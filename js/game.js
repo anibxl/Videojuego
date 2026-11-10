@@ -49,9 +49,11 @@
       boosts: {},
       mine: { level: 0, stored: 0, last: Date.now() },
       pendingRound: null,
+      // Récords de todas las partidas: se conservan al empezar de cero
+      records: { runs: 1, bestLevel: 1, bestCoins: 1000, bestWin: 0 },
       stats: {
         spent: 0, won: 0, bonus: 0, skillSpent: 0, shopSpent: 0, refunds: 0, bought: 0, scratched: 0, wins: 0,
-        games: 0, items: 0, mineEarned: 0, wildWins: 0,
+        games: 0, items: 0, mineEarned: 0, wildWins: 0, livesUsed: 0,
         biggestWin: 0, biggestTier: null, streak: 0, bestStreak: 0, peakCoins: 1000,
         perTier: freshPerTier(),
       },
@@ -78,6 +80,7 @@
     out.skills = Object.assign({}, s.skills || {});
     out.boosts = Object.assign({}, s.boosts || {});
     out.mine = Object.assign({ level: 0, stored: 0, last: Date.now() }, s.mine || {});
+    out.records = Object.assign({ runs: 1, bestLevel: 1, bestCoins: 1000, bestWin: 0 }, s.records || {});
     return out;
   }
 
@@ -110,7 +113,7 @@
   function itemPrice(it) {
     return Math.max(10, Math.round((it.price * (1 + 0.2 * (S.level - 1)) * (1 - skEffect('merchant'))) / 10) * 10);
   }
-  const itemUses = (it) => Math.round(it.uses * (1 + skEffect('alchemist')));
+  const itemUses = (it) => (it.fixedUses ? it.uses : Math.round(it.uses * (1 + skEffect('alchemist'))));
   const mineRate = () => MINE.rate(S.mine.level) * (1 + skEffect('foreman')); // monedas/min
   const mineCap = () => Math.round(mineRate() * 60 * MINE.capHours * (1 + skEffect('storage')));
   const mineUpgradeCost = () => Math.round((MINE.cost(S.mine.level) * (1 - skEffect('merchant'))) / 50) * 50;
@@ -373,20 +376,130 @@
     renderHome();
   });
 
-  function isBroke() {
-    return S.coins < TIERS[0].price && S.inventory.length === 0;
+  /* ---------- Bancarrota, segunda vida y récords ---------- */
+  const dailyReady = () => S.lastDaily + DAILY_MS <= Date.now();
+  /** Precio de lo más barato que se puede jugar ahora mismo. */
+  function cheapestPlay() {
+    return Math.min(...TIERS.concat(GAMES).filter((t) => S.level >= t.level).map(ticketPrice));
   }
-  $('rescue-btn').addEventListener('click', (e) => {
-    if (!isBroke()) return;
-    S.coins += 100;
-    S.stats.bonus += 100;
-    Sound.buy();
-    const r = e.currentTarget.getBoundingClientRect();
-    FX.coins(r.left + r.width / 2, r.top, 20);
+  /**
+   * Sin dinero = no llega para lo más barato (contando lo que hay en la mina),
+   * sin boletos por rascar, sin partida en curso y sin bonus diario disponible.
+   */
+  function isBroke(coins) {
+    if (coins === undefined) coins = S.coins;
+    mineTick();
+    const available = coins + Math.floor(S.mine.stored || 0);
+    return available < cheapestPlay() && S.inventory.length === 0 && !S.pendingRound && !(gameRun.tk && !gameRun.done) && !dailyReady();
+  }
+  /** Sin monedas pero con el bonus diario listo: se avisa en el inicio. */
+  const needsDaily = () => S.coins + Math.floor(S.mine.stored || 0) < cheapestPlay() && S.inventory.length === 0 && dailyReady();
+  $('rescue-btn').addEventListener('click', () => $('daily-btn').click());
+
+  const reviveCoins = () => 300 + 100 * S.level;
+  function noteRecords() {
+    const r = S.records;
+    r.bestLevel = Math.max(r.bestLevel, S.level);
+    r.bestCoins = Math.max(r.bestCoins, S.stats.peakCoins, S.coins);
+    r.bestWin = Math.max(r.bestWin, S.stats.biggestWin);
+  }
+
+  let bankruptTimer = null;
+  /** Comprueba la bancarrota (con retraso para que se vea antes el resultado). */
+  function checkBankrupt(delay) {
+    clearTimeout(bankruptTimer);
+    bankruptTimer = setTimeout(() => {
+      if (!isBroke()) return;
+      if (modalOpen) return checkBankrupt(600); // espera a que se cierren otras ventanas
+      if ((S.boosts.life || 0) > 0) return useLife();
+      gameOver();
+    }, delay === undefined ? 300 : delay);
+  }
+
+  function useLife() {
+    S.boosts.life--;
+    const amt = reviveCoins();
+    S.coins += amt;
+    S.stats.bonus += amt;
+    S.stats.livesUsed++;
+    checkAchievements();
     save();
+    Sound.levelUp();
+    FX.flash('#ff8ab5');
+    FX.burst(window.innerWidth / 2, window.innerHeight / 2, 60, ['#ff4d6d', '#ff8ab5', '#ffffff']);
+    modal({
+      icon: '❤️',
+      title: '¡Segunda vida!',
+      html: `<p>Te habías quedado sin monedas, pero tu Segunda vida te ha salvado. Conservas todo tu progreso.</p>
+        <div class="jp-amount"><span class="coin-ico lg"></span>+${fmt(amt)}</div>
+        <p>${S.boosts.life ? `Te quedan ${S.boosts.life} vidas.` : 'Ya no te quedan vidas: ¡compra otra en la tienda!'}</p>`,
+      buttons: [{ label: '¡A seguir!', cls: 'btn btn-pink' }],
+    });
     refreshHeader(true);
-    renderHome();
-  });
+    if (renderers[current]) renderers[current]();
+  }
+
+  function gameOver() {
+    noteRecords();
+    save();
+    Sound.lose();
+    FX.shake();
+    const st = S.stats;
+    const row = (k, v) => `<div class="go-row"><span>${k}</span><b>${v}</b></div>`;
+    modal({
+      cls: 'gameover',
+      icon: '💀',
+      title: '¡Bancarrota!',
+      html: `<p>Te has quedado sin monedas. La partida ha terminado y tendrás que <b>empezar de cero</b>.</p>
+        <div class="go-stats">
+          ${row('Nivel alcanzado', S.level)}
+          ${row('Saldo máximo', fmt(st.peakCoins))}
+          ${row('Mayor premio', st.biggestWin ? fmt(st.biggestWin) : '—')}
+          ${row('Boletos rascados', fmt(st.scratched))}
+          ${row('Partidas de juegos', fmt(st.games))}
+        </div>
+        <p class="small">💡 La próxima vez, compra una <b>❤️ Segunda vida</b> en la tienda (pestaña Objetos) para no perderlo todo.</p>`,
+      buttons: [{ label: '🔄 Empezar de cero', cls: 'btn', action: () => resetRun('💀 Nueva partida: ¡1.000 monedas para empezar!') }],
+    });
+  }
+
+  /** Empieza una partida nueva conservando sonido y récords. */
+  function resetRun(msg) {
+    noteRecords();
+    const keep = { sound: S.sound, records: S.records };
+    if (play.card) {
+      play.card.destroy();
+      play.card = null;
+    }
+    gameRun.timers.forEach((t) => { clearTimeout(t); clearInterval(t); });
+    gameRun.tk = null;
+    gameRun.done = true;
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* sin almacenamiento */ }
+    S = load();
+    S.sound = keep.sound;
+    S.records = keep.records;
+    S.records.runs++;
+    save();
+    refreshHeader(false);
+    go('home');
+    toast('🔄', msg);
+  }
+
+  /** Si una compra te dejaría sin dinero, pide confirmación antes. */
+  function guardRuin(cost, action) {
+    if (!isBroke(S.coins - cost)) return action();
+    modal({
+      icon: '⚠️',
+      title: '¿Seguro?',
+      html: (S.boosts.life || 0) > 0
+        ? '<p>Con esta compra te quedarás sin monedas y se gastará una <b>❤️ Segunda vida</b>.</p>'
+        : '<p>Con esta compra te quedarás sin monedas y <b>perderás la partida</b>: tendrás que empezar de cero.</p>',
+      buttons: [
+        { label: 'Comprar igualmente', cls: 'btn btn-pink', action },
+        { label: 'Cancelar', cls: 'btn btn-ghost' },
+      ],
+    });
+  }
 
   /* ---------- Inicio ---------- */
   function historyRow(h) {
@@ -403,7 +516,7 @@
     renderDaily();
     const got = Object.keys(S.achievements).length;
     $('ach-count').textContent = `${got}/${ACHIEVEMENTS.length}`;
-    $('rescue-btn').classList.toggle('hidden', !isBroke());
+    $('rescue-btn').classList.toggle('hidden', !needsDaily());
     renderMineCard();
     renderBoosts();
     const wins = S.history.filter((h) => h.prize > 0).slice(0, 5);
@@ -558,10 +671,10 @@
         <div class="shop-body">
           <div class="item-head"><span class="item-ico">${it.icon}</span><div><b>${it.name}</b><small class="muted">${it.desc}</small></div></div>
           <div class="shop-info">
-            <div class="si"><small>Duración</small><b>${itemUses(it)} ${it.ticketsOnly ? 'boletos' : 'partidas'}</b></div>
-            <div class="si"><small>Te quedan</small><b>${have ? have + ' usos' : '—'}</b></div>
+            <div class="si"><small>${it.fixedUses ? 'Máximo' : 'Duración'}</small><b>${it.fixedUses ? it.max + ' vidas' : itemUses(it) + (it.ticketsOnly ? ' boletos' : ' partidas')}</b></div>
+            <div class="si"><small>Te quedan</small><b>${have ? have + (it.fixedUses ? (have === 1 ? ' vida' : ' vidas') : ' usos') : '—'}</b></div>
           </div>
-          <div class="buy-row single"><button class="btn" data-item="${it.id}" ${locked || S.coins < price ? 'disabled' : ''}>Comprar <small>${fmtShort(price)}</small></button></div>
+          <div class="buy-row single"><button class="btn" data-item="${it.id}" ${locked || S.coins < price || (it.max && have >= it.max) ? 'disabled' : ''}>${it.max && have >= it.max ? 'Al máximo' : `Comprar <small>${fmtShort(price)}</small>`}</button></div>
         </div>
       </div>`;
     }).join('');
@@ -591,37 +704,43 @@
     Sound.unlock();
     const it = ITEM_BY_ID[id];
     const price = itemPrice(it);
-    if (S.level < it.level || S.coins < price) return Sound.error();
-    S.coins -= price;
-    S.stats.shopSpent += price;
-    S.stats.items++;
-    S.boosts[id] = (S.boosts[id] || 0) + itemUses(it);
-    Sound.buy();
+    if (S.level < it.level || S.coins < price || (it.max && (S.boosts[id] || 0) >= it.max)) return Sound.error();
     const r = srcEl.getBoundingClientRect();
-    FX.sparkle(r.left + r.width / 2, r.top + r.height / 2, 14, '#c9b6ff');
-    toast(it.icon, `<b>${it.name}</b><br>${it.desc} · ${itemUses(it)} usos`);
-    checkAchievements();
-    save();
-    refreshHeader(true);
-    renderShop();
+    guardRuin(price, () => {
+      S.coins -= price;
+      S.stats.shopSpent += price;
+      S.stats.items++;
+      S.boosts[id] = (S.boosts[id] || 0) + itemUses(it);
+      Sound.buy();
+      FX.sparkle(r.left + r.width / 2, r.top + r.height / 2, 14, '#c9b6ff');
+      toast(it.icon, `<b>${it.name}</b><br>${it.desc}${it.fixedUses ? '' : ` · ${itemUses(it)} usos`}`);
+      checkAchievements();
+      save();
+      refreshHeader(true);
+      renderShop();
+      checkBankrupt();
+    });
   }
 
   function upgradeMine(srcEl) {
     Sound.unlock();
     const cost = mineUpgradeCost();
     if (S.level < MINE.minLevel || S.mine.level >= MINE.maxLevel || S.coins < cost) return Sound.error();
-    mineTick();
-    S.coins -= cost;
-    S.stats.shopSpent += cost;
-    S.mine.level++;
-    Sound.levelUp();
     const r = srcEl.getBoundingClientRect();
-    FX.burst(r.left + r.width / 2, r.top + r.height / 2, 40, ['#ff9f1c', '#ffcf3f', '#ffffff']);
-    toast('⛏️', `<b>Mina nivel ${S.mine.level}</b><br>${fmtDec(mineRate())} monedas por minuto`);
-    checkAchievements();
-    save();
-    refreshHeader(true);
-    renderShop();
+    guardRuin(cost, () => {
+      mineTick();
+      S.coins -= cost;
+      S.stats.shopSpent += cost;
+      S.mine.level++;
+      Sound.levelUp();
+      FX.burst(r.left + r.width / 2, r.top + r.height / 2, 40, ['#ff9f1c', '#ffcf3f', '#ffffff']);
+      toast('⛏️', `<b>Mina nivel ${S.mine.level}</b><br>${fmtDec(mineRate())} monedas por minuto`);
+      checkAchievements();
+      save();
+      refreshHeader(true);
+      renderShop();
+      checkBankrupt();
+    });
   }
 
   /** Crea un boleto o una partida aplicando las habilidades que actúan al comprar. */
@@ -904,6 +1023,7 @@
     save();
     setTimeout(() => refreshHeader(true), prize > 0 ? 450 : 0);
     renderPlayActions(t);
+    checkBankrupt(1800);
   }
 
   function celebrate(tk, t, el, prize) {
@@ -1056,6 +1176,7 @@
       buttons: [{ label: '¡Genial!', cls: 'btn' }],
     });
     refreshHeader(true);
+    checkBankrupt(800);
   }
 
   /* ---------- Juegos sin rascar: máquinas y cajas ---------- */
@@ -1203,6 +1324,7 @@
     if (silent) {
       if (r.payout) toast(g.icon, `<b>${g.name}</b><br>Partida cobrada: +${fmt(r.payout)}`);
       refreshHeader(true);
+      checkBankrupt(800);
       return;
     }
     const holder = $('game-holder');
@@ -1227,6 +1349,7 @@
     }
     setTimeout(() => refreshHeader(true), r.payout ? 450 : 0);
     renderGameActions(g);
+    checkBankrupt(1800);
   }
 
   function renderGameActions(g) {
@@ -1288,19 +1411,22 @@
       Sound.error();
       return;
     }
-    S.coins -= st.cost;
-    S.stats.skillSpent += st.cost;
-    S.skills[k.id] = st.lvl + 1;
     const r = b.getBoundingClientRect();
-    Sound.levelUp();
-    FX.burst(r.left + r.width / 2, r.top + r.height / 2, 40, [SKILL_BRANCHES.find((x) => x.id === k.branch).color, '#ffffff', '#ffe48a']);
-    toast(k.icon, `<b>${k.name} nivel ${st.lvl + 1}</b><br>${k.fx(st.lvl + 1)}`);
-    checkAchievements();
-    save();
-    refreshHeader(true);
-    renderSkills();
-    const node = document.querySelector(`[data-node="${k.id}"]`);
-    if (node) node.classList.add('just');
+    guardRuin(st.cost, () => {
+      S.coins -= st.cost;
+      S.stats.skillSpent += st.cost;
+      S.skills[k.id] = st.lvl + 1;
+      Sound.levelUp();
+      FX.burst(r.left + r.width / 2, r.top + r.height / 2, 40, [SKILL_BRANCHES.find((x) => x.id === k.branch).color, '#ffffff', '#ffe48a']);
+      toast(k.icon, `<b>${k.name} nivel ${st.lvl + 1}</b><br>${k.fx(st.lvl + 1)}`);
+      checkAchievements();
+      save();
+      refreshHeader(true);
+      renderSkills();
+      const node = document.querySelector(`[data-node="${k.id}"]`);
+      if (node) node.classList.add('just');
+      checkBankrupt();
+    });
   });
 
   /* ---------- Historial ---------- */
@@ -1340,7 +1466,16 @@
       ['Saldo máximo', fmt(st.peakCoins)],
       ['Retorno real', st.spent ? Math.round((st.won / st.spent) * 100) + '%' : '—'],
       ['Logros', `${Object.keys(S.achievements).length}/${ACHIEVEMENTS.length}`],
+      ['Segundas vidas usadas', fmt(st.livesUsed)],
     ];
+    noteRecords();
+    const rec = S.records;
+    $('record-grid').innerHTML = [
+      ['Partida nº', fmt(rec.runs)],
+      ['Récord de nivel', fmt(rec.bestLevel)],
+      ['Récord de saldo', fmt(rec.bestCoins)],
+      ['Récord de premio', rec.bestWin ? fmt(rec.bestWin) : '—'],
+    ].map(([k, v]) => `<div class="stat"><small>${k}</small><b>${v}</b></div>`).join('');
     $('stat-grid').innerHTML = items.map(([k, v]) => `<div class="stat"><small>${k}</small><b>${v}</b></div>`).join('');
 
     $('tier-table').innerHTML =
@@ -1370,21 +1505,12 @@
     modal({
       icon: '⚠️',
       title: '¿Reiniciar partida?',
-      html: '<p>Perderás tu saldo, nivel, boletos, historial y logros.</p>',
+      html: '<p>Perderás tu saldo, nivel, boletos, habilidades, objetos, mina, historial y logros. Los récords se conservan.</p>',
       buttons: [
         {
           label: 'Sí, reiniciar',
           cls: 'btn btn-pink',
-          action: () => {
-            const sound = S.sound;
-            try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* sin almacenamiento */ }
-            S = load();
-            S.sound = sound;
-            save();
-            refreshHeader(false);
-            go('home');
-            toast('🔄', 'Partida reiniciada. ¡1.000 monedas para empezar!');
-          },
+          action: () => resetRun('🔄 Partida reiniciada. ¡1.000 monedas para empezar!'),
         },
         { label: 'Cancelar', cls: 'btn btn-ghost' },
       ],
@@ -1429,6 +1555,7 @@
   renderSoundBtn();
   refreshHeader(false);
   go('home');
+  checkBankrupt(900);
   setInterval(() => {
     if (current === 'home') renderDaily();
   }, 30000);
@@ -1455,7 +1582,8 @@
       title: '¡Bienvenido a RascaManía!',
       html: `<p>Empiezas con <b style="color:var(--accent)">1.000 monedas</b> ficticias.</p>
         <p>Compra boletos en la tienda, <b>ráscalos arrastrando el dedo o el ratón</b> y encuentra 3 símbolos iguales para ganar.</p>
-        <p>Sube de nivel para desbloquear boletos mejores, juegos sin rascar, objetos, una mina de monedas y el árbol de habilidades.</p>`,
+        <p>Sube de nivel para desbloquear boletos mejores, juegos sin rascar, objetos, una mina de monedas y el árbol de habilidades.</p>
+        <p>⚠️ Si te quedas sin monedas, <b>pierdes y empiezas de cero</b>… salvo que tengas una ❤️ Segunda vida.</p>`,
       buttons: [{ label: '¡A rascar!', cls: 'btn', action: () => go('shop') }],
     });
   }

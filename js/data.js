@@ -390,6 +390,8 @@
    * El precio sube con el nivel del jugador: price * (1 + 0.2 * (nivel - 1)).
    */
   const ITEMS = [
+    // Se gasta sola al quedarte sin monedas: evita empezar de cero
+    { id: 'life', icon: '❤️', name: 'Segunda vida', desc: 'Si te quedas sin monedas, te salva de empezar de cero y te da monedas para seguir', uses: 1, price: 1200, level: 2, fixedUses: true, max: 3 },
     { id: 'xp2', icon: '🧪', name: 'Poción de sabiduría', desc: 'Doble de experiencia', uses: 20, price: 300, level: 2 },
     { id: 'crystal', icon: '🔮', name: 'Bola de cristal', desc: '2 casillas extra descubiertas al abrir cada boleto', uses: 8, price: 450, level: 3, ticketsOnly: true },
     { id: 'charm', icon: '🧿', name: 'Amuleto de la fortuna', desc: 'Premios +10 %', uses: 10, price: 900, level: 4 },
@@ -511,6 +513,7 @@
     { id: 'items10', icon: '🧪', name: 'Buen cliente', desc: 'Compra 10 objetos', reward: 400, test: (s) => (s.stats.items || 0) >= 10 },
     { id: 'miner1', icon: '⛏️', name: 'Primera mina', desc: 'Compra la mina de monedas', reward: 200, test: (s) => ((s.mine || {}).level || 0) >= 1 },
     { id: 'miner5', icon: '💎', name: 'Magnate minero', desc: 'Mejora la mina al nivel 5', reward: 3000, test: (s) => ((s.mine || {}).level || 0) >= 5 },
+    { id: 'survivor', icon: '❤️', name: 'Superviviente', desc: 'Salva la partida con una Segunda vida', reward: 300, test: (s) => (s.stats.livesUsed || 0) >= 1 },
     { id: 'skillall', icon: '🧙', name: 'Gran maestro', desc: 'Lleva al máximo todo el árbol', reward: 50000, test: (s) => SKILLS.every((k) => (s.skills || {})[k.id] >= k.max) },
   ];
 

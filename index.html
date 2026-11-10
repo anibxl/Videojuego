@@ -68,13 +68,13 @@
           <button class="menu-btn mb-hist" data-go="history"><span>📜</span>Historial</button>
           <button class="menu-btn mb-stats" data-go="stats"><span>📊</span>Estadísticas</button>
         </div>
-        <button class="btn btn-rescue hidden" id="rescue-btn">🆘 Ayuda de emergencia: +100 monedas</button>
+        <button class="btn btn-rescue hidden" id="rescue-btn">⚠️ ¡Sin monedas! Reclama el bonus diario para seguir jugando</button>
 
         <div class="card">
           <h3 class="card-title">Últimos premios</h3>
           <ul class="recent" id="recent-list"></ul>
         </div>
-        <p class="disclaimer">Juego de entretenimiento con monedas ficticias. No hay apuestas ni dinero real.</p>
+        <p class="disclaimer">Juego de entretenimiento con monedas ficticias. No hay apuestas ni dinero real. Si te quedas sin monedas, empiezas de cero.</p>
       </section>
 
       <!-- TIENDA -->
@@ -143,6 +143,10 @@
         <div class="screen-head">
           <h2>📊 Estadísticas</h2>
           <p class="muted">Ganancias, pérdidas y probabilidades.</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">🏆 Récords de todas las partidas</h3>
+          <div class="stat-grid record-grid" id="record-grid"></div>
         </div>
         <div class="stat-grid" id="stat-grid"></div>
         <div class="card">

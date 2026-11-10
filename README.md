@@ -46,6 +46,7 @@ Si cierras la página mientras giran los rodillos, la partida se cobra al volver
 
 ## Objetos
 
+- ❤️ **Segunda vida:** te salva de la bancarrota (máximo 3).
 - 🧪 **Poción de sabiduría:** doble de experiencia durante 20 partidas.
 - 🔮 **Bola de cristal:** 2 casillas extra descubiertas en los próximos 8 boletos.
 - 🧿 **Amuleto de la fortuna:** premios +10 % durante 10 partidas.
@@ -60,8 +61,10 @@ El precio de los objetos sube con el nivel del jugador.
 - **Inventario:** boletos comprados pendientes de rascar.
 - **Historial:** los últimos 300 boletos, con filtros.
 - **Estadísticas:** gastado, ganado, balance, porcentaje de premiados, retorno real por tipo, mayor premio y rachas.
-- **Logros:** 25 retos con recompensa.
-- **Bonus diario** cada 20 h, y **ayuda de emergencia** si te quedas sin monedas ni boletos.
+- **Logros:** 26 retos con recompensa.
+- **Bonus diario** cada 20 h.
+- **Bancarrota:** si no te llega para lo más barato, no tienes boletos sin rascar, no puedes recoger nada de la mina y no hay bonus diario disponible, pierdes la partida y **empiezas de cero**. Si tienes una **❤️ Segunda vida**, se gasta sola, conservas tu progreso y recibes monedas (300 + 100 × nivel). Antes de una compra que te dejaría sin nada, el juego pide confirmación.
+- **Récords** de todas las partidas (nivel, saldo, mayor premio y número de partida): se conservan al empezar de cero.
 - La partida se guarda automáticamente en `localStorage`.
 
 ## Árbol de habilidades

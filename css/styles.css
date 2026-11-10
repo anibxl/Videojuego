@@ -620,3 +620,12 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .gbox.open { background: rgba(255,255,255,.92); cursor: default; }
 .gbox.open .lid { transform: translateY(-120%) rotate(-25deg); opacity: 0; }
 .gbox.open .content { opacity: 1; transform: none; }
+
+/* ---------- Bancarrota ---------- */
+.modal-box.gameover { background: linear-gradient(160deg, #4a1028, #1d0f2e); box-shadow: 0 0 60px #ff4d6d66; }
+.modal-box.gameover h3 { color: #ff8a8a; font-size: 2rem; }
+.go-stats { display: grid; gap: 6px; margin: 10px 0; text-align: left; }
+.go-row { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,.07); font-size: .9rem; }
+.record-grid { margin-bottom: 0; }
+.record-grid .stat { background: rgba(255,207,63,.08); }
+.btn-rescue { background: linear-gradient(180deg, #ffd95e, #f5a700); color: #3a2300; box-shadow: 0 4px 0 #b77a00; animation: glow 1.6s infinite; }
