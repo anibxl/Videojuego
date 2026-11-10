@@ -387,3 +387,49 @@ func _upload() -> void:
 	_dirty = false
 	image.set_data(res.x, res.y, false, Image.FORMAT_RG8, bytes)
 	texture.update(image)
+
+
+# ----------------------------------------------------------- persistence ---
+
+## Compact snapshot of this surface (empty if untouched). Dirt is quantised to
+## 8 bits per pixel and deflate-compressed.
+func export_state() -> Dictionary:
+	if layer_index == 0 and not done and remaining >= initial_sum - 0.0001:
+		return {}
+	var out := {"l": layer_index, "d": done, "i": initial_sum, "w": res.x, "h": res.y}
+	if not done:
+		var q := PackedByteArray()
+		q.resize(data.size())
+		for i in data.size():
+			q[i] = int(round(data[i] * 255.0))
+		out["n"] = q.size()
+		out["m"] = Marshalls.raw_to_base64(q.compress(FileAccess.COMPRESSION_DEFLATE))
+	return out
+
+
+func import_state(s: Dictionary) -> void:
+	if s.is_empty() or int(s.get("w", -1)) != res.x or int(s.get("h", -1)) != res.y:
+		return
+	var li := clampi(int(s.get("l", 0)), 0, layers.size() - 1)
+	if li != layer_index:
+		layer_index = li
+		_generate_layer()
+	if bool(s.get("d", false)):
+		done = true
+		data.fill(0.0)
+		for i in data.size():
+			bytes[i * 2] = 0
+		remaining = 0.0
+		foam_amount = 0.0
+		material.set_shader_parameter("foam", 0.0)
+	elif s.has("m"):
+		var q: PackedByteArray = Marshalls.base64_to_raw(String(s["m"])).decompress(int(s["n"]), FileAccess.COMPRESSION_DEFLATE)
+		if q.size() != data.size():
+			return
+		remaining = 0.0
+		for i in q.size():
+			data[i] = q[i] / 255.0
+			bytes[i * 2] = q[i]
+			remaining += data[i]
+		initial_sum = maxf(float(s.get("i", initial_sum)), remaining)
+	_dirty = true

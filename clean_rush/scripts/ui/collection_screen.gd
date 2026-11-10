@@ -8,7 +8,7 @@ var arg
 
 func _ready() -> void:
 	var all := Data.all_discoveries()
-	var list := MiscScreens.list_screen(self, "Collection Book  %d / %d" % [Game.state["discoveries"].size(), all.size()], func(): main.goto("menu"))
+	var list := MiscScreens.list_screen(self, "Collection Book  %d / %d" % [Game.state["discoveries"].size(), all.size()], func(): main.goto("profile"))
 	list.add_child(UIKit.wrap_label("Hidden treasures appear when you clean the dirt or leaves covering them. Walk over a sparkling item to collect it.", 18, Color(1, 1, 1, 0.85), 900))
 	for map_id in Data.map_order:
 		var d := Data.map_def(map_id)

@@ -21,24 +21,38 @@ func _build() -> void:
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
-	var p := UIKit.panel(Color(UIKit.BLUE, 0.96), 28)
-	p.custom_minimum_size = Vector2(900, 0)
+	var p := UIKit.panel(Color(UIKit.BLUE, 0.96), 14)
+	p.custom_minimum_size = Vector2(920, 640)
 	center.add_child(p)
-	var v := UIKit.vbox(9)
-	p.add_child(v)
-	v.add_child(UIKit.label("Settings", 34, UIKit.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
+	var outer := UIKit.vbox(10)
+	p.add_child(outer)
+	outer.add_child(UIKit.label("Settings", 28, UIKit.WHITE))
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer.add_child(scroll)
+	var v := UIKit.vbox(8)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(v)
+	v.add_child(_section("AUDIO"))
 	v.add_child(_slider("Music", "music"))
 	v.add_child(_slider("Sound effects", "sfx"))
-	v.add_child(_choice("Graphics", "graphics", ["Low", "Medium", "High"]))
+	v.add_child(_section("CONTROLS"))
+	v.add_child(_slider("Look sensitivity", "cam_sens", 0.3, 2.5))
+	v.add_child(_choice("Invert look (Y)", "invert_y", ["Off", "On"], true))
 	v.add_child(_choice("Touch controls", "touch", ["Auto", "On", "Off"]))
-	v.add_child(_choice("Auto-aim assist", "auto_aim", ["Off", "On"], true))
-	var cam := _slider("Camera speed", "cam_sens", 0.3, 2.0)
-	v.add_child(cam)
+	v.add_child(_choice("Layout", "layout", ["Right-handed", "Left-handed"]))
+	v.add_child(_slider("Joystick size", "joystick_size", 0.7, 1.4))
+	v.add_child(_slider("Button size", "button_scale", 0.8, 1.3))
+	v.add_child(_section("CAMERA & DISPLAY"))
+	v.add_child(_slider("Field of view", "fov", 60.0, 90.0, "%d°", 1.0))
+	v.add_child(_choice("Head bob", "head_bob", ["Off", "On"], true))
+	v.add_child(_choice("Graphics", "graphics", ["Low", "Medium", "High"]))
 	v.add_child(_choice("Time of day", "time_of_day", ["Auto", "Morning", "Day", "Evening"]))
 	v.add_child(_choice("Weather", "weather", ["Auto", "Sunny", "Cloudy", "Windy", "Rain"]))
-	v.add_child(UIKit.label("Graphics changes apply fully when the next location loads.", 15, Color(1, 1, 1, 0.65), HORIZONTAL_ALIGNMENT_CENTER))
+	v.add_child(UIKit.label("Graphics, FOV and layout changes apply fully when the next location loads.", 13, UIKit.GREY))
 	var h := UIKit.hbox(12)
-	h.alignment = BoxContainer.ALIGNMENT_CENTER
+	h.alignment = BoxContainer.ALIGNMENT_END
 	h.add_child(UIKit.button("Save now", UIKit.TURQ.darkened(0.15), Vector2(170, 62), 20, func():
 		if Game.save_game():
 			main.show_toast("Saved to slot %d" % (Game.current_slot + 1), "good")
@@ -65,26 +79,31 @@ func _build() -> void:
 			queue_free()
 		else:
 			main.goto("menu")))
-	v.add_child(h)
-	v.add_child(UIKit.label("CLEAN RUSH v%s • No ads, no tracking, offline saves" % ProjectSettings.get_setting("application/config/version", "1.0.0"), 14, Color(1, 1, 1, 0.5), HORIZONTAL_ALIGNMENT_CENTER))
+	outer.add_child(h)
+	outer.add_child(UIKit.label("CLEAN RUSH v%s • No ads, no tracking, offline saves" % ProjectSettings.get_setting("application/config/version", "1.0.0"), 14, Color(1, 1, 1, 0.5), HORIZONTAL_ALIGNMENT_CENTER))
 
 
-func _slider(text: String, key: String, lo := 0.0, hi := 1.0) -> HBoxContainer:
+func _section(text: String) -> Label:
+	var l := UIKit.label(text, 12, UIKit.TURQ)
+	return l
+
+
+func _slider(text: String, key: String, lo := 0.0, hi := 1.0, fmt := "%d%%", mul := 100.0) -> HBoxContainer:
 	var h := UIKit.hbox(14)
-	var l := UIKit.label(text, 22, UIKit.WHITE)
+	var l := UIKit.label(text, 17, UIKit.WHITE)
 	l.custom_minimum_size.x = 240
 	h.add_child(l)
 	var s := HSlider.new()
 	s.min_value = lo
 	s.max_value = hi
-	s.step = 0.05
+	s.step = 0.05 if hi <= 3.0 else 1.0
 	s.value = float(Game.setting(key))
 	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	s.custom_minimum_size.y = 40
-	var val := UIKit.label("%d%%" % int(s.value * 100), 20, UIKit.TURQ)
+	var val := UIKit.label(fmt % int(s.value * mul), 16, UIKit.TURQ)
 	val.custom_minimum_size.x = 70
 	s.value_changed.connect(func(x):
-		val.text = "%d%%" % int(x * 100)
+		val.text = fmt % int(x * mul)
 		Game.set_setting(key, x))
 	h.add_child(s)
 	h.add_child(val)
@@ -93,14 +112,14 @@ func _slider(text: String, key: String, lo := 0.0, hi := 1.0) -> HBoxContainer:
 
 func _choice(text: String, key: String, options: Array, boolean := false) -> HBoxContainer:
 	var h := UIKit.hbox(10)
-	var l := UIKit.label(text, 22, UIKit.WHITE)
+	var l := UIKit.label(text, 17, UIKit.WHITE)
 	l.custom_minimum_size.x = 240
 	h.add_child(l)
 	var cur = Game.setting(key)
 	for i in options.size():
 		var selected: bool = (bool(cur) == (i == 1)) if boolean else int(cur) == i
 		var idx := i
-		h.add_child(UIKit.button(String(options[i]), UIKit.ORANGE if selected else UIKit.BLUE2, Vector2(120 if options.size() > 4 else 140, 50), 18, func():
+		h.add_child(UIKit.button(String(options[i]), UIKit.GOLD if selected else UIKit.BLUE2, Vector2(120 if options.size() > 4 else 140, 50), 18, func():
 			Game.set_setting(key, (idx == 1) if boolean else idx)
 			_build()))
 	return h

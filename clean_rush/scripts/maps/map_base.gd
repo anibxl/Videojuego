@@ -7,6 +7,7 @@ extends Node3D
 signal progress_updated(snap: Dictionary)
 signal discovery_found(d: Discovery, coins: int)
 signal message(text: String, kind: String)
+signal coins_earned(amount: int, source: String)
 
 const TRACK_INTERVAL := 0.2
 
@@ -30,6 +31,8 @@ var weather := "sunny"
 var rain_fx: CPUParticles3D
 var _base_atmo: Dictionary = {}
 var menu_mode := false          # background for the main menu
+var pending_state: Dictionary = {}   # saved restoration state applied after build()
+var restored := false
 var _track_t := 0.0
 var _mat_cache: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
@@ -43,6 +46,7 @@ func _ready() -> void:
 	var sp: Array = def.get("spawn", [0, 0, 0])
 	spawn_point = Vector3(sp[0], sp[1], sp[2])
 	build()
+	add_backdrop()
 	for s in surfaces:
 		s.completed.connect(_on_surface_completed)
 	for f in fields:
@@ -50,7 +54,11 @@ func _ready() -> void:
 		f.pile_bagged.connect(_on_pile_bagged)
 	for d in discoveries:
 		d.found.connect(_on_discovery_found)
+	if not menu_mode and not pending_state.is_empty():
+		import_state(pending_state)
 	_track(true)
+	if restored:
+		_update_blooms(overall())
 
 
 ## Override in subclasses.
@@ -112,6 +120,14 @@ func _track(initial: bool) -> void:
 		water_material.set_shader_parameter("clarity", snapshot["water"])
 	for m in health_materials:
 		m.set_shader_parameter("health", clampf(0.75 + overall * 0.35, 0.0, 1.0))
+	if not menu_mode and Game.has_active_slot():
+		# Pay coins for removed dirt immediately (persisted per location), so
+		# money is never lost by quitting before a contract is finished.
+		var earned := int(floor(overall * 100.0 * float(def.get("coins_per_percent", 2.0))))
+		var paid := Game.map_dirt_paid(map_id)
+		if earned > paid:
+			Game.pay_map_dirt(map_id, earned - paid)
+			coins_earned.emit(earned - paid, "dirt")
 	if not initial and not menu_mode:
 		for k in cleared.keys():
 			var delta: int = cleared[k] - int(_cleared_reported[k])
@@ -212,6 +228,8 @@ func _on_pile_bagged(_f: DebrisField, at: Vector3, n: int) -> void:
 
 func _on_discovery_found(d: Discovery) -> void:
 	var coins := Game.add_discovery(map_id, d.disc_id)
+	Game.add_coins(coins)   # paid instantly (saved), not at contract end
+	coins_earned.emit(coins, "discovery")
 	Audio.play("discovery")
 	discovery_found.emit(d, coins)
 
@@ -245,6 +263,79 @@ func add_bloom(n: Node3D, threshold: float) -> void:
 	blooms.append({"node": n, "threshold": threshold, "done": false, "scale": n.scale})
 	n.scale = Vector3.ONE * 0.01
 	n.visible = false
+
+
+# ================================================================ backdrop ===
+
+## Distant treeline and soft hills around the site so the first-person horizon
+## looks like a real place (no gameplay impact, LOD-faded, few cards).
+func add_backdrop() -> void:
+	var c := player_bounds.get_center()
+	var r := maxf(player_bounds.size.x, player_bounds.size.y) * 0.5 + 9.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(map_id) + 7
+	var tints := [Color(0.28, 0.45, 0.2), Color(0.35, 0.5, 0.22), Color(0.8, 0.5, 0.18), Color(0.22, 0.38, 0.2), Color(0.85, 0.7, 0.25)]
+	var n: int = [10, 16, 22][Game.graphics_level()]
+	for i in n:
+		var ang: float = i * TAU / n + rng.randf_range(-0.12, 0.12)
+		var dist := r + rng.randf_range(0.0, 7.0)
+		var p := Vector3(c.x + cos(ang) * dist, 0, c.y + sin(ang) * dist)
+		var species: String = ["oak", "pine", "birch", "maple", "oak"][rng.randi() % 5]
+		Vegetation.tree(self, p, species, tints[rng.randi() % tints.size()], rng.randf_range(1.0, 1.5), i + 31)
+	var hill_m := StandardMaterial3D.new()
+	hill_m.albedo_color = Color(0.33, 0.47, 0.27)
+	hill_m.roughness = 1.0
+	for i in 9:
+		var ang2 := i * TAU / 9.0 + rng.randf()
+		var hm := SphereMesh.new()
+		hm.radius = rng.randf_range(18.0, 30.0)
+		hm.height = hm.radius * 2.0
+		hm.radial_segments = 12
+		hm.rings = 6
+		var mi := MeshInstance3D.new()
+		mi.mesh = hm
+		mi.material_override = hill_m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.position = Vector3(c.x + cos(ang2) * 75.0, -hm.radius * 0.72, c.y + sin(ang2) * 75.0)
+		mi.scale = Vector3(1.6, 0.55, 1.6)
+		add_child(mi)
+
+
+# ============================================================ persistence ===
+
+## Full restoration snapshot of this location (saved per save slot).
+func export_state() -> Dictionary:
+	var ss := []
+	for sf in surfaces:
+		ss.append(sf.export_state())
+	var fs := []
+	for f in fields:
+		fs.append(f.export_state())
+	var found := []
+	for d in discoveries:
+		if d.is_found:
+			found.append(d.disc_id)
+	return {"v": 1, "map": map_id, "ns": surfaces.size(), "nf": fields.size(), "surfaces": ss, "fields": fs,
+		"found": found, "overall": overall()}
+
+
+func import_state(st: Dictionary) -> void:
+	var ss: Array = st.get("surfaces", [])
+	var fs: Array = st.get("fields", [])
+	if int(st.get("ns", -1)) != surfaces.size() or int(st.get("nf", -1)) != fields.size():
+		push_warning("Map %s layout changed since the save; restoring what still matches." % map_id)
+	for i in mini(ss.size(), surfaces.size()):
+		if typeof(ss[i]) == TYPE_DICTIONARY:
+			surfaces[i].import_state(ss[i])
+	for i in mini(fs.size(), fields.size()):
+		if typeof(fs[i]) == TYPE_DICTIONARY:
+			fields[i].import_state(fs[i])
+	var found: Array = st.get("found", [])
+	for d in discoveries:
+		if found.has(d.disc_id):
+			d.is_found = true
+			d.visible = false
+	restored = true
 
 
 # ============================================================= environment ===
@@ -585,8 +676,8 @@ func floor_grid(sname: String, group: String, rect: Rect2, y: float, cols: int, 
 
 func debris(cfg: Dictionary) -> DebrisField:
 	var f := DebrisField.new()
-	if cfg.has("count"):
-		cfg["count"] = int(cfg["count"] * (1.0 if menu_mode else Game.density()))
+	# Debris counts are identical on every graphics level so saved location
+	# states always match (rendering cost of instanced leaves is tiny).
 	f.setup(cfg)
 	add_child(f)
 	fields.append(f)

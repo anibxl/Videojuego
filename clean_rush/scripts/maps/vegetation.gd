@@ -295,8 +295,8 @@ static func grass_mesh() -> Mesh:
 	for k in 2:
 		var a := k * PI / 2.0
 		var dx := Vector3(cos(a), 0, sin(a)) * 0.22
-		var quad := [[-dx, Vector2(0, 1)], [dx, Vector2(1, 1)], [dx + Vector3(0, 0.32, 0), Vector2(1, 0)],
-			[-dx, Vector2(0, 1)], [dx + Vector3(0, 0.32, 0), Vector2(1, 0)], [-dx + Vector3(0, 0.32, 0), Vector2(0, 0)]]
+		var quad := [[-dx, Vector2(0, 1)], [dx, Vector2(1, 1)], [dx + Vector3(0, 0.2, 0), Vector2(1, 0)],
+			[-dx, Vector2(0, 1)], [dx + Vector3(0, 0.2, 0), Vector2(1, 0)], [-dx + Vector3(0, 0.2, 0), Vector2(0, 0)]]
 		for q in quad:
 			st.set_uv(q[1])
 			st.set_normal(Vector3.UP)
@@ -340,7 +340,7 @@ static func grass_field(parent: Node3D, rect: Rect2, per_m2: float, base: Color,
 				if not ok:
 					continue
 				var s := rng.randf_range(0.9, 1.6)
-				xf.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * rng.randf_range(0.7, 1.2), s)), p))
+				xf.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * rng.randf_range(0.6, 1.05), s)), p))
 			if xf.is_empty():
 				continue
 			var mmi := _mm_instance(parent, grass_mesh(), mat, xf, [], [], false, 32.0)

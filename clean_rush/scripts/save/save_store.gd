@@ -80,6 +80,36 @@ static func read_slot(i: int) -> Dictionary:
 	return {"ok": false, "error": main.get("error", "missing"), "damaged": backend.exists(slot_path(i))}
 
 
+# ------------------------------------------------------------ map states ---
+# Each slot keeps one file per location with the exact restoration state
+# (per-pixel dirt of every surface, every leaf/litter piece, found items), so a
+# 45 % clean garden is still 45 % clean - with the same clean areas - next time.
+
+static func map_state_path(i: int, map_id: String) -> String:
+	return "%s/slot_%d_map_%s.sav" % [DIR, i + 1, map_id]
+
+
+static func write_map_state(i: int, map_id: String, data: Dictionary) -> bool:
+	backend.ensure_dir(DIR)
+	return backend.write_text_atomic(map_state_path(i, map_id), encode(data, 1), map_state_path(i, map_id) + ".bak")
+
+
+static func read_map_state(i: int, map_id: String) -> Dictionary:
+	var p := map_state_path(i, map_id)
+	for path in [p, p + ".bak"]:
+		if backend.exists(path):
+			var r := decode(backend.read_text(path))
+			if r["ok"]:
+				return r["data"]
+	return {}
+
+
+static func delete_map_state(i: int, map_id: String) -> void:
+	var p := map_state_path(i, map_id)
+	for path in [p, p + ".bak", p + ".tmp"]:
+		backend.remove(path)
+
+
 static func slot_exists(i: int) -> bool:
 	return backend.exists(slot_path(i)) or backend.exists(backup_path(i))
 
@@ -87,6 +117,8 @@ static func slot_exists(i: int) -> bool:
 static func delete_slot(i: int) -> void:
 	for p in [slot_path(i), backup_path(i), slot_path(i) + ".tmp", slot_path(i) + ".corrupt"]:
 		backend.remove(p)
+	for map_id in Data.map_order:
+		delete_map_state(i, map_id)
 
 
 # --------------------------------------------------------------- settings ---

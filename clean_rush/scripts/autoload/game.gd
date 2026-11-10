@@ -12,6 +12,10 @@ signal achievement_unlocked(def: Dictionary)
 signal settings_changed
 signal slot_changed(slot: int)
 signal saved(slot: int)
+## Emitted right before the slot is written: the gameplay scene uses it to
+## persist the current location's restoration state at the same moment.
+signal about_to_save
+signal map_reset(map_id: String)
 
 const SAVE_VERSION := 3
 const AUTOSAVE_INTERVAL := 30.0
@@ -19,7 +23,7 @@ const AUTOSAVE_INTERVAL := 30.0
 var SAVE_PATH: String:
 	get:
 		return SaveStore.slot_path(maxi(current_slot, 0))
-const STARTER_TOOLS := ["rake", "broom", "sponge"]
+const STARTER_TOOLS := ["leaf_blower", "sponge"]
 const STAR_MULT := [0.0, 1.0, 1.25, 1.6]
 
 var state: Dictionary = {}
@@ -52,10 +56,21 @@ func boot() -> void:
 	state = default_state()
 	current_slot = -1
 	var last := int(settings.get("last_slot", -1))
-	if last >= 0 and SaveStore.slot_exists(last):
-		load_slot(last)
-	elif SaveStore.slot_exists(0) and last < 0:
-		load_slot(0)
+	if last >= 0 and SaveStore.slot_exists(last) and load_slot(last):
+		return
+	# Settings missing/damaged or last slot unreadable: resume the most recently
+	# saved slot instead of silently showing an empty game.
+	var best := -1
+	var best_t := -1
+	for i in SaveStore.SLOTS:
+		if i == last or not SaveStore.slot_exists(i):
+			continue
+		var r := SaveStore.read_slot(i)
+		if r["ok"] and int(r["data"].get("saved_at", 0)) > best_t:
+			best_t = int(r["data"].get("saved_at", 0))
+			best = i
+	if best >= 0:
+		load_slot(best)
 
 
 func _merge_settings(stored: Dictionary) -> void:
@@ -178,7 +193,7 @@ func default_state() -> Dictionary:
 		"tools_owned": STARTER_TOOLS.duplicate(),
 		"tool_upgrades": {},
 		"gear": {},
-		"selected_tool": "rake",
+		"selected_tool": "leaf_blower",
 		"contracts": {},
 		"map_best": {},
 		"discoveries": [],
@@ -195,6 +210,8 @@ func default_state() -> Dictionary:
 		"created_at": 0,
 		"saved_at": 0,
 		"save_count": 0,
+		"maps": {},          # per location: {dirt_paid, overall, saved_at}
+		"active_job": {},    # contract in progress: {map, contract, elapsed}
 	}
 
 
@@ -209,6 +226,12 @@ func default_settings() -> Dictionary:
 		"time_of_day": 0,
 		"weather": 0,
 		"last_slot": -1,
+		"head_bob": 1.0,       # 0 = off, 1 = normal
+		"invert_y": false,
+		"fov": 72.0,
+		"joystick_size": 1.0,
+		"button_scale": 1.0,
+		"layout": 0,           # 0 = right-handed, 1 = left-handed (mirrored)
 	}
 
 
@@ -268,7 +291,7 @@ func _sanitize(data: Dictionary) -> Dictionary:
 			owned.append(t)
 	d["tools_owned"] = owned
 	if not owned.has(d["selected_tool"]):
-		d["selected_tool"] = "rake"
+		d["selected_tool"] = "leaf_blower"
 	if not d["unlocked_maps"].has("autumn_garden"):
 		d["unlocked_maps"].append("autumn_garden")
 	return d
@@ -278,6 +301,7 @@ func save_game() -> bool:
 	_save_queued = false
 	if current_slot < 0 or state.is_empty():
 		return false
+	about_to_save.emit()
 	state["version"] = SAVE_VERSION
 	state["saved_at"] = int(Time.get_unix_time_from_system())
 	state["save_count"] = int(state.get("save_count", 0)) + 1
@@ -411,6 +435,8 @@ func buy_tool(tool_id: String) -> bool:
 	if owns_tool(tool_id):
 		return false
 	var price := int(Data.tool_def(tool_id).get("price", 0))
+	if level() < tool_unlock_level(tool_id):
+		return false
 	if not spend(price):
 		return false
 	state["tools_owned"].append(tool_id)
@@ -419,6 +445,14 @@ func buy_tool(tool_id: String) -> bool:
 	refresh_unlocks(true)
 	save_game()
 	return true
+
+
+func tool_unlock_level(tool_id: String) -> int:
+	return int(Data.tool_def(tool_id).get("unlock_level", 1))
+
+
+func tool_locked(tool_id: String) -> bool:
+	return not owns_tool(tool_id) and level() < tool_unlock_level(tool_id)
 
 
 func upgrade_level(tool_id: String, stat: String) -> int:
@@ -546,7 +580,9 @@ func complete_contract(map_id: String, contract_id: String, result: Dictionary) 
 	var star_bonus := int(base * (STAR_MULT[stars] - 1.0))
 	var dirt_coins := int(result.get("dirt_coins", 0))
 	var disc_coins := int(result.get("discovery_coins", 0))
+	# Dirt and discovery coins were already paid while cleaning (and saved).
 	var total := base + star_bonus + dirt_coins + disc_coins
+	var pay_now := base + star_bonus
 	var xp_gain := int(def.get("xp", 50)) + stars * 10
 	if not first_time:
 		xp_gain = int(xp_gain * 0.5)
@@ -568,7 +604,8 @@ func complete_contract(map_id: String, contract_id: String, result: Dictionary) 
 		add_stat("three_star_count", 1)
 	if time > 0.0 and time <= float(def.get("par_time", 60)) * 0.5:
 		add_stat("speed_runs", 1)
-	add_coins(total)
+	add_coins(pay_now)
+	state["active_job"] = {}
 	var levels := add_xp(xp_gain)
 	var new_maps := refresh_unlocks(true)
 	check_achievements()
@@ -584,6 +621,58 @@ func complete_contract(map_id: String, contract_id: String, result: Dictionary) 
 		"new_record": new_record and not first_time, "new_maps": new_maps, "stars": stars,
 		"prev_stars": prev_stars, "time": time,
 	}
+
+
+# ------------------------------------------------------ location states ---
+
+func map_entry(map_id: String) -> Dictionary:
+	var maps: Dictionary = state.get("maps", {})
+	if not maps.has(map_id) or typeof(maps[map_id]) != TYPE_DICTIONARY:
+		maps[map_id] = {"dirt_paid": 0, "overall": 0.0, "saved_at": 0}
+		state["maps"] = maps
+	return maps[map_id]
+
+
+func map_dirt_paid(map_id: String) -> int:
+	return int(map_entry(map_id).get("dirt_paid", 0))
+
+
+func pay_map_dirt(map_id: String, amount: int) -> void:
+	var e := map_entry(map_id)
+	e["dirt_paid"] = int(e.get("dirt_paid", 0)) + amount
+	add_coins(amount)
+
+
+## Current restoration % of a location (persists between sessions).
+func map_state_overall(map_id: String) -> float:
+	return float(map_entry(map_id).get("overall", 0.0))
+
+
+func store_map_state(map_id: String, data: Dictionary) -> bool:
+	if current_slot < 0:
+		return false
+	var e := map_entry(map_id)
+	e["overall"] = float(data.get("overall", 0.0))
+	e["saved_at"] = int(Time.get_unix_time_from_system())
+	record_map_progress(map_id, e["overall"])
+	return SaveStore.write_map_state(current_slot, map_id, data)
+
+
+func load_map_state(map_id: String) -> Dictionary:
+	if current_slot < 0:
+		return {}
+	return SaveStore.read_map_state(current_slot, map_id)
+
+
+## Makes the location dirty again (used to replay finished contracts).
+func reset_map(map_id: String) -> void:
+	map_reset.emit(map_id)   # gameplay stops persisting the old session first
+	if current_slot >= 0:
+		SaveStore.delete_map_state(current_slot, map_id)
+	state["maps"][map_id] = {"dirt_paid": 0, "overall": 0.0, "saved_at": 0}
+	if state.get("active_job", {}).get("map", "") == map_id:
+		state["active_job"] = {}
+	save_game()
 
 
 func record_map_progress(map_id: String, pct: float) -> void:

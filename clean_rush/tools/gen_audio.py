@@ -172,6 +172,33 @@ def gen_weather():
     save("wind", make_loop(wind), 0.5)
 
 
+def gen_ambience():
+    d = 8.0
+    n = int(SR * d)
+    base = bandpass(noise(d), 120, 700) * 0.18 * (0.7 + 0.3 * np.sin(2 * np.pi * 0.12 * t_axis(d)))
+    birds = np.zeros(n)
+    r = np.random.default_rng(77)
+    for _ in range(14):
+        st = int(r.uniform(0, d - 0.6) * SR)
+        f0 = r.uniform(2400, 4200)
+        for k in range(r.integers(2, 6)):
+            ln = int(SR * r.uniform(0.05, 0.11))
+            tt = np.arange(ln) / SR
+            sweep = f0 * (1 + r.uniform(-0.25, 0.25) * tt / tt[-1])
+            chirp = np.sin(2 * np.pi * np.cumsum(sweep) / SR) * np.sin(np.pi * tt / tt[-1]) ** 2 * r.uniform(0.15, 0.35)
+            s0 = st + int(k * SR * r.uniform(0.09, 0.16))
+            if s0 + ln < n:
+                birds[s0:s0 + ln] += chirp
+    save("ambience_garden", make_loop(base + birds, 0.4), 0.45)
+    hum = bandpass(noise(d), 60, 400) * 0.5
+    cars = np.zeros(n)
+    for _ in range(5):
+        st = int(r.uniform(0, d - 2.5) * SR)
+        ln = int(SR * 2.4)
+        cars[st:st + ln] += bandpass(r.uniform(-1, 1, ln), 80, 900) * np.sin(np.linspace(0, np.pi, ln)) ** 2 * 0.7
+    save("ambience_city", make_loop(hum + cars, 0.4), 0.45)
+
+
 # -------------------------------------------------------------- one-shots ---
 
 def gen_scratch(name, lo, hi, dur, strokes):
@@ -350,3 +377,4 @@ if __name__ == "__main__":
     gen_misc()
     gen_music()
     gen_weather()
+    gen_ambience()

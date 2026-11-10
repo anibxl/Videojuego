@@ -25,6 +25,7 @@ var map_order: Array = []
 var achievements: Array = []
 var daily_templates: Array = []
 var cosmetics: Dictionary = {}
+var shop_categories: Array = []
 var _icon_cache: Dictionary = {}
 
 
@@ -39,6 +40,7 @@ func _load_all() -> void:
 	tool_order = td.get("order", tools.keys())
 	upgrade_effects = td.get("upgrade_effects", {})
 	gear = td.get("gear", {})
+	shop_categories = td.get("shop_categories", [])
 	var index: Dictionary = _read_json("res://data/maps/index.json")
 	for map_id in index.get("maps", []):
 		var m: Dictionary = _read_json("res://data/maps/%s.json" % map_id)
@@ -63,6 +65,17 @@ func _read_json(path: String) -> Dictionary:
 		push_error("Invalid JSON: " + path)
 		return {}
 	return parsed
+
+
+func tools_categories() -> Array:
+	return shop_categories
+
+
+func category_name(id: String) -> String:
+	for c in shop_categories:
+		if c["id"] == id:
+			return String(c["name"])
+	return id
 
 
 func tool_def(tool_id: String) -> Dictionary:

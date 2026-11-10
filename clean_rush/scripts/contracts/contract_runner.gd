@@ -15,6 +15,7 @@ var running := false
 var completed := false
 var states: Array = []
 var discovery_coins := 0
+var session_dirt_coins := 0   # already paid live by the map; shown on the reward screen
 var found_ids: Array = []
 
 
@@ -26,6 +27,9 @@ func setup(m: MapBase, map_identifier: String, contract: Dictionary) -> void:
 		states.append({"label": o.get("label", ""), "progress": 0.0, "target": float(o.get("target", 1.0)), "done": false})
 	map.progress_updated.connect(_on_progress)
 	map.discovery_found.connect(_on_discovery)
+	map.coins_earned.connect(func(n, src):
+		if src == "dirt":
+			session_dirt_coins += n)
 	running = true
 
 
@@ -77,7 +81,7 @@ func _on_discovery(d: Discovery, coins: int) -> void:
 
 
 func dirt_coins() -> int:
-	return int(floor(map.overall() * 100.0 * float(map.def.get("coins_per_percent", 2.0))))
+	return session_dirt_coins
 
 
 func star_breakdown() -> Array:

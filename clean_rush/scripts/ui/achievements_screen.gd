@@ -7,7 +7,7 @@ var arg
 
 
 func _ready() -> void:
-	var list := MiscScreens.list_screen(self, "Achievements  %d / %d" % [Game.state["achievements"].size(), Data.achievements.size()], func(): main.goto("menu"))
+	var list := MiscScreens.list_screen(self, "Achievements  %d / %d" % [Game.state["achievements"].size(), Data.achievements.size()], func(): main.goto("profile"))
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 12)

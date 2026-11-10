@@ -24,6 +24,23 @@ func _ready() -> void:
 		chip.add_child(h)
 		tools_row.add_child(chip)
 	v.add_child(tools_row)
+	# Persistent location state.
+	var st := UIKit.panel(Color(UIKit.BLUE, 0.8), 10)
+	var sh := UIKit.hbox(12)
+	st.add_child(sh)
+	var pct := Game.map_state_overall(map_id)
+	sh.add_child(UIKit.label("LOCATION STATE", 12, UIKit.TURQ))
+	var bar := UIKit.progress(pct, UIKit.TURQ, 10)
+	bar.custom_minimum_size.x = 260
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sh.add_child(bar)
+	sh.add_child(UIKit.label("%d%% restored · your cleaning is saved and stays done" % int(pct * 100), 14, UIKit.WHITE))
+	sh.add_child(UIKit.spacer())
+	if pct > 0.0:
+		var rb := UIKit.button("Reset location", UIKit.BLUE2, Vector2(200, 48), 15, func(): _confirm_reset(map_id))
+		rb.custom_minimum_size = Vector2(170, 42)
+		sh.add_child(rb)
+	v.add_child(st)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -64,6 +81,37 @@ func _row(map_id: String, c: Dictionary) -> Control:
 	right.add_child(UIKit.label("Par time %s" % UIKit.time_str(float(c.get("par_time", 120))), 16, Color(1, 1, 1, 0.75)))
 	if float(rec.get("best_time", 0.0)) > 0.0:
 		right.add_child(UIKit.label("Personal best %s" % UIKit.time_str(float(rec["best_time"])), 16, UIKit.GOLD))
-	right.add_child(UIKit.button("Replay" if done else "Start", UIKit.ORANGE if not done else UIKit.GREEN.darkened(0.15), Vector2(260, 68), 26,
-		func(): main.start_contract(map_id, c["id"])))
+	var job: Dictionary = Game.state.get("active_job", {})
+	var resuming: bool = job.get("map", "") == map_id and job.get("contract", "") == c["id"]
+	var label := "Continue" if resuming else ("Replay (fresh site)" if done else "Start")
+	right.add_child(UIKit.button(label, UIKit.ORANGE if not done else UIKit.BLUE2, Vector2(260, 68), 22,
+		func():
+			if done and not resuming and Game.map_state_overall(map_id) > 0.0:
+				# Replays need a dirty site, otherwise a finished job could be farmed instantly.
+				Game.reset_map(map_id)
+			main.start_contract(map_id, c["id"])))
 	return p
+
+
+func _confirm_reset(map_id: String) -> void:
+	var box := Control.new()
+	box.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(box)
+	box.add_child(UIKit.backdrop(0.6))
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	box.add_child(center)
+	var p := UIKit.panel(Color(UIKit.BLUE, 0.98), 14)
+	p.custom_minimum_size = Vector2(520, 0)
+	center.add_child(p)
+	var v := UIKit.vbox(12)
+	p.add_child(v)
+	v.add_child(UIKit.label("Reset this location?", 24, UIKit.WHITE))
+	v.add_child(UIKit.wrap_label("All leaves, dirt and litter come back so you can clean it again. Coins already earned are kept.", 15, UIKit.GREY, 480))
+	var h := UIKit.hbox(10)
+	h.alignment = BoxContainer.ALIGNMENT_END
+	h.add_child(UIKit.button("Cancel", UIKit.BLUE2, Vector2(160, 52), 16, func(): box.queue_free()))
+	h.add_child(UIKit.button("Reset", UIKit.RED, Vector2(160, 52), 16, func():
+		Game.reset_map(map_id)
+		main.goto("contracts", map_id)))
+	v.add_child(h)

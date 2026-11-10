@@ -14,7 +14,7 @@ func _build() -> void:
 	for c in get_children():
 		c.queue_free()
 	Game.ensure_daily()
-	var list := MiscScreens.list_screen(self, "Daily Missions", func(): main.goto("menu"))
+	var list := MiscScreens.list_screen(self, "Daily Missions", func(): main.goto("profile"))
 	list.add_child(UIKit.wrap_label("Three optional missions every day. Progress counts from any contract. Missing a day never costs you anything.", 18, Color(1, 1, 1, 0.85), 900))
 	var missions: Array = Game.state["daily"]["missions"]
 	for i in missions.size():

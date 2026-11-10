@@ -42,7 +42,7 @@ static func _leaf() -> Mesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var n := 4
-	var size := 0.3
+	var size := 0.25
 	var pts := []
 	for r in n + 1:
 		for c in n + 1:

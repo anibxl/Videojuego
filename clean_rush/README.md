@@ -1,7 +1,17 @@
 # CLEAN RUSH
 
-**Clean it. Upgrade it. Unlock everything.** — Version 2.0
+**Clean it. Upgrade it. Unlock everything.** — Version 3.0 (first person)
 
+> **What's new in 3.0 — first-person simulator:** a real first-person controller (eye-level camera,
+> free look, walk/run, comfortable head bob, visible hands holding the tool, shadow-only body), crosshair
+> targeting so cleaning happens exactly where you look, new touch layout (joystick + look-drag + CLEAN / RUN
+> / USE / MODE + quick tool switching, adjustable size/sensitivity/handedness/invert-Y/FOV), basic leaf
+> blower as starter with Eco/Turbo power, new pro blower & garden vacuum, a professional inventory-style
+> shop (categories, filters, vertical list, 3D preview, stats, upgrades), redesigned menu/HUD/UI, and a
+> **fixed save system**: every location now remembers its exact cleaning state, coins are paid while you
+> clean, the current job and timer resume, and saves happen before every write, every 15 s in play and on
+> pause/background/close. Versions 1.0 and 2.0 are kept in `../clean_rush_backups/`.
+>
 > **What's new in 2.0:** realistic autumn leaves (8 textured species) with natural piles,
 > a rake that gathers piles, tumbling blower physics, alpha-card trees/bushes/hedges with wind,
 > instanced grass, flagstone paths, wet surfaces after washing, textured house and garden props,
@@ -26,26 +36,26 @@ by the code in this project.
 
 The first import takes a few seconds while Godot processes the SVG icons and WAV files.
 
-### Desktop controls (for testing)
+### Desktop controls (first person)
 | Action | Keys |
 |---|---|
 | Move | WASD / arrow keys |
+| Look | Mouse (captured; click to recapture after a menu) |
 | Run | Shift |
-| Clean | Space, or hold left mouse button (aims at the cursor) |
-| Change tool | Tab, or keys 1–9 |
-| Nozzle (wide / narrow) | R |
-| Rotate camera | Q / E, or drag with the right mouse button |
-| Zoom | Mouse wheel |
+| Clean | Hold left mouse button or Space (works exactly at the crosshair) |
+| Use (empty bag at bin / pick up item / switch mode) | E or right mouse button |
+| Tool mode (blower power, washer nozzle) | R |
+| Change tool | 1–9, Tab / Q (next / previous), mouse wheel |
 | Pause | Esc / P |
 
-### Mobile controls
-* **Left half of the screen**: floating virtual joystick.
-* **Big orange CLEAN button** (hold): uses the current tool. Auto-aim finds dirt in front of you.
-* **RUN** toggle, the **tool button** (opens the tool picker) and **Wide/Narrow** for nozzles.
-* **Drag on the right side**: rotate the camera (vertical drag zooms).
-* Multitouch works: you can move and clean at the same time.
-
-Settings → *Touch controls* lets you force the touch layout on or off (Auto by default).
+### Mobile controls (first person)
+* **Left side**: floating virtual joystick (walk in any direction).
+* **Drag anywhere on the right side**: look around (also while holding CLEAN).
+* **CLEAN** (hold) uses the tool at the crosshair · **RUN** toggle · **USE** (empty bag at a bin, pick up a
+  sparkling discovery, otherwise switch mode) · **MODE** (blower power / nozzle) · tool chip with **< >**
+  quick switching (tap the name for the full picker).
+* Settings → Controls: look sensitivity, invert look, joystick size, button size, left-handed layout,
+  touch on/off/auto; Camera: field of view, head bob.
 
 ---
 
@@ -147,8 +157,11 @@ hedges, under the fence or onto the leaf tarp.
   *Save now* also exists. Saves are local only (no cloud sync in this version).
 * **Time of day / weather**: Settings → *Time of day* (Auto, Morning, Day, Evening) and *Weather*
   (Auto, Sunny, Cloudy, Windy, Rain).
-* **Rake**: walk forward while raking to push leaves into a pile; stop moving and any pile of 14+
-  raked leaves is bagged automatically.
+* **Rake / blower piles**: push leaves together (rake or blower); any resting pile of 14+ pushed leaves is
+  bagged automatically.
+* **Location state (3.0)**: every location keeps its cleaning state per save slot (`slot_N_map_<id>.sav`:
+  per-pixel dirt of every surface, every leaf/litter position, found items). Contract screen shows
+  "% restored" and offers *Reset location*; replaying an already finished contract starts on a fresh site.
 
 ## 5. Project structure
 ```

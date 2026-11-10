@@ -1,154 +1,142 @@
-# CLEAN RUSH 2.0: delivery report
+# CLEAN RUSH 3.0: first-person simulator, delivery report
 
-## Backup and approach
-* Before any change, version 1.0 was archived: `clean_rush_backups/clean_rush_v1.0_backup.zip`
-  (also git commit `e4ff2f2`, local tag `clean-rush-v1.0-backup`).
-* 2.0 upgrades the existing project in place. All 6 maps, 21 contracts, 13 tools, shop, upgrades,
-  gear, achievements, collection, daily missions, rewards, HUD and touch controls are preserved.
-  The 1.x save format is migrated automatically.
+## 0. Inspection and backup
+* **Engine and architecture found:** Godot 4.3, GDScript, GL Compatibility renderer (OpenGL ES 3 on
+  Android).
+  * Gameplay: a third-person `CameraRig` following a `CharacterBody3D` player, `ToolRuntime` for tools,
+    `MapBase` plus six map builders, and `ContractRunner` for objectives.
+  * Saves: three slots through `SaveStore` (2.0).
+  * UI: code-built screens using `UIKit`.
+* **Backups:** `clean_rush_backups/clean_rush_v2.0_backup.zip` (commit `db36e66`) and the earlier
+  `clean_rush_v1.0_backup.zip`.
+* The upgrade was made in place. Every existing system was kept: 6 maps, 21 contracts, shop, upgrades,
+  gear, cosmetics, achievements, collection, daily missions, character creator, slots and settings.
 
-## What changed
+## 1. Why progress was being lost (root causes) and the fixes
+| Root cause found in 2.0 | Fix in 3.0 |
+|---|---|
+| A location's cleaning state was **never saved**: every visit rebuilt the map fully dirty. | Each location's exact state (per-pixel dirt of every surface, every leaf/litter position, found discoveries) is saved per slot in `slot_N_map_<id>.sav` and restored on load. Saves are compressed, checksummed, atomic, with a `.bak`. |
+| Coins for removed dirt and for discoveries were only paid when a contract was finished, so closing the app mid-job lost them. | Coins are paid **while cleaning** (tracked per location so they are never paid twice) and saved. |
+| The location's best % was only recorded on an explicit "exit to menu". | The state is recorded before every save, every 15 s in play, on pause, on exit, on contract finish, and on app pause, background or close. |
+| The job in progress was forgotten. | The `active_job` (map, contract, timer) is saved. The menu shows **CONTINUE** and the timer resumes. |
+| If the settings file was missing or damaged, boot fell back to slot 1 or to no slot, so a player whose data was in slot 2 or 3 appeared to have lost everything. | Boot resumes the **most recently saved** readable slot. |
+| Finished contracts could be replayed instantly on an already-clean site (a reward farm, once state became persistent). | Replaying a finished contract resets that site first. Unfinished contracts continue on the saved state. |
 
-### Graphics and atmosphere
-* **Realistic leaves**: an 8-type textured atlas (maple, red maple, oak, golden oak, birch, small,
-  large dry, damaged/holed). Each leaf is a curled card with a mid-rib, per-leaf brightness and tint
-  variation, backlighting, and shadows on High.
-* **Natural distribution**:
-  * Attractors around trees, along the fence, path edges, bed borders and the house wall, in corners
-    and under furniture.
-  * Dense hand-placed piles.
-  * Volumetric stacking: leaves on top of others sit higher and tilt more.
-* **Vegetation**: oak, maple, birch, pine and cypress trees.
-  * Textured branching trunks with root flare, and canopies made of alpha-tested foliage cards
-    (one MultiMesh per tree) with wind sway.
-  * Bushes, some flowering, and leafy hedges.
-  * Instanced grass clumps in culled chunks, with wind.
-  * Flowers with petals. Plants sway via a global `wind_strength`.
-* **Ground**: tiled grass texture with large-scale colour variation and soil patches. The path is now
-  irregular flagstone (voronoi) with bevelled edges, cracks, dirt settling in the joints, mossy
-  sections and edge stones.
-* **Wet surfaces**: water tools leave a darker, glossy wet trail that dries over about 10 s, showing
-  exactly where the tool worked.
-* **Garden details**:
-  * The house now has textured siding and roof tiles, a stone plinth, gutters and downpipes, a chimney,
-    shutters, window boxes with flowers, a panelled door, porch, lamp and doormat.
-  * Pointed-picket textured fences.
-  * Props: mailbox, garden lights, rocks, wheelbarrow, bird bath, watering can, leaning rake and shovel.
-* **Lighting**:
-  * Times of day (morning / day / evening) change the sun's height and direction, the light colour and
-    energy, and the sky.
-  * Weather: sunny, cloudy (soft shadows), windy (strong sway plus wind sound) and light rain
-    (camera-following rain particles plus rain sound).
-  * Depth fog on Medium/High, ACES tonemapping, 2-split shadows on High.
+Unchanged from 2.0 and still active: versioned saves, SHA-256 header, verified atomic writes, backups,
+corruption recovery, autosave every 30 s, saves on app pause/background/close, and the saving
+indicator in the HUD.
 
-### Cleaning feel
-* **Rake**: drags leaves toward the rake line in front of the player, so walking pushes a growing pile.
-  When the player stops, piles of 14 or more raked leaves are bagged with a puff, a sound and a toast.
-* **Blower**: leaves get spin, lift up to about 1 m, tumble, then settle back on the ground.
-* **Vacuum**: leaves are pulled into the nozzle, with collection bursts and the bag meter.
-* **Pressure washer / sponge**: progressive per-pixel cleaning plus the wet trail.
+## 2. First-person experience
+* `Player` is now a first-person controller:
+  * Body yaw plus head pitch, with the camera at the character's eye height (1.62 m × height).
+  * Pitch is clamped to ±85°. Walk is 3.7 m/s and run 6.2 m/s.
+  * Comfortable head bob (can be turned off), a slight strafe roll, adjustable FOV (60–90°) and
+    adjustable look sensitivity with invert-Y.
+* The body is not visible to the camera, but it **casts its shadow** (built from the saved character)
+  and animates while walking.
+* `FirstPersonView`:
+  * Your own arms (sleeve colour, skin tone, gloves) hold the equipped tool in per-tool grips (spray
+    guns, blowers/vacuums, poles, hand tools, machines) with two-handed holds.
+  * Walk bob, breathing, look-sway lag, and a lower/raise switch animation.
+  * Use animations: aim and vibration, sweeping, scrubbing circles. Vacuums, nets and pickers show a
+    fill indicator for the collection bag.
+* **Targeting:**
+  * A raycast from the crosshair finds the surface you look at. Cleaning is applied at that hit point
+    with the tool's radius, and the water or foam stream goes from the visible nozzle to that point.
+  * Debris tools work at the looked-at ground point: blower airflow follows your view, and the vacuum,
+    rake and net work where you aim.
+  * The crosshair colour shows the target: dirt (turquoise), wrong tool (red), already clean (white),
+    debris (orange).
+* **USE** button / E / right mouse: empties the bag at a bin, picks up a sparkling discovery in view,
+  otherwise switches the tool mode.
 
-### Character creator (Part 3)
-* `CharacterModel` is a fully modular 3D character. Every option is real geometry or material on the
-  in-game player:
-  * 8 skin tones.
-  * 12 hairstyles (buzz, short, side part, medium, bob, long straight, long wavy, curly, afro,
-    ponytail, bun, bald), 8 hair colours plus a custom hue/lightness.
-  * 5 eye colours, 3 eye shapes, 4 eyebrow styles, 4 face shapes, 4 noses, 4 mouths.
-  * 4 body presets, plus height and build sliders.
-  * 9 tops, including unlockable uniforms; 4 bottoms; 4 shoes; 7 hats; 5 glasses; 3 gloves; 3 watches;
-    14 outfit colours.
-* Animations: walk and run cycles (thigh/knee/arm swing, bob, lean), idle breathing, look-around and
-  blinking, and two-handed tool poses for sweeping, aiming and scrubbing.
-* Creator UI:
-  * Large live 3D preview: rotate with a finger or mouse, pinch or wheel to zoom, face zoom.
-  * 10 categories and a name field.
-  * Randomize, Reset, Cancel and Confirm buttons.
-  * Locked items show their unlock requirement; coin items can be bought with in-game coins.
-* Reachable from the main menu (*Character*) and when creating a new save.
+## 3. Controls
+* **Touch:**
+  * Floating joystick and look-drag (also works while holding CLEAN).
+  * CLEAN / RUN / USE / MODE buttons and a tool chip with < > quick switching plus a full picker.
+  * Settings: joystick size, button size, left-handed mirrored layout, sensitivity, invert-Y, FOV,
+    head bob.
+* **Desktop:** WASD, mouse look (captured), left mouse = clean, Shift = run, E/F/right mouse = use,
+  R = mode, 1–9 / Tab / Q / mouse wheel = tools, Esc = pause (releases the mouse).
 
-### Progression cosmetics (Part 6)
-* Earnable through gameplay: uniforms (level 5, achievement, 30 stars, coins), golden boots, hard hat,
-  crown, goggles, rubber gloves and sport watch.
-* 6 tool skins (level, contracts, achievement, coins), shown on the tool model.
-* The reward screen announces new cosmetic unlocks. There are no real-money purchases.
+## 4. Equipment progression
+* New saves start with the **Basic Leaf Blower** (Eco/Turbo power) equipped, plus a sponge. Old saves
+  keep everything they own and also receive the blower.
+* Added the **Professional Leaf Blower** and the **Garden Vacuum**. The High-Pressure Nozzle is now the
+  **Professional Pressure Washer** (wide/narrow nozzles). The rake and broom are cheap optional tools.
+* Blown leaves now also gather into piles that get bagged.
+* Each tool has a level requirement (shown as "LEVEL n" in the shop), its own behaviour, a first-person
+  hold, sound and effects.
 
-### Save system (Part 4)
-See the README section "Save data (2.0)": 3 slots, SHA-256 checksum header, verified atomic writes,
-`.bak` backups, corruption recovery and a damaged-slot state. Settings live in a global file.
-Autosave runs on every progression event, every 30 s, and on app pause, focus loss, back and close.
-Playtime is tracked. The slot screen shows a live 3D character preview, level, coins, playtime, last
-save date and progress. New games can only be created in empty slots, and deletion requires
-confirmation. There is a migration chain for old versions and a `SaveBackend` abstraction for a future
-cloud backend. **No cloud sync is implemented.**
+## 5–7. UI redesign
+* **New UIKit style** applied to every screen: navy glass panels, thin borders, turquoise accents,
+  orange only for primary actions, regular-weight body text, calmer button sizes (all ≥ 48 px for touch).
+* **Main menu:**
+  * Live garden with a slow, low, swaying cinematic camera.
+  * CONTINUE/PLAY, Maps, Equipment, Character, Settings.
+  * A compact player panel (money, level/XP, stars, character preview) that opens the new **Profile**
+    hub (stats, character, Achievements, Collection, Daily missions, Save slots).
+* **Shop:**
+  * Categories: Leaf, Surface, Pool, Accessories, Upgrades.
+  * Filters: All, Owned, Available, Locked.
+  * Vertical item list with icon, name, short description, price or status badge.
+  * Detail panel with a rotating **3D tool preview**, performance bars (power, range, width,
+    efficiency, capacity), upgrade rows (level pips, current → next, price), tool skins, and Buy/Equip.
+* **HUD:**
+  * Money (+ coins earned this session) top-left; location progress and mission timer top-centre;
+    pause top-right.
+  * Compact objectives, crosshair, saving indicator, and the tool/mode/bag chip.
+* Contract screen shows the persistent location state with *Reset location*. Settings are reorganised
+  (audio, controls, camera & display) in a scroll panel.
+* A loading overlay appears while a site is generated. Ambient audio: birds and breeze in gardens,
+  traffic in the city.
 
-### Performance (Part 7)
-* Everything that can be instanced is instanced (leaves, grass, foliage cards, flowers): about one
-  draw call per plant.
-* Distance fade-out ranges on foliage and grass (LOD).
-* Grass is split into 6 m chunks for frustum culling. Shadows are limited (no grass shadows, leaf
-  shadows only on High).
-* Graphics presets:
-  * **Low**: no shadows, no grass, about 55 % of the foliage cards, 60 % of the leaves, no fog or glow,
-    0.75 render scale.
-  * **Medium**: shadows, grass at 55 %, fog, MSAA 2×.
-  * **High**: everything, MSAA 4×, glow, 2-split shadows.
-* Measured instance budget on the Autumn Garden: Low 2,797 · Medium 5,919 · High 8,226.
+## 8. Graphics
+The 2.0 realism work is kept: textured leaf species with natural piles, card-based trees and hedges,
+instanced grass, flagstone paths, the wet trail, textured house and props, time of day and weather.
+Additions for first person:
+* A **distant treeline and soft hills** around every map (density by quality).
+* Mown-height grass and leaf sizes tuned for eye level.
 
-## Test results (automated, Linux, Mesa llvmpipe, GL Compatibility renderer)
-* **Smoke test** (`-- --smoke`): **115 checks, 0 failures**. It covers:
-  * Every menu screen, buying every tool, and upgrades.
-  * All 6 maps with three tools each and progressive cleaning.
-  * Contract completion and rewards on every map.
-  * Multitouch joystick and CLEAN button.
-  * **Cleaning physics**: the rake drags leaves and bags piles; the blower moves, rotates and lifts
-    leaves, which then settle; the vacuum fills its bag; the washer cleans progressively and leaves a
-    wet trail.
-  * **Character**: every saved option appears on the in-game model; height scales the rig; hair colour
-    reaches the hair meshes; accessories change the 3D components; the appearance is identical after a
-    save and reload; the creator and slot screens open.
-  * **Graphics**: the Low < Medium < High instance budget holds.
-  * **Saves**: the slot file is written; a reload keeps coins, tools and upgrades; a corrupt main file
-    is recovered from the backup without losing progress; checksum tampering is detected; the slot
-    summary is complete.
-* **Real restart test** (two separate processes, `--savetest=write` then `--savetest=verify`): **10/10 pass**. The
-  first process:
-  1. Creates a new save and earns money.
-  2. Completes a contract.
-  3. Buys an upgrade.
-  4. Changes the appearance (hair, colour, eyes, skin, clothes, accessories).
-  5. Switches to another map and earns again.
-  6. Quits **without** an explicit save call, relying only on autosave.
+## 9. Tests run (automated, Linux, Mesa llvmpipe, GL Compatibility)
+* **Smoke test** (`-- --smoke`): **133 checks, 0 failures**. In addition to all 2.0 checks, it
+  covers:
+  * Starting with the leaf blower; level-locked tools cannot be bought.
+  * First-person checks: active camera at eye height, body shadow-only, hands and tool visible,
+    look yaw/pitch with clamp, walk vs run in the look direction.
+  * Tool switching swaps the viewmodel; the crosshair raycast hits the looked-at surface; the washer
+    nozzle mode and blower power mode work.
+* **Real restart test** (`--savetest=write`, then a separate process `--savetest=verify`):
+  **19/19 checks pass**.
+  1. Starts the patio contract, uses a tool in first person, and cleans **≈45 % of the objective**.
+  2. Earns coins (including coins paid live for removed dirt) and buys the pressure washer.
+  3. Changes the character, then **closes the application while still on the map**, with no menu
+     and no manual save.
+  4. A fresh process reloads the slot. It checks money, cleaning coins, XP, purchased and equipped tool,
+     appearance, playtime, the current mission, and the stored location %.
+  5. It re-enters the map and confirms the site was restored (not reset): the objective progress is
+     identical, the partially cleaned tile has **exactly the same pixels**, fully cleaned tiles are
+     still clean, the timer resumed, and the bought tool is equipped.
 
-  The second process boots fresh and confirms the slot, name, coins, XP, contract, upgrade, map
-  completion, appearance and playtime, and that the in-game player model is rebuilt from the saved
-  appearance.
-* The 1.x save present on the test machine (whose main file had been deliberately corrupted by the 1.0
-  test) was migrated: it was recovered from its backup into slot 1 and upgraded to v3.
+* The tests also caught and fixed two real bugs during development:
+  1. Resetting a location while its session was still active re-saved the old clean state.
+  2. Starting a new job did not persist the session being left.
+* A cleaned location stays clean when re-entered (verified inside the smoke test as well).
 
-## Not verified / honest limitations
-* No physical Android device or emulator was available. Real-phone frame rate, touch feel and audio
-  output are untested. Frame rates measured on the CPU software renderer (15/5/3 fps for
-  Low/Medium/High) say nothing about phone GPUs; they only confirm that the presets scale.
-* **Ambient occlusion and reflection probes are not available** in Godot's Compatibility renderer, which
-  this project uses for the broadest Android support. Depth fog, sky reflections and rim lighting are
-  used instead.
-* The character uses smooth procedural primitives. It is far more detailed and customisable than 1.0
-  and every option is real geometry, but it is stylised-realistic, not a photoreal scanned human.
-  There is no morph-based face sculpting; faces are built from selectable components, as the brief
-  allows.
-* Leaf physics are simplified (no leaf-to-leaf collisions, rect obstacles only); this is intentional
-  for mobile performance.
-* The changing room in a future personal base is not built: the wardrobe is reached from the main menu.
-* Weather is visual and audio only. Rain does not make surfaces wet or change cleaning.
-* Cloud saves and accounts are not implemented (only the backend abstraction exists).
-* iOS export is still not configured.
+## Not verified / limitations (honest)
+* No Android device or emulator was available: touch feel, phone frame rate and audio output are
+  untested. Multitouch was tested only with simulated touch events.
+* Ambient occlusion and reflection probes are not available in the Compatibility renderer.
+* The first-person hands are simple shaded shapes (no skinned hand mesh with fingers). Tools can clip
+  into walls when you stand right against them (no separate viewmodel render layer).
+* Mirrors are not implemented. The character is visible in the creator, the Profile, the menu panel
+  and save slots, and as your shadow in game.
+* Locked maps stay visible but are clearly marked LOCKED with their requirement and progress.
+* Cloud saves are not implemented.
 
 ## Roadmap
-1. Device QA on low/mid/high Android phones; tune foliage card counts and shadow distances per preset.
-2. A personal base with a changing room, trophy shelf and tool rack (wardrobe in 3D).
-3. Weather that affects gameplay (rain wets surfaces, wind drifts leaves back) as optional modifiers.
-4. Face detail: textured eyes and lashes, more hairstyles, beards.
-5. New maps using the existing pipeline (beach, snow, kitchen, garage, office windows, farm, park).
-6. An optional cloud backend (Google Play Games Saved Games) behind `SaveBackend`.
-7. Release keystore, AAB, target SDK update, store listing, privacy policy.
+1. Device QA: tune look sensitivity curves, button positions and graphics presets on real phones.
+2. A free button-drag layout editor; skinned first-person hands with finger poses.
+3. Viewmodel render layer (no clipping); a mirror/reflection display in a personal base.
+4. Optional cloud saves behind `SaveBackend`.
+5. New first-person maps (beach, snow, kitchen, garage, office windows).

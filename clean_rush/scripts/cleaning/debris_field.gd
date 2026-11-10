@@ -324,7 +324,13 @@ func push(origin: Vector3, dir: Vector3, reach: float, width: float, power: floa
 		if sp > max_sp:
 			vel[i] = vel[i] / sp * max_sp
 		active[i] = true
+		if kind == "leaf":
+			raked[i] = 1   # blown leaves can also gather into piles that get bagged
 		moved += 1
+	if moved > 0:
+		touched = true
+		if kind == "leaf":
+			_any_raked = true
 	return moved
 
 
@@ -406,6 +412,7 @@ func rake(center: Vector3, radius: float, gather: Vector3, power: float, delta: 
 		moved += 1
 	if moved > 0:
 		_any_raked = true
+		touched = true
 	return moved
 
 
@@ -431,6 +438,7 @@ func _check_piles() -> void:
 
 
 func _collect_piece(i: int, target: Vector3) -> void:
+	touched = true
 	alive[i] = 0
 	alive_count -= 1
 	active.erase(i)
@@ -540,3 +548,43 @@ func _update_dying(delta: float) -> void:
 			mm.set_instance_transform(i, Transform3D(Basis(Vector3.UP, yaw[i] + t * 8.0).scaled(Vector3.ONE * maxf(s, 0.001)), p))
 			keep.append(d)
 	dying = keep
+
+
+# ----------------------------------------------------------- persistence ---
+
+var touched := false   # any piece moved or collected since the map was built
+
+
+func export_state() -> Dictionary:
+	if not touched and alive_count == count:
+		return {}
+	var xz := PackedFloat32Array()
+	xz.resize(count * 2)
+	for i in count:
+		xz[i * 2] = pos[i].x
+		xz[i * 2 + 1] = pos[i].z
+	var pb := xz.to_byte_array()
+	return {"c": count, "na": alive.size(), "a": Marshalls.raw_to_base64(alive.compress(FileAccess.COMPRESSION_DEFLATE)),
+		"np": pb.size(), "p": Marshalls.raw_to_base64(pb.compress(FileAccess.COMPRESSION_DEFLATE))}
+
+
+func import_state(s: Dictionary) -> void:
+	if s.is_empty() or int(s.get("c", -1)) != count:
+		return
+	var a: PackedByteArray = Marshalls.base64_to_raw(String(s["a"])).decompress(int(s["na"]), FileAccess.COMPRESSION_DEFLATE)
+	var xz: PackedFloat32Array = Marshalls.base64_to_raw(String(s["p"])).decompress(int(s["np"]), FileAccess.COMPRESSION_DEFLATE).to_float32_array()
+	if a.size() != count or xz.size() != count * 2:
+		return
+	alive_count = 0
+	for i in count:
+		alive[i] = a[i]
+		if alive[i] == 1:
+			alive_count += 1
+		pos[i] = Vector3(xz[i * 2], pos[i].y, xz[i * 2 + 1])
+		vel[i] = Vector3.ZERO
+		lift[i] = 0.0
+		if kind != "floating":
+			active.erase(i)
+		if mm:
+			_update_transform(i)
+	touched = true

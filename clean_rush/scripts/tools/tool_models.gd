@@ -49,13 +49,15 @@ static func build(tool_id: String) -> Node3D:
 			ItemModels.part(n, ItemModels.box(Vector3(0.18, 0.08, 0.12)), acc, Vector3(0, 0, -0.12))
 			ItemModels.part(n, ItemModels.box(Vector3(0.18, 0.03, 0.12)), _m(Color(0.3, 0.75, 0.35)), Vector3(0, -0.055, -0.12))
 			tip = Vector3(0, -0.06, -0.15)
-		"leaf_blower", "leaf_vacuum":
+		"leaf_blower", "leaf_vacuum", "pro_blower", "garden_vacuum":
 			ItemModels.part(n, ItemModels.box(Vector3(0.2, 0.25, 0.4)), acc, Vector3(0, 0, 0.05))
 			ItemModels.part(n, ItemModels.box(Vector3(0.05, 0.12, 0.2)), dark, Vector3(0, 0.17, 0.05))
-			var tube_r := 0.06 if tool_id == "leaf_blower" else 0.09
+			var tube_r := 0.06 if tool_id in ["leaf_blower", "pro_blower"] else 0.09
 			ItemModels.part(n, ItemModels.cyl(tube_r, 1.0, tube_r * 0.8), dark, Vector3(0, -0.2 - sin(0.35) * 0.5, -0.05 - cos(0.35) * 0.5), Vector3(-PI / 2 - 0.35, 0, 0))
 			tip = Vector3(0, -0.2 - sin(0.35), -0.05 - cos(0.35))
-			if tool_id == "leaf_vacuum":
+			if tool_id == "pro_blower":
+				ItemModels.part(n, ItemModels.box(Vector3(0.3, 0.32, 0.18)), dark, Vector3(0, 0.05, 0.25))
+			if tool_id in ["leaf_vacuum", "garden_vacuum"]:
 				ItemModels.part(n, ItemModels.sphere(0.22), _m(Color(0.25, 0.3, 0.35)), Vector3(0.2, -0.2, 0.25), Vector3.ZERO, Vector3(0.8, 1.2, 1))
 		"pressure_washer", "turbo_nozzle", "foam_sprayer":
 			ItemModels.part(n, ItemModels.box(Vector3(0.06, 0.18, 0.08)), dark, Vector3(0, -0.06, 0.05))

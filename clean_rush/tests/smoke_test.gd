@@ -54,6 +54,15 @@ func _drag(idx: int, pos: Vector2, rel: Vector2) -> void:
 	Input.parse_input_event(e)
 
 
+## Points the first-person camera at a world position (yaw on body, pitch on head).
+func _look_at(pl: Player, target: Vector3) -> void:
+	var eye := pl.global_position + Vector3(0, pl.eye_height, 0)
+	var d := target - eye
+	pl.rotation.y = atan2(-d.x, -d.z)
+	pl.pitch = atan2(d.y, Vector2(d.x, d.z).length())
+	pl.head.rotation.x = pl.pitch
+
+
 func _leaf_field() -> DebrisField:
 	for f in main.current_map.fields:
 		if f.kind == "leaf":
@@ -63,7 +72,8 @@ func _leaf_field() -> DebrisField:
 
 func _cleaning_physics_tests() -> void:
 	# RAKE: leaves move toward the rake and form piles that get bagged.
-	main.start_contract("autumn_garden", "ag_path")
+	Game.reset_map("autumn_garden")
+	await _start("autumn_garden", "ag_path")
 	await wait(0.8)
 	var pl: Player = main.player
 	var lf := _leaf_field()
@@ -73,7 +83,7 @@ func _cleaning_physics_tests() -> void:
 	var bagged := [0]
 	lf.pile_bagged.connect(func(_f, _p, n): bagged[0] += n)
 	pl.global_position = Vector3(-8.4, 0.2, 4.6)
-	pl.rotation.y = 0.0   # facing -Z, toward the pile at (-8.4, 3.4)
+	_look_at(pl, Vector3(-8.4, 0.0, 3.4))
 	pl.clean_held = true
 	for k in 6:
 		pl.move_input = Vector2(0, -0.35)
@@ -93,7 +103,7 @@ func _cleaning_physics_tests() -> void:
 	# BLOWER: leaves fly, rotate, lift and settle.
 	pl.select_tool("leaf_blower")
 	pl.global_position = Vector3(6.5, 0.2, 11.0)
-	pl.rotation.y = 0.0
+	_look_at(pl, Vector3(6.5, 0.0, 9.0))
 	var b2 := lf.pos.duplicate()
 	var y0 := lf.yaw.duplicate()
 	pl.clean_held = true
@@ -122,6 +132,7 @@ func _cleaning_physics_tests() -> void:
 	# VACUUM: leaves are pulled in and stored in the bag.
 	pl.select_tool("leaf_vacuum")
 	pl.global_position = Vector3(-6.0, 0.2, 2.6)
+	_look_at(pl, Vector3(-6.0, 0.0, 1.2))
 	var a3 := lf.alive_count
 	pl.clean_held = true
 	for k in 6:
@@ -132,14 +143,16 @@ func _cleaning_physics_tests() -> void:
 	await wait(0.4)
 	check(lf.alive_count < a3 and pl.tool.bag_load > 0, "vacuum collects leaves into its bag (%d in bag)" % pl.tool.bag_load)
 	# PRESSURE WASHER: progressive cleaning + wet trail shows where the tool worked.
-	main.start_contract("power_wash_patio", "pw_spring")
+	Game.reset_map("power_wash_patio")
+	await _start("power_wash_patio", "pw_spring")
 	await wait(0.8)
 	pl = main.player
 	pl.select_tool("pressure_washer")
 	var tile: CleanSurface = main.current_map.surfaces[10]
 	var p_before := tile.progress()
 	pl.global_position = tile.global_position + Vector3(0, 0.2, 2.5)
-	pl.rotation.y = 0.0
+	await wait(0.1)
+	_look_at(pl, tile.global_position)
 	pl.clean_held = true
 	await wait(1.5)
 	var wet := 0
@@ -150,6 +163,74 @@ func _cleaning_physics_tests() -> void:
 	check(tile.progress() > p_before, "pressure washer cleans progressively (%.1f%% -> %.1f%%)" % [p_before * 100, tile.progress() * 100])
 	check(wet > 10, "wet trail marks exactly where water hit (%d px)" % wet)
 	await shot("22_washer")
+
+
+func _first_person_tests() -> void:
+	Game.reset_map("autumn_garden")
+	await _start("autumn_garden", "ag_path")
+	await wait(0.8)
+	var pl: Player = main.player
+	check(pl.camera != null and pl.camera.current, "first-person camera is the active camera")
+	check(absf(pl.camera.global_position.y - (pl.global_position.y + pl.eye_height)) < 0.1, "camera sits at eye height (%.2f m)" % pl.eye_height)
+	var body_hidden := true
+	for mi in pl.model.find_children("*", "MeshInstance3D", true, false):
+		if (mi as MeshInstance3D).cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY:
+			body_hidden = false
+	check(body_hidden, "player body is invisible in first person (casts shadow only)")
+	check(pl.view.tool_model != null and pl.view.tool_model.is_visible_in_tree(), "hands + equipped tool visible in first person")
+	# Looking around: yaw and pitch.
+	var y0 := pl.rotation.y
+	pl.add_look(Vector2(200, 0))
+	await wait(0.1)
+	check(absf(pl.rotation.y - y0) > 0.2, "look left/right rotates the view")
+	var p0 := pl.pitch
+	pl.add_look(Vector2(0, 150))
+	await wait(0.1)
+	check(pl.pitch < p0, "look up/down changes pitch")
+	pl.add_look(Vector2(0, -100000))
+	await wait(0.1)
+	check(pl.pitch <= Player.PITCH_LIMIT + 0.001, "pitch is clamped (no flipping)")
+	# Walk vs run speed.
+	pl.pitch = -0.3
+	pl.global_position = Vector3(0, 0.2, 10.5)
+	pl.rotation.y = 0.0
+	await wait(0.1)
+	var a := pl.global_position
+	pl.move_input = Vector2(0, -1)
+	await wait(0.6)
+	var walk_d := pl.global_position.distance_to(a)
+	pl.global_position = Vector3(0, 0.2, 10.5)
+	await wait(0.1)
+	a = pl.global_position
+	pl.run_toggle = true
+	await wait(0.6)
+	var run_d := pl.global_position.distance_to(a)
+	pl.move_input = Vector2.ZERO
+	pl.run_toggle = false
+	check(walk_d > 1.0 and run_d > walk_d * 1.3, "walking (%.1f m) and running (%.1f m) in the look direction" % [walk_d, run_d])
+	# Tool switching updates the viewmodel.
+	pl.select_tool("pressure_washer")
+	await wait(0.2)
+	check(pl.tool.tool_id == "pressure_washer" and pl.view.tool_id == "pressure_washer", "tool switching swaps the first-person tool")
+	# Crosshair targeting: aiming at dirt is detected.
+	var path_tile: CleanSurface = null
+	for sf in main.current_map.surfaces:
+		if sf.group == "path_stone" and sf.progress() < 0.5:
+			path_tile = sf
+			break
+	pl.global_position = path_tile.global_position + Vector3(0, 0.2, 3.0)
+	await wait(0.1)
+	_look_at(pl, path_tile.global_position)
+	await wait(0.2)
+	check(pl.tool.aim_surface == path_tile, "crosshair raycast targets the surface being looked at")
+	# Modes: washer nozzle switch.
+	var m0 := pl.tool.mode_name()
+	pl.tool.cycle_mode()
+	check(pl.tool.mode_name() != m0, "tool mode switch (%s -> %s)" % [m0, pl.tool.mode_name()])
+	pl.select_tool("leaf_blower")
+	await wait(0.1)
+	check(pl.tool.has_modes(), "starter leaf blower has adjustable power")
+	await shot("19_first_person")
 
 
 func _character_tests() -> void:
@@ -169,7 +250,8 @@ func _character_tests() -> void:
 	look["body"] = "athletic"
 	look["height"] = 1.06
 	Game.set_appearance(look)
-	main.start_contract("autumn_garden", "ag_path")
+	Game.reset_map("autumn_garden")
+	await _start("autumn_garden", "ag_path")
 	await wait(0.8)
 	var m: CharacterModel = main.player.model
 	var same := true
@@ -212,7 +294,8 @@ func _graphics_tests() -> void:
 	for q in 3:
 		Game.settings["graphics"] = q
 		Game.apply_settings()
-		main.start_contract("autumn_garden", "ag_path")
+		Game.reset_map("autumn_garden")
+		await _start("autumn_garden", "ag_path")
 		await wait(1.0)
 		var inst := 0
 		for mmi in main.current_map.find_children("*", "MultiMeshInstance3D", true, false):
@@ -235,6 +318,10 @@ func _run() -> void:
 	Game.settings["touch"] = 0
 	Game.delete_slot(2)
 	Game.new_slot(2, "Smoke Bot")
+	check(Game.owns_tool("leaf_blower") and String(Game.state["selected_tool"]) == "leaf_blower", "new save starts with the basic leaf blower equipped")
+	Game.state["coins"] = 5000
+	check(not Game.buy_tool("pro_blower"), "level-locked equipment cannot be bought early")
+	Game.state["xp"] = Game.xp_for_level(10)
 	await wait(1.0)
 	await shot("00_menu")
 	for s in ["maps", "shop", "equipment", "achievements", "collection", "daily", "settings"]:
@@ -266,12 +353,13 @@ func _run() -> void:
 	for map_id in Data.map_order:
 		idx += 1
 		var c: Dictionary = Data.map_def(map_id)["contracts"][0]
-		main.start_contract(map_id, c["id"])
+		await _start(map_id, c["id"])
 		await wait(0.6)
 		check(main.current_map != null and main.current_map.surfaces.size() + main.current_map.fields.size() > 0, "%s loads with cleanables (%d surfaces, %d debris fields)" % [map_id, main.current_map.surfaces.size(), main.current_map.fields.size()])
 		await shot("%02d_%s_start" % [idx + 2, map_id])
 		var p0: float = main.current_map.overall()
 		var p := main.player as Player
+		p.pitch = -0.62   # look at the ground in front, as a player would
 		var tools_used: Array = plans[map_id]
 		for ti in tools_used.size():
 			p.select_tool(tools_used[ti])
@@ -320,7 +408,7 @@ func _run() -> void:
 		await shot("%02d_%s_reward" % [idx + 2, map_id])
 	# Multitouch: joystick (finger 0) + CLEAN button (finger 1) at the same time.
 	Game.settings["touch"] = 1
-	main.start_contract("autumn_garden", "ag_path")
+	await _start("autumn_garden", "ag_path")
 	await wait(0.6)
 	var tc: TouchControls = main.hud.touch
 	check(tc.visible, "touch controls visible when enabled")
@@ -341,7 +429,10 @@ func _run() -> void:
 	# Unlocks.
 	for map_id in Data.map_order:
 		check(Game.is_map_unlocked(map_id) or map_id == "abandoned_greenhouse", "unlock state ok: " + map_id)
+	await _start("autumn_garden", "ag_full")
+	check(main.current_map.restored and main.current_map.overall() > 0.99, "cleaned location stays clean when re-entered (%.0f%%)" % (main.current_map.overall() * 100))
 	await _cleaning_physics_tests()
+	await _first_person_tests()
 	await _character_tests()
 	await _graphics_tests()
 	# Save / load roundtrip (from disk).
@@ -379,3 +470,12 @@ func _run() -> void:
 	await wait(0.5)
 	print("SMOKE TEST DONE: %d failures" % failures)
 	get_tree().quit(1 if failures > 0 else 0)
+
+func _start(map_id: String, contract_id: String) -> void:
+	main.start_contract(map_id, contract_id)
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 20000:
+		await get_tree().process_frame
+		if main.playing and main.player != null and main.current_map != null and not main.current_map.menu_mode and main.session_map == map_id:
+			break
+	await get_tree().create_timer(0.3).timeout
