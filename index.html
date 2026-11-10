@@ -54,7 +54,10 @@
             <div class="muted small" id="home-xp-text">0 / 40 XP</div>
           </div>
           <div class="next-unlock" id="next-unlock"></div>
+          <div class="boost-bar" id="home-boosts"></div>
         </div>
+
+        <div class="card mine-card" id="mine-card"></div>
 
         <button class="menu-btn mb-daily" id="daily-btn"><span>🎁</span><b>Bonus diario</b><small id="daily-text"></small></button>
         <div class="menu-grid">
@@ -77,8 +80,13 @@
       <!-- TIENDA -->
       <section class="screen" id="screen-shop">
         <div class="screen-head">
-          <h2>🛒 Tienda de boletos</h2>
-          <p class="muted">Sube de nivel para desbloquear boletos con premios mayores.</p>
+          <h2>🛒 Tienda</h2>
+          <p class="muted">Boletos para rascar, juegos rápidos y objetos que te ayudan a progresar.</p>
+        </div>
+        <div class="shop-tabs" id="shop-tabs">
+          <button data-tab="tickets" class="active">🎟️ Boletos</button>
+          <button data-tab="games">🎰 Juegos</button>
+          <button data-tab="items">🧪 Objetos</button>
         </div>
         <div class="shop-grid" id="shop-grid"></div>
       </section>
@@ -91,9 +99,23 @@
             <div class="play-progress"><span id="play-progress-fill"></span></div>
             <button class="btn btn-ghost small-btn" id="auto-btn">⚡ Rascar todo</button>
           </div>
+          <div class="boost-bar" id="play-boosts"></div>
           <div id="ticket-holder"></div>
           <div class="result" id="result"></div>
           <div class="play-actions" id="play-actions"></div>
+        </div>
+      </section>
+
+      <!-- JUEGOS SIN RASCAR -->
+      <section class="screen" id="screen-game">
+        <div class="play-wrap">
+          <div class="play-top">
+            <button class="btn btn-ghost small-btn" data-shoptab="games">← Juegos</button>
+            <div class="boost-bar grow" id="game-boosts"></div>
+          </div>
+          <div id="game-holder"></div>
+          <div class="result" id="game-result"></div>
+          <div class="play-actions" id="game-actions"></div>
         </div>
       </section>
 

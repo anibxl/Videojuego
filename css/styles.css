@@ -530,3 +530,93 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 @media (max-width: 900px) {
   .skill-tree { grid-template-columns: 1fr; }
 }
+
+/* ---------- Pestañas de la tienda ---------- */
+.shop-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; }
+.shop-tabs button {
+  flex: 1; min-width: max-content; padding: 10px 14px; border-radius: 14px; font-weight: 800;
+  background: var(--card); border: 1px solid var(--card-b); color: var(--muted); transition: background .2s, color .2s;
+}
+.shop-tabs button.active { background: linear-gradient(180deg, #ffd95e, #f5a700); color: #3a2300; border-color: transparent; }
+.buy-row.single { grid-template-columns: 1fr; }
+.buy-row.two { grid-template-columns: 1fr 1fr; }
+.buy-row.single:has(.multi-hint) { grid-template-columns: 1fr 1.6fr; }
+.multi-hint { font-size: .72rem; color: var(--muted); display: flex; align-items: center; line-height: 1.25; }
+
+/* Mini-portadas de los juegos */
+.mt-kind { font-size: .7rem; font-weight: 900; letter-spacing: 3px; opacity: .8; }
+.mini-ticket .mg-name { font-size: 1.2rem; }
+.mg-slot1 { background: linear-gradient(135deg, #ff6b6b, #c2185b); }
+.mg-boxes1 { background: linear-gradient(135deg, #7c4dff, #00b8d4); }
+.mg-slot2 { background: radial-gradient(circle at 30% 20%, #fff59d55, transparent 40%), linear-gradient(135deg, #1e1e2f, #ff9100 160%); }
+.mg-boxes2 { background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 45%, transparent 60%) 0 0 / 250% 100%, linear-gradient(135deg, #8e24aa, #ffb300); animation: shine 3.5s linear infinite; }
+.mini-ticket[class*="mg-"] .mt-name { font-size: 1.25rem; letter-spacing: 1px; text-transform: none; }
+.chip-slot1 { background: #ff8a8a; }
+.chip-boxes1 { background: #b39dff; }
+.chip-slot2 { background: #ffb74d; }
+.chip-boxes2 { background: linear-gradient(90deg, #ce93d8, #ffd54f); }
+
+/* Objetos */
+.item-head { display: flex; gap: 12px; align-items: center; }
+.item-head b { display: block; font-size: 1.05rem; }
+.item-head small { font-size: .8rem; }
+.item-ico { font-size: 2.2rem; width: 60px; height: 60px; flex: none; border-radius: 18px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(179,136,255,.3), rgba(76,201,240,.2)); }
+.mine-shop { grid-column: 1 / -1; background: linear-gradient(135deg, rgba(255,159,28,.18), rgba(255,255,255,.04)); }
+.mine-shop .item-ico { background: linear-gradient(135deg, rgba(255,159,28,.45), rgba(255,207,63,.2)); }
+
+/* Potenciadores activos */
+.boost-bar { display: flex; flex-wrap: wrap; gap: 6px; }
+.boost-bar:empty { display: none; }
+#home-boosts { margin-top: 10px; }
+#play-boosts { justify-content: center; margin-bottom: 10px; }
+.boost-chip { background: rgba(179,136,255,.2); border: 1px solid rgba(179,136,255,.45); border-radius: 99px; padding: 3px 9px; font-size: .78rem; font-weight: 800; }
+
+/* Mina en el inicio */
+.mine-card { padding: 12px 16px; background: linear-gradient(135deg, rgba(255,159,28,.15), rgba(255,255,255,.04)); }
+.mine-card.locked { opacity: .6; }
+.mine-row { display: flex; align-items: center; gap: 12px; }
+.mine-row b { display: block; }
+.mine-row small { display: block; }
+.mine-ico { font-size: 2rem; }
+.mine-bar { margin-top: 6px; height: 8px; }
+.mine-bar span { background: linear-gradient(90deg, #ff9f1c, #ffcf3f); transition: width 1s linear; }
+.mine-row .btn { white-space: nowrap; }
+
+/* ---------- Máquinas y cajas ---------- */
+.machine {
+  position: relative; width: min(100%, 460px); margin: 0 auto; padding: 18px 16px; border-radius: 26px; text-align: center;
+  box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 0 0 3px rgba(255,255,255,.25);
+  animation: ticketIn .5s cubic-bezier(.2,1.4,.4,1);
+}
+.m-title { font-weight: 900; font-size: 1.35rem; letter-spacing: 1px; margin-bottom: 14px; text-shadow: 0 2px 8px rgba(0,0,0,.35); }
+.reels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 12px; border-radius: 18px; background: rgba(0,0,0,.35); box-shadow: inset 0 4px 14px rgba(0,0,0,.5); }
+.reel {
+  height: clamp(92px, 26vw, 130px); border-radius: 14px; overflow: hidden; position: relative;
+  background: linear-gradient(180deg, #d9d9e6, #ffffff 30%, #ffffff 70%, #c9c9d9);
+  display: flex; align-items: center; justify-content: center; transition: box-shadow .3s, transform .2s;
+}
+.reel-sym { font-size: clamp(2.6rem, 11vw, 3.6rem); line-height: 1; }
+.reel.spinning .reel-sym { animation: reelSpin .12s linear infinite; filter: blur(2px); }
+@keyframes reelSpin { from { transform: translateY(-40%); } to { transform: translateY(40%); } }
+.reel.stopped .reel-sym { animation: reelStop .35s cubic-bezier(.2,1.6,.4,1); }
+@keyframes reelStop { from { transform: translateY(-30%); } }
+.reel.hot, .gbox.hot { box-shadow: 0 0 0 3px #ffcf3f, 0 0 18px #ffcf3f99; }
+.reel.win, .gbox.win { box-shadow: 0 0 0 4px #ff9f1c, 0 0 26px #ffcf3f; animation: winPulse 1s ease-in-out infinite; }
+.machine.lost .reel:not(.win), .machine.lost .gbox { opacity: .75; }
+.m-pay { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 14px; }
+.m-pay span { background: rgba(0,0,0,.25); border-radius: 99px; padding: 3px 9px; font-size: .74rem; font-weight: 800; }
+
+.boxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 8px 0; }
+.gbox {
+  position: relative; aspect-ratio: 1 / 1; border-radius: 18px; background: rgba(255,255,255,.14);
+  border: 2px solid rgba(255,255,255,.3); display: flex; align-items: center; justify-content: center; overflow: hidden;
+  transition: transform .2s, background .3s, box-shadow .3s;
+}
+.gbox:hover { transform: translateY(-4px); }
+.gbox .lid { font-size: clamp(2.8rem, 12vw, 4rem); transition: transform .35s, opacity .35s; }
+.gbox .content { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: clamp(2.6rem, 11vw, 3.6rem); opacity: 0; transform: scale(.3); transition: transform .4s cubic-bezier(.2,1.6,.4,1), opacity .3s; }
+.gbox.opening .lid { animation: boxShake .38s; }
+@keyframes boxShake { 20% { transform: rotate(-12deg); } 40% { transform: rotate(10deg); } 60% { transform: rotate(-8deg) scale(1.1); } 80% { transform: rotate(6deg) scale(1.15); } }
+.gbox.open { background: rgba(255,255,255,.92); cursor: default; }
+.gbox.open .lid { transform: translateY(-120%) rotate(-25deg); opacity: 0; }
+.gbox.open .content { opacity: 1; transform: none; }

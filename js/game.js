@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  const { TIERS, TIER_BY_ID, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward } = window.GameData;
+  const { TIERS, TIER_BY_ID, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward } = window.GameData;
   const SAVE_KEY = 'rascamania_save_v1';
   const DAILY_MS = 20 * 60 * 60 * 1000; // bonus cada 20 h
   const HISTORY_MAX = 300;
@@ -30,7 +30,7 @@
   /* ---------- Estado y guardado ---------- */
   function freshPerTier() {
     const perTier = {};
-    TIERS.forEach((t) => (perTier[t.id] = { bought: 0, scratched: 0, wins: 0, spent: 0, won: 0, best: 0 }));
+    TIERS.concat(GAMES).forEach((t) => (perTier[t.id] = { bought: 0, scratched: 0, wins: 0, spent: 0, won: 0, best: 0 }));
     return perTier;
   }
 
@@ -46,8 +46,12 @@
       sound: true,
       achievements: {},
       skills: {},
+      boosts: {},
+      mine: { level: 0, stored: 0, last: Date.now() },
+      pendingRound: null,
       stats: {
-        spent: 0, won: 0, bonus: 0, skillSpent: 0, refunds: 0, bought: 0, scratched: 0, wins: 0,
+        spent: 0, won: 0, bonus: 0, skillSpent: 0, shopSpent: 0, refunds: 0, bought: 0, scratched: 0, wins: 0,
+        games: 0, items: 0, mineEarned: 0, wildWins: 0,
         biggestWin: 0, biggestTier: null, streak: 0, bestStreak: 0, peakCoins: 1000,
         perTier: freshPerTier(),
       },
@@ -72,6 +76,8 @@
     // Descarta boletos de tipos desconocidos (por si cambian los datos)
     out.inventory = (out.inventory || []).filter((t) => TIER_BY_ID[t.tier]);
     out.skills = Object.assign({}, s.skills || {});
+    out.boosts = Object.assign({}, s.boosts || {});
+    out.mine = Object.assign({ level: 0, stored: 0, last: Date.now() }, s.mine || {});
     return out;
   }
 
@@ -99,6 +105,46 @@
     return { lvl, cost, state: S.coins >= cost ? 'available' : 'expensive' };
   }
   const affordableSkills = () => SKILLS.filter((s) => skillState(s).state === 'available').length;
+
+  /* ---------- Objetos y mina ---------- */
+  function itemPrice(it) {
+    return Math.max(10, Math.round((it.price * (1 + 0.2 * (S.level - 1)) * (1 - skEffect('merchant'))) / 10) * 10);
+  }
+  const itemUses = (it) => Math.round(it.uses * (1 + skEffect('alchemist')));
+  const mineRate = () => MINE.rate(S.mine.level) * (1 + skEffect('foreman')); // monedas/min
+  const mineCap = () => Math.round(mineRate() * 60 * MINE.capHours * (1 + skEffect('storage')));
+  const mineUpgradeCost = () => Math.round((MINE.cost(S.mine.level) * (1 - skEffect('merchant'))) / 50) * 50;
+  function mineTick() {
+    const now = Date.now();
+    if (S.mine.level > 0) {
+      const dt = Math.max(0, now - (S.mine.last || now));
+      S.mine.stored = Math.min(mineCap(), (S.mine.stored || 0) + (mineRate() * dt) / 60000);
+    }
+    S.mine.last = now;
+  }
+  /** Gasta un uso de cada potenciador activo que aplique. */
+  function useBoosts(isTicket) {
+    const used = {};
+    ['xp2', 'charm', 'shield'].forEach((id) => {
+      if ((S.boosts[id] || 0) > 0) {
+        S.boosts[id]--;
+        used[id] = true;
+      }
+    });
+    return used;
+  }
+  function boostChips() {
+    return ITEMS.filter((it) => (S.boosts[it.id] || 0) > 0)
+      .map((it) => `<span class="boost-chip" title="${esc(it.name)}: ${esc(it.desc)}">${it.icon} ${S.boosts[it.id]}</span>`)
+      .join('');
+  }
+  function renderBoosts() {
+    const html = boostChips();
+    ['home-boosts', 'play-boosts', 'game-boosts'].forEach((id) => {
+      const el = $(id);
+      if (el) el.innerHTML = html;
+    });
+  }
 
   /* ---------- Saldo y XP en la cabecera ---------- */
   let shownCoins = S.coins;
@@ -156,6 +202,7 @@
     renderCoins(animateCoins);
     renderLevel();
     renderBadges();
+    renderBoosts();
   }
 
   /* ---------- Navegación ---------- */
@@ -166,9 +213,10 @@
       play.card.destroy();
       play.card = null;
     }
+    if (screen !== 'game' && gameRun.tk && !gameRun.done) finishGame(true);
     current = screen;
     document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === 'screen-' + screen));
-    document.querySelectorAll('.bottomnav button').forEach((b) => b.classList.toggle('active', b.dataset.go === screen || (screen === 'play' && b.dataset.go === 'inventory')));
+    document.querySelectorAll('.bottomnav button').forEach((b) => b.classList.toggle('active', b.dataset.go === screen || (screen === 'play' && b.dataset.go === 'inventory') || (screen === 'game' && b.dataset.go === 'shop')));
     if (renderers[screen]) renderers[screen]();
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
   }
@@ -342,7 +390,7 @@
 
   /* ---------- Inicio ---------- */
   function historyRow(h) {
-    const tier = TIER_BY_ID[h.tier];
+    const tier = PRODUCT_BY_ID[h.tier];
     const sym = h.sym >= 0 ? tier.symbols[h.sym].e : '❌';
     return `<li><span class="h-sym">${sym}</span><span class="chip chip-${h.tier}">${tier.name}</span>
       <span class="grow h-time">${timeAgo(h.t)}${h.mult > 1 && h.prize ? ` · ×${h.mult}` : ''}</span>
@@ -356,6 +404,8 @@
     const got = Object.keys(S.achievements).length;
     $('ach-count').textContent = `${got}/${ACHIEVEMENTS.length}`;
     $('rescue-btn').classList.toggle('hidden', !isBroke());
+    renderMineCard();
+    renderBoosts();
     const wins = S.history.filter((h) => h.prize > 0).slice(0, 5);
     $('recent-list').innerHTML = wins.length
       ? wins.map(historyRow).join('')
@@ -363,8 +413,66 @@
   }
   renderers.home = renderHome;
 
+  function renderMineCard() {
+    const el = $('mine-card');
+    if (S.level < MINE.minLevel) {
+      el.innerHTML = `<div class="mine-row"><span class="mine-ico">⛏️</span><div class="grow"><b>Mina de monedas</b><small class="muted">Se desbloquea en el nivel ${MINE.minLevel}</small></div></div>`;
+      el.classList.add('locked');
+      return;
+    }
+    el.classList.remove('locked');
+    if (!S.mine.level) {
+      el.innerHTML = `<div class="mine-row"><span class="mine-ico">⛏️</span><div class="grow"><b>Mina de monedas</b><small class="muted">Genera monedas aunque no juegues</small></div>
+        <button class="btn btn-ghost small-btn" data-shoptab="items">Construir</button></div>`;
+      return;
+    }
+    mineTick();
+    const cap = mineCap();
+    const st = Math.floor(S.mine.stored);
+    el.innerHTML = `<div class="mine-row"><span class="mine-ico">⛏️</span>
+      <div class="grow"><b>Mina nivel ${S.mine.level}</b><small class="muted">${fmtDec(mineRate())} monedas/min · máx. ${fmt(cap)}</small>
+        <div class="xp-bar wide mine-bar"><span style="width:${Math.min(100, (S.mine.stored / cap) * 100)}%"></span></div></div>
+      <button class="btn small-btn" data-collect ${st < 1 ? 'disabled' : ''}>Recoger <span class="coin-ico"></span> ${fmt(st)}</button></div>`;
+  }
+  const fmtDec = (x) => (Math.round(x * 10) / 10).toString().replace('.', ',');
+
+  function collectMine(srcEl) {
+    mineTick();
+    const amt = Math.floor(S.mine.stored);
+    if (amt < 1) return;
+    S.mine.stored -= amt;
+    S.coins += amt;
+    S.stats.bonus += amt;
+    S.stats.mineEarned += amt;
+    notePeak();
+    Sound.win();
+    if (srcEl) {
+      const r = srcEl.getBoundingClientRect();
+      FX.coins(r.left + r.width / 2, r.top + r.height / 2, Math.min(40, 8 + Math.round(amt / 100)));
+    }
+    toast('⛏️', `<b>Mina</b><br>+${fmt(amt)} monedas`);
+    checkAchievements();
+    save();
+    refreshHeader(true);
+    if (current === 'home') renderMineCard();
+    if (current === 'shop') renderShop();
+  }
+  document.addEventListener('click', (e) => {
+    const c = e.target.closest('[data-collect]');
+    if (c && !c.disabled) collectMine(c);
+    const t = e.target.closest('[data-shoptab]');
+    if (t) {
+      shopTab = t.dataset.shoptab;
+      go('shop');
+    }
+  });
+
   /* ---------- Tienda ---------- */
+  let shopTab = 'tickets';
   function renderShop() {
+    document.querySelectorAll('#shop-tabs [data-tab]').forEach((b) => b.classList.toggle('active', b.dataset.tab === shopTab));
+    if (shopTab === 'games') return renderGamesTab();
+    if (shopTab === 'items') return renderItemsTab();
     $('shop-grid').innerHTML = TIERS.map((t) => {
       const m = tierMath(t);
       const locked = S.level < t.level;
@@ -392,15 +500,148 @@
   }
   renderers.shop = renderShop;
 
+  function renderGamesTab() {
+    const multi = sk('multi');
+    $('shop-grid').innerHTML = GAMES.map((g) => {
+      const m = tierMath(g);
+      const locked = S.level < g.level;
+      const price = ticketPrice(g);
+      const btn = (q, label) => {
+        const cost = price * q;
+        return `<button class="btn ${q === 1 ? '' : 'btn-ghost'}" data-play="${g.id}" data-q="${q}" ${locked || S.coins < cost ? 'disabled' : ''}>${label}<small>${fmtShort(cost)}</small></button>`;
+      };
+      return `<div class="shop-card ${locked ? 'locked' : ''}">
+        ${locked ? `<div class="lock-overlay"><span>🔒</span>Se desbloquea en el nivel ${g.level}<small class="muted">Te faltan ${g.level - S.level} niveles</small></div>` : ''}
+        <div class="shop-body">
+          <div class="mini-ticket mg-${g.id}"><div class="mt-kind">${g.kind === 'slot' ? 'MÁQUINA' : 'CAJAS'}</div><div class="mt-name">${g.icon} ${g.name}</div><div class="mt-syms">${g.symbols.slice(-3).map((x) => x.e).join('')}</div></div>
+          <div class="muted small">${g.tagline} · sin rascar</div>
+          <div class="shop-info">
+            <div class="si"><small>Precio por partida</small><b><span class="coin-ico"></span> ${fmt(price)}${price < g.price ? ` <s class="muted small">${fmt(g.price)}</s>` : ''}</b></div>
+            <div class="si"><small>Premio máximo</small><b>${fmtShort(m.maxPrize)}</b></div>
+            <div class="si"><small>Probabilidad de premio</small><b>1 de ${fmtOdds(m.oddsWin)}</b></div>
+            <div class="si"><small>Prob. premio máximo</small><b>1 de ${fmt(Math.round(m.oddsTop))}</b></div>
+          </div>
+          <div class="buy-row ${multi ? '' : 'single'}">${btn(1, 'Jugar')}${multi ? btn(5, '×5') + btn(10, '×10') : '<span class="multi-hint">🔁 ×5 y ×10 con la habilidad «Tirada múltiple»</span>'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderItemsTab() {
+    mineTick();
+    const mineLocked = S.level < MINE.minLevel;
+    const maxed = S.mine.level >= MINE.maxLevel;
+    const upCost = mineUpgradeCost();
+    const nextRate = MINE.rate(S.mine.level + 1) * (1 + skEffect('foreman'));
+    const mineCard = `<div class="shop-card mine-shop ${mineLocked ? 'locked' : ''}">
+      ${mineLocked ? `<div class="lock-overlay"><span>🔒</span>Se desbloquea en el nivel ${MINE.minLevel}</div>` : ''}
+      <div class="shop-body">
+        <div class="item-head"><span class="item-ico">⛏️</span><div><b>Mina de monedas</b><small class="muted">Ingresos pasivos: produce monedas incluso con el juego cerrado (hasta ${MINE.capHours} h acumuladas).</small></div></div>
+        <div class="shop-info">
+          <div class="si"><small>Nivel</small><b>${S.mine.level} / ${MINE.maxLevel}</b></div>
+          <div class="si"><small>Producción</small><b>${S.mine.level ? fmtDec(mineRate()) + '/min' : '—'}</b></div>
+          <div class="si"><small>Almacenado</small><b>${fmt(Math.floor(S.mine.stored || 0))}${S.mine.level ? ' / ' + fmtShort(mineCap()) : ''}</b></div>
+          <div class="si"><small>${maxed ? 'Nivel máximo' : 'Siguiente nivel'}</small><b>${maxed ? '✔' : fmtDec(nextRate) + '/min'}</b></div>
+        </div>
+        <div class="buy-row two">
+          <button class="btn" data-mine-up ${mineLocked || maxed || S.coins < upCost ? 'disabled' : ''}>${maxed ? 'Al máximo' : (S.mine.level ? 'Mejorar' : 'Construir') + ` <small>${fmtShort(upCost)}</small>`}</button>
+          <button class="btn btn-ghost" data-collect ${Math.floor(S.mine.stored || 0) < 1 ? 'disabled' : ''}>Recoger <small>${fmt(Math.floor(S.mine.stored || 0))}</small></button>
+        </div>
+      </div>
+    </div>`;
+    const items = ITEMS.map((it) => {
+      const locked = S.level < it.level;
+      const price = itemPrice(it);
+      const have = S.boosts[it.id] || 0;
+      return `<div class="shop-card item-card ${locked ? 'locked' : ''}">
+        ${locked ? `<div class="lock-overlay"><span>🔒</span>Se desbloquea en el nivel ${it.level}</div>` : ''}
+        <div class="shop-body">
+          <div class="item-head"><span class="item-ico">${it.icon}</span><div><b>${it.name}</b><small class="muted">${it.desc}</small></div></div>
+          <div class="shop-info">
+            <div class="si"><small>Duración</small><b>${itemUses(it)} ${it.ticketsOnly ? 'boletos' : 'partidas'}</b></div>
+            <div class="si"><small>Te quedan</small><b>${have ? have + ' usos' : '—'}</b></div>
+          </div>
+          <div class="buy-row single"><button class="btn" data-item="${it.id}" ${locked || S.coins < price ? 'disabled' : ''}>Comprar <small>${fmtShort(price)}</small></button></div>
+        </div>
+      </div>`;
+    }).join('');
+    $('shop-grid').innerHTML = mineCard + items;
+  }
+
+  $('shop-tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tab]');
+    if (!b) return;
+    Sound.click();
+    shopTab = b.dataset.tab;
+    renderShop();
+  });
+
   $('shop-grid').addEventListener('click', (e) => {
     const b = e.target.closest('[data-buy]');
-    if (!b || b.disabled) return;
-    buy(b.dataset.buy, +b.dataset.q, b);
+    if (b && !b.disabled) return buy(b.dataset.buy, +b.dataset.q, b);
+    const g = e.target.closest('[data-play]');
+    if (g && !g.disabled) return playGame(g.dataset.play, +g.dataset.q, g);
+    const it = e.target.closest('[data-item]');
+    if (it && !it.disabled) return buyItem(it.dataset.item, it);
+    const mu = e.target.closest('[data-mine-up]');
+    if (mu && !mu.disabled) return upgradeMine(mu);
   });
+
+  function buyItem(id, srcEl) {
+    Sound.unlock();
+    const it = ITEM_BY_ID[id];
+    const price = itemPrice(it);
+    if (S.level < it.level || S.coins < price) return Sound.error();
+    S.coins -= price;
+    S.stats.shopSpent += price;
+    S.stats.items++;
+    S.boosts[id] = (S.boosts[id] || 0) + itemUses(it);
+    Sound.buy();
+    const r = srcEl.getBoundingClientRect();
+    FX.sparkle(r.left + r.width / 2, r.top + r.height / 2, 14, '#c9b6ff');
+    toast(it.icon, `<b>${it.name}</b><br>${it.desc} · ${itemUses(it)} usos`);
+    checkAchievements();
+    save();
+    refreshHeader(true);
+    renderShop();
+  }
+
+  function upgradeMine(srcEl) {
+    Sound.unlock();
+    const cost = mineUpgradeCost();
+    if (S.level < MINE.minLevel || S.mine.level >= MINE.maxLevel || S.coins < cost) return Sound.error();
+    mineTick();
+    S.coins -= cost;
+    S.stats.shopSpent += cost;
+    S.mine.level++;
+    Sound.levelUp();
+    const r = srcEl.getBoundingClientRect();
+    FX.burst(r.left + r.width / 2, r.top + r.height / 2, 40, ['#ff9f1c', '#ffcf3f', '#ffffff']);
+    toast('⛏️', `<b>Mina nivel ${S.mine.level}</b><br>${fmtDec(mineRate())} monedas por minuto`);
+    checkAchievements();
+    save();
+    refreshHeader(true);
+    renderShop();
+  }
+
+  /** Crea un boleto o una partida aplicando las habilidades que actúan al comprar. */
+  function makeRound(id) {
+    const isGame = !!GAME_BY_ID[id];
+    const gen = () => (isGame ? generateRound(id, Math.random, { wildChance: skEffect('wild') }) : generateTicket(id));
+    let tk = gen();
+    // Segunda oportunidad: una partida perdedora se sortea de nuevo
+    if (!tk.prize && Math.random() < skEffect('reroll')) {
+      tk = gen();
+      if (tk.prize) tk.rerolled = true;
+    }
+    // Toque dorado: el premio se duplicará al cobrarlo
+    if (tk.prize && Math.random() < skEffect('golden')) tk.golden = true;
+    return tk;
+  }
 
   function buy(tierId, qty, srcEl) {
     Sound.unlock();
-    const t = TIER_BY_ID[tierId];
+    const t = PRODUCT_BY_ID[tierId];
     const unit = ticketPrice(t);
     const cost = unit * qty;
     if (S.level < t.level) return;
@@ -416,14 +657,7 @@
     S.stats.perTier[tierId].spent += cost;
     const created = [];
     for (let i = 0; i < qty; i++) {
-      let tk = generateTicket(tierId);
-      // Segunda oportunidad: un boleto perdedor se sortea de nuevo (antes de rascarlo)
-      if (!tk.prize && Math.random() < skEffect('reroll')) {
-        tk = generateTicket(tierId);
-        if (tk.prize) tk.rerolled = true;
-      }
-      // Toque dorado: el premio se duplicará al cobrarlo
-      if (tk.prize && Math.random() < skEffect('golden')) tk.golden = true;
+      const tk = makeRound(tierId);
       tk.paid = unit;
       tk.id = S.serial++;
       tk.bought = Date.now();
@@ -444,7 +678,7 @@
   const play = { card: null, ticket: null, revealedSyms: {}, settled: false };
 
   function renderTicketEl(tk) {
-    const t = TIER_BY_ID[tk.tier];
+    const t = PRODUCT_BY_ID[tk.tier];
     const el = document.createElement('div');
     el.className = `ticket tier-${t.id}`;
     const cells = tk.cells
@@ -483,7 +717,7 @@
 
     const area = el.querySelector('.scratch-area');
     const cellEls = Array.from(area.querySelectorAll('.cell'));
-    const t = TIER_BY_ID[tk.tier];
+    const t = PRODUCT_BY_ID[tk.tier];
     // Espera al layout para medir correctamente
     requestAnimationFrame(() => {
       play.card = new ScratchCard(area, {
@@ -495,7 +729,13 @@
         brushScale: 1 + skEffect('brush'),
       });
       // Ojo de lince: descubre casillas al azar nada más empezar
-      const peek = sk('peek');
+      let peek = sk('peek');
+      if ((S.boosts.crystal || 0) > 0) {
+        S.boosts.crystal--;
+        peek += 2;
+        save();
+        renderBoosts();
+      }
       if (peek) {
         const idx = shuffleIdx(tk.cells.length).slice(0, peek);
         setTimeout(() => play.card && play.card.revealCells(idx), 350);
@@ -551,19 +791,25 @@
     }
   }
 
-  /** Cobra un boleto: aplica habilidades y actualiza estado. Devuelve el resultado. */
+  /** Cobra un boleto o una partida: aplica habilidades y objetos y actualiza el estado. */
   function resolveTicket(tk) {
-    const t = TIER_BY_ID[tk.tier];
-    const idx = S.inventory.findIndex((x) => x.id === tk.id);
-    if (idx < 0) return null; // ya cobrado
-    S.inventory.splice(idx, 1);
-
+    const t = PRODUCT_BY_ID[tk.tier];
+    const isGame = !!GAME_BY_ID[tk.tier];
+    if (!isGame) {
+      const idx = S.inventory.findIndex((x) => x.id === tk.id);
+      if (idx < 0) return null; // ya cobrado
+      S.inventory.splice(idx, 1);
+    }
+    const used = useBoosts(!isGame);
     const base = tk.prize;
-    const luckBonus = skEffect('lucky');
+    const luckBonus = skEffect('lucky') + (isGame ? skEffect('lever') : 0) + (used.charm ? 0.1 : 0);
     const payout = base ? Math.round(base * (tk.golden ? 2 : 1) * (1 + luckBonus)) : 0;
-    const refund = base ? 0 : Math.round((tk.paid || t.price) * skEffect('refund'));
+    const paid = tk.paid || t.price;
+    const refund = base ? 0 : Math.round(paid * (skEffect('refund') + (used.shield ? 0.1 : 0)));
+    const consolation = !base && isGame && tk.pair ? Math.round(paid * skEffect('consol')) : 0;
     const pt = S.stats.perTier[t.id];
-    S.stats.scratched++;
+    if (isGame) S.stats.games++;
+    else S.stats.scratched++;
     pt.scratched++;
     if (payout > 0) {
       S.coins += payout;
@@ -574,32 +820,49 @@
       pt.wins++;
       pt.won += payout;
       pt.best = Math.max(pt.best, payout);
+      if (tk.wild) S.stats.wildWins++;
       if (payout > S.stats.biggestWin) {
         S.stats.biggestWin = payout;
         S.stats.biggestTier = t.id;
       }
     } else {
       S.stats.streak = 0;
-      if (refund) {
-        S.coins += refund;
-        S.stats.bonus += refund;
-        S.stats.refunds += refund;
+      if (refund + consolation) {
+        S.coins += refund + consolation;
+        S.stats.bonus += refund + consolation;
+        S.stats.refunds += refund + consolation;
       }
     }
     notePeak();
     S.history.unshift({ tier: t.id, prize: payout, sym: tk.winSym, mult: tk.mult, t: Date.now(), id: tk.id });
     if (S.history.length > HISTORY_MAX) S.history.length = HISTORY_MAX;
 
-    const xpGain = Math.round((t.xp + Math.min(Math.floor(payout / 20), t.xp * 5)) * (1 + skEffect('xp')));
+    const xpGain = Math.round((t.xp + Math.min(Math.floor(payout / 20), t.xp * 5)) * (1 + skEffect('xp')) * (used.xp2 ? 2 : 1));
     addXP(xpGain);
-    return { payout, refund, xpGain, luckBonus };
+    return { payout, refund, consolation, xpGain, luckBonus, used };
+  }
+
+  /** Texto de bonificaciones aplicadas a un resultado. */
+  function resultExtras(tk, r) {
+    const extras = [];
+    if (r.payout) {
+      if (tk.rerolled) extras.push('🔄 ¡Segunda oportunidad!');
+      if (tk.wild) extras.push('🃏 ¡Comodín!');
+      if (tk.golden) extras.push('✨ ¡Toque dorado: premio doble!');
+      if (r.luckBonus) extras.push(`🍀 Premio +${Math.round(r.luckBonus * 100)}%`);
+    } else {
+      if (r.refund) extras.push(`🛟 Recuperas ${fmt(r.refund)}`);
+      if (r.consolation) extras.push(`🥈 Consolación: +${fmt(r.consolation)}`);
+    }
+    if (r.used.xp2) extras.push('🧪 XP ×2');
+    return extras.length ? `<div class="r-extras">${extras.join(' · ')}</div>` : '';
   }
 
   function settle(tk, el, cellEls) {
     if (play.settled) return;
     play.settled = true;
     revealCount = 0;
-    const t = TIER_BY_ID[tk.tier];
+    const t = PRODUCT_BY_ID[tk.tier];
     const r = resolveTicket(tk);
     if (!r) return;
     const prize = r.payout;
@@ -628,17 +891,13 @@
     const res = $('result');
     if (prize > 0) {
       res.className = 'result win';
-      const extras = [];
-      if (tk.rerolled) extras.push('🔄 ¡Segunda oportunidad!');
-      if (tk.golden) extras.push('✨ ¡Toque dorado: premio doble!');
-      if (r.luckBonus) extras.push(`🍀 +${Math.round(r.luckBonus * 100)}% suerte`);
       res.innerHTML = `<div class="r-title">¡Has ganado ${fmt(prize)} monedas!</div>
         <div class="r-sub">${t.symbols[tk.winSym].e} ×3${tk.mult > 1 ? ` · multiplicador ×${tk.mult}` : ''} · +${xpGain} XP</div>
-        ${extras.length ? `<div class="r-extras">${extras.join(' · ')}</div>` : ''}`;
+        ${resultExtras(tk, r)}`;
     } else {
       res.className = 'result';
       res.innerHTML = `<div class="r-title">Sin premio esta vez</div><div class="r-sub">¡La suerte cambia! · +${xpGain} XP</div>
-        ${r.refund ? `<div class="r-extras">🛟 Seguro de consuelo: recuperas ${fmt(r.refund)} monedas</div>` : ''}`;
+        ${resultExtras(tk, r)}`;
     }
 
     checkAchievements();
@@ -678,7 +937,7 @@
           onShow: (m) => countUp(m.querySelector('#jp-count'), prize, 2000),
         });
       }, 1200);
-    } else if (ratio >= 5 || prize >= 1000) {
+    } else if (ratio >= 5 || (prize >= 1000 && ratio >= 2)) {
       Sound.bigWin();
       FX.flash('#ffe48a');
       FX.confetti(130);
@@ -754,16 +1013,22 @@
   function bulkScratch(tierId, srcEl) {
     if (!sk('bulk')) return;
     Sound.unlock();
-    const t = TIER_BY_ID[tierId];
+    const t = PRODUCT_BY_ID[tierId];
     const list = S.inventory.filter((x) => x.tier === tierId);
     if (!list.length) return;
+    resolveMany(t, list, srcEl, '🚀', `${list.length} boletos ${t.name} rascados`);
+    renderInventory();
+  }
+
+  /** Cobra varias partidas de golpe y muestra un resumen. */
+  function resolveMany(t, list, srcEl, icon, title) {
     let total = 0, refunds = 0, xp = 0, best = null;
     const wins = [];
     list.forEach((tk) => {
       const r = resolveTicket(tk);
       if (!r) return;
       total += r.payout;
-      refunds += r.refund;
+      refunds += r.refund + r.consolation;
       xp += r.xpGain;
       if (r.payout) {
         wins.push({ tk, payout: r.payout });
@@ -782,17 +1047,202 @@
     if (total) FX.coins(cx, cy, Math.min(80, 10 + wins.length * 4));
     wins.sort((a, b) => b.payout - a.payout);
     modal({
-      icon: '🚀',
-      title: `${list.length} boletos ${t.name} rascados`,
+      icon,
+      title,
       html: `<p>${wins.length} con premio · +${fmt(xp)} XP</p>
         <div class="jp-amount"><span class="coin-ico lg"></span>+${fmt(total)}</div>
-        ${refunds ? `<p>🛟 Seguro de consuelo: +${fmt(refunds)}</p>` : ''}
-        <div class="bulk-wins">${wins.slice(0, 12).map((w) => `<span>${t.symbols[w.tk.winSym].e} ${fmtShort(w.payout)}${w.tk.golden ? ' ✨' : ''}</span>`).join('')}${wins.length > 12 ? `<span>+${wins.length - 12} más</span>` : ''}</div>`,
+        ${refunds ? `<p>🛟 Reembolsos y consolación: +${fmt(refunds)}</p>` : ''}
+        <div class="bulk-wins">${wins.slice(0, 12).map((w) => `<span>${t.symbols[w.tk.winSym].e} ${fmtShort(w.payout)}${w.tk.golden ? ' ✨' : ''}${w.tk.wild ? ' 🃏' : ''}</span>`).join('')}${wins.length > 12 ? `<span>+${wins.length - 12} más</span>` : ''}</div>`,
       buttons: [{ label: '¡Genial!', cls: 'btn' }],
     });
     refreshHeader(true);
-    renderInventory();
   }
+
+  /* ---------- Juegos sin rascar: máquinas y cajas ---------- */
+  const gameRun = { tk: null, done: true, timers: [] };
+  const symE = (g, i) => (i === WILD ? '🃏' : g.symbols[i].e);
+  const BOX_LID = { boxes1: '🎁', boxes2: '🧰' };
+
+  function playGame(gameId, qty, srcEl) {
+    Sound.unlock();
+    const g = GAME_BY_ID[gameId];
+    if (gameRun.tk && !gameRun.done) return; // hay una partida en curso
+    if (S.level < g.level) return;
+    if (qty > 1 && !sk('multi')) return;
+    const unit = ticketPrice(g);
+    const cost = unit * qty;
+    if (S.coins < cost) {
+      Sound.error();
+      toast('💸', 'No tienes monedas suficientes.');
+      return;
+    }
+    S.coins -= cost;
+    S.stats.spent += cost;
+    S.stats.bought += qty;
+    S.stats.perTier[g.id].bought += qty;
+    S.stats.perTier[g.id].spent += cost;
+    const rounds = [];
+    for (let i = 0; i < qty; i++) {
+      const tk = makeRound(g.id);
+      tk.paid = unit;
+      tk.id = S.serial++;
+      rounds.push(tk);
+    }
+    Sound.buy();
+    if (qty > 1) {
+      resolveMany(g, rounds, srcEl, g.icon, `${qty} partidas de ${g.name}`);
+      if (current === 'shop') renderShop();
+      if (current === 'game') renderGameActions(g);
+      return;
+    }
+    // Se guarda como pendiente: si se cierra la página a mitad, se cobra al volver
+    S.pendingRound = rounds[0];
+    save();
+    refreshHeader(true);
+    startGame(g, rounds[0]);
+  }
+
+  function startGame(g, tk) {
+    gameRun.timers.forEach(clearTimeout);
+    gameRun.timers = [];
+    gameRun.tk = tk;
+    gameRun.g = g;
+    gameRun.done = false;
+    gameRun.opened = [false, false, false];
+    if (current !== 'game') go('game');
+    const holder = $('game-holder');
+    const pay = g.symbols.map((x) => `<span>${x.e}×3 ${fmtShort(x.v)}</span>`).join('');
+    $('game-result').className = 'result';
+    $('game-actions').innerHTML = '';
+    if (g.kind === 'slot') {
+      holder.innerHTML = `<div class="machine mg-${g.id}">
+        <div class="m-title">${g.icon} ${g.name}</div>
+        <div class="reels">${[0, 1, 2].map((i) => `<div class="reel" data-i="${i}"><div class="reel-sym">${g.symbols[(Math.random() * g.symbols.length) | 0].e}</div></div>`).join('')}</div>
+        <div class="m-pay">${pay}</div>
+      </div>`;
+      $('game-result').innerHTML = '<div class="hint">🎰 ¡Girando!</div>';
+      spinReels(g, tk);
+    } else {
+      holder.innerHTML = `<div class="machine mg-${g.id}">
+        <div class="m-title">${g.icon} ${g.name}</div>
+        <div class="boxes">${[0, 1, 2].map((i) => `<button class="gbox" data-box="${i}"><span class="lid">${BOX_LID[g.id] || '🎁'}</span><span class="content">${symE(g, tk.cells[i])}</span></button>`).join('')}</div>
+        <div class="m-pay">${pay}</div>
+      </div>`;
+      $('game-result').innerHTML = '<div class="hint">👆 Toca cada caja para abrirla</div>';
+      $('game-actions').innerHTML = '<button class="btn btn-ghost" data-openall>Abrir todas</button>';
+    }
+    renderBoosts();
+  }
+  renderers.game = () => renderBoosts();
+
+  function spinReels(g, tk) {
+    const reels = Array.from(document.querySelectorAll('#game-holder .reel'));
+    const stops = [800, 1250, 1700];
+    // Suspense: si los dos primeros coinciden, el tercero tarda más
+    const firstTwo = tk.cells[0] === tk.cells[1] || tk.cells[0] === WILD || tk.cells[1] === WILD;
+    if (firstTwo) stops[2] = 2500;
+    reels.forEach((reel, i) => {
+      reel.classList.add('spinning');
+      const el = reel.querySelector('.reel-sym');
+      const iv = setInterval(() => (el.textContent = g.symbols[(Math.random() * g.symbols.length) | 0].e), 70);
+      gameRun.timers.push(setTimeout(() => {
+        clearInterval(iv);
+        reel.classList.remove('spinning');
+        reel.classList.add('stopped');
+        el.textContent = symE(g, tk.cells[i]);
+        Sound.reveal(i * 3);
+        if (i === 1 && firstTwo) reels.slice(0, 2).forEach((r) => r.classList.add('hot'));
+        if (i === 2) finishGame(false);
+      }, stops[i]));
+      gameRun.timers.push(iv);
+    });
+  }
+
+  function openBox(i) {
+    if (gameRun.done || gameRun.opened[i]) return;
+    const g = gameRun.g, tk = gameRun.tk;
+    gameRun.opened[i] = true;
+    const box = document.querySelector(`#game-holder .gbox[data-box="${i}"]`);
+    box.classList.add('opening');
+    gameRun.timers.push(setTimeout(() => {
+      box.classList.remove('opening');
+      box.classList.add('open');
+      Sound.reveal(i * 3);
+      const r = box.getBoundingClientRect();
+      FX.sparkle(r.left + r.width / 2, r.top + r.height / 2, 6);
+      // Pareja abierta: se ilumina
+      const openIdx = [0, 1, 2].filter((j) => gameRun.opened[j] && document.querySelector(`#game-holder .gbox[data-box="${j}"]`).classList.contains('open'));
+      const vals = openIdx.map((j) => tk.cells[j]);
+      openIdx.forEach((j) => {
+        const same = vals.filter((v) => v === tk.cells[j] || v === WILD || tk.cells[j] === WILD).length;
+        if (same >= 2) document.querySelector(`#game-holder .gbox[data-box="${j}"]`).classList.add('hot');
+      });
+      if (openIdx.length === 3) finishGame(false);
+    }, 380));
+  }
+
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('#game-holder [data-box]');
+    if (b) return openBox(+b.dataset.box);
+    if (e.target.closest('[data-openall]')) {
+      [0, 1, 2].forEach((i, k) => gameRun.timers.push(setTimeout(() => openBox(i), k * 260)));
+    }
+  });
+
+  /** Termina la partida en curso. `silent` = se cobra sin animación (al salir de la pantalla). */
+  function finishGame(silent) {
+    if (gameRun.done || !gameRun.tk) return;
+    gameRun.done = true;
+    gameRun.timers.forEach((t) => { clearTimeout(t); clearInterval(t); });
+    gameRun.timers = [];
+    const g = gameRun.g, tk = gameRun.tk;
+    S.pendingRound = null;
+    const r = resolveTicket(tk);
+    checkAchievements();
+    save();
+    if (silent) {
+      if (r.payout) toast(g.icon, `<b>${g.name}</b><br>Partida cobrada: +${fmt(r.payout)}`);
+      refreshHeader(true);
+      return;
+    }
+    const holder = $('game-holder');
+    const machine = holder.querySelector('.machine');
+    const parts = holder.querySelectorAll(g.kind === 'slot' ? '.reel' : '.gbox');
+    parts.forEach((p, i) => {
+      p.classList.remove('hot');
+      if (r.payout && (tk.cells[i] === tk.winSym || tk.cells[i] === WILD)) p.classList.add('win');
+      if (g.kind === 'boxes') p.classList.add('open');
+    });
+    machine.classList.add(r.payout ? 'won' : 'lost');
+    celebrate(tk, g, machine, r.payout);
+    const res = $('game-result');
+    if (r.payout) {
+      res.className = 'result win';
+      res.innerHTML = `<div class="r-title">¡Has ganado ${fmt(r.payout)} monedas!</div>
+        <div class="r-sub">${symE(g, tk.winSym)} ×3 · +${r.xpGain} XP</div>${resultExtras(tk, r)}`;
+    } else {
+      res.className = 'result';
+      res.innerHTML = `<div class="r-title">${tk.pair ? '¡Casi! Dos iguales' : 'Sin premio esta vez'}</div>
+        <div class="r-sub">¡La suerte cambia! · +${r.xpGain} XP</div>${resultExtras(tk, r)}`;
+    }
+    setTimeout(() => refreshHeader(true), r.payout ? 450 : 0);
+    renderGameActions(g);
+  }
+
+  function renderGameActions(g) {
+    const price = ticketPrice(g);
+    const acts = [`<button class="btn btn-pink" data-replay="${g.id}" data-q="1" ${S.coins >= price ? '' : 'disabled'}>${g.kind === 'slot' ? '🎰 Tirar otra vez' : '🎁 Otra partida'} · ${fmt(price)}</button>`];
+    if (sk('multi')) {
+      acts.push(`<button class="btn btn-ghost" data-replay="${g.id}" data-q="5" ${S.coins >= price * 5 ? '' : 'disabled'}>×5 · ${fmtShort(price * 5)}</button>`);
+      acts.push(`<button class="btn btn-ghost" data-replay="${g.id}" data-q="10" ${S.coins >= price * 10 ? '' : 'disabled'}>×10 · ${fmtShort(price * 10)}</button>`);
+    }
+    acts.push('<button class="btn btn-ghost" data-shoptab="games">Juegos</button>');
+    $('game-actions').innerHTML = acts.join('');
+  }
+  $('game-actions').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-replay]');
+    if (b && !b.disabled) playGame(b.dataset.replay, +b.dataset.q, b);
+  });
 
   /* ---------- Árbol de habilidades ---------- */
   function renderSkills() {
@@ -856,9 +1306,9 @@
   /* ---------- Historial ---------- */
   let histFilter = 'all';
   function renderHistory() {
-    const filters = [['all', 'Todos'], ['wins', 'Premios']].concat(TIERS.map((t) => [t.id, t.name]));
+    const filters = [['all', 'Todos'], ['wins', 'Premios'], ['games', 'Juegos']].concat(TIERS.map((t) => [t.id, t.name]));
     $('hist-filter').innerHTML = filters.map(([id, n]) => `<button data-hf="${id}" class="${histFilter === id ? 'active' : ''}">${n}</button>`).join('');
-    const list = S.history.filter((h) => histFilter === 'all' || (histFilter === 'wins' ? h.prize > 0 : h.tier === histFilter));
+    const list = S.history.filter((h) => histFilter === 'all' || (histFilter === 'wins' ? h.prize > 0 : histFilter === 'games' ? !!GAME_BY_ID[h.tier] : h.tier === histFilter));
     $('hist-list').innerHTML = list.length ? list.slice(0, 150).map(historyRow).join('') : '<li class="empty">Todavía no hay boletos rascados aquí.</li>';
   }
   renderers.history = renderHistory;
@@ -881,8 +1331,11 @@
       ['Balance de boletos', `<span class="${net >= 0 ? 'pos' : 'neg'}">${net >= 0 ? '+' : ''}${fmt(net)}</span>`],
       ['Bonus, niveles y logros', '+' + fmt(st.bonus)],
       ['Invertido en habilidades', fmt(st.skillSpent)],
+      ['Partidas de juegos', fmt(st.games)],
+      ['Ganado con la mina', fmt(st.mineEarned)],
+      ['Gastado en objetos y mina', fmt(st.shopSpent)],
       ['Boletos premiados', st.scratched ? `${fmt(st.wins)} (${Math.round((st.wins / st.scratched) * 100)}%)` : '0'],
-      ['Mayor premio', st.biggestWin ? fmt(st.biggestWin) + (st.biggestTier ? ` <span class="chip chip-${st.biggestTier}">${TIER_BY_ID[st.biggestTier].name}</span>` : '') : '—'],
+      ['Mayor premio', st.biggestWin ? fmt(st.biggestWin) + (st.biggestTier ? ` <span class="chip chip-${st.biggestTier}">${PRODUCT_BY_ID[st.biggestTier].name}</span>` : '') : '—'],
       ['Mejor racha', fmt(st.bestStreak)],
       ['Saldo máximo', fmt(st.peakCoins)],
       ['Retorno real', st.spent ? Math.round((st.won / st.spent) * 100) + '%' : '—'],
@@ -891,15 +1344,15 @@
     $('stat-grid').innerHTML = items.map(([k, v]) => `<div class="stat"><small>${k}</small><b>${v}</b></div>`).join('');
 
     $('tier-table').innerHTML =
-      `<tr><th>Boleto</th><th>Comprados</th><th>Rascados</th><th>Premiados</th><th>Gastado</th><th>Ganado</th><th>Retorno</th><th>Mejor</th></tr>` +
-      TIERS.map((t) => {
+      `<tr><th>Boleto / juego</th><th>Comprados</th><th>Jugados</th><th>Premiados</th><th>Gastado</th><th>Ganado</th><th>Retorno</th><th>Mejor</th></tr>` +
+      TIERS.concat(GAMES).map((t) => {
         const p = st.perTier[t.id];
         return `<tr><td><span class="chip chip-${t.id}">${t.name}</span></td><td>${fmt(p.bought)}</td><td>${fmt(p.scratched)}</td>
           <td>${p.scratched ? Math.round((p.wins / p.scratched) * 100) + '%' : '—'}</td><td>${fmt(p.spent)}</td><td>${fmt(p.won)}</td>
           <td>${p.spent ? Math.round((p.won / p.spent) * 100) + '%' : '—'}</td><td>${p.best ? fmt(p.best) : '—'}</td></tr>`;
       }).join('');
 
-    $('odds-list').innerHTML = TIERS.map((t) => {
+    $('odds-list').innerHTML = TIERS.concat(GAMES).map((t) => {
       const m = tierMath(t);
       const rows = t.outcomes
         .slice()
@@ -962,12 +1415,32 @@
   });
 
   /* ---------- Arranque ---------- */
+  // Partida de un juego que quedó a medias (página cerrada durante la animación)
+  if (S.pendingRound && GAME_BY_ID[S.pendingRound.tier]) {
+    const tk = S.pendingRound;
+    S.pendingRound = null;
+    const r = resolveTicket(tk);
+    if (r) toast(PRODUCT_BY_ID[tk.tier].icon, `Partida pendiente cobrada${r.payout ? `: +${fmt(r.payout)}` : ' (sin premio)'}`);
+    checkAchievements();
+  } else {
+    S.pendingRound = null;
+  }
+  mineTick();
   renderSoundBtn();
   refreshHeader(false);
   go('home');
   setInterval(() => {
     if (current === 'home') renderDaily();
   }, 30000);
+  // La mina va sumando en tiempo real
+  setInterval(() => {
+    if (current === 'home' && S.mine.level) renderMineCard();
+  }, 2000);
+  // Guarda la producción de la mina al salir
+  window.addEventListener('pagehide', () => {
+    mineTick();
+    save();
+  });
 
   let firstTime = true;
   try {
@@ -982,11 +1455,11 @@
       title: '¡Bienvenido a RascaManía!',
       html: `<p>Empiezas con <b style="color:var(--accent)">1.000 monedas</b> ficticias.</p>
         <p>Compra boletos en la tienda, <b>ráscalos arrastrando el dedo o el ratón</b> y encuentra 3 símbolos iguales para ganar.</p>
-        <p>Sube de nivel para desbloquear boletos Plata, Oro, Diamante y Legendario.</p>`,
+        <p>Sube de nivel para desbloquear boletos mejores, juegos sin rascar, objetos, una mina de monedas y el árbol de habilidades.</p>`,
       buttons: [{ label: '¡A rascar!', cls: 'btn', action: () => go('shop') }],
     });
   }
 
   // Acceso de depuración desde la consola
-  window.RascaMania = { get state() { return S; }, save, go };
+  window.RascaMania = { get state() { return S; }, save, go, setShopTab: (t) => { shopTab = t; } };
 })();

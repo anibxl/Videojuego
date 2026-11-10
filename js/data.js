@@ -304,6 +304,109 @@
     };
   }
 
+  /* ---------- Juegos sin rascar ----------
+   * Misma mecánica que los boletos: 3 símbolos iguales = premio.
+   * El resultado se sortea con la tabla `outcomes` y se muestran 3 símbolos
+   * coherentes con él. kind 'slot' = rodillos; 'boxes' = cajas que se abren.
+   */
+  const GAMES = [
+    {
+      id: 'slot1', kind: 'slot', name: 'Tragaperras clásica', tagline: 'Tira de la palanca: 3 iguales ganan',
+      price: 25, level: 2, xp: 12, icon: '🎰',
+      symbols: [
+        { e: '🍒', v: 15 }, { e: '🍋', v: 25 }, { e: '🔔', v: 50 }, { e: '🍉', v: 100 },
+        { e: '⭐', v: 250 }, { e: '7️⃣', v: 1000 }, { e: '💎', v: 5000 },
+      ],
+      outcomes: [[0, 1, 0.2], [1, 1, 0.13], [2, 1, 0.08], [3, 1, 0.035], [4, 1, 0.014], [5, 1, 0.0035], [6, 1, 0.0006]],
+    },
+    {
+      id: 'boxes1', kind: 'boxes', name: 'Cajas sorpresa', tagline: 'Abre 3 cajas y busca 3 regalos iguales',
+      price: 100, level: 4, xp: 35, icon: '🎁',
+      symbols: [
+        { e: '🧸', v: 50 }, { e: '🎈', v: 100 }, { e: '🎀', v: 200 }, { e: '🎮', v: 500 },
+        { e: '🎸', v: 1500 }, { e: '🚗', v: 5000 }, { e: '🏝️', v: 25000 },
+      ],
+      outcomes: [[0, 1, 0.18], [1, 1, 0.13], [2, 1, 0.08], [3, 1, 0.035], [4, 1, 0.01], [5, 1, 0.0025], [6, 1, 0.0004]],
+    },
+    {
+      id: 'slot2', kind: 'slot', name: 'Máquina mega', tagline: 'Rodillos de alto voltaje y premios gordos',
+      price: 500, level: 8, xp: 120, icon: '⚡',
+      symbols: [
+        { e: '💵', v: 250 }, { e: '🎲', v: 500 }, { e: '🍀', v: 1000 }, { e: '🔥', v: 2500 },
+        { e: '💰', v: 7500 }, { e: '👑', v: 25000 }, { e: '🌟', v: 100000 },
+      ],
+      outcomes: [[0, 1, 0.17], [1, 1, 0.11], [2, 1, 0.06], [3, 1, 0.03], [4, 1, 0.012], [5, 1, 0.003], [6, 1, 0.0008]],
+    },
+    {
+      id: 'boxes2', kind: 'boxes', name: 'Cofres reales', tagline: 'Tesoros de la realeza en 3 cofres',
+      price: 2500, level: 12, xp: 400, icon: '👑',
+      symbols: [
+        { e: '💍', v: 1250 }, { e: '🔱', v: 2500 }, { e: '🏺', v: 5000 }, { e: '🗡️', v: 12500 },
+        { e: '🐉', v: 40000 }, { e: '🏰', v: 150000 }, { e: '🌌', v: 750000 },
+      ],
+      outcomes: [[0, 1, 0.15], [1, 1, 0.1], [2, 1, 0.06], [3, 1, 0.03], [4, 1, 0.01], [5, 1, 0.0028], [6, 1, 0.0006]],
+    },
+  ];
+  const GAME_BY_ID = {};
+  GAMES.forEach((g) => (GAME_BY_ID[g.id] = g));
+  const PRODUCT_BY_ID = Object.assign({}, TIER_BY_ID, GAME_BY_ID);
+
+  const WILD = -1; // índice del comodín 🃏
+
+  /**
+   * Genera una partida de 3 símbolos.
+   *  - Gana: los 3 iguales.
+   *  - Pierde: 55 % de las veces una pareja (casi-premio) y el resto, 3 distintos.
+   *  - opts.wildChance: probabilidad de que una pareja perdedora se complete con un comodín
+   *    de uno de los 3 símbolos más comunes (habilidad «Comodín»): entonces gana el premio de esa pareja.
+   */
+  function generateRound(gameId, rng, opts) {
+    rng = rng || Math.random;
+    opts = opts || {};
+    const g = GAME_BY_ID[gameId];
+    const n = g.symbols.length;
+    const outcome = rollOutcome(g, rng);
+    if (outcome) {
+      return { tier: gameId, cells: [outcome.sym, outcome.sym, outcome.sym], mult: 1, winSym: outcome.sym, prize: g.symbols[outcome.sym].v };
+    }
+    const a = Math.floor(rng() * n);
+    let b = Math.floor(rng() * (n - 1));
+    if (b >= a) b++;
+    if (rng() < 0.55) {
+      // El comodín solo completa parejas de los 3 símbolos de menor valor
+      if (opts.wildChance && a < 3 && rng() < opts.wildChance) {
+        const cells = shuffle([a, a, WILD], rng);
+        return { tier: gameId, cells, mult: 1, winSym: a, prize: g.symbols[a].v, wild: true };
+      }
+      return { tier: gameId, cells: shuffle([a, a, b], rng), mult: 1, winSym: -1, prize: 0, pair: true };
+    }
+    let c = Math.floor(rng() * (n - 2));
+    [a, b].sort((x, y) => x - y).forEach((x) => { if (c >= x) c++; });
+    return { tier: gameId, cells: shuffle([a, b, c], rng), mult: 1, winSym: -1, prize: 0 };
+  }
+
+  /* ---------- Objetos de la tienda ----------
+   * Potenciadores con un número de usos (cada boleto o partida gasta un uso).
+   * El precio sube con el nivel del jugador: price * (1 + 0.2 * (nivel - 1)).
+   */
+  const ITEMS = [
+    { id: 'xp2', icon: '🧪', name: 'Poción de sabiduría', desc: 'Doble de experiencia', uses: 20, price: 300, level: 2 },
+    { id: 'crystal', icon: '🔮', name: 'Bola de cristal', desc: '2 casillas extra descubiertas al abrir cada boleto', uses: 8, price: 450, level: 3, ticketsOnly: true },
+    { id: 'charm', icon: '🧿', name: 'Amuleto de la fortuna', desc: 'Premios +10 %', uses: 10, price: 900, level: 4 },
+    { id: 'shield', icon: '🛡️', name: 'Escudo de consuelo', desc: 'Recuperas el 10 % de cada partida sin premio', uses: 10, price: 1000, level: 5 },
+  ];
+  const ITEM_BY_ID = {};
+  ITEMS.forEach((i) => (ITEM_BY_ID[i.id] = i));
+
+  /* ---------- Mina de monedas (ingresos pasivos) ---------- */
+  const MINE = {
+    minLevel: 3,
+    maxLevel: 10,
+    capHours: 6,
+    cost: (l) => Math.round((2000 * Math.pow(1.9, l)) / 50) * 50, // precio para pasar de l a l+1
+    rate: (l) => 3 * l, // monedas por minuto
+  };
+
   /* ---------- Niveles ---------- */
   // XP necesaria para pasar del nivel `l` al `l + 1`.
   function xpForLevel(l) {
@@ -323,6 +426,8 @@
     { id: 'mastery', name: 'Maestría', icon: '⚡', color: '#4cc9f0', desc: 'Progresa y rasca más rápido' },
     { id: 'luck', name: 'Suerte', icon: '🍀', color: '#2ee6a0', desc: 'Más y mejores premios' },
     { id: 'econ', name: 'Economía', icon: '💰', color: '#ffcf3f', desc: 'Gasta menos, recibe más' },
+    { id: 'arcade', name: 'Arcade', icon: '🎰', color: '#ff4d8d', desc: 'Mejora los juegos sin rascar' },
+    { id: 'biz', name: 'Negocios', icon: '⛏️', color: '#ff9f1c', desc: 'Mina de monedas y objetos' },
   ];
 
   const pct = (x) => Math.round(x * 100) + '%';
@@ -353,6 +458,26 @@
     { id: 'bulk', branch: 'mastery', icon: '🚀', name: 'Rascado en lote', max: 1, base: 15000, growth: 1, minLevel: 8, req: ['peek', 1], per: 1,
       fx: (l) => (l ? 'Botón «Rascar todos» en el inventario' : 'Desbloquea «Rascar todos» en el inventario') },
   ];
+  SKILLS.push(
+    // Arcade
+    { id: 'lever', branch: 'arcade', icon: '🎰', name: 'Palanca engrasada', max: 5, base: 600, growth: 2.2, minLevel: 2, req: null, per: 0.04,
+      fx: (l) => `Premios de los juegos +${pct(l * 0.04)}` },
+    { id: 'consol', branch: 'arcade', icon: '🥈', name: 'Premio de consolación', max: 3, base: 2000, growth: 2.5, minLevel: 4, req: ['lever', 1], per: 0.1,
+      fx: (l) => `Con 2 iguales en un juego recuperas el ${pct(l * 0.1)}` },
+    { id: 'multi', branch: 'arcade', icon: '🔁', name: 'Tirada múltiple', max: 1, base: 6000, growth: 1, minLevel: 5, req: ['consol', 1], per: 1,
+      fx: (l) => (l ? 'Botones ×5 y ×10 en los juegos' : 'Desbloquea jugar ×5 y ×10 en los juegos') },
+    { id: 'wild', branch: 'arcade', icon: '🃏', name: 'Comodín', max: 3, base: 15000, growth: 2.6, minLevel: 9, req: ['multi', 1], per: 0.06,
+      fx: (l) => `${pct(l * 0.06)} de que una pareja perdedora de símbolos comunes se complete con un comodín` },
+    // Negocios
+    { id: 'foreman', branch: 'biz', icon: '👷', name: 'Capataz', max: 4, base: 1000, growth: 2.4, minLevel: 3, req: null, per: 0.25,
+      fx: (l) => `La mina produce un ${pct(l * 0.25)} más` },
+    { id: 'storage', branch: 'biz', icon: '📦', name: 'Almacén', max: 3, base: 2500, growth: 2.5, minLevel: 4, req: ['foreman', 1], per: 0.5,
+      fx: (l) => `Capacidad de la mina +${pct(l * 0.5)}` },
+    { id: 'alchemist', branch: 'biz', icon: '⚗️', name: 'Alquimista', max: 4, base: 3000, growth: 2.3, minLevel: 6, req: ['storage', 1], per: 0.25,
+      fx: (l) => `Los objetos duran un ${pct(l * 0.25)} más` },
+    { id: 'merchant', branch: 'biz', icon: '🤝', name: 'Comerciante', max: 3, base: 8000, growth: 2.5, minLevel: 8, req: ['alchemist', 1], per: 0.08,
+      fx: (l) => `Objetos y mejoras de la mina un ${pct(l * 0.08)} más baratos` }
+  );
   const SKILL_BY_ID = {};
   SKILLS.forEach((s) => (SKILL_BY_ID[s.id] = s));
 
@@ -380,10 +505,16 @@
     { id: 'lvl20', icon: '👑', name: 'Leyenda', desc: 'Alcanza el nivel 20', reward: 10000, test: (s) => s.level >= 20 },
     { id: 'skill1', icon: '🌱', name: 'Primera habilidad', desc: 'Mejora una habilidad del árbol', reward: 100, test: (s) => Object.keys(s.skills || {}).some((k) => s.skills[k] > 0) },
     { id: 'branch', icon: '🌳', name: 'Rama completa', desc: 'Lleva al máximo una rama del árbol', reward: 5000, test: (s) => SKILL_BRANCHES.some((b) => SKILLS.filter((k) => k.branch === b.id).every((k) => (s.skills || {})[k.id] >= k.max)) },
+    { id: 'arcade1', icon: '🕹️', name: 'A jugar', desc: 'Juega tu primera partida de un juego', reward: 50, test: (s) => (s.stats.games || 0) >= 1 },
+    { id: 'arcade100', icon: '🎰', name: 'Jugón', desc: 'Juega 100 partidas de juegos', reward: 800, test: (s) => (s.stats.games || 0) >= 100 },
+    { id: 'wildwin', icon: '🃏', name: '¡Comodín!', desc: 'Gana gracias a un comodín', reward: 300, test: (s) => (s.stats.wildWins || 0) >= 1 },
+    { id: 'items10', icon: '🧪', name: 'Buen cliente', desc: 'Compra 10 objetos', reward: 400, test: (s) => (s.stats.items || 0) >= 10 },
+    { id: 'miner1', icon: '⛏️', name: 'Primera mina', desc: 'Compra la mina de monedas', reward: 200, test: (s) => ((s.mine || {}).level || 0) >= 1 },
+    { id: 'miner5', icon: '💎', name: 'Magnate minero', desc: 'Mejora la mina al nivel 5', reward: 3000, test: (s) => ((s.mine || {}).level || 0) >= 5 },
     { id: 'skillall', icon: '🧙', name: 'Gran maestro', desc: 'Lleva al máximo todo el árbol', reward: 50000, test: (s) => SKILLS.every((k) => (s.skills || {})[k.id] >= k.max) },
   ];
 
-  const api = { TIERS, TIER_BY_ID, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward };
+  const api = { TIERS, TIER_BY_ID, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GameData = api;
 })(typeof window !== 'undefined' ? window : globalThis);
