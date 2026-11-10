@@ -53,8 +53,12 @@ func add_trauma(t: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled:
 		return
-	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		_rotate(event.relative * MOUSE_SENS * Settings.sensitivity)
+	if event is InputEventMouseMotion:
+		# Captured mouse (desktop) or click-and-drag (web / embedded pages,
+		# where pointer lock may be unavailable).
+		var dragging: bool = event.button_mask & (MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_RIGHT) != 0
+		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or (dragging and not Settings.use_touch_controls()):
+			_rotate(event.relative * MOUSE_SENS * Settings.sensitivity)
 
 func _rotate(rel: Vector2) -> void:
 	yaw -= rel.x

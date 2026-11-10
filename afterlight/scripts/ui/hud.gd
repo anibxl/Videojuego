@@ -369,7 +369,7 @@ func show_intro() -> void:
 	if Settings.use_touch_controls():
 		toast("Left thumb: move  ·  Right thumb: look  ·  Push the stick to the edge to run", UIKit.TEXT)
 	else:
-		toast("WASD move · Mouse look · Shift run · Space jump · E interact", UIKit.TEXT)
+		toast("WASD move · %s look · Shift run · Space jump · E interact" % ("Click-drag" if OS.has_feature("web") else "Mouse"), UIKit.TEXT)
 	await get_tree().create_timer(3.4).timeout
 	toast("Collect Energy Fragments (blue crystals) to power the Tower.", UIKit.CYAN)
 

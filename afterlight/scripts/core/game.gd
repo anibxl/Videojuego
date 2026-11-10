@@ -150,7 +150,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		hud.open_panel("missions")
 	elif event.is_action_pressed("collection"):
 		hud.open_panel("collection")
-	elif event is InputEventMouseButton and event.pressed and not Settings.use_touch_controls():
+	elif event is InputEventMouseButton and event.pressed and not Settings.use_touch_controls() and not OS.has_feature("web"):
 		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not get_tree().paused:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -163,7 +163,7 @@ func _notification(what: int) -> void:
 		hud.toggle_pause()      # Android back button
 
 func _update_mouse_mode() -> void:
-	if Settings.use_touch_controls() or get_tree().paused:
+	if Settings.use_touch_controls() or get_tree().paused or OS.has_feature("web"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	else:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
