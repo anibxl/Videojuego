@@ -34,6 +34,7 @@ var _sound_t := 0.0
 var _hint_t := 0.0
 var _area_accum := 0.0
 var _foam_t := 0.0
+var _suck_fx_t := 0.0
 
 # FX nodes
 var beam: MeshInstance3D
@@ -229,7 +230,7 @@ func _do_surface(delta: float, fwd: Vector3) -> void:
 		var s: CleanSurface = hit["surface"]
 		aim_surface = s
 		if s != null:
-			var removed := s.clean_at(aim_point, radius, power * delta, types)
+			var removed := s.clean_at(aim_point, radius, power * delta, types, bool(def.get("wet", false)))
 			if removed < 0.0 and deb.is_empty():
 				_show_hint("%s can't clean %s. Try another tool!" % [def.get("name", ""), Data.dirt_def(s.current_type()).get("name", "this")])
 			elif removed > 0.0:
@@ -403,12 +404,23 @@ func _do_debris(delta: float, fwd: Vector3) -> void:
 			if suction_fx:
 				suction_fx.global_position = center + Vector3(0, 0.3, 0)
 				suction_fx.emitting = true
+		"rake":
+			var rc := ppos + dir * reach * 0.75
+			var gather := ppos + dir * 0.75
+			for f in map.fields:
+				if f.has_kind(kinds):
+					f.rake(rc, radius, gather, power, delta)
 		"collect":
 			var center2 := ppos + dir * reach * 0.7
 			var target := ppos + Vector3(0, 0.8, 0)
 			for f in map.fields:
 				if f.has_kind(kinds):
 					got += f.collect(center2, radius, power, delta, target, free_space - got)
+	if got > 0 and mode == "suck":
+		_suck_fx_t -= delta
+		if _suck_fx_t <= 0.0:
+			_suck_fx_t = 0.18
+			Fx.spawn_burst(map, ppos + dir * 0.7 + Vector3(0, 0.4, 0), Fx.burst(Color(0.9, 0.55, 0.2), 8, 1.2, 0.08))
 	if got > 0 and capacity > 0:
 		bag_load = mini(capacity, bag_load + got)
 		load_changed.emit(bag_load, capacity)

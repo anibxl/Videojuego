@@ -1,0 +1,95 @@
+{
+  "skin_tones": ["#f6d7c3", "#efc3a4", "#e2a882", "#c98e66", "#a8704c", "#8a5638", "#6b3f28", "#4a2b1c"],
+  "hair_colors": [
+    {"id": "black", "name": "Black", "color": "#1b1714"},
+    {"id": "dark_brown", "name": "Dark brown", "color": "#3b2618"},
+    {"id": "brown", "name": "Brown", "color": "#6b4428"},
+    {"id": "dark_blonde", "name": "Dark blonde", "color": "#a07a45"},
+    {"id": "blonde", "name": "Blonde", "color": "#dcbc7a"},
+    {"id": "red", "name": "Red", "color": "#a3401f"},
+    {"id": "grey", "name": "Grey", "color": "#8d8a86"},
+    {"id": "white", "name": "White", "color": "#e8e4dc"}
+  ],
+  "eye_colors": [
+    {"id": "brown", "name": "Brown", "color": "#5a3a22"},
+    {"id": "hazel", "name": "Hazel", "color": "#8a6a32"},
+    {"id": "green", "name": "Green", "color": "#4c7a3a"},
+    {"id": "blue", "name": "Blue", "color": "#3f74b8"},
+    {"id": "grey", "name": "Grey", "color": "#7d8790"}
+  ],
+  "hair_styles": [
+    {"id": "buzz", "name": "Buzz cut"},
+    {"id": "short", "name": "Short"},
+    {"id": "side_part", "name": "Side part"},
+    {"id": "medium", "name": "Medium"},
+    {"id": "bob", "name": "Bob"},
+    {"id": "long_straight", "name": "Long straight"},
+    {"id": "long_wavy", "name": "Long wavy"},
+    {"id": "curly", "name": "Curly"},
+    {"id": "afro", "name": "Afro"},
+    {"id": "ponytail", "name": "Ponytail"},
+    {"id": "bun", "name": "Bun"},
+    {"id": "bald", "name": "Bald"}
+  ],
+  "face_shapes": [{"id": "oval", "name": "Oval"}, {"id": "round", "name": "Round"}, {"id": "square", "name": "Square"}, {"id": "long", "name": "Long"}],
+  "eyebrows": [{"id": "soft", "name": "Soft"}, {"id": "straight", "name": "Straight"}, {"id": "thick", "name": "Thick"}, {"id": "arched", "name": "Arched"}],
+  "eye_shapes": [{"id": "round", "name": "Round"}, {"id": "almond", "name": "Almond"}, {"id": "narrow", "name": "Narrow"}],
+  "noses": [{"id": "small", "name": "Small"}, {"id": "straight", "name": "Straight"}, {"id": "wide", "name": "Wide"}, {"id": "long", "name": "Long"}],
+  "mouths": [{"id": "neutral", "name": "Neutral"}, {"id": "smile", "name": "Smile"}, {"id": "wide", "name": "Wide"}, {"id": "small", "name": "Small"}],
+  "body_presets": [
+    {"id": "slim", "name": "Slim", "width": 0.88, "limb": 0.88},
+    {"id": "average", "name": "Average", "width": 1.0, "limb": 1.0},
+    {"id": "athletic", "name": "Athletic", "width": 1.1, "limb": 1.06},
+    {"id": "sturdy", "name": "Sturdy", "width": 1.2, "limb": 1.12}
+  ],
+  "tops": [
+    {"id": "tshirt", "name": "T-shirt"},
+    {"id": "polo", "name": "Polo shirt"},
+    {"id": "work_shirt", "name": "Work shirt"},
+    {"id": "sweatshirt", "name": "Sweatshirt"},
+    {"id": "uniform", "name": "Clean Rush uniform"},
+    {"id": "pro_uniform", "name": "Pro hi-vis uniform", "unlock": {"type": "level", "value": 5}},
+    {"id": "night_shift", "name": "Night shift jacket", "unlock": {"type": "achievement", "value": "ten_contracts"}},
+    {"id": "gold_uniform", "name": "Golden uniform", "unlock": {"type": "stars", "value": 30}},
+    {"id": "legend_coat", "name": "Legend coat", "unlock": {"type": "coins", "value": 2500}}
+  ],
+  "bottoms": [
+    {"id": "work_trousers", "name": "Work trousers"},
+    {"id": "shorts", "name": "Shorts"},
+    {"id": "cargo", "name": "Cargo trousers"},
+    {"id": "jeans", "name": "Jeans"}
+  ],
+  "shoes": [
+    {"id": "sneakers", "name": "Sneakers"},
+    {"id": "work_shoes", "name": "Work shoes"},
+    {"id": "boots", "name": "Boots"},
+    {"id": "gold_boots", "name": "Golden boots", "unlock": {"type": "achievement", "value": "perfectionist"}}
+  ],
+  "hats": [
+    {"id": "none", "name": "None"},
+    {"id": "cap", "name": "Cap"},
+    {"id": "beanie", "name": "Beanie"},
+    {"id": "bucket", "name": "Bucket hat"},
+    {"id": "sun_hat", "name": "Sun hat"},
+    {"id": "hard_hat", "name": "Hard hat", "unlock": {"type": "contracts", "value": 3}},
+    {"id": "crown", "name": "Cleaning crown", "unlock": {"type": "achievement", "value": "collector"}}
+  ],
+  "glasses": [
+    {"id": "none", "name": "None"},
+    {"id": "round", "name": "Round glasses"},
+    {"id": "square", "name": "Square glasses"},
+    {"id": "sunglasses", "name": "Sunglasses"},
+    {"id": "goggles", "name": "Safety goggles", "unlock": {"type": "level", "value": 3}}
+  ],
+  "gloves": [{"id": "none", "name": "None"}, {"id": "work", "name": "Work gloves"}, {"id": "rubber", "name": "Rubber gloves", "unlock": {"type": "coins", "value": 300}}],
+  "watches": [{"id": "none", "name": "None"}, {"id": "classic", "name": "Classic watch"}, {"id": "sport", "name": "Sport watch", "unlock": {"type": "coins", "value": 400}}],
+  "outfit_colors": ["#1550b8", "#0b2e66", "#1fc8c8", "#ff8c2a", "#5bd66b", "#f4f4f2", "#2b2b30", "#7a7f88", "#c0392b", "#8a4be0", "#f1c40f", "#6b4428", "#3a6b3a", "#e86fa0"],
+  "tool_skins": [
+    {"id": "default", "name": "Factory", "color": ""},
+    {"id": "ocean", "name": "Ocean", "color": "#1a8fd6", "unlock": {"type": "level", "value": 3}},
+    {"id": "forest", "name": "Forest", "color": "#2f8f4a", "unlock": {"type": "contracts", "value": 4}},
+    {"id": "carbon", "name": "Carbon", "color": "#2a2c30", "unlock": {"type": "contracts", "value": 10}},
+    {"id": "neon", "name": "Neon pink", "color": "#ff3fa4", "unlock": {"type": "coins", "value": 1200}},
+    {"id": "gold", "name": "Gold", "color": "#e6b422", "unlock": {"type": "achievement", "value": "star_collector"}}
+  ]
+}

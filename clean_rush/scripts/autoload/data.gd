@@ -24,6 +24,7 @@ var maps: Dictionary = {}
 var map_order: Array = []
 var achievements: Array = []
 var daily_templates: Array = []
+var cosmetics: Dictionary = {}
 var _icon_cache: Dictionary = {}
 
 
@@ -49,6 +50,7 @@ func _load_all() -> void:
 	var ad: Dictionary = _read_json("res://data/achievements.json")
 	achievements = ad.get("achievements", [])
 	daily_templates = ad.get("daily_templates", [])
+	cosmetics = _read_json("res://data/cosmetics.json")
 
 
 func _read_json(path: String) -> Dictionary:

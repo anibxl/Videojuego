@@ -51,8 +51,16 @@ func _ready() -> void:
 		var mid := args[pi + 1]
 		var cid: String = args[pi + 2] if pi + 2 < args.size() and not args[pi + 2].begins_with("--") else Data.map_def(mid)["contracts"][0]["id"]
 		start_contract(mid, cid)
+	elif not Game.has_active_slot():
+		goto("slots")
 	else:
 		goto("menu")
+	for a2 in args:
+		if a2.begins_with("--screen="):
+			goto(a2.substr(9), {"mode": "edit", "return_to": "menu"} if a2.ends_with("creator") else null)
+			if a2.ends_with("creator") and args.has("--face"):
+				screen.preview.zoom = 0.55
+				screen.preview.call_deferred("_update_camera")
 
 
 ## Developer hooks (only active with user args after "--"):
@@ -67,8 +75,18 @@ func _dev_args(args: PackedStringArray) -> void:
 		get_tree().create_timer(secs, true).timeout.connect(func():
 			get_viewport().get_texture().get_image().save_png(path)
 			get_tree().quit())
+	for a in args:
+		if a.begins_with("--time="):
+			Game.forced_time = a.substr(7)
+		elif a.begins_with("--weather="):
+			Game.forced_weather = a.substr(10)
 	if args.has("--touch"):
-		Game.state["settings"]["touch"] = 1
+		Game.settings["touch"] = 1
+	for a3 in args:
+		if a3.begins_with("--savetest=") and ResourceLoader.exists("res://tests/save_relaunch_test.gd"):
+			var st: Node = load("res://tests/save_relaunch_test.gd").new()
+			st.set("main", self)
+			add_child(st)
 	if args.has("--debug-aim"):
 		var d: Node = load("res://tests/debug_aim.gd").new()
 		d.set("main", self)
@@ -130,6 +148,10 @@ func goto(screen_name: String, arg = null) -> void:
 			s = DailyScreen.new()
 		"settings":
 			s = SettingsScreen.new()
+		"creator":
+			s = CharacterCreatorScreen.new()
+		"slots":
+			s = SaveSlotsScreen.new()
 		_:
 			s = MainMenuScreen.new()
 	s.set("main", self)
@@ -226,6 +248,7 @@ func start_contract(map_id: String, contract_id: String) -> void:
 	Audio.stop_all_loops()
 	session_map = map_id
 	session_contract = contract_id
+	Game.session["visit"] = int(Game.session.get("visit", 0)) + 1
 	var mdef := Data.map_def(map_id)
 	var script: GDScript = load(mdef["builder"])
 	var m: MapBase = script.new()

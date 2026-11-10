@@ -37,32 +37,40 @@ static func get_mesh(style: String) -> Mesh:
 
 
 static func _leaf() -> Mesh:
+	# Realistic leaf card (textured from the atlas): 4x4 grid, gently curled
+	# edges and a raised mid-rib so leaves catch the light naturally.
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	# Outline of a maple-ish leaf in XZ, center raised slightly for curl.
-	var outline := [
-		Vector3(0, 0, -0.13), Vector3(0.035, 0.01, -0.07), Vector3(0.085, 0.015, -0.075), Vector3(0.06, 0.01, -0.02),
-		Vector3(0.1, 0.02, 0.02), Vector3(0.04, 0.008, 0.04), Vector3(0.012, 0.0, 0.09),
-		Vector3(-0.012, 0.0, 0.09), Vector3(-0.04, 0.008, 0.04), Vector3(-0.1, 0.02, 0.02), Vector3(-0.06, 0.01, -0.02),
-		Vector3(-0.085, 0.015, -0.075), Vector3(-0.035, 0.01, -0.07),
-	]
-	var center := Vector3(0, 0.018, -0.01)
-	st.set_normal(Vector3.UP)
-	for k in outline.size():
-		var a: Vector3 = outline[k]
-		var b: Vector3 = outline[(k + 1) % outline.size()]
-		st.set_color(Color(1, 1, 1))
-		st.add_vertex(center)
-		st.set_color(Color(0.85, 0.85, 0.85))
-		st.add_vertex(a)
-		st.add_vertex(b)
-	# Stem.
-	st.set_color(Color(0.6, 0.5, 0.4))
-	st.add_vertex(Vector3(-0.006, 0.004, 0.09))
-	st.add_vertex(Vector3(0.006, 0.004, 0.09))
-	st.add_vertex(Vector3(0.0, 0.004, 0.15))
+	var n := 4
+	var size := 0.3
+	var pts := []
+	for r in n + 1:
+		for c in n + 1:
+			var u := float(c) / n
+			var v := float(r) / n
+			var x := (u - 0.5) * size
+			var z := (v - 0.5) * size
+			var e := absf(u - 0.5) * 2.0
+			var y: float = 0.012 * e * e + 0.006 * (1.0 - e) - 0.004 * (v - 0.5)
+			pts.append([Vector3(x, y, z), Vector2(u, v)])
+	for r in n:
+		for c in n:
+			var i0 := r * (n + 1) + c
+			for k in [i0, i0 + 1, i0 + n + 2, i0, i0 + n + 2, i0 + n + 1]:
+				st.set_uv(pts[k][1])
+				st.set_color(Color.WHITE)
+				st.add_vertex(pts[k][0])
 	st.generate_normals()
 	return st.commit()
+
+
+static var _leaf_mat: ShaderMaterial
+static func leaf_material() -> ShaderMaterial:
+	if _leaf_mat == null:
+		_leaf_mat = ShaderMaterial.new()
+		_leaf_mat.shader = load("res://shaders/leaf.gdshader")
+		_leaf_mat.set_shader_parameter("atlas", load("res://assets/textures/leaves_atlas.png"))
+	return _leaf_mat
 
 
 static func _from_primitives(parts: Array) -> Mesh:

@@ -122,7 +122,8 @@ func _generate_layer() -> void:
 	material.set_shader_parameter("dirt_mode", int(ddef.get("mode", 0)))
 	var n := res.x * res.y
 	data.resize(n)
-	bytes.resize(n)
+	bytes.resize(n * 2)
+	bytes.fill(0)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value + layer_index * 7919
 	var noise := FastNoiseLite.new()
@@ -159,12 +160,12 @@ func _generate_layer() -> void:
 	initial_sum = 0.0
 	for i in n:
 		initial_sum += data[i]
-		bytes[i] = int(data[i] * 255.0)
+		bytes[i * 2] = int(data[i] * 255.0)
 	if initial_sum <= 0.001:
 		data[n / 2] = 1.0
 		initial_sum = 1.0
 	remaining = initial_sum
-	image = Image.create_from_data(res.x, res.y, false, Image.FORMAT_R8, bytes)
+	image = Image.create_from_data(res.x, res.y, false, Image.FORMAT_RG8, bytes)
 	if texture == null:
 		texture = ImageTexture.create_from_image(image)
 	else:
@@ -224,7 +225,9 @@ func world_to_px(world_point: Vector3) -> Vector2:
 
 ## Removes dirt around a world point. Returns cleaned area in m² (or -1 if the
 ## tool has no effect on the current dirt type).
-func clean_at(world_point: Vector3, radius: float, amount: float, types: Dictionary) -> float:
+func clean_at(world_point: Vector3, radius: float, amount: float, types: Dictionary, wet := false) -> float:
+	if wet:
+		_wet_stamp(world_point, radius)
 	if done:
 		return 0.0
 	var eff := efficiency_for(types)
@@ -258,7 +261,7 @@ func clean_at(world_point: Vector3, radius: float, amount: float, types: Diction
 				nv = 0.0
 			removed += v - nv
 			data[i] = nv
-			bytes[i] = int(nv * 255.0)
+			bytes[i * 2] = int(nv * 255.0)
 	if removed <= 0.0:
 		return 0.0
 	remaining = maxf(0.0, remaining - removed)
@@ -280,7 +283,8 @@ func add_foam(amount: float) -> void:
 
 func _finish_layer() -> void:
 	data.fill(0.0)
-	bytes.fill(0)
+	for i in data.size():
+		bytes[i * 2] = 0
 	remaining = 0.0
 	_dirty = true
 	var finished := current_type()
@@ -342,12 +346,44 @@ func weight() -> float:
 	return size.x * size.y * layers.size() * (0.5 if circle else 1.0)
 
 
-func _process(_delta: float) -> void:
+var _wet_active := false
+var _wet_t := 0.0
+
+
+## Marks pixels as wet (darker / glossy) to show exactly where water hit.
+func _wet_stamp(world_point: Vector3, radius: float) -> void:
+	var c := world_to_px(world_point)
+	var r := maxf(1.0, radius * px_per_m * 1.15)
+	var r2 := r * r
+	for y in range(maxi(0, int(c.y - r)), mini(res.y, int(c.y + r) + 1)):
+		var dy := y + 0.5 - c.y
+		for x in range(maxi(0, int(c.x - r)), mini(res.x, int(c.x + r) + 1)):
+			var dx := x + 0.5 - c.x
+			if dx * dx + dy * dy <= r2:
+				bytes[(y * res.x + x) * 2 + 1] = 255
+	_wet_active = true
+	_dirty = true
+
+
+func _process(delta: float) -> void:
+	if _wet_active:
+		_wet_t += delta
+		if _wet_t >= 0.15:
+			_wet_t = 0.0
+			var any := false
+			var n := res.x * res.y
+			for i in n:
+				var w := bytes[i * 2 + 1]
+				if w > 0:
+					bytes[i * 2 + 1] = maxi(0, w - 4)
+					any = true
+			_wet_active = any
+			_dirty = true
 	if _dirty:
 		_upload()
 
 
 func _upload() -> void:
 	_dirty = false
-	image.set_data(res.x, res.y, false, Image.FORMAT_R8, bytes)
+	image.set_data(res.x, res.y, false, Image.FORMAT_RG8, bytes)
 	texture.update(image)

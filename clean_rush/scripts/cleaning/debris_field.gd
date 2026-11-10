@@ -5,6 +5,11 @@ extends Node3D
 ## collected (rakes, nets, pickers). Only moving pieces are simulated.
 
 signal collected(field: DebrisField, count: int)
+signal pile_bagged(field: DebrisField, at: Vector3, count: int)
+
+const LEAF_TYPES := 8
+const PILE_CELL := 0.75
+const PILE_SIZE := 14
 
 var tag := "leaves"
 var kind := "leaf"          # leaf | trash | floating
@@ -17,6 +22,14 @@ var drop_zones: Array = []  # Array[Rect2]
 var colors: Array = []
 var scale_range := Vector2(1.4, 2.1)
 var piece_weight := 0.12    # m² equivalent used for overall progress
+var attractors: Array = []  # natural accumulation: [{p|a,b, r, w}]
+var piles: Array = []       # dense starting piles: [{p, r, n}]
+var uniform_frac := 1.0     # share of pieces scattered uniformly (rest accumulate)
+var variants: Array = []    # allowed leaf atlas cells (empty = all)
+var spin := PackedFloat32Array()
+var raked := PackedByteArray()
+var _pile_t := 0.0
+var _any_raked := false
 
 var count := 0
 var pos := PackedVector3Array()
@@ -50,8 +63,12 @@ func setup(cfg: Dictionary) -> DebrisField:
 	obstacles = cfg.get("obstacles", [])
 	drop_zones = cfg.get("drop_zones", [])
 	colors = cfg.get("colors", [Color(0.9, 0.45, 0.1), Color(0.95, 0.7, 0.15), Color(0.75, 0.2, 0.08)])
-	scale_range = cfg.get("scale", Vector2(1.4, 2.1))
+	scale_range = cfg.get("scale", Vector2(0.85, 1.6) if mesh_style == "leaf" else Vector2(1.4, 2.1))
 	piece_weight = cfg.get("weight", 0.12)
+	attractors = cfg.get("attractors", [])
+	piles = cfg.get("piles", [])
+	uniform_frac = cfg.get("uniform", 1.0 if attractors.is_empty() else 0.35)
+	variants = cfg.get("variants", [])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = cfg.get("seed", 42)
 	_spawn(rng, int(cfg.get("count", 200)), cfg.get("spawn", [bounds]), cfg.get("points", []))
@@ -74,11 +91,50 @@ func _spawn(rng: RandomNumberGenerator, n: int, spawn: Array, points: Array) -> 
 	scl.resize(count)
 	lift.resize(count)
 	alive.resize(count)
+	spin.resize(count)
+	raked.resize(count)
+	var pile_total := 0
+	for pl in piles:
+		pile_total += int(pl.get("n", 40))
+	var att_w := 0.0
+	for a in attractors:
+		att_w += float(a.get("w", 1.0))
 	for i in count:
 		var p := Vector3.ZERO
+		var placed := false
 		if i < points.size():
 			p = points[i]
-		else:
+			placed = true
+		elif i - points.size() < pile_total and not piles.is_empty():
+			# Dense hand-placed piles (against fences, under trees...).
+			var k := i - points.size()
+			for pl in piles:
+				var pn := int(pl.get("n", 40))
+				if k < pn:
+					var c: Vector3 = pl["p"]
+					var pr := float(pl.get("r", 0.8))
+					var a0 := rng.randf() * TAU
+					var d0 := pr * sqrt(rng.randf()) * (0.4 + 0.6 * rng.randf())
+					p = c + Vector3(cos(a0) * d0, 0, sin(a0) * d0)
+					placed = true
+					break
+				k -= pn
+		elif att_w > 0.0 and rng.randf() > uniform_frac:
+			# Natural accumulation around trees, fences, path edges, corners...
+			var pick2 := rng.randf() * att_w
+			var at: Dictionary = attractors[0]
+			for a in attractors:
+				pick2 -= float(a.get("w", 1.0))
+				if pick2 <= 0.0:
+					at = a
+					break
+			var r := float(at.get("r", 1.0))
+			var off := absf(rng.randfn(0.0, 0.55)) * r
+			var ang := rng.randf() * TAU
+			var c2: Vector3 = at["p"] if at.has("p") else (at["a"] as Vector3).lerp(at["b"], rng.randf())
+			p = c2 + Vector3(cos(ang) * off, 0, sin(ang) * off)
+			placed = not _in_obstacle(p) and bounds.has_point(Vector2(p.x, p.z))
+		if not placed:
 			var pick := rng.randf() * total_w
 			var area: Rect2 = areas[0][0]
 			for a in areas:
@@ -91,6 +147,8 @@ func _spawn(rng: RandomNumberGenerator, n: int, spawn: Array, points: Array) -> 
 				if not _in_obstacle(p):
 					break
 		pos[i] = Vector3(p.x, base_y + 0.012 + rng.randf() * 0.03, p.z)
+		spin[i] = 0.0
+		raked[i] = 0
 		vel[i] = Vector3.ZERO
 		yaw[i] = rng.randf() * TAU
 		tilt[i] = Vector2(rng.randf_range(-0.25, 0.25), rng.randf_range(-0.25, 0.25))
@@ -98,27 +156,57 @@ func _spawn(rng: RandomNumberGenerator, n: int, spawn: Array, points: Array) -> 
 		lift[i] = 0.0
 		alive[i] = 1
 	alive_count = count
+	if mesh_style == "leaf":
+		_stack_leaves(rng)
 	# Initial zone population (pieces that count as "dirty").
 	for zname in zones.keys():
 		zone_initial[zname] = _count_in_zone(zname)
 	dirty_initial = _count_dirty()
 
 
+## Leaves on top of other leaves sit higher and tilt more: piles get volume.
+func _stack_leaves(rng: RandomNumberGenerator) -> void:
+	var grid := {}
+	for i in count:
+		var key := Vector2i(int(floor(pos[i].x / 0.32)), int(floor(pos[i].z / 0.32)))
+		var n: int = grid.get(key, 0)
+		grid[key] = n + 1
+		var h := minf(0.22, n * 0.0075) * rng.randf_range(0.6, 1.0)
+		pos[i].y = base_y + 0.012 + h + rng.randf() * 0.02
+		if n > 3:
+			tilt[i] = Vector2(rng.randf_range(-0.7, 0.7), rng.randf_range(-0.7, 0.7))
+
+
 func _ready() -> void:
+	var realistic := mesh_style == "leaf"
 	mm = MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
+	mm.use_custom_data = realistic
 	mm.mesh = DebrisMeshes.get_mesh(mesh_style)
 	mm.instance_count = count
 	var rng := RandomNumberGenerator.new()
 	rng.seed = count * 13 + int(base_y * 100)
 	for i in count:
-		mm.set_instance_color(i, colors[rng.randi() % colors.size()] * rng.randf_range(0.85, 1.1))
+		if realistic:
+			# Atlas leaf: natural texture colour, only a slight tint from the palette.
+			var v: int = variants[rng.randi() % variants.size()] if not variants.is_empty() else rng.randi() % LEAF_TYPES
+			var tint: Color = Color.WHITE.lerp(colors[rng.randi() % colors.size()], 0.22)
+			if kind == "floating":
+				tint = tint * Color(0.85, 0.82, 0.7)
+			mm.set_instance_color(i, tint)
+			mm.set_instance_custom_data(i, Color((v + 0.01) / float(LEAF_TYPES), rng.randf(), 0, 0))
+		else:
+			mm.set_instance_color(i, colors[rng.randi() % colors.size()] * rng.randf_range(0.85, 1.1))
 		_update_transform(i)
 	mmi = MultiMeshInstance3D.new()
 	mmi.multimesh = mm
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if kind != "trash" else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	mmi.material_override = DebrisMeshes.material()
+	if realistic:
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if Game.graphics_level() >= 2 else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mmi.material_override = DebrisMeshes.leaf_material()
+	else:
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		mmi.material_override = DebrisMeshes.material()
 	add_child(mmi)
 	if kind == "floating":
 		for i in count:
@@ -230,6 +318,7 @@ func push(origin: Vector3, dir: Vector3, reach: float, width: float, power: floa
 		var push_dir := (d2 + side * signf(lat) * 0.35 * absf(lat) / maxf(half, 0.01)).normalized()
 		var j := _push_jitter.randf_range(0.75, 1.25)
 		vel[i] += push_dir * power * falloff * j * delta * 6.0 * water_drag
+		spin[i] = clampf(spin[i] + _push_jitter.randf_range(-1.0, 1.0) * power * delta * 4.0, -14.0, 14.0)
 		var sp := vel[i].length()
 		var max_sp := power * 1.4
 		if sp > max_sp:
@@ -294,6 +383,53 @@ func collect(center: Vector3, radius: float, rate: float, delta: float, target: 
 	return got
 
 
+## Rake: drags leaves in the area toward the rake line just in front of the
+## player. Raked leaves accumulate into piles; dense resting piles get bagged.
+func rake(center: Vector3, radius: float, gather: Vector3, power: float, delta: float) -> int:
+	var r2 := radius * radius
+	var moved := 0
+	for i in count:
+		if alive[i] == 0:
+			continue
+		var rel := pos[i] - center
+		if rel.x * rel.x + rel.z * rel.z > r2:
+			continue
+		var to := Vector3(gather.x - pos[i].x, 0, gather.z - pos[i].z)
+		var dist := to.length()
+		if dist < 0.1:
+			raked[i] = 1
+			continue
+		var target_v := to / dist * minf(power * 0.18, dist * 5.0)
+		vel[i] = vel[i].lerp(target_v, clampf(delta * 10.0, 0.0, 1.0))
+		raked[i] = 1
+		active[i] = true
+		moved += 1
+	if moved > 0:
+		_any_raked = true
+	return moved
+
+
+func _check_piles() -> void:
+	var cells := {}
+	for i in count:
+		if alive[i] == 0 or raked[i] == 0 or active.has(i):
+			continue
+		var key := Vector2i(int(floor(pos[i].x / PILE_CELL)), int(floor(pos[i].z / PILE_CELL)))
+		if cells.has(key):
+			cells[key].append(i)
+		else:
+			cells[key] = [i]
+	for key in cells.keys():
+		var list: Array = cells[key]
+		if list.size() < PILE_SIZE:
+			continue
+		var c := Vector3((key.x + 0.5) * PILE_CELL, base_y + 0.6, (key.y + 0.5) * PILE_CELL)
+		for i in list:
+			_collect_piece(i, c)
+		pile_bagged.emit(self, c, list.size())
+		collected.emit(self, list.size())
+
+
 func _collect_piece(i: int, target: Vector3) -> void:
 	alive[i] = 0
 	alive_count -= 1
@@ -307,6 +443,11 @@ func _process(delta: float) -> void:
 	_time += delta
 	if not dying.is_empty():
 		_update_dying(delta)
+	if _any_raked:
+		_pile_t += delta
+		if _pile_t > 0.5:
+			_pile_t = 0.0
+			_check_piles()
 	if active.is_empty():
 		return
 	var floating := kind == "floating"
@@ -362,8 +503,14 @@ func _process(delta: float) -> void:
 			p.y = base_y + sin(_time * 1.6 + i) * 0.015
 			lift[i] = 0.0
 		else:
-			lift[i] = lerpf(lift[i], minf(0.7, sp * 0.09) if kind == "leaf" else minf(0.1, sp * 0.02), clampf(delta * 6.0, 0.0, 1.0))
-			yaw[i] += sp * delta * (2.5 if kind == "leaf" else 1.0) * (1.0 if i % 2 == 0 else -1.0)
+			# Blown leaves flutter up, tumble and settle back down.
+			lift[i] = lerpf(lift[i], minf(1.1, sp * 0.13) if kind == "leaf" else minf(0.1, sp * 0.02), clampf(delta * (5.0 if sp > 1.0 else 2.5), 0.0, 1.0))
+			yaw[i] += (sp * (2.0 if kind == "leaf" else 0.8) * (1.0 if i % 2 == 0 else -1.0) + spin[i]) * delta
+			spin[i] *= exp(-2.0 * delta)
+			if kind == "leaf" and lift[i] > 0.05:
+				tilt[i].x += spin[i] * delta * 0.6
+			elif kind == "leaf":
+				tilt[i].x = lerpf(tilt[i].x, clampf(tilt[i].x, -0.35, 0.35), clampf(delta * 3.0, 0.0, 1.0))
 		pos[i] = p
 		vel[i] = v
 		if not drop_zones.is_empty() and _in_rects(p, drop_zones):
@@ -371,7 +518,7 @@ func _process(delta: float) -> void:
 			collected.emit(self, 1)
 			continue
 		_update_transform(i)
-		if sp < 0.04 and not floating:
+		if sp < 0.04 and not floating and lift[i] < 0.03:
 			lift[i] = 0.0
 			_update_transform(i)
 			to_remove.append(i)

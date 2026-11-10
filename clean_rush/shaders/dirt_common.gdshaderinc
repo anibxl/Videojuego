@@ -58,6 +58,27 @@ vec3 clean_albedo(vec2 p, out float grout) {
 		grout = 1.0 - step(0.05, f.x) * step(0.12, f.y);
 		vec3 bcol = mix(clean_a, clean_b, h21(floor(c)) * 0.8 + n * 0.2);
 		return mix(bcol, vec3(0.82, 0.8, 0.76), grout);
+	} else if (pattern == 9) { // irregular flagstones (voronoi)
+		vec2 c = p / 0.62;
+		vec2 ip = floor(c); vec2 fp = fract(c);
+		float d1 = 8.0; float d2 = 8.0; vec2 id = vec2(0.0);
+		for (int y = -1; y <= 1; y++) {
+			for (int x = -1; x <= 1; x++) {
+				vec2 g = vec2(float(x), float(y));
+				vec2 o = vec2(h21(ip + g), h21(ip + g + 17.3)) * 0.8 + 0.1;
+				float d = length(g + o - fp);
+				if (d < d1) { d2 = d1; d1 = d; id = ip + g; }
+				else if (d < d2) { d2 = d; }
+			}
+		}
+		float edge = d2 - d1;
+		grout = 1.0 - smoothstep(0.035, 0.07, edge);
+		float bevel = smoothstep(0.07, 0.25, edge);
+		vec3 scol = mix(clean_a, clean_b, h21(id) * 0.8 + n * 0.25);
+		scol *= 0.82 + 0.18 * bevel;                      // rounded stone edges
+		float crack = smoothstep(0.985, 1.0, vnoise(p * vec2(9.0, 2.0) + id * 3.1));
+		scol *= 1.0 - crack * 0.35;
+		return mix(scol, clean_b * 0.42, grout);
 	} else if (pattern == 6) { // car paint: smooth with subtle flake
 		return mix(clean_a, clean_b, n * 0.25 + vnoise(p * 60.0) * 0.05);
 	} else if (pattern == 7) { // asphalt / concrete speckle
@@ -74,7 +95,9 @@ void apply_dirt(vec2 uv, out vec3 albedo, out float rough, out float metal, out 
 	vec2 p = uv * size * pattern_scale;
 	float grout;
 	vec3 clean = clean_albedo(p, grout);
-	float m = texture(dirt_mask, uv).r;
+	vec4 mask = texture(dirt_mask, uv);
+	float m = mask.r;
+	float wet = mask.g;
 	float detail = fbm(p * 3.0 + seed * 7.0);
 	rough = clean_roughness;
 	metal = clean_metallic;
@@ -105,8 +128,13 @@ void apply_dirt(vec2 uv, out vec3 albedo, out float rough, out float metal, out 
 		rough = mix(rough, 0.95, d);
 		metal = mix(metal, 0.0, d);
 	}
+	// Dirt settles in the joints first.
+	col = mix(col, col * 0.7, grout * clamp(m * 2.0, 0.0, 1.0));
 	// Freshly cleaned surfaces get a gentle extra brightness.
 	col *= 1.0 + 0.03 * (1.0 - d);
+	// Wet look where water tools have just worked (dries over a few seconds).
+	col *= 1.0 - wet * 0.28;
+	rough = mix(rough, 0.12, wet * 0.9);
 	if (foam > 0.001) {
 		float fb = smoothstep(0.35, 0.75, vnoise(p * 7.0 + seed)) * 0.5 + 0.5;
 		col = mix(col, vec3(0.96, 0.97, 1.0), clamp(foam * fb * (0.45 + 0.4 * d), 0.0, 0.9));

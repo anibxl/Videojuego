@@ -1,35 +1,171 @@
 extends Node
-## Persistent player state: economy, progression, equipment, collections,
-## achievements, daily missions and settings. Saves versioned JSON locally.
+## Persistent player state: economy, progression, equipment, character,
+## collections, achievements, daily missions and settings.
+## Storage: 3 local save slots via SaveStore (checksummed, atomic, backed up),
+## global settings file, autosave on every important change, every 30 s and
+## whenever the app is paused / backgrounded / closed.
 
 signal coins_changed(coins: int)
 signal xp_changed(xp: int, level: int)
 signal toast(text: String, kind: String)
 signal achievement_unlocked(def: Dictionary)
 signal settings_changed
+signal slot_changed(slot: int)
+signal saved(slot: int)
 
-const SAVE_VERSION := 2
-const SAVE_PATH := "user://clean_rush_save.json"
-const BACKUP_PATH := "user://clean_rush_save.bak"
+const SAVE_VERSION := 3
+const AUTOSAVE_INTERVAL := 30.0
+## Kept for the smoke test / tooling: path of the active slot file.
+var SAVE_PATH: String:
+	get:
+		return SaveStore.slot_path(maxi(current_slot, 0))
 const STARTER_TOOLS := ["rake", "broom", "sponge"]
 const STAR_MULT := [0.0, 1.0, 1.25, 1.6]
 
 var state: Dictionary = {}
+var settings: Dictionary = {}
+var current_slot := -1
 var session: Dictionary = {}   # transient: current map/contract selection
+var last_load_info: Dictionary = {}
 var _save_queued := false
+var _dirty := false
+var _autosave_t := 0.0
+var _settings_queued := false
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	load_game()
-	ensure_daily()
-	refresh_unlocks(false)
+	boot()
 	apply_settings()
 
 
+## Loads settings, migrates a 1.x save into slot 1 if present, then resumes the
+## last used slot. If no slot exists yet, state stays at defaults (slot -1) and
+## the main scene opens the save-slot screen.
+func boot() -> void:
+	settings = default_settings()
+	var legacy_settings := SaveStore.migrate_legacy()
+	var stored := SaveStore.read_settings()
+	if stored.is_empty() and not legacy_settings.is_empty():
+		stored = legacy_settings
+	_merge_settings(stored)
+	state = default_state()
+	current_slot = -1
+	var last := int(settings.get("last_slot", -1))
+	if last >= 0 and SaveStore.slot_exists(last):
+		load_slot(last)
+	elif SaveStore.slot_exists(0) and last < 0:
+		load_slot(0)
+
+
+func _merge_settings(stored: Dictionary) -> void:
+	for k in settings.keys():
+		if stored.has(k) and typeof(stored[k]) in [typeof(settings[k]), TYPE_INT, TYPE_FLOAT, TYPE_BOOL]:
+			settings[k] = stored[k]
+	if typeof(settings.get("graphics")) == TYPE_STRING:
+		settings["graphics"] = maxi(0, ["low", "medium", "high"].find(settings["graphics"]))
+
+
+func has_active_slot() -> bool:
+	return current_slot >= 0
+
+
+func load_slot(i: int) -> bool:
+	var r := SaveStore.read_slot(i)
+	last_load_info = r
+	if not r["ok"]:
+		push_warning("Slot %d could not be loaded: %s" % [i + 1, r.get("error", "?")])
+		return false
+	state = _sanitize(_migrate(r["data"]))
+	current_slot = i
+	settings["last_slot"] = i
+	_write_settings()
+	ensure_daily()
+	refresh_unlocks(false)
+	if r.get("recovered", false):
+		call_deferred("emit_signal", "toast", "Your save was damaged and has been restored from the backup.", "warn")
+	coins_changed.emit(coins())
+	xp_changed.emit(xp(), level())
+	slot_changed.emit(i)
+	return true
+
+
+func new_slot(i: int, profile_name := "") -> void:
+	state = default_state()
+	state["created_at"] = int(Time.get_unix_time_from_system())
+	state["profile_name"] = profile_name if profile_name != "" else "Cleaner %d" % (i + 1)
+	current_slot = i
+	settings["last_slot"] = i
+	_write_settings()
+	ensure_daily()
+	save_game()
+	coins_changed.emit(coins())
+	xp_changed.emit(xp(), level())
+	slot_changed.emit(i)
+
+
+func delete_slot(i: int) -> void:
+	SaveStore.delete_slot(i)
+	if i == current_slot:
+		current_slot = -1
+		state = default_state()
+		settings["last_slot"] = -1
+		_write_settings()
+		slot_changed.emit(-1)
+
+
+## Lightweight info for the slot screen (does not change the active slot).
+func slot_summary(i: int) -> Dictionary:
+	if not SaveStore.slot_exists(i):
+		return {"exists": false}
+	var r := SaveStore.read_slot(i)
+	if not r["ok"]:
+		return {"exists": true, "damaged": true}
+	var d: Dictionary = r["data"]
+	var xp_v := int(d.get("xp", 0))
+	var lvl := 1
+	while xp_v >= xp_for_level(lvl + 1):
+		lvl += 1
+	return {"exists": true, "damaged": false, "name": String(d.get("profile_name", "Cleaner %d" % (i + 1))),
+		"level": lvl, "coins": int(d.get("coins", 0)), "playtime": float(d.get("playtime", 0.0)),
+		"saved_at": int(d.get("saved_at", 0)), "progress": progress_of(d),
+		"appearance": Appearance.sanitize(d.get("appearance", {})), "recovered": r.get("recovered", false)}
+
+
+## Overall completion %: contracts, stars, discoveries and maps.
+func progress_of(d: Dictionary) -> float:
+	var total_c := Data.all_contracts().size()
+	var done := 0
+	var stars := 0
+	var contracts: Dictionary = d.get("contracts", {}) if typeof(d.get("contracts", {})) == TYPE_DICTIONARY else {}
+	for c in contracts.values():
+		if typeof(c) == TYPE_DICTIONARY and c.get("completed", false):
+			done += 1
+			stars += int(c.get("stars", 0))
+	var disc: int = d.get("discoveries", []).size() if typeof(d.get("discoveries", [])) == TYPE_ARRAY else 0
+	var maps: int = d.get("unlocked_maps", []).size() if typeof(d.get("unlocked_maps", [])) == TYPE_ARRAY else 1
+	var p := 0.4 * done / maxf(1, total_c) + 0.3 * stars / maxf(1, total_c * 3) + 0.15 * disc / maxf(1, Data.all_discoveries().size()) + 0.15 * maps / maxf(1, Data.map_order.size())
+	return clampf(p, 0.0, 1.0)
+
+
+func _process(delta: float) -> void:
+	if current_slot < 0:
+		return
+	if not get_tree().paused:
+		state["playtime"] = float(state.get("playtime", 0.0)) + delta
+	_autosave_t += delta
+	if _autosave_t >= AUTOSAVE_INTERVAL:
+		_autosave_t = 0.0
+		save_game()   # periodic autosave (also stores playtime)
+
+
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
-		save_game()
+	# Mobile OSes may kill a backgrounded app without warning: save on every
+	# lifecycle transition, not only on quit.
+	if what in [NOTIFICATION_WM_CLOSE_REQUEST, NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_GO_BACK_REQUEST, NOTIFICATION_PREDELETE]:
+		if current_slot >= 0 and not state.is_empty():
+			save_game()
+		_write_settings()
 
 
 # ---------------------------------------------------------------- defaults ---
@@ -51,7 +187,14 @@ func default_state() -> Dictionary:
 		"stats": {},
 		"daily": {},
 		"tutorial_done": false,
-		"settings": default_settings(),
+		"profile_name": "",
+		"appearance": Appearance.defaults(),
+		"cosmetics_owned": [],
+		"tool_skins": {},
+		"playtime": 0.0,
+		"created_at": 0,
+		"saved_at": 0,
+		"save_count": 0,
 	}
 
 
@@ -63,33 +206,26 @@ func default_settings() -> Dictionary:
 		"touch": 0,
 		"auto_aim": true,
 		"cam_sens": 1.0,
+		"time_of_day": 0,
+		"weather": 0,
+		"last_slot": -1,
 	}
 
 
 # -------------------------------------------------------------- save / load ---
 
+## Reloads the active slot from disk (used by tests and after external changes).
 func load_game() -> void:
-	var data = _read_save(SAVE_PATH)
-	if data == null:
-		data = _read_save(BACKUP_PATH)
-		if data != null:
-			push_warning("Main save invalid, restored from backup.")
-	if data == null:
-		state = default_state()
-		return
-	state = _sanitize(_migrate(data))
+	if current_slot >= 0:
+		if not load_slot(current_slot):
+			state = default_state()
+	else:
+		boot()
 
 
 func _read_save(path: String):
-	if not FileAccess.file_exists(path):
-		return null
-	var f := FileAccess.open(path, FileAccess.READ)
-	if f == null:
-		return null
-	var parsed = JSON.parse_string(f.get_as_text())
-	if typeof(parsed) != TYPE_DICTIONARY or not parsed.has("version"):
-		return null
-	return parsed
+	var r := SaveStore.decode(SaveStore.backend.read_text(path))
+	return r["data"] if r["ok"] else null
 
 
 func _migrate(data: Dictionary) -> Dictionary:
@@ -100,6 +236,13 @@ func _migrate(data: Dictionary) -> Dictionary:
 		if typeof(s.get("graphics", 1)) == TYPE_STRING:
 			s["graphics"] = ["low", "medium", "high"].find(s["graphics"])
 		data["settings"] = s
+	if v < 3:
+		# v3 (CLEAN RUSH 2.0): character, cosmetics, playtime. Settings moved to a
+		# global file (migrated in boot()). Nothing is reset.
+		if not data.has("appearance"):
+			data["appearance"] = Appearance.defaults()
+		if not data.has("playtime"):
+			data["playtime"] = 0.0
 	data["version"] = SAVE_VERSION
 	return data
 
@@ -111,11 +254,8 @@ func _sanitize(data: Dictionary) -> Dictionary:
 			d[key] = data[key]
 		elif data.has(key) and typeof(d[key]) in [TYPE_INT, TYPE_FLOAT] and typeof(data[key]) in [TYPE_INT, TYPE_FLOAT]:
 			d[key] = data[key]
-	var s := default_settings()
-	for key in s.keys():
-		if d["settings"].has(key) and typeof(d["settings"][key]) in [typeof(s[key]), TYPE_INT, TYPE_FLOAT]:
-			s[key] = d["settings"][key]
-	d["settings"] = s
+	d["appearance"] = Appearance.sanitize(d["appearance"])
+	d["playtime"] = maxf(0.0, float(d["playtime"]))
 	d["coins"] = maxi(0, int(d["coins"]))
 	d["xp"] = maxi(0, int(d["xp"]))
 	# Remove unknown tools, guarantee starters.
@@ -134,45 +274,41 @@ func _sanitize(data: Dictionary) -> Dictionary:
 	return d
 
 
-func save_game() -> void:
+func save_game() -> bool:
 	_save_queued = false
+	if current_slot < 0 or state.is_empty():
+		return false
 	state["version"] = SAVE_VERSION
-	var text := JSON.stringify(state, "\t")
-	var tmp := SAVE_PATH + ".tmp"
-	var f := FileAccess.open(tmp, FileAccess.WRITE)
-	if f == null:
-		push_error("Cannot write save file: %s" % FileAccess.get_open_error())
-		return
-	f.store_string(text)
-	f.close()
-	var dir := DirAccess.open("user://")
-	if dir == null:
-		return
-	if dir.file_exists(SAVE_PATH.get_file()):
-		if dir.file_exists(BACKUP_PATH.get_file()):
-			dir.remove(BACKUP_PATH.get_file())
-		dir.rename(SAVE_PATH.get_file(), BACKUP_PATH.get_file())
-	dir.rename(tmp.get_file(), SAVE_PATH.get_file())
+	state["saved_at"] = int(Time.get_unix_time_from_system())
+	state["save_count"] = int(state.get("save_count", 0)) + 1
+	var ok := SaveStore.write_slot(current_slot, state, SAVE_VERSION)
+	if ok:
+		_dirty = false
+		_autosave_t = 0.0
+		saved.emit(current_slot)
+	return ok
 
 
 func queue_save() -> void:
+	_dirty = true
 	if _save_queued:
 		return
 	_save_queued = true
 	get_tree().create_timer(1.0, true).timeout.connect(save_game)
 
 
+## Resets the ACTIVE slot only (other slots and settings are untouched).
 func reset_progress() -> void:
-	var keep: Dictionary = state.get("settings", default_settings())
+	var name_keep := String(state.get("profile_name", ""))
+	var look := appearance()
 	state = default_state()
-	state["settings"] = keep
+	state["profile_name"] = name_keep
+	state["appearance"] = look
 	ensure_daily()
 	save_game()
 	coins_changed.emit(coins())
 	xp_changed.emit(xp(), level())
 
-
-# ----------------------------------------------------------------- economy ---
 
 func coins() -> int:
 	return int(state["coins"])
@@ -415,6 +551,7 @@ func complete_contract(map_id: String, contract_id: String, result: Dictionary) 
 	if not first_time:
 		xp_gain = int(xp_gain * 0.5)
 	var prev_stars := int(rec.get("stars", 0))
+	var cosmetics_before := earned_cosmetics()
 	var time := float(result.get("time", 0.0))
 	rec["completed"] = true
 	rec["stars"] = maxi(prev_stars, stars)
@@ -435,8 +572,13 @@ func complete_contract(map_id: String, contract_id: String, result: Dictionary) 
 	var levels := add_xp(xp_gain)
 	var new_maps := refresh_unlocks(true)
 	check_achievements()
+	var new_cosmetics := []
+	for c in earned_cosmetics():
+		if not cosmetics_before.has(c):
+			new_cosmetics.append(c)
 	save_game()
 	return {
+		"new_cosmetics": new_cosmetics,
 		"base": base, "star_bonus": star_bonus, "dirt_coins": dirt_coins, "discovery_coins": disc_coins,
 		"total": total, "xp": xp_gain, "levels": levels, "first_time": first_time,
 		"new_record": new_record and not first_time, "new_maps": new_maps, "stars": stars,
@@ -540,6 +682,91 @@ func next_goal() -> Dictionary:
 	return {"map": "", "contract": "", "text": "Everything is spotless. You are a cleaning legend!"}
 
 
+# ------------------------------------------------------ character / cosmetics ---
+
+func appearance() -> Dictionary:
+	return Appearance.sanitize(state.get("appearance", {}))
+
+
+func set_appearance(a: Dictionary) -> void:
+	state["appearance"] = Appearance.sanitize(a)
+	save_game()
+
+
+func profile_name() -> String:
+	return String(state.get("profile_name", ""))
+
+
+func cosmetic_owned(key: String) -> bool:
+	return state.get("cosmetics_owned", []).has(key)
+
+
+## Buys a coin-priced cosmetic (field:id) with in-game coins only.
+func buy_cosmetic(field: String, id: String) -> bool:
+	var rule := Appearance.unlock_rule(field, id)
+	if String(rule.get("type", "")) != "coins" or cosmetic_owned(field + ":" + id):
+		return false
+	if not spend(int(rule["value"])):
+		return false
+	state["cosmetics_owned"].append(field + ":" + id)
+	save_game()
+	return true
+
+
+func tool_skin_def(skin_id: String) -> Dictionary:
+	for s in Data.cosmetics.get("tool_skins", []):
+		if s["id"] == skin_id:
+			return s
+	return {}
+
+
+func tool_skin_unlocked(skin_id: String) -> bool:
+	var rule: Dictionary = tool_skin_def(skin_id).get("unlock", {})
+	if rule.is_empty():
+		return true
+	if String(rule.get("type", "")) == "coins":
+		return cosmetic_owned("tool_skin:" + skin_id)
+	return Appearance.rule_met(rule)
+
+
+func buy_tool_skin(skin_id: String) -> bool:
+	var rule: Dictionary = tool_skin_def(skin_id).get("unlock", {})
+	if String(rule.get("type", "")) != "coins" or tool_skin_unlocked(skin_id):
+		return false
+	if not spend(int(rule["value"])):
+		return false
+	state["cosmetics_owned"].append("tool_skin:" + skin_id)
+	save_game()
+	return true
+
+
+func tool_skin(tool_id: String) -> String:
+	var s := String(state.get("tool_skins", {}).get(tool_id, "default"))
+	return s if tool_skin_unlocked(s) else "default"
+
+
+func set_tool_skin(tool_id: String, skin_id: String) -> void:
+	if not tool_skin_unlocked(skin_id):
+		return
+	state["tool_skins"][tool_id] = skin_id
+	save_game()
+
+
+## All unlock-by-progress cosmetics currently earned (for "new unlock" notices).
+func earned_cosmetics() -> Array:
+	var out := []
+	for field in Appearance.FIELD_CATEGORY.keys():
+		for o in Appearance.options(field):
+			var rule: Dictionary = o.get("unlock", {})
+			if not rule.is_empty() and String(rule.get("type", "")) != "coins" and Appearance.rule_met(rule):
+				out.append(String(o.get("name", o["id"])))
+	for sk in Data.cosmetics.get("tool_skins", []):
+		var r2: Dictionary = sk.get("unlock", {})
+		if not r2.is_empty() and String(r2.get("type", "")) != "coins" and Appearance.rule_met(r2):
+			out.append("Tool skin: " + String(sk["name"]))
+	return out
+
+
 # ----------------------------------------------------------- daily missions ---
 
 func today_string() -> String:
@@ -601,13 +828,21 @@ func dailies_ready() -> int:
 # ---------------------------------------------------------------- settings ---
 
 func setting(key: String):
-	return state["settings"].get(key, default_settings().get(key))
+	return settings.get(key, default_settings().get(key))
 
 
 func set_setting(key: String, value) -> void:
-	state["settings"][key] = value
+	settings[key] = value
 	apply_settings()
-	queue_save()
+	if _settings_queued:
+		return
+	_settings_queued = true
+	get_tree().create_timer(0.5, true).timeout.connect(_write_settings)
+
+
+func _write_settings() -> void:
+	_settings_queued = false
+	SaveStore.write_settings(settings)
 
 
 func apply_settings() -> void:
@@ -618,6 +853,35 @@ func apply_settings() -> void:
 		vp.msaa_3d = [Viewport.MSAA_DISABLED, Viewport.MSAA_2X, Viewport.MSAA_4X][clampi(g, 0, 2)]
 		vp.scaling_3d_scale = [0.75, 1.0, 1.0][clampi(g, 0, 2)]
 	settings_changed.emit()
+
+
+const TIMES_OF_DAY := ["auto", "morning", "afternoon", "evening"]
+const WEATHERS := ["auto", "sunny", "cloudy", "windy", "rain"]
+
+## Session override (set by the developer/test hooks); otherwise from settings.
+var forced_time := ""
+var forced_weather := ""
+
+
+func resolve_time_of_day(map_id: String) -> String:
+	if forced_time != "":
+		return forced_time
+	var idx := int(setting("time_of_day"))
+	if idx > 0 and idx < TIMES_OF_DAY.size():
+		return TIMES_OF_DAY[idx]
+	# Auto: varies with the job so places feel alive, deterministic per session.
+	var h := absi(hash(map_id + str(session.get("visit", 0))))
+	return ["morning", "afternoon", "afternoon", "evening"][h % 4]
+
+
+func resolve_weather(map_id: String) -> String:
+	if forced_weather != "":
+		return forced_weather
+	var idx := int(setting("weather"))
+	if idx > 0 and idx < WEATHERS.size():
+		return WEATHERS[idx]
+	var h := absi(hash(map_id + "w" + str(session.get("visit", 0))))
+	return ["sunny", "sunny", "sunny", "sunny", "cloudy", "windy", "sunny", "rain", "sunny", "cloudy"][h % 10]
 
 
 func graphics_level() -> int:

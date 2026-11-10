@@ -75,10 +75,11 @@ static func flat(c: Color, radius := 18, margin := 12) -> StyleBoxFlat:
 	return sb
 
 
-static func panel_style(c: Color, radius := 24, border := Color(1, 1, 1, 0.12)) -> StyleBoxFlat:
+static func panel_style(c: Color, radius := 24, border := Color(0.45, 0.85, 0.9, 0.18)) -> StyleBoxFlat:
 	var sb := flat(c, radius, 20)
 	sb.border_color = border
 	sb.set_border_width_all(2)
+	sb.border_width_top = 3   # subtle light edge on top for a premium look
 	sb.shadow_color = Color(0, 0, 0, 0.25)
 	sb.shadow_size = 8
 	sb.shadow_offset = Vector2(0, 4)
@@ -152,8 +153,19 @@ static func label(text: String, size := 22, color := WHITE, align := HORIZONTAL_
 	return l
 
 
+static var _regular: Font
+static func regular_font() -> Font:
+	if _regular == null and ResourceLoader.exists("res://assets/fonts/DejaVuSans.ttf"):
+		_regular = load("res://assets/fonts/DejaVuSans.ttf")
+	return _regular
+
+
+## Body text: regular weight for a clearer hierarchy against bold titles.
 static func wrap_label(text: String, size := 20, color := WHITE, min_width := 200.0) -> Label:
 	var l := label(text, size, color)
+	if regular_font():
+		l.add_theme_font_override("font", regular_font())
+		l.add_theme_constant_override("outline_size", 0)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size.x = min_width
 	return l

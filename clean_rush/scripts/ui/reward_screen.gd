@@ -57,6 +57,8 @@ func _ready() -> void:
 	tot.add_child(UIKit.money_chip(int(r["total"]), 28))
 	right.add_child(tot)
 	right.add_child(UIKit.label("+%d XP%s" % [int(r["xp"]), ("   LEVEL UP!" if int(r["levels"]) > 0 else "")], 22, UIKit.TURQ))
+	for cosm in r.get("new_cosmetics", []):
+		v.add_child(UIKit.label("NEW COSMETIC UNLOCKED: %s" % cosm, 20, UIKit.TURQ, HORIZONTAL_ALIGNMENT_CENTER))
 	for m in r.get("new_maps", []):
 		v.add_child(UIKit.label("NEW LOCATION UNLOCKED: %s" % Data.map_def(m)["name"], 22, UIKit.ORANGE, HORIZONTAL_ALIGNMENT_CENTER))
 	var next: Dictionary = main.next_contract_after(data["map"], data["contract"])

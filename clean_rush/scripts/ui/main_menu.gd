@@ -40,11 +40,11 @@ func _ready() -> void:
 	left.custom_minimum_size.x = 470
 	root.add_child(left)
 	_logo = UIKit.icon_rect(Data.icon("res://assets/icons/ui/logo.png"), 0)
-	_logo.custom_minimum_size = Vector2(460, 200)
+	_logo.custom_minimum_size = Vector2(400, 150)
 	left.add_child(_logo)
 	left.add_child(UIKit.label("Clean it. Upgrade it. Unlock everything.", 22, UIKit.WHITE))
 	var goal := Game.next_goal()
-	var play := UIKit.button("▶  PLAY", UIKit.ORANGE, Vector2(460, 96), 40, func():
+	var play := UIKit.button("▶  PLAY", UIKit.ORANGE, Vector2(460, 84), 38, func():
 		var g2 := Game.next_goal()
 		if g2["contract"] != "":
 			main.goto("contracts", g2["map"])
@@ -58,7 +58,7 @@ func _ready() -> void:
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	left.add_child(grid)
-	var bsize := Vector2(224, 70)
+	var bsize := Vector2(224, 60)
 	grid.add_child(UIKit.button("Maps", UIKit.TURQ.darkened(0.1), bsize, 26, func(): main.goto("maps")))
 	grid.add_child(UIKit.button("Equipment", UIKit.BLUE2, bsize, 26, func(): main.goto("equipment")))
 	grid.add_child(UIKit.button("Shop", UIKit.GREEN.darkened(0.15), bsize, 26, func(): main.goto("shop")))
@@ -66,6 +66,8 @@ func _ready() -> void:
 	grid.add_child(UIKit.button(daily_text, Color("8a4be0"), bsize, 26, func(): main.goto("daily")))
 	grid.add_child(UIKit.button("Collection", UIKit.BLUE2, bsize, 26, func(): main.goto("collection")))
 	grid.add_child(UIKit.button("Achievements", UIKit.BLUE2, bsize, 24, func(): main.goto("achievements")))
+	grid.add_child(UIKit.button("Character", UIKit.ORANGE.darkened(0.15), bsize, 26, func(): main.goto("creator", {"mode": "edit", "return_to": "menu"})))
+	grid.add_child(UIKit.button("Save slots", UIKit.BLUE2, bsize, 24, func(): main.goto("slots")))
 	root.add_child(UIKit.spacer())
 	# Right: player card
 	var right := UIKit.vbox(12)
@@ -74,9 +76,21 @@ func _ready() -> void:
 	var card := UIKit.panel(Color(UIKit.BLUE, 0.85), 26)
 	card.custom_minimum_size.x = 330
 	right.add_child(card)
-	var cv := UIKit.vbox(10)
+	var cv := UIKit.vbox(8)
 	card.add_child(cv)
-	cv.add_child(UIKit.money_chip(Game.coins(), 30))
+	var who := UIKit.hbox(10)
+	var pv := CharacterPreview.new()
+	pv.custom_minimum_size = Vector2(130, 175)
+	pv.auto_rotate = true
+	pv.interactive = false
+	pv.zoom = 1.25
+	who.add_child(pv)
+	var wv := UIKit.vbox(4)
+	wv.add_child(UIKit.label(Game.profile_name() if Game.profile_name() != "" else "Cleaner", 24, UIKit.WHITE))
+	wv.add_child(UIKit.label("Slot %d · %s" % [Game.current_slot + 1, _playtime()], 15, Color(1, 1, 1, 0.65)))
+	wv.add_child(UIKit.money_chip(Game.coins(), 26))
+	who.add_child(wv)
+	cv.add_child(who)
 	var lvl := Game.level()
 	var lo := Game.xp_for_level(lvl)
 	var hi := Game.xp_for_level(lvl + 1)
@@ -94,6 +108,11 @@ func _ready() -> void:
 		right.add_child(UIKit.button("Quit", Color(0.35, 0.4, 0.5), Vector2(330, 56), 22, func():
 			Game.save_game()
 			get_tree().quit()))
+
+
+func _playtime() -> String:
+	var m := int(float(Game.state.get("playtime", 0.0)) / 60.0)
+	return "%dh %02dm played" % [m / 60, m % 60]
 
 
 func _process(delta: float) -> void:

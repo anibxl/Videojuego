@@ -11,6 +11,10 @@ static func build(tool_id: String) -> Node3D:
 	var n := Node3D.new()
 	var def := Data.tool_def(tool_id)
 	var accent := Data.arr_color(def.get("color", [0.2, 0.6, 0.9]))
+	# Cosmetic tool skin (earned through gameplay) recolours the tool body.
+	var skin_col := String(Game.tool_skin_def(Game.tool_skin(tool_id)).get("color", ""))
+	if skin_col != "" and Color.html_is_valid(skin_col):
+		accent = Color(skin_col)
 	var dark := _m(Color(0.15, 0.17, 0.2), 0.3, 0.5)
 	var wood := _m(Color(0.7, 0.5, 0.3), 0.0, 0.8)
 	var metal := _m(Color(0.75, 0.78, 0.8), 0.8, 0.3)

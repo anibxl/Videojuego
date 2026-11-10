@@ -24,6 +24,11 @@ var health_materials: Array[ShaderMaterial] = []
 var water_material: ShaderMaterial
 var env: Environment
 var sun: DirectionalLight3D
+var sky_material: ProceduralSkyMaterial
+var time_of_day := "afternoon"
+var weather := "sunny"
+var rain_fx: CPUParticles3D
+var _base_atmo: Dictionary = {}
 var menu_mode := false          # background for the main menu
 var _track_t := 0.0
 var _mat_cache: Dictionary = {}
@@ -42,6 +47,7 @@ func _ready() -> void:
 		s.completed.connect(_on_surface_completed)
 	for f in fields:
 		f.collected.connect(_on_field_collected)
+		f.pile_bagged.connect(_on_pile_bagged)
 	for d in discoveries:
 		d.found.connect(_on_discovery_found)
 	_track(true)
@@ -105,7 +111,7 @@ func _track(initial: bool) -> void:
 	if water_material:
 		water_material.set_shader_parameter("clarity", snapshot["water"])
 	for m in health_materials:
-		m.set_shader_parameter("health", clampf(0.35 + overall * 0.8, 0.0, 1.0))
+		m.set_shader_parameter("health", clampf(0.75 + overall * 0.35, 0.0, 1.0))
 	if not initial and not menu_mode:
 		for k in cleared.keys():
 			var delta: int = cleared[k] - int(_cleared_reported[k])
@@ -196,6 +202,14 @@ func _on_field_collected(f: DebrisField, n: int) -> void:
 	Audio.play("pop", -10.0, 0.2, 0.05)
 
 
+func _on_pile_bagged(_f: DebrisField, at: Vector3, n: int) -> void:
+	if menu_mode:
+		return
+	Audio.play("empty_bag", -4.0)
+	Fx.spawn_burst(self, at, Fx.burst(Color(0.85, 0.5, 0.15), 18, 2.5, 0.12))
+	message.emit("Leaf pile bagged! (%d leaves)" % n, "good")
+
+
 func _on_discovery_found(d: Discovery) -> void:
 	var coins := Game.add_discovery(map_id, d.disc_id)
 	Audio.play("discovery")
@@ -239,19 +253,11 @@ func setup_environment(sky_top: Color, sky_horizon: Color, ground_col: Color, su
 	var we := WorldEnvironment.new()
 	env = Environment.new()
 	var sky := Sky.new()
-	var sm := ProceduralSkyMaterial.new()
-	sm.sky_top_color = sky_top
-	sm.sky_horizon_color = sky_horizon
-	sm.ground_bottom_color = ground_col
-	sm.ground_horizon_color = sky_horizon
-	sm.sun_angle_max = 20.0
-	sky.sky_material = sm
+	sky_material = ProceduralSkyMaterial.new()
+	sky.sky_material = sky_material
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
-	# Explicit ambient colour: predictable exposure on every device/renderer.
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = sky_top.lerp(sky_horizon, 0.5).lerp(Color(0.6, 0.65, 0.7), 0.3)
-	env.ambient_light_energy = ambient * 0.9
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
 	env.tonemap_exposure = 0.95
@@ -260,19 +266,114 @@ func setup_environment(sky_top: Color, sky_horizon: Color, ground_col: Color, su
 	env.glow_intensity = 0.25
 	env.glow_bloom = 0.05
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.18
+	env.adjustment_saturation = 1.15
 	env.adjustment_contrast = 1.08
 	we.environment = env
 	add_child(we)
 	sun = DirectionalLight3D.new()
-	sun.light_color = sun_color
-	sun.light_energy = sun_energy * 0.72
 	sun.shadow_enabled = Game.graphics_level() >= 1
-	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-	sun.directional_shadow_max_distance = [30.0, 40.0, 60.0][Game.graphics_level()]
-	sun.shadow_blur = 1.5
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if Game.graphics_level() >= 2 else DirectionalLight3D.SHADOW_ORTHOGONAL
+	sun.directional_shadow_max_distance = [30.0, 40.0, 55.0][Game.graphics_level()]
+	sun.shadow_blur = 1.8
 	add_child(sun)
-	sun.look_at_from_position(Vector3.ZERO, sun_dir.normalized(), Vector3.UP if absf(sun_dir.normalized().y) < 0.99 else Vector3.FORWARD)
+	_base_atmo = {"top": sky_top, "horizon": sky_horizon, "ground": ground_col, "dir": sun_dir.normalized(),
+		"color": sun_color, "energy": sun_energy, "ambient": ambient}
+	apply_atmosphere(Game.resolve_time_of_day(map_id), Game.resolve_weather(map_id))
+
+
+## Time of day: "morning" | "afternoon" | "evening". Weather: "sunny" | "cloudy" | "windy" | "rain".
+func apply_atmosphere(tod: String, weather: String) -> void:
+	time_of_day = tod
+	self.weather = weather
+	var b: Dictionary = _base_atmo
+	var top: Color = b["top"]
+	var hor: Color = b["horizon"]
+	var sun_col: Color = b["color"]
+	var energy: float = b["energy"]
+	var dir: Vector3 = b["dir"]
+	var amb: float = b["ambient"]
+	# Sun direction from the map default, then elevation/azimuth by time of day.
+	var az := atan2(dir.x, dir.z)
+	var elev := deg_to_rad(52.0)
+	match tod:
+		"morning":
+			elev = deg_to_rad(24.0)
+			az += 1.1
+			sun_col = sun_col.lerp(Color(1.0, 0.82, 0.62), 0.6)
+			energy *= 0.85
+			hor = hor.lerp(Color(1.0, 0.86, 0.72), 0.45)
+		"evening":
+			elev = deg_to_rad(13.0)
+			az -= 1.2
+			sun_col = sun_col.lerp(Color(1.0, 0.6, 0.35), 0.7)
+			energy *= 0.75
+			top = top.lerp(Color(0.32, 0.38, 0.62), 0.5)
+			hor = hor.lerp(Color(1.0, 0.62, 0.38), 0.6)
+			amb *= 1.05
+	match weather:
+		"cloudy", "rain":
+			var grey := Color(0.62, 0.66, 0.7) if weather == "cloudy" else Color(0.48, 0.52, 0.58)
+			top = top.lerp(grey, 0.75)
+			hor = hor.lerp(grey.lightened(0.15), 0.75)
+			energy *= 0.42 if weather == "cloudy" else 0.32
+			amb *= 1.25
+			sun_col = sun_col.lerp(Color(0.9, 0.92, 0.95), 0.6)
+	var d := Vector3(sin(az) * cos(elev), -sin(elev), cos(az) * cos(elev)).normalized()
+	sky_material.sky_top_color = top
+	sky_material.sky_horizon_color = hor
+	sky_material.ground_bottom_color = b["ground"]
+	sky_material.ground_horizon_color = hor
+	sky_material.sun_angle_max = 20.0
+	env.ambient_light_color = top.lerp(hor, 0.5).lerp(Color(0.6, 0.65, 0.7), 0.3)
+	env.ambient_light_energy = amb * 0.9
+	sun.light_color = sun_col
+	sun.light_energy = energy * 0.72
+	sun.shadow_blur = 3.5 if weather in ["cloudy", "rain"] else 1.8
+	sun.look_at_from_position(Vector3.ZERO, d, Vector3.UP)
+	# Light atmospheric depth fog on Medium/High.
+	env.fog_enabled = Game.graphics_level() >= 1
+	env.fog_light_color = hor.lerp(top, 0.3)
+	env.fog_density = 0.006 if weather in ["cloudy", "rain"] else 0.0035
+	env.fog_sky_affect = 0.0
+	RenderingServer.global_shader_parameter_set("wind_strength", 2.6 if weather == "windy" else (1.6 if weather == "rain" else 1.0))
+	if rain_fx and is_instance_valid(rain_fx):
+		rain_fx.queue_free()
+		rain_fx = null
+	if weather == "rain" and not menu_mode:
+		rain_fx = _make_rain()
+		add_child(rain_fx)
+
+
+func _make_rain() -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.amount = int(900 * Fx.amount_scale())
+	p.lifetime = 0.9
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	p.emission_box_extents = Vector3(14, 0.5, 14)
+	p.direction = Vector3(0.1, -1, 0)
+	p.spread = 3
+	p.gravity = Vector3(0, -18, 0)
+	p.initial_velocity_min = 10
+	p.initial_velocity_max = 13
+	var q := QuadMesh.new()
+	q.size = Vector2(0.015, 0.35)
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_color = Color(0.8, 0.85, 0.95, 0.35)
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_FIXED_Y
+	q.material = m
+	p.mesh = q
+	p.position = Vector3(0, 9, 0)
+	p.local_coords = false
+	p.emitting = true
+	return p
+
+
+## Keeps rain centred on the camera so it always surrounds the player.
+func follow_camera(cam_pos: Vector3) -> void:
+	if rain_fx:
+		rain_fx.global_position = Vector3(cam_pos.x, cam_pos.y + 4.0, cam_pos.z)
 
 
 # =============================================================== materials ===
@@ -304,9 +405,13 @@ func emissive(c: Color, energy := 1.5) -> StandardMaterial3D:
 	return m
 
 
-func ground_material(a: Color, b: Color, c: Color, scale := 0.35, restorable := false) -> ShaderMaterial:
+func ground_material(a: Color, b: Color, c: Color, scale := 0.35, restorable := false, soil := 0.1) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = load("res://shaders/ground.gdshader")
+	m.set_shader_parameter("grass_tex", load("res://assets/textures/grass_ground.png"))
+	m.set_shader_parameter("soil_tex", load("res://assets/textures/soil.png"))
+	m.set_shader_parameter("use_textures", 1.0 if a.g > a.r else 0.0)
+	m.set_shader_parameter("soil_amount", soil)
 	m.set_shader_parameter("color_a", a.darkened(0.12))
 	m.set_shader_parameter("color_b", b.darkened(0.12))
 	m.set_shader_parameter("color_c", c.darkened(0.12))
@@ -314,7 +419,23 @@ func ground_material(a: Color, b: Color, c: Color, scale := 0.35, restorable := 
 	m.set_shader_parameter("health", 1.0)
 	if restorable:
 		health_materials.append(m)
-		m.set_shader_parameter("health", 0.35)
+		m.set_shader_parameter("health", 0.75)
+	return m
+
+
+## Textured material (triplanar so boxes never stretch). Cached.
+func tex_mat(path: String, tint := Color.WHITE, uv_scale := 1.0, rough := 0.85) -> StandardMaterial3D:
+	var key := "tex|%s|%s|%.2f|%.2f" % [path, tint.to_html(), uv_scale, rough]
+	if _mat_cache.has(key):
+		return _mat_cache[key]
+	var m := StandardMaterial3D.new()
+	m.albedo_texture = load(path)
+	m.albedo_color = tint
+	m.uv1_triplanar = true
+	m.uv1_world_triplanar = true
+	m.uv1_scale = Vector3.ONE * uv_scale
+	m.roughness = rough
+	_mat_cache[key] = m
 	return m
 
 
@@ -518,38 +639,61 @@ func add_bin(center: Vector3, style := "wheelie", yaw_deg := 0.0) -> Rect2:
 # =================================================================== props ===
 
 func tree(pos: Vector3, canopy: Array, scale_f := 1.0, style := "round") -> Node3D:
+	if style == "palm":
+		return _palm(pos, canopy, scale_f)
+	var tint: Color = canopy[0]
+	var species := style
+	if style == "round":
+		var autumn := tint.r > tint.g
+		var h := absi(hash(pos)) % 3
+		if autumn:
+			species = "maple" if h != 1 else "oak"
+		else:
+			species = ["oak", "birch", "oak"][h]
+	elif style == "pine":
+		species = "pine"
+	return Vegetation.tree(self, pos, species, tint.lerp(canopy[canopy.size() - 1], 0.3), scale_f)
+
+
+func _palm(pos: Vector3, canopy: Array, scale_f: float) -> Node3D:
 	var root := Node3D.new()
 	root.position = pos
 	root.scale = Vector3.ONE * scale_f
 	add_child(root)
-	var trunk_m := mat(Color(0.42, 0.28, 0.18), 0.9)
-	cyl(Vector3(0, 1.3, 0), 0.22, 2.6, trunk_m, false, 0.16, 8, root)
+	var trunk_m := tex_mat("res://assets/textures/bark.png", Color(0.9, 0.8, 0.65), 1.5)
+	for i in 6:
+		cyl(Vector3(sin(i * 0.3) * 0.15, 0.35 + i * 0.7, 0), 0.19 - i * 0.012, 0.72, trunk_m, false, 0.16 - i * 0.012, 8, root)
 	var tshape := CylinderShape3D.new()
-	tshape.radius = 0.3 * scale_f
+	tshape.radius = 0.3
 	tshape.height = 3.0
 	_add_collider(root, tshape, Vector3(0, 1.5, 0))
-	if style == "pine":
-		for i in 3:
-			cyl(Vector3(0, 2.2 + i * 0.9, 0), 1.4 - i * 0.35, 1.4, mat(canopy[i % canopy.size()], 0.85), false, 0.0, 9, root)
-	elif style == "palm":
-		root.get_child(0).queue_free()
-		cyl(Vector3(0, 2.0, 0), 0.16, 4.0, trunk_m, false, 0.12, 7, root)
-		for i in 7:
-			var leaf := box(Vector3(0, 4.0, 0), Vector3(0.5, 0.06, 2.4), mat(canopy[i % canopy.size()], 0.8), false, Vector3(-25, i * 51.4, 0), root)
-			leaf.translate_object_local(Vector3(0, 0, -1.0))
-	else:
-		var offsets := [Vector3(0, 3.4, 0), Vector3(0.9, 3.0, 0.3), Vector3(-0.8, 3.1, -0.4), Vector3(0.2, 3.0, -0.9), Vector3(-0.3, 4.2, 0.2), Vector3(0.1, 2.9, 0.9)]
-		for i in offsets.size():
-			sphere(offsets[i], 1.25 - (i % 3) * 0.15, mat(canopy[i % canopy.size()], 0.85), Vector3.ONE, 8, root)
+	var fm := Vegetation.foliage_mat(canopy[0], true)
+	var xf := []
+	var hs := []
+	for i in 9:
+		for k in 4:
+			var a := i * TAU / 9.0
+			var dist := 0.4 + k * 0.55
+			var p := Vector3(cos(a) * dist, 4.2 - k * k * 0.12, sin(a) * dist)
+			xf.append(Transform3D(Basis(Vector3.UP, -a + PI / 2) * Basis(Vector3.RIGHT, -1.2).scaled(Vector3(1.1, 0.7, 1.1)), p))
+			hs.append(0.6 + k * 0.1)
+	Vegetation._mm_instance(root, Vegetation.card_mesh(), fm, xf, hs, [], true, 70.0)
 	return root
 
 
 func bush(pos: Vector3, color: Color, size := 1.0) -> Node3D:
-	var root := Node3D.new()
-	root.position = pos
-	add_child(root)
-	for i in 3:
-		sphere(Vector3((i - 1) * 0.35 * size, 0.4 * size, (i % 2) * 0.2 * size), 0.5 * size, mat(color.darkened(i * 0.06), 0.9), Vector3(1, 0.85, 1), 8, root)
+	var flowering := Color(0, 0, 0, 0)
+	if absi(hash(pos)) % 4 == 0 and color.g > color.r:
+		flowering = [Color(1, 0.45, 0.6), Color(1, 1, 1), Color(0.75, 0.5, 1.0)][absi(hash(pos)) % 3]
+	var root := Vegetation.bush(self, pos, color.lerp(Color(0.3, 0.48, 0.2), 0.3), size, flowering)
+	var body := StaticBody3D.new()
+	var cs := CollisionShape3D.new()
+	var shape := SphereShape3D.new()
+	shape.radius = 0.55 * size
+	cs.shape = shape
+	cs.position.y = 0.4 * size
+	body.add_child(cs)
+	root.add_child(body)
 	return root
 
 
@@ -557,12 +701,7 @@ func flowers(rect: Rect2, count: int, colors: Array, y := 0.0) -> MultiMeshInsta
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
-	var sm := SphereMesh.new()
-	sm.radius = 0.08
-	sm.height = 0.12
-	sm.radial_segments = 6
-	sm.rings = 3
-	mm.mesh = sm
+	mm.mesh = _flower_head()
 	mm.instance_count = count
 	for i in count:
 		var p := Vector3(_rng.randf_range(rect.position.x, rect.end.x), y + _rng.randf_range(0.25, 0.45), _rng.randf_range(rect.position.y, rect.end.y))
@@ -572,6 +711,7 @@ func flowers(rect: Rect2, count: int, colors: Array, y := 0.0) -> MultiMeshInsta
 	mmi.multimesh = mm
 	var m := StandardMaterial3D.new()
 	m.vertex_color_use_as_albedo = true
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.roughness = 0.6
 	mmi.material_override = m
 	add_child(mmi)
@@ -598,69 +738,41 @@ func flowers(rect: Rect2, count: int, colors: Array, y := 0.0) -> MultiMeshInsta
 
 
 func grass_tufts(rect: Rect2, count: int, color: Color, avoid: Array = []) -> void:
-	var mm := MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.use_colors = true
-	var cm := CylinderMesh.new()
-	cm.top_radius = 0.0
-	cm.bottom_radius = 0.05
-	cm.height = 0.22
-	cm.radial_segments = 3
-	cm.rings = 1
-	mm.mesh = cm
-	var xs := []
-	for i in count:
-		var p := Vector3(_rng.randf_range(rect.position.x, rect.end.x), 0.1, _rng.randf_range(rect.position.y, rect.end.y))
-		var ok := true
-		for a in avoid:
-			if (a as Rect2).has_point(Vector2(p.x, p.z)):
-				ok = false
-				break
-		if ok:
-			xs.append(p)
-	mm.instance_count = xs.size()
-	for i in xs.size():
-		mm.set_instance_transform(i, Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(1, _rng.randf_range(0.7, 1.5), 1)), xs[i]))
-		mm.set_instance_color(i, color.lightened(_rng.randf_range(-0.1, 0.15)))
-	var mmi := MultiMeshInstance3D.new()
-	mmi.multimesh = mm
-	var m := StandardMaterial3D.new()
-	m.vertex_color_use_as_albedo = true
-	m.roughness = 0.9
-	mmi.material_override = m
-	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mmi)
+	# Upgraded: realistic instanced grass clumps with wind (density scales with quality).
+	var per_m2 := clampf(count / maxf(rect.get_area(), 1.0) * 6.0, 2.0, 10.0)
+	Vegetation.grass_field(self, rect, per_m2, color.darkened(0.3), color.lightened(0.25), avoid, absi(hash(map_id)) + count)
 
 
 func hedge(rect: Rect2, height: float, color: Color) -> void:
-	box(Vector3(rect.get_center().x, height / 2, rect.get_center().y), Vector3(rect.size.x, height, rect.size.y), mat(color, 0.95))
-	# Bumpy top for a softer silhouette.
-	var n := int(maxf(rect.size.x, rect.size.y) / 1.2)
-	for i in n:
-		var t := (i + 0.5) / n
-		var p := Vector3(lerpf(rect.position.x, rect.end.x, t if rect.size.x > rect.size.y else 0.5), height, lerpf(rect.position.y, rect.end.y, t if rect.size.y >= rect.size.x else 0.5))
-		sphere(p, minf(rect.size.x, rect.size.y) * 0.55, mat(color.lightened(0.05), 0.95), Vector3(1.4, 0.6, 1.4), 7)
+	Vegetation.hedge(self, rect, height, color.lerp(Color(0.2, 0.4, 0.17), 0.3))
 
 
 func fence(from: Vector3, to: Vector3, color: Color, height := 1.0) -> void:
 	var d := to - from
 	var length := d.length()
 	var yaw := atan2(d.x, d.z)
-	var n := maxi(2, int(length / 0.25))
-	var m := mat(color, 0.8)
+	var n := maxi(2, int(length / 0.18))
+	var m := tex_mat("res://assets/textures/wood.png", color.lerp(Color.WHITE, 0.2), 1.0, 0.75)
 	var center := (from + to) / 2
-	for i in n:
-		var p := from + d * (float(i) / (n - 1))
-		box(Vector3(p.x, height / 2, p.z), Vector3(0.1, height, 0.1), m, false)
-	box(Vector3(center.x, height * 0.75, center.z), Vector3(0.05, 0.08, length), m, false, Vector3(0, rad_to_deg(yaw), 0))
-	box(Vector3(center.x, height * 0.3, center.z), Vector3(0.05, 0.08, length), m, false, Vector3(0, rad_to_deg(yaw), 0))
-	var s := BoxShape3D.new()
-	s.size = Vector3(0.2, height, length)
 	var holder := Node3D.new()
-	holder.position = Vector3(center.x, height / 2, center.z)
+	holder.position = Vector3(center.x, 0, center.z)
 	holder.rotation.y = yaw
 	add_child(holder)
-	_add_collider(holder, s)
+	# Pickets with pointed tops, slight height variation, sturdier posts every 2 m.
+	for i in n:
+		var z := -length / 2 + length * (float(i) / (n - 1))
+		var h := height * (0.97 + 0.06 * sin(i * 1.7))
+		box(Vector3(0, h / 2, z), Vector3(0.025, h, 0.09), m, false, Vector3.ZERO, holder)
+		box(Vector3(0, h, z), Vector3(0.024, 0.064, 0.064), m, false, Vector3(45, 0, 0), holder)
+	var posts := maxi(2, int(length / 2.0) + 1)
+	for i in posts:
+		var z2 := -length / 2 + length * (float(i) / (posts - 1))
+		box(Vector3(0.05, height * 0.55, z2), Vector3(0.1, height * 1.1, 0.1), m, false, Vector3.ZERO, holder)
+	box(Vector3(0.04, height * 0.78, 0), Vector3(0.04, 0.08, length), m, false, Vector3.ZERO, holder)
+	box(Vector3(0.04, height * 0.28, 0), Vector3(0.04, 0.08, length), m, false, Vector3.ZERO, holder)
+	var s2 := BoxShape3D.new()
+	s2.size = Vector3(0.2, height, length)
+	_add_collider(holder, s2, Vector3(0, height / 2, 0))
 
 
 func lamp_post(pos: Vector3, color := Color(0.15, 0.18, 0.22)) -> void:
@@ -753,23 +865,159 @@ func house_facade(center: Vector3, width: float, height: float, wall: Color, roo
 	root.position = center
 	root.rotation_degrees.y = facing_deg
 	add_child(root)
-	box(Vector3(0, height / 2, -2.0), Vector3(width, height, 4.0), mat(wall, 0.9), true, Vector3.ZERO, root)
-	var roof_m := mat(roof, 0.8)
-	box(Vector3(0, height + 0.9, -1.0), Vector3(width + 0.6, 0.25, 3.4), roof_m, false, Vector3(28, 0, 0), root)
-	box(Vector3(0, height + 0.9, -3.0), Vector3(width + 0.6, 0.25, 3.4), roof_m, false, Vector3(-28, 0, 0), root)
-	var win_m := mat(Color(0.55, 0.78, 0.92), 0.1, 0.3)
-	var frame_m := mat(Color(0.97, 0.97, 0.95), 0.6)
+	var wall_m := tex_mat("res://assets/textures/siding.png", wall, 0.5, 0.9)
+	var roof_m := tex_mat("res://assets/textures/roof_tiles.png", roof.lerp(Color.WHITE, 0.45), 0.5, 0.8)
+	var trim := mat(Color(0.97, 0.97, 0.95), 0.6)
+	var stone_m := tex_mat("res://assets/textures/rock.png", Color(0.95, 0.92, 0.88), 1.0)
+	box(Vector3(0, height / 2, -2.0), Vector3(width, height, 4.0), wall_m, true, Vector3.ZERO, root)
+	box(Vector3(0, 0.25, -1.98), Vector3(width + 0.06, 0.5, 4.06), stone_m, false, Vector3.ZERO, root)   # stone plinth
+	box(Vector3(0, height + 0.9, -1.0), Vector3(width + 0.6, 0.18, 3.4), roof_m, false, Vector3(28, 0, 0), root)
+	box(Vector3(0, height + 0.9, -3.0), Vector3(width + 0.6, 0.18, 3.4), roof_m, false, Vector3(-28, 0, 0), root)
+	box(Vector3(0, height + 1.72, -2.0), Vector3(width + 0.6, 0.12, 0.3), mat(roof.darkened(0.3)), false, Vector3.ZERO, root)
+	# Gutter + downpipes.
+	var metal := mat(Color(0.75, 0.77, 0.8), 0.35, 0.7)
+	box(Vector3(0, height + 0.1, 0.45), Vector3(width + 0.6, 0.1, 0.12), metal, false, Vector3.ZERO, root)
+	for sx in [-width / 2 + 0.15, width / 2 - 0.15]:
+		box(Vector3(sx, height / 2, 0.1), Vector3(0.08, height, 0.08), metal, false, Vector3.ZERO, root)
+	# Chimney.
+	box(Vector3(width * 0.3, height + 1.8, -2.4), Vector3(0.7, 1.6, 0.7), tex_mat("res://assets/textures/rock.png", Color(0.8, 0.5, 0.4), 1.5), false, Vector3.ZERO, root)
+	var glass := mat(Color(0.42, 0.6, 0.72), 0.08, 0.4)
 	var n := int(width / 3.0)
 	for i in n:
 		var x := -width / 2 + 1.5 + i * 3.0
 		if absf(x) < 1.0:
 			continue
-		box(Vector3(x, height * 0.55, 0.02), Vector3(1.3, 1.3, 0.08), frame_m, false, Vector3.ZERO, root)
-		box(Vector3(x, height * 0.55, 0.06), Vector3(1.1, 1.1, 0.04), win_m, false, Vector3.ZERO, root)
-		box(Vector3(x, height * 0.55 - 0.72, 0.15), Vector3(1.4, 0.1, 0.3), frame_m, false, Vector3.ZERO, root)
-	box(Vector3(0, 1.1, 0.03), Vector3(1.2, 2.2, 0.1), mat(Color(0.85, 0.35, 0.15), 0.6), false, Vector3.ZERO, root)
-	sphere(Vector3(0.4, 1.1, 0.12), 0.05, mat(Color(1.0, 0.8, 0.2), 0.3, 0.8), Vector3.ONE, 6, root)
+		var wy := height * 0.55
+		box(Vector3(x, wy, 0.02), Vector3(1.36, 1.46, 0.08), trim, false, Vector3.ZERO, root)
+		box(Vector3(x, wy, 0.05), Vector3(1.16, 1.26, 0.04), glass, false, Vector3.ZERO, root)
+		box(Vector3(x, wy, 0.08), Vector3(0.05, 1.26, 0.03), trim, false, Vector3.ZERO, root)
+		box(Vector3(x, wy, 0.08), Vector3(1.16, 0.05, 0.03), trim, false, Vector3.ZERO, root)
+		box(Vector3(x, wy - 0.8, 0.14), Vector3(1.5, 0.08, 0.28), trim, false, Vector3.ZERO, root)
+		# Shutters.
+		for sx2 in [-0.82, 0.82]:
+			box(Vector3(x + sx2, wy, 0.05), Vector3(0.28, 1.4, 0.05), mat(Color(0.18, 0.36, 0.42), 0.7), false, Vector3.ZERO, root)
+		# Window box with flowers.
+		box(Vector3(x, wy - 0.95, 0.22), Vector3(1.2, 0.22, 0.25), tex_mat("res://assets/textures/wood.png", Color(0.7, 0.45, 0.3), 2.0), false, Vector3.ZERO, root)
+		for k in 6:
+			sphere(Vector3(x - 0.5 + k * 0.2, wy - 0.78, 0.22), 0.09, mat([Color(1, 0.35, 0.45), Color(1, 0.85, 0.3), Color(0.95, 0.95, 1)][k % 3], 0.6), Vector3.ONE, 6, root)
+	# Door with panels, porch, steps, lamp and mat.
+	box(Vector3(0, 1.15, 0.03), Vector3(1.4, 2.4, 0.08), trim, false, Vector3.ZERO, root)
+	box(Vector3(0, 1.12, 0.07), Vector3(1.15, 2.22, 0.06), mat(Color(0.55, 0.2, 0.12), 0.55), false, Vector3.ZERO, root)
+	for py in [0.6, 1.6]:
+		box(Vector3(0, py, 0.11), Vector3(0.8, 0.6, 0.02), mat(Color(0.48, 0.17, 0.1), 0.55), false, Vector3.ZERO, root)
+	sphere(Vector3(0.42, 1.1, 0.14), 0.04, mat(Color(1.0, 0.8, 0.3), 0.25, 0.9), Vector3.ONE, 6, root)
+	box(Vector3(0, 0.08, 0.55), Vector3(2.2, 0.16, 1.0), stone_m, true, Vector3.ZERO, root)
+	box(Vector3(0, 0.17, 0.5), Vector3(0.9, 0.02, 0.55), mat(Color(0.35, 0.25, 0.18), 1.0), false, Vector3.ZERO, root)
+	box(Vector3(0.95, 2.1, 0.12), Vector3(0.14, 0.24, 0.14), mat(Color(0.12, 0.12, 0.12), 0.4, 0.6), false, Vector3.ZERO, root)
+	sphere(Vector3(0.95, 2.06, 0.18), 0.06, emissive(Color(1.0, 0.85, 0.55), 1.6), Vector3.ONE, 6, root)
+	box(Vector3(-0.85, 1.6, 0.09), Vector3(0.25, 0.08, 0.02), mat(Color(0.75, 0.6, 0.25), 0.3, 0.8), false, Vector3.ZERO, root)  # house number plate
 	return root
+
+
+# =================================================== garden detail props ===
+
+func mailbox(pos: Vector3, yaw_deg := 0.0, color := Color(0.15, 0.35, 0.6)) -> void:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = yaw_deg
+	add_child(root)
+	box(Vector3(0, 0.55, 0), Vector3(0.1, 1.1, 0.1), tex_mat("res://assets/textures/wood.png", Color(0.6, 0.45, 0.3), 2.0), true, Vector3.ZERO, root)
+	box(Vector3(0, 1.2, 0), Vector3(0.3, 0.26, 0.48), mat(color, 0.4, 0.4), false, Vector3.ZERO, root)
+	cyl(Vector3(0, 1.32, 0), 0.15, 0.48, mat(color, 0.4, 0.4), false, -1, 10, root).rotation_degrees.x = 90
+	box(Vector3(0.17, 1.33, 0.12), Vector3(0.02, 0.2, 0.05), mat(Color(0.85, 0.15, 0.1), 0.5), false, Vector3.ZERO, root)
+
+
+func garden_light(pos: Vector3) -> void:
+	cyl(pos + Vector3(0, 0.3, 0), 0.05, 0.6, mat(Color(0.12, 0.13, 0.14), 0.4, 0.6), false, -1, 8)
+	cyl(pos + Vector3(0, 0.65, 0), 0.09, 0.12, emissive(Color(1.0, 0.88, 0.6), 1.3), false, -1, 8)
+	cyl(pos + Vector3(0, 0.73, 0), 0.11, 0.04, mat(Color(0.12, 0.13, 0.14), 0.4, 0.6), false, -1, 8)
+
+
+func rock(pos: Vector3, size := 0.5, seed := 0) -> void:
+	var r := RandomNumberGenerator.new()
+	r.seed = seed if seed != 0 else hash(pos)
+	var mi := sphere(pos + Vector3(0, size * 0.25, 0), size, tex_mat("res://assets/textures/rock.png", Color.WHITE, 1.4, 0.95), Vector3(r.randf_range(0.8, 1.3), r.randf_range(0.45, 0.7), r.randf_range(0.8, 1.2)), 7)
+	mi.rotation.y = r.randf() * TAU
+
+
+func wheelbarrow(pos: Vector3, yaw_deg := 0.0) -> void:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = yaw_deg
+	add_child(root)
+	var green := mat(Color(0.2, 0.5, 0.3), 0.5, 0.3)
+	box(Vector3(0, 0.55, 0), Vector3(0.7, 0.3, 1.0), green, true, Vector3(0, 0, 0), root)
+	box(Vector3(0, 0.42, 0.55), Vector3(0.6, 0.06, 0.3), green, false, Vector3(-35, 0, 0), root)
+	var wheel := cyl(Vector3(0, 0.22, 0.75), 0.22, 0.1, mat(Color(0.1, 0.1, 0.1), 0.8), false, -1, 14, root)
+	wheel.rotation_degrees.z = 90
+	for sx in [-0.28, 0.28]:
+		box(Vector3(sx, 0.5, -0.65), Vector3(0.04, 0.04, 0.9), mat(Color(0.3, 0.3, 0.32), 0.4, 0.6), false, Vector3(-12, 0, 0), root)
+		box(Vector3(sx, 0.2, -0.25), Vector3(0.04, 0.4, 0.04), mat(Color(0.3, 0.3, 0.32), 0.4, 0.6), false, Vector3.ZERO, root)
+	# A few leaves already inside.
+	box(Vector3(0, 0.66, 0), Vector3(0.6, 0.06, 0.9), mat(Color(0.75, 0.42, 0.12), 0.9), false, Vector3.ZERO, root)
+
+
+func bird_bath(pos: Vector3) -> void:
+	var stone := tex_mat("res://assets/textures/rock.png", Color(0.95, 0.93, 0.9), 2.0)
+	cyl(pos + Vector3(0, 0.08, 0), 0.3, 0.16, stone, true, -1, 12)
+	cyl(pos + Vector3(0, 0.5, 0), 0.09, 0.7, stone, false, 0.12, 10)
+	cyl(pos + Vector3(0, 0.9, 0), 0.45, 0.14, stone, false, 0.5, 14)
+	cyl(pos + Vector3(0, 0.975, 0), 0.4, 0.01, mat(Color(0.35, 0.55, 0.65, 0.85), 0.05, 0.2), false, -1, 14)
+
+
+func watering_can(pos: Vector3, yaw_deg := 0.0) -> void:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees.y = yaw_deg
+	add_child(root)
+	var m := mat(Color(0.25, 0.6, 0.45), 0.35, 0.5)
+	cyl(Vector3(0, 0.15, 0), 0.13, 0.3, m, false, -1, 12, root)
+	cyl(Vector3(0.2, 0.22, 0), 0.025, 0.35, m, false, 0.015, 6, root).rotation_degrees.z = -55
+	box(Vector3(-0.02, 0.33, 0), Vector3(0.2, 0.03, 0.03), m, false, Vector3.ZERO, root)
+
+
+func leaning_tool(pos: Vector3, yaw_deg := 0.0, kind := "rake") -> void:
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation_degrees = Vector3(0, yaw_deg, 0)
+	add_child(root)
+	var wood := tex_mat("res://assets/textures/wood.png", Color(0.85, 0.65, 0.45), 3.0)
+	var pole := cyl(Vector3(0, 0.8, 0), 0.02, 1.6, wood, false, -1, 6, root)
+	pole.rotation_degrees.x = -12
+	var head_y := 0.05 if kind == "rake" else 0.1
+	var head := box(Vector3(0, head_y, 0.17), Vector3(0.45 if kind == "rake" else 0.22, 0.05, 0.06 if kind == "rake" else 0.3), mat(Color(0.35, 0.36, 0.38), 0.4, 0.7), false, Vector3.ZERO, root)
+	head.rotation_degrees.x = -12
+
+
+static var _flower_mesh: Mesh
+func _flower_head() -> Mesh:
+	if _flower_mesh:
+		return _flower_mesh
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for k in 6:
+		var a := k * TAU / 6.0
+		var a1 := a - 0.35
+		var a2 := a + 0.35
+		var tip := Vector3(cos(a) * 0.1, 0.02, sin(a) * 0.1)
+		st.set_color(Color(1, 1, 1))
+		st.set_normal(Vector3.UP)
+		st.add_vertex(Vector3.ZERO)
+		st.add_vertex(Vector3(cos(a1) * 0.06, 0.012, sin(a1) * 0.06))
+		st.add_vertex(tip)
+		st.add_vertex(Vector3.ZERO)
+		st.add_vertex(tip)
+		st.add_vertex(Vector3(cos(a2) * 0.06, 0.012, sin(a2) * 0.06))
+	# Yellow centre (vertex colour multiplies with instance colour; keep it bright).
+	for k in 6:
+		var a3 := k * TAU / 6.0
+		var b3 := (k + 1) * TAU / 6.0
+		st.set_color(Color(1.0, 0.85, 0.2))
+		st.add_vertex(Vector3(0, 0.03, 0))
+		st.add_vertex(Vector3(cos(b3) * 0.025, 0.025, sin(b3) * 0.025))
+		st.add_vertex(Vector3(cos(a3) * 0.025, 0.025, sin(a3) * 0.025))
+	_flower_mesh = st.commit()
+	return _flower_mesh
 
 
 func parasol(pos: Vector3, color: Color) -> void:

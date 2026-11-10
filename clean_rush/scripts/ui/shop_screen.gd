@@ -157,6 +157,7 @@ func _show_detail() -> void:
 			_rebuild()))
 	detail.add_child(UIKit.label("Upgrades", 24, UIKit.WHITE))
 	_stats_preview(t, true)
+	_skins_row(t)
 
 
 func _stats_preview(t: String, with_buttons: bool) -> void:
@@ -221,6 +222,42 @@ func _stats_preview(t: String, with_buttons: bool) -> void:
 				b.disabled = Game.coins() < cost
 				h.add_child(b)
 		detail.add_child(row)
+
+
+func _skins_row(t: String) -> void:
+	detail.add_child(UIKit.label("Tool skin", 22, UIKit.WHITE))
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 6)
+	flow.add_theme_constant_override("v_separation", 6)
+	detail.add_child(flow)
+	for sk in Data.cosmetics.get("tool_skins", []):
+		var sid: String = sk["id"]
+		var unlocked := Game.tool_skin_unlocked(sid)
+		var rule: Dictionary = sk.get("unlock", {})
+		var col := Color(String(sk["color"])) if String(sk["color"]) != "" else Data.arr_color(Data.tool_def(t).get("color", [0.2, 0.6, 0.9]))
+		var selected := Game.tool_skin(t) == sid
+		var label := String(sk["name"]) if unlocked else ("Buy " + UIKit.fmt(int(rule["value"])) if String(rule.get("type", "")) == "coins" else Appearance.rule_text(rule))
+		var b := UIKit.button(label, col.darkened(0.2) if unlocked else Color(0.25, 0.28, 0.35), Vector2(135, 52), 14, func():
+			if unlocked:
+				Game.set_tool_skin(t, sid)
+				_rebuild()
+			elif String(rule.get("type", "")) == "coins":
+				if Game.buy_tool_skin(sid):
+					Audio.play("purchase")
+					Game.set_tool_skin(t, sid)
+					_rebuild()
+				else:
+					Audio.play("error")
+			else:
+				Audio.play("error")
+				main.show_toast("Locked: " + Appearance.rule_text(rule), "warn"))
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		if selected:
+			var st := UIKit.flat(col, 20)
+			st.border_color = UIKit.GOLD
+			st.set_border_width_all(4)
+			b.add_theme_stylebox_override("normal", st)
+		flow.add_child(b)
 
 
 func _gear_row(g: String) -> Control:
