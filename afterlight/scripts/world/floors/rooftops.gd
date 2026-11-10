@@ -22,9 +22,9 @@ func build() -> void:
 		"fog_sky": 0.15, "sun_energy": 0.55, "sun_dir": Vector3(-35, 60, 0), "aurora": 1.6})
 	# rooftops: x0, x1, z0, z1, top, seed
 	var roofs := [
-		[-8, 8, 8, 24, 0.0, 1], [-6, 6, -6.5, 5.5, 0.8, 2], [-16.5, -8.5, -12, -4, 2.0, 3], [-16, -8, -23, -14.5, 3.2, 4],
+		[-8, 8, 8, 24, 0.0, 1], [-6, 6, -6.5, 5.5, 0.8, 2], [-16.5, -8.5, -12, -4, 2.0, 3], [-12, -3, -21.5, -13.5, 3.2, 4],
 		[-6, 6, -34, -24, 4.4, 5], [-5, 5, -46, -37, 5.0, 6], [-4, 4, -60, -49, 6.0, 7], [-3, 3, -66, -60, 10.0, 0],
-		[10, 20, -20, -10, 1.6, 1],
+		[9, 19, -6, 4, 1.6, 1],
 	]
 	for r in roofs:
 		_roof(Rect2(r[0], r[2], r[1] - r[0], r[3] - r[2]), r[4], r[5])
@@ -92,8 +92,8 @@ func _water_tower() -> void:
 	var steps := [Vector3(6.0, 5.6, -25.5), Vector3(6.0, 6.8, -28.0), Vector3(6.0, 8.0, -30.5), Vector3(6.0, 9.2, -33.0), Vector3(3.5, 10.4, -35.5)]
 	for s in steps:
 		var h: float = s.y - base
-		box(Vector3(s.x, base + h / 2, s.z), Vector3(1.4, h, 1.4), Mats.std(Color(0.4, 0.38, 0.42), 0.6, 0.4))
-		box(Vector3(s.x, s.y + 0.01, s.z), Vector3(1.42, 0.03, 1.42), Mats.neon(C_AMBER, 0.8), false)
+		box(Vector3(s.x, base + h / 2, s.z), Vector3(2.0, h, 2.0), Mats.std(Color(0.4, 0.38, 0.42), 0.6, 0.4))
+		box(Vector3(s.x, s.y + 0.01, s.z), Vector3(2.02, 0.03, 2.02), Mats.neon(C_AMBER, 0.8), false)
 	add_location("roof_watertower", Vector3(cx, base + 8.0, cz), Vector3(9, 3, 9))
 
 func _summit() -> void:
@@ -115,7 +115,7 @@ func _summit() -> void:
 	add_location("roof_summit", Vector3(0, 11.5, -63), Vector3(6, 3, 6))
 
 func _coop() -> void:
-	var c := Vector3(16, 1.6, -16)
+	var c := Vector3(15, 1.6, -1)
 	var wire := Mats.glass(Color(0.7, 0.75, 0.8, 0.12))
 	var wood := Mats.std(Color(0.4, 0.28, 0.2), 0.85)
 	box(c + Vector3(0, 1.3, -1.5), Vector3(3.2, 2.6, 0.08), wire)
@@ -150,9 +150,9 @@ func _dressing() -> void:
 		var z := 8.5 - i * 1.4
 		prop(sphere(Vector3(-5.5, 3.0 + sin(i * 0.6) * 0.2, z + 3), 0.08, Mats.neon(C_AMBER, 6.0)))
 		prop(sphere(Vector3(5.5, 3.0 + cos(i * 0.6) * 0.2, z + 3), 0.08, Mats.neon(C_AMBER, 6.0)))
-	for p in [Vector3(-6, 0, 12), Vector3(-4, 0.8, -4), Vector3(-14, 2.0, -6), Vector3(3, 5.0, -44), Vector3(-2.5, 6.0, -58)]:
+	for p in [Vector3(-6, 0, 12), Vector3(-4, 0.8, 3), Vector3(-15, 2.0, -10), Vector3(3, 5.0, -44), Vector3(-2.5, 6.0, -58)]:
 		prop_ac(p + Vector3(0, 0.35, 0))
-	for p in [Vector3(6.5, 0, 16), Vector3(-10, 3.2, -22)]:
+	for p in [Vector3(6.5, 0, 16), Vector3(-10.5, 3.2, -14.5)]:
 		cyl(p + Vector3(0, 0.75, 0), 0.6, 1.5, Mats.std(Color(0.3, 0.32, 0.38), 0.5, 0.6), true, 12)
 	neon_text("SKY", Vector3(-8.1, 1.5, 15), -PI / 2, C_PINK, 200, 0.02, true)
 	neon_text("HOTEL", Vector3(-16.6, 0.5, -8), -PI / 2, C_CYAN, 120, 0.015)
@@ -190,11 +190,11 @@ func _process(delta: float) -> void:
 		b.visible = on
 
 func _pickups() -> void:
-	var fr := [Vector3(0, 0.4, 10), Vector3(0, 1.2, 0), Vector3(-12.5, 2.4, -8), Vector3(-12, 3.6, -19), Vector3(4, 4.8, -26),
-		Vector3(0, 5.4, -42), Vector3(0, 6.4, -52), Vector3(15, 2.0, -12), Vector3(6.0, 7.2, -28.0), Vector3(-3.7, 11.8, -26)]
+	var fr := [Vector3(0, 0.4, 10), Vector3(0, 1.2, 0), Vector3(-12.5, 2.4, -8), Vector3(-7.5, 3.6, -17.5), Vector3(4, 4.8, -26),
+		Vector3(0, 5.4, -42), Vector3(0, 6.4, -52), Vector3(15, 2.0, 2.0), Vector3(6.0, 7.2, -28.0), Vector3(-3.7, 11.8, -26)]
 	for i in fr.size():
 		add_fragment(fr[i], i)
 	add_collectible("u_wind_chime", Vector3(-6.5, 0, 20.5))
-	add_collectible("r_silver_feather", Vector3(16, 1.6, -15.5))
+	add_collectible("r_silver_feather", Vector3(15, 1.6, -0.6))
 	add_collectible("l_prism_night", Vector3(-3.7, 11.4, -29), false)
 	add_note("n_rooftop_letter", Vector3(2.6, 6.6, -51), 0.0)

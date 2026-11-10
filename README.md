@@ -61,3 +61,11 @@ js/audio.js       sonidos sintetizados
 js/game.js        estado, tienda, inventario, progresión e interfaz
 tools/simulate.js verificación de probabilidades
 ```
+
+---
+
+## 🌃 AFTERLIGHT (juego 3D para móvil, Godot 4)
+
+Este repositorio también contiene **AFTERLIGHT**, un juego 3D de exploración para Android/iOS hecho con Godot 4.3,
+en la carpeta [`afterlight/`](afterlight/). Instrucciones para abrirlo, exportar el APK y probarlo en el móvil:
+[`afterlight/README.md`](afterlight/README.md) (en inglés).

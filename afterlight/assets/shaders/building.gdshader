@@ -35,6 +35,8 @@ void fragment() {
 		vec2 uv = vec2(h, wpos.y) / cell;
 		vec2 id = floor(uv);
 		vec2 f = fract(uv);
+		// distance anti-aliasing: far facades blend to their average glow
+		float aa = clamp(1.6 - max(fwidth(uv.x), fwidth(uv.y)) * 3.0, 0.0, 1.0);
 		float in_win = step(0.18, f.x) * step(f.x, 0.82) * step(0.28, f.y) * step(f.y, 0.78);
 		// vertical trim columns every 4 cells
 		float trim = step(0.94, fract(uv.x / 4.0));
@@ -57,6 +59,10 @@ void fragment() {
 				rough = 0.15; // dark glass reflects the sky
 			}
 		}
+		vec3 avg_emi = vec3(0.85, 0.7, 0.6) * window_energy * lit_ratio * 0.3 * step(ground_floor, wpos.y);
+		emi = mix(avg_emi, emi, aa);
+		col = mix(base_color * 0.7, col, aa);
+		rough = mix(0.6, rough, aa);
 	} else {
 		col = trim_color * 0.8;
 	}

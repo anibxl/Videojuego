@@ -33,9 +33,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
-	var a := _t * 0.05 + 0.6
-	_cam.position = Vector3(cos(a) * 34, 9 + sin(_t * 0.2) * 1.5, sin(a) * 34)
-	_cam.look_at(Vector3(0, 14 + sin(_t * 0.15) * 2, -30), Vector3.UP)
+	# slow cinematic drift down the south avenue, framing the plaza and the tower
+	_cam.position = Vector3(sin(_t * 0.07) * 4.5, 5.5 + sin(_t * 0.11) * 1.0, 25.0 + cos(_t * 0.05) * 4.0)
+	_cam.look_at(Vector3(sin(_t * 0.05) * 3.0, 16.0 + sin(_t * 0.13) * 3.0, -40), Vector3.UP)
 	if _logo:
 		var g := 0.85 + 0.15 * sin(_t * 1.6)
 		_logo.add_theme_color_override("font_shadow_color", Color(UIKit.CYAN.r, UIKit.CYAN.g, UIKit.CYAN.b, 0.35 * g))

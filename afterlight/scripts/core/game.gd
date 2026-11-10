@@ -155,8 +155,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_inside_tree() and not get_tree().paused and hud:
+	if not is_inside_tree() or hud == null:
+		return
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and not get_tree().paused:
 		hud.toggle_pause()
+	elif what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		hud.toggle_pause()      # Android back button
 
 func _update_mouse_mode() -> void:
 	if Settings.use_touch_controls() or get_tree().paused:

@@ -331,6 +331,9 @@ func _next_popup() -> void:
 		_popup_busy = false
 		return
 	_popup_busy = true
+	# never cover an open menu: wait until the player closes it
+	while has_open_panel():
+		await get_tree().create_timer(0.3, true).timeout
 	var p: Dictionary = _popup_queue.pop_front()
 	var pop := DiscoveryPopup.new()
 	pop.info = p
