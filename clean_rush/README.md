@@ -1,6 +1,15 @@
 # CLEAN RUSH
 
-**Clean it. Upgrade it. Unlock everything.**
+**Clean it. Upgrade it. Unlock everything.** — Version 2.0
+
+> **What's new in 2.0:** realistic autumn leaves (8 textured species) with natural piles,
+> a rake that gathers piles, tumbling blower physics, alpha-card trees/bushes/hedges with wind,
+> instanced grass, flagstone paths, wet surfaces after washing, textured house and garden props,
+> morning/afternoon/evening lighting, sunny/cloudy/windy/rain weather, a complete **character
+> creator** (skin, 12 hairstyles + any hair colour, eyes, face, nose, mouth, body, height, outfits,
+> shoes, hats, glasses, gloves, watches), earnable cosmetics and **tool skins**, and a
+> **professional save system** (3 slots, checksums, backups, recovery, autosave, migration).
+> Version 1.0 is preserved in `../clean_rush_backups/clean_rush_v1.0_backup.zip`.
 
 A relaxing 3D cleaning simulator for Android phones (with desktop controls for development),
 made with **Godot 4.3** and **GDScript**. Everything is original and procedural: no paid or
@@ -122,6 +131,25 @@ hedges, under the fence or onto the leaf tarp.
 
 ---
 
+## 4b. Character, saves and atmosphere (2.0)
+
+* **First launch** opens the *Save Slots* screen: pick an empty slot → *New game* → the character
+  creator. Existing 1.x progress is migrated automatically into **slot 1** (nothing is lost; the
+  old file is kept as `clean_rush_save.json.migrated`).
+* **Character**: main menu → *Character* (wardrobe). Drag the 3D preview to rotate, pinch / mouse
+  wheel to zoom, *Zoom face* for close-ups, *Randomize*, *Reset*, *Cancel*, *Confirm*. Every option is
+  a real 3D component of the in-game player model. Some outfits, hats, shoes, glasses and tool skins
+  unlock through levels, stars, contracts or achievements, a few can be bought with in-game coins
+  (no real money anywhere).
+* **Tool skins**: *Equipment* → select an owned tool → *Tool skin*.
+* **Saving**: automatic after contracts, purchases, upgrades, appearance changes, unlocks and
+  rewards, every 30 s, and whenever the app is paused, sent to the background or closed. Settings →
+  *Save now* also exists. Saves are local only (no cloud sync in this version).
+* **Time of day / weather**: Settings → *Time of day* (Auto, Morning, Day, Evening) and *Weather*
+  (Auto, Sunny, Cloudy, Windy, Rain).
+* **Rake**: walk forward while raking to push leaves into a pile; stop moving and any pile of 14+
+  raked leaves is bagged automatically.
+
 ## 5. Project structure
 ```
 clean_rush/
@@ -131,17 +159,19 @@ clean_rush/
     autoload/   data.gd (JSON database), game.gd (state, economy, save), audio.gd
     main/       main.gd (screen routing, gameplay session, input)
     player/     player.gd, camera_rig.gd
+    character/  appearance.gd (data + unlock rules), character_model.gd (modular 3D character + animations)
+    save/       save_store.gd (slots, checksums, backups, recovery, migration), save_backend.gd (storage abstraction)
     cleaning/   clean_surface.gd (mask-based dirt), debris_field.gd (MultiMesh debris),
                 discovery.gd, item_models.gd, debris_meshes.gd
     tools/      tool_runtime.gd (aim, auto-aim, behaviours), tool_models.gd, fx.gd
-    maps/       map_base.gd (shared builders + progress tracking) + one script per map
+    maps/       map_base.gd (shared builders, props, lighting/weather, progress tracking), vegetation.gd + one script per map
     contracts/  contract_runner.gd (objectives, stars, payouts)
     ui/         ui_kit.gd + every screen (menu, maps, contracts, HUD, touch controls, shop…)
-  data/         tools.json, dirt_types.json, achievements.json, maps/*.json (contracts, unlocks…)
-  shaders/      dirt_common.gdshaderinc, dirt_surface, dirt_glass, water, ground
-  assets/       audio/*.wav, icons/**.svg, fonts/ (DejaVu Sans Bold, free license)
-  tools/        gen_audio.py, gen_icons.py (regenerate all audio / icons)
-  tests/        smoke_test.gd (automated play-through), debug_aim.gd
+  data/         tools.json, dirt_types.json, achievements.json, cosmetics.json, maps/*.json
+  shaders/      dirt_common.gdshaderinc, dirt_surface, dirt_glass, water, ground, leaf, foliage, grass_blades
+  assets/       audio/*.wav, icons/**.svg, textures/*.png, fonts/ (DejaVu Sans, free license)
+  tools/        gen_audio.py, gen_icons.py, gen_textures.py (regenerate audio / icons / textures)
+  tests/        smoke_test.gd (automated play-through), save_relaunch_test.gd (2-process restart test)
   android/      launcher icons
 ```
 
@@ -157,10 +187,20 @@ and list it in the `types` table of the tools that should clean it.
 **New tool**: add it to `data/tools.json` (+ its icon SVG, and optionally a model in `tool_models.gd`).
 **New objective type**: add a case in `ContractRunner.objective_value()`.
 
-### Save data
-`user://clean_rush_save.json` holds versioned JSON (`version` field, with migrations in `Game._migrate`).
-It is written atomically through a temp file and keeps a `.bak` backup. Invalid or missing data falls back
-to the backup, then to defaults, and every field is type-checked on load.
+### Save data (2.0)
+* `user://saves/slot_1.sav` … `slot_3.sav`: a header line `{"format","version","checksum"(SHA-256),"saved_at"}`
+  followed by the JSON body (player, progression, equipment, tool skins, cosmetics, character, collection,
+  achievements, daily missions, statistics, playtime).
+* `user://saves/settings.json`: global settings (volumes, graphics, controls, camera, time/weather, last slot).
+* Each write goes to a `.tmp` file, which is read back and verified, then atomically renamed; the previous
+  version is kept as `.bak`. On load, a bad checksum or JSON falls back to `.bak` (the damaged file is kept as
+  `.corrupt`) and the player is told. A slot whose main file and backup are both unreadable is shown as
+  "Damaged" and is never silently overwritten.
+* **Migrations:** `Game._migrate` upgrades old data step by step (v1→v2→v3), and `SaveStore.migrate_legacy`
+  moves the 1.x single file into slot 1. Unknown or missing fields are sanitised, so an update never resets
+  progress.
+* **Future cloud saves:** `SaveBackend` is the single storage interface. A cloud backend can implement it,
+  but none exists yet.
 
 ---
 
@@ -168,11 +208,16 @@ to the backup, then to defaults, and every field is type-checked on load.
 Automated play-through (needs a display; under Linux CI use `xvfb-run`):
 ```bash
 godot --path clean_rush --rendering-driver opengl3 -- --smoke /tmp/shots
+# Real restart test (two separate processes):
+godot --path clean_rush --rendering-driver opengl3 -- --savetest=write
+godot --path clean_rush --rendering-driver opengl3 -- --savetest=verify
 ```
+The smoke test uses **slot 3** (deleting and recreating it). The relaunch test uses **slot 2**.
 The bot visits every menu screen and buys every tool and upgrade. On each of the six maps it
 plays with three tools and checks that dirt disappears progressively. It then completes a
 contract on each map and checks the payout, saving, unlocks, the save/load round trip and
 recovery from a corrupt save. It also writes screenshots to `/tmp/shots`.
-**Warning:** it overwrites the local save file.
+Developer flags: `--play <map> <contract>`, `--screen=<name>`, `--time=morning|afternoon|evening`,
+`--weather=sunny|cloudy|windy|rain`, `--touch`, `--shot <png> <seconds>`.
 
 See `docs/DELIVERY.md` for the verified feature list, known issues and roadmap.

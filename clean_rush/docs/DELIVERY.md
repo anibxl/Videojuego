@@ -1,87 +1,154 @@
-# CLEAN RUSH v1.0.0: delivery report
+# CLEAN RUSH 2.0: delivery report
 
-## What was delivered
-* A complete Godot 4.3 project (`clean_rush/`) using GDScript and the GL Compatibility renderer.
-  This renderer was chosen for the widest Android device support (OpenGL ES 3).
-* A **debug APK** built and signed in the development environment: `export/CleanRush-debug.apk`,
-  about 50 MB, arm64-v8a + armeabi-v7a. It is not committed to git (see `.gitignore`).
-  Rebuild it with the instructions in `README.md`.
-  `apksigner verify` passes. The APK was **not run on a physical phone or an emulator**
-  (none was available).
-* All source, data, shaders, generators for icons and audio, and the automated smoke test.
+## Backup and approach
+* Before any change, version 1.0 was archived: `clean_rush_backups/clean_rush_v1.0_backup.zip`
+  (also git commit `e4ff2f2`, local tag `clean-rush-v1.0-backup`).
+* 2.0 upgrades the existing project in place. All 6 maps, 21 contracts, 13 tools, shop, upgrades,
+  gear, achievements, collection, daily missions, rewards, HUD and touch controls are preserved.
+  The 1.x save format is migrated automatically.
 
-## Verified features
-The automated smoke test (`-- --smoke`) ran on Linux with Mesa llvmpipe through the
-OpenGL 3.3 Compatibility renderer: **0 failures, 95 checks**. Screenshots of every map and
-screen were inspected manually.
+## What changed
 
-| Area | How it was verified |
-|---|---|
-| Game launches, main menu renders with the animated 3D garden background | screenshots + headless run |
-| All menu screens open (maps, contracts, shop, equipment, achievements, collection, daily, settings) | smoke test |
-| All six maps load with cleanable surfaces and debris | smoke test (counts printed) |
-| Player movement, camera follow, tool switching | smoke test bot + screenshots |
-| Progressive cleaning: dirt masks are cleaned per pixel and surfaces show partial cleaning | smoke test ("partial surface cleaning observed") + screenshots |
-| Every map makes progress with its tools (blower, vacuum, rake, washer, turbo nozzle, foam, net, pool vacuum, scrubber, picker, broom, sponge, polisher) | smoke test (progress is checked to be monotonic for each tool) |
-| Overall percentage reaches 100 % when everything is clean, and contracts complete | smoke test (1 contract per map) |
-| Rewards are paid, contracts are saved as completed, reward screen appears | smoke test + screenshots |
-| Tool purchase, upgrade purchase (and its effect on stats), gear purchase | smoke test |
-| Map unlocking (rules evaluated after rewards) | smoke test |
-| Save → load round trip (coins, tools, upgrades); a corrupted save file loads without crashing | smoke test |
-| Multitouch: joystick finger + CLEAN finger at the same time (simulated `InputEventScreenTouch/Drag`) | smoke test |
-| Android export: debug APK assembled, aligned, signed and verified | Godot `--export-debug` + `apksigner verify` |
+### Graphics and atmosphere
+* **Realistic leaves**: an 8-type textured atlas (maple, red maple, oak, golden oak, birch, small,
+  large dry, damaged/holed). Each leaf is a curled card with a mid-rib, per-leaf brightness and tint
+  variation, backlighting, and shadows on High.
+* **Natural distribution**:
+  * Attractors around trees, along the fence, path edges, bed borders and the house wall, in corners
+    and under furniture.
+  * Dense hand-placed piles.
+  * Volumetric stacking: leaves on top of others sit higher and tilt more.
+* **Vegetation**: oak, maple, birch, pine and cypress trees.
+  * Textured branching trunks with root flare, and canopies made of alpha-tested foliage cards
+    (one MultiMesh per tree) with wind sway.
+  * Bushes, some flowering, and leafy hedges.
+  * Instanced grass clumps in culled chunks, with wind.
+  * Flowers with petals. Plants sway via a global `wind_strength`.
+* **Ground**: tiled grass texture with large-scale colour variation and soil patches. The path is now
+  irregular flagstone (voronoi) with bevelled edges, cracks, dirt settling in the joints, mossy
+  sections and edge stones.
+* **Wet surfaces**: water tools leave a darker, glossy wet trail that dries over about 10 s, showing
+  exactly where the tool worked.
+* **Garden details**:
+  * The house now has textured siding and roof tiles, a stone plinth, gutters and downpipes, a chimney,
+    shutters, window boxes with flowers, a panelled door, porch, lamp and doormat.
+  * Pointed-picket textured fences.
+  * Props: mailbox, garden lights, rocks, wheelbarrow, bird bath, watering can, leaning rake and shovel.
+* **Lighting**:
+  * Times of day (morning / day / evening) change the sun's height and direction, the light colour and
+    energy, and the sky.
+  * Weather: sunny, cloudy (soft shadows), windy (strong sway plus wind sound) and light rain
+    (camera-following rain particles plus rain sound).
+  * Depth fog on Medium/High, ACES tonemapping, 2-split shadows on High.
 
-## Implemented but not verified on a device
-* Multitouch on real hardware. It was verified with simulated touch events only.
-* Performance on real phones. Expected to be fine: the design uses MultiMesh debris,
-  ≤96×96 R8 dirt masks, CPU particles scaled by the quality setting and only a handful of
-  draw calls per surface. It has not been measured.
-* Audio output (the test machine has no audio device; Godot used its dummy driver).
-  The sounds were generated and checked offline.
-* The Low / Medium / High graphics presets (they change shadows, glow, MSAA, render scale,
-  debris density and particle amounts).
+### Cleaning feel
+* **Rake**: drags leaves toward the rake line in front of the player, so walking pushes a growing pile.
+  When the player stops, piles of 14 or more raked leaves are bagged with a puff, a sound and a toast.
+* **Blower**: leaves get spin, lift up to about 1 m, tumble, then settle back on the ground.
+* **Vacuum**: leaves are pulled into the nozzle, with collection bursts and the bag meter.
+* **Pressure washer / sponge**: progressive per-pixel cleaning plus the wet trail.
 
-## Simplified or incomplete features (honest list)
-* **Car interior** is a simplified open-top convertible with five flat cleanable sections
-  (seats, footwells, dashboard).
-* **Leaf physics** are simplified: no stacking, and there is no collision with small props.
-  Leaves collide with play-area bounds and large obstacle rectangles. The blower "tucks"
-  leaves into hedges, under the fence or onto tarps and bins.
-* **Pressure washer nozzles**: two modes (wide fan / narrow jet) instead of multiple
-  interchangeable nozzle items. The High-Pressure Nozzle is a separate tool.
-* **Foam** is a per-surface coat (boost multiplier + white overlay), not a per-pixel foam mask.
-* **Tool durability / energy** is not used: the brief allows leaving it out, and a bag/net
-  capacity system is used instead.
-* **Monetization** is not implemented, as requested: no ads, no IAP, no fake integrations.
-  The economy is fully earnable.
-* **iOS**: not configured. The project is Godot, so an iOS export preset can be added later
-  on a Mac with Xcode.
-* **Map thumbnails** are flat vector illustrations, not renders.
-* **Localisation**: English only.
+### Character creator (Part 3)
+* `CharacterModel` is a fully modular 3D character. Every option is real geometry or material on the
+  in-game player:
+  * 8 skin tones.
+  * 12 hairstyles (buzz, short, side part, medium, bob, long straight, long wavy, curly, afro,
+    ponytail, bun, bald), 8 hair colours plus a custom hue/lightness.
+  * 5 eye colours, 3 eye shapes, 4 eyebrow styles, 4 face shapes, 4 noses, 4 mouths.
+  * 4 body presets, plus height and build sliders.
+  * 9 tops, including unlockable uniforms; 4 bottoms; 4 shoes; 7 hats; 5 glasses; 3 gloves; 3 watches;
+    14 outfit colours.
+* Animations: walk and run cycles (thigh/knee/arm swing, bob, lean), idle breathing, look-around and
+  blinking, and two-handed tool poses for sweeping, aiming and scrubbing.
+* Creator UI:
+  * Large live 3D preview: rotate with a finger or mouse, pinch or wheel to zoom, face zoom.
+  * 10 categories and a name field.
+  * Randomize, Reset, Cancel and Confirm buttons.
+  * Locked items show their unlock requirement; coin items can be bought with in-game coins.
+* Reachable from the main menu (*Character*) and when creating a new save.
 
-## Known issues
-* In the editor console, the headless dummy renderer prints `mesh_get_surface_count` errors.
-  This is harmless and only happens with `--headless`.
-* SVG icons use a simple flat style. Godot's SVG importer does not support `<text>`, so the
-  logo is a PNG generated by `tools/gen_icons.py`.
-* The camera is not occlusion-aware. Maps are designed with low or transparent roofs, so this
-  should rarely matter.
-* Balancing was done by reasoning and short automated runs, not long playtests. Contract par
-  times and prices may need tuning after real-device play.
-* The smoke test overwrites the local save file (by design, for deterministic results).
+### Progression cosmetics (Part 6)
+* Earnable through gameplay: uniforms (level 5, achievement, 30 stars, coins), golden boots, hard hat,
+  crown, goggles, rubber gloves and sport watch.
+* 6 tool skins (level, contracts, achievement, coins), shown on the tool model.
+* The reward screen announces new cosmetic unlocks. There are no real-money purchases.
+
+### Save system (Part 4)
+See the README section "Save data (2.0)": 3 slots, SHA-256 checksum header, verified atomic writes,
+`.bak` backups, corruption recovery and a damaged-slot state. Settings live in a global file.
+Autosave runs on every progression event, every 30 s, and on app pause, focus loss, back and close.
+Playtime is tracked. The slot screen shows a live 3D character preview, level, coins, playtime, last
+save date and progress. New games can only be created in empty slots, and deletion requires
+confirmation. There is a migration chain for old versions and a `SaveBackend` abstraction for a future
+cloud backend. **No cloud sync is implemented.**
+
+### Performance (Part 7)
+* Everything that can be instanced is instanced (leaves, grass, foliage cards, flowers): about one
+  draw call per plant.
+* Distance fade-out ranges on foliage and grass (LOD).
+* Grass is split into 6 m chunks for frustum culling. Shadows are limited (no grass shadows, leaf
+  shadows only on High).
+* Graphics presets:
+  * **Low**: no shadows, no grass, about 55 % of the foliage cards, 60 % of the leaves, no fog or glow,
+    0.75 render scale.
+  * **Medium**: shadows, grass at 55 %, fog, MSAA 2×.
+  * **High**: everything, MSAA 4×, glow, 2-split shadows.
+* Measured instance budget on the Autumn Garden: Low 2,797 · Medium 5,919 · High 8,226.
+
+## Test results (automated, Linux, Mesa llvmpipe, GL Compatibility renderer)
+* **Smoke test** (`-- --smoke`): **115 checks, 0 failures**. It covers:
+  * Every menu screen, buying every tool, and upgrades.
+  * All 6 maps with three tools each and progressive cleaning.
+  * Contract completion and rewards on every map.
+  * Multitouch joystick and CLEAN button.
+  * **Cleaning physics**: the rake drags leaves and bags piles; the blower moves, rotates and lifts
+    leaves, which then settle; the vacuum fills its bag; the washer cleans progressively and leaves a
+    wet trail.
+  * **Character**: every saved option appears on the in-game model; height scales the rig; hair colour
+    reaches the hair meshes; accessories change the 3D components; the appearance is identical after a
+    save and reload; the creator and slot screens open.
+  * **Graphics**: the Low < Medium < High instance budget holds.
+  * **Saves**: the slot file is written; a reload keeps coins, tools and upgrades; a corrupt main file
+    is recovered from the backup without losing progress; checksum tampering is detected; the slot
+    summary is complete.
+* **Real restart test** (two separate processes, `--savetest=write` then `--savetest=verify`): **10/10 pass**. The
+  first process:
+  1. Creates a new save and earns money.
+  2. Completes a contract.
+  3. Buys an upgrade.
+  4. Changes the appearance (hair, colour, eyes, skin, clothes, accessories).
+  5. Switches to another map and earns again.
+  6. Quits **without** an explicit save call, relying only on autosave.
+
+  The second process boots fresh and confirms the slot, name, coins, XP, contract, upgrade, map
+  completion, appearance and playtime, and that the in-game player model is rebuilt from the saved
+  appearance.
+* The 1.x save present on the test machine (whose main file had been deliberately corrupted by the 1.0
+  test) was migrated: it was recovered from its backup into slot 1 and upgraded to v3.
+
+## Not verified / honest limitations
+* No physical Android device or emulator was available. Real-phone frame rate, touch feel and audio
+  output are untested. Frame rates measured on the CPU software renderer (15/5/3 fps for
+  Low/Medium/High) say nothing about phone GPUs; they only confirm that the presets scale.
+* **Ambient occlusion and reflection probes are not available** in Godot's Compatibility renderer, which
+  this project uses for the broadest Android support. Depth fog, sky reflections and rim lighting are
+  used instead.
+* The character uses smooth procedural primitives. It is far more detailed and customisable than 1.0
+  and every option is real geometry, but it is stylised-realistic, not a photoreal scanned human.
+  There is no morph-based face sculpting; faces are built from selectable components, as the brief
+  allows.
+* Leaf physics are simplified (no leaf-to-leaf collisions, rect obstacles only); this is intentional
+  for mobile performance.
+* The changing room in a future personal base is not built: the wardrobe is reached from the main menu.
+* Weather is visual and audio only. Rain does not make surfaces wet or change cleaning.
+* Cloud saves and accounts are not implemented (only the backend abstraction exists).
+* iOS export is still not configured.
 
 ## Roadmap
-1. **Device QA**: test on 3–4 Android phones (low/mid/high), profile, tune the graphics presets.
-2. **Balancing pass**: playtest-driven par times, prices and upgrade curves.
-3. **Juice**: footprint decals, water puddles drying, wet sheen on fresh surfaces, camera
-   punch on completion, haptics (with the VIBRATE permission made optional).
-4. **New maps**, using the existing architecture (JSON + `MapBase` builder):
-   Beach Cleanup, Snow Removal, Restaurant Kitchen, Garage, Office Windows, Farm, Construction
-   Site, Public Park, Abandoned House.
-5. **New mechanics**: per-pixel foam, rust and oil dirt types, window squeegee with streaks,
-   a snow shovel.
-6. **Cosmetics**: player outfits and tool skins (optional cosmetic purchases, earnable in-game).
-7. **Store prep**: release keystore, AAB through a Gradle build, target SDK update,
-   privacy policy, store screenshots.
-8. **Localisation** (Spanish, French, German, Portuguese) via Godot's CSV translations.
-9. **iOS export.**
+1. Device QA on low/mid/high Android phones; tune foliage card counts and shadow distances per preset.
+2. A personal base with a changing room, trophy shelf and tool rack (wardrobe in 3D).
+3. Weather that affects gameplay (rain wets surfaces, wind drifts leaves back) as optional modifiers.
+4. Face detail: textured eyes and lashes, more hairstyles, beards.
+5. New maps using the existing pipeline (beach, snow, kitchen, garage, office windows, farm, park).
+6. An optional cloud backend (Google Play Games Saved Games) behind `SaveBackend`.
+7. Release keystore, AAB, target SDK update, store listing, privacy policy.

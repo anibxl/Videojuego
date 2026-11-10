@@ -3,7 +3,7 @@ extends Node
 ## All sounds are original, synthesised by tools/gen_audio.py.
 
 const SFX_PLAYERS := 10
-const LOOP_SOUNDS := ["washer", "blower", "vacuum", "foam", "scrubber", "polisher", "music_garden"]
+const LOOP_SOUNDS := ["washer", "blower", "vacuum", "foam", "scrubber", "polisher", "music_garden", "rain", "wind"]
 
 var _streams: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []

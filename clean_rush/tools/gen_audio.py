@@ -157,6 +157,21 @@ def gen_polisher():
     save("polisher", make_loop(whir + pad), 0.55)
 
 
+def gen_weather():
+    d = 3.0
+    rain = bandpass(noise(d), 800, 7000) * 0.5
+    drops = np.zeros(int(SR * d))
+    for _ in range(260):
+        st = rng.integers(0, len(drops) - 600)
+        ln = int(SR * rng.uniform(0.004, 0.012))
+        burst = bandpass(rng.uniform(-1, 1, ln), 2000, 9000)
+        drops[st:st + ln] += burst * rng.uniform(0.3, 1.0)
+    save("rain", make_loop(rain + drops), 0.5)
+    t = t_axis(d)
+    wind = bandpass(noise(d), 150, 900) * (0.6 + 0.4 * np.sin(2 * np.pi * 0.35 * t) ** 2)
+    save("wind", make_loop(wind), 0.5)
+
+
 # -------------------------------------------------------------- one-shots ---
 
 def gen_scratch(name, lo, hi, dur, strokes):
@@ -334,3 +349,4 @@ if __name__ == "__main__":
     gen_jingles()
     gen_misc()
     gen_music()
+    gen_weather()

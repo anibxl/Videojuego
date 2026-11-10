@@ -342,6 +342,11 @@ func apply_atmosphere(tod: String, weather: String) -> void:
 	if weather == "rain" and not menu_mode:
 		rain_fx = _make_rain()
 		add_child(rain_fx)
+	if not menu_mode:
+		if weather in ["rain", "windy"]:
+			Audio.loop_start("weather", "rain" if weather == "rain" else "wind", -12.0)
+		else:
+			Audio.loop_stop("weather")
 
 
 func _make_rain() -> CPUParticles3D:

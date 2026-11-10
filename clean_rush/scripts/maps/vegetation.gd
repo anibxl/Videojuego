@@ -143,8 +143,8 @@ static func _canopy(parent: Node3D, clusters: Array, tint: Color, rng: RandomNum
 			cs.append(Color.WHITE)
 		# Inner volume so the canopy never looks hollow.
 		var sm := SphereMesh.new()
-		sm.radius = radius * 0.62
-		sm.height = radius * 1.24
+		sm.radius = radius * 0.5
+		sm.height = radius * 1.0
 		sm.radial_segments = 8
 		sm.rings = 5
 		var mi := MeshInstance3D.new()
