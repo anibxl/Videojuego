@@ -8,6 +8,8 @@ signal load_changed(load: int, capacity: int)
 signal cleaned_area(m2: float)
 
 const AIM_YAWS := [0.0, -18.0, 18.0, -36.0, 36.0]
+## Global tuning so contracts stay short and satisfying on mobile.
+const SURFACE_POWER_SCALE := 1.6
 
 var player: Node3D
 var map: MapBase
@@ -208,7 +210,7 @@ func _do_surface(delta: float, fwd: Vector3) -> void:
 	var mode := String(surf.get("mode", "spray"))
 	var rng := Game.tool_param(tool_id, "surface", "range")
 	var radius := Game.tool_param(tool_id, "surface", "radius")
-	var power := Game.tool_param(tool_id, "surface", "power")
+	var power := Game.tool_param(tool_id, "surface", "power") * SURFACE_POWER_SCALE
 	if has_nozzles():
 		if nozzle_narrow:
 			radius *= 0.6
@@ -336,8 +338,7 @@ func _find_target(origin: Vector3, fwd: Vector3, rng: float, mode: String, types
 		var dir_h := fwd.rotated(Vector3.UP, deg_to_rad(y))
 		var side := dir_h.cross(Vector3.UP).normalized()
 		for p in pitches:
-			var dir: Vector3 = dir_h.rotated(side, deg_to_rad(-p))
-			# rotated(side, -p) with side = dir x up tilts the ray downward for negative p
+			var dir: Vector3 = dir_h.rotated(side, deg_to_rad(p))
 			var hit := _raycast(origin, origin + dir * rng)
 			if hit.is_empty():
 				continue

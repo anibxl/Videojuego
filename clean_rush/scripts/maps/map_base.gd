@@ -235,7 +235,7 @@ func add_bloom(n: Node3D, threshold: float) -> void:
 
 # ============================================================= environment ===
 
-func setup_environment(sky_top: Color, sky_horizon: Color, ground_col: Color, sun_dir: Vector3, sun_color := Color(1.0, 0.95, 0.85), sun_energy := 1.1, ambient := 0.6) -> void:
+func setup_environment(sky_top: Color, sky_horizon: Color, ground_col: Color, sun_dir: Vector3, sun_color := Color(1.0, 0.95, 0.85), sun_energy := 1.0, ambient := 0.4) -> void:
 	var we := WorldEnvironment.new()
 	env = Environment.new()
 	var sky := Sky.new()
@@ -248,21 +248,25 @@ func setup_environment(sky_top: Color, sky_horizon: Color, ground_col: Color, su
 	sky.sky_material = sm
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = ambient
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.tonemap_exposure = 1.0
-	env.glow_enabled = Game.graphics_level() >= 1
-	env.glow_intensity = 0.4
+	# Explicit ambient colour: predictable exposure on every device/renderer.
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = sky_top.lerp(sky_horizon, 0.5).lerp(Color(0.6, 0.65, 0.7), 0.3)
+	env.ambient_light_energy = ambient * 0.9
+	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.tonemap_exposure = 0.95
+	env.tonemap_white = 6.0
+	env.glow_enabled = Game.graphics_level() >= 2
+	env.glow_intensity = 0.25
 	env.glow_bloom = 0.05
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.12
-	env.adjustment_contrast = 1.05
+	env.adjustment_saturation = 1.18
+	env.adjustment_contrast = 1.08
 	we.environment = env
 	add_child(we)
 	sun = DirectionalLight3D.new()
 	sun.light_color = sun_color
-	sun.light_energy = sun_energy
+	sun.light_energy = sun_energy * 0.72
 	sun.shadow_enabled = Game.graphics_level() >= 1
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	sun.directional_shadow_max_distance = [30.0, 40.0, 60.0][Game.graphics_level()]
@@ -303,9 +307,9 @@ func emissive(c: Color, energy := 1.5) -> StandardMaterial3D:
 func ground_material(a: Color, b: Color, c: Color, scale := 0.35, restorable := false) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = load("res://shaders/ground.gdshader")
-	m.set_shader_parameter("color_a", a)
-	m.set_shader_parameter("color_b", b)
-	m.set_shader_parameter("color_c", c)
+	m.set_shader_parameter("color_a", a.darkened(0.12))
+	m.set_shader_parameter("color_b", b.darkened(0.12))
+	m.set_shader_parameter("color_c", c.darkened(0.12))
 	m.set_shader_parameter("scale", scale)
 	m.set_shader_parameter("health", 1.0)
 	if restorable:
@@ -378,12 +382,14 @@ func sphere(pos: Vector3, radius: float, material: Material, squash := Vector3.O
 
 ## Invisible wall (keeps the player inside the play area).
 func blocker(pos: Vector3, size: Vector3) -> void:
+	# Layer 4 (value 8): blocks the player only, never tool rays or debris.
 	var n := Node3D.new()
 	n.position = pos
 	add_child(n)
 	var s := BoxShape3D.new()
 	s.size = size
-	_add_collider(n, s)
+	var b := _add_collider(n, s)
+	b.collision_layer = 8
 
 
 func ground_plane(rect: Rect2, material: Material, y := 0.0) -> MeshInstance3D:

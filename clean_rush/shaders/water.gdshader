@@ -2,7 +2,7 @@ shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, specular_schlick_ggx;
 // clarity 0 = murky swamp, 1 = crystal-clear pool water.
 uniform float clarity : hint_range(0.0, 1.0) = 0.0;
-uniform vec3 murky : source_color = vec3(0.22, 0.30, 0.12);
+uniform vec3 murky : source_color = vec3(0.16, 0.19, 0.08);
 uniform vec3 clear : source_color = vec3(0.15, 0.70, 0.85);
 
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -24,7 +24,7 @@ void fragment() {
 	NORMAL_MAP_DEPTH = 0.6;
 	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 4.0);
 	ALBEDO = col;
-	ROUGHNESS = mix(0.4, 0.04, clarity);
-	SPECULAR = 0.7;
+	ROUGHNESS = mix(0.7, 0.05, clarity);
+	SPECULAR = mix(0.1, 0.6, clarity);
 	ALPHA = clamp(mix(0.96, 0.5, clarity) + fres * 0.3, 0.0, 1.0);
 }

@@ -106,7 +106,7 @@ void apply_dirt(vec2 uv, out vec3 albedo, out float rough, out float metal, out 
 		metal = mix(metal, 0.0, d);
 	}
 	// Freshly cleaned surfaces get a gentle extra brightness.
-	col *= 1.0 + 0.06 * (1.0 - d);
+	col *= 1.0 + 0.03 * (1.0 - d);
 	if (foam > 0.001) {
 		float fb = smoothstep(0.35, 0.75, vnoise(p * 7.0 + seed)) * 0.5 + 0.5;
 		col = mix(col, vec3(0.96, 0.97, 1.0), clamp(foam * fb * (0.45 + 0.4 * d), 0.0, 0.9));

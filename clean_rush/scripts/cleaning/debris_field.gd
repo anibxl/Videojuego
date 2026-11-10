@@ -15,7 +15,7 @@ var zones: Dictionary = {}  # name -> Array[Rect2]
 var obstacles: Array = []   # Array[Rect2] (XZ)
 var drop_zones: Array = []  # Array[Rect2]
 var colors: Array = []
-var scale_range := Vector2(0.8, 1.3)
+var scale_range := Vector2(1.4, 2.1)
 var piece_weight := 0.12    # m² equivalent used for overall progress
 
 var count := 0
@@ -50,7 +50,7 @@ func setup(cfg: Dictionary) -> DebrisField:
 	obstacles = cfg.get("obstacles", [])
 	drop_zones = cfg.get("drop_zones", [])
 	colors = cfg.get("colors", [Color(0.9, 0.45, 0.1), Color(0.95, 0.7, 0.15), Color(0.75, 0.2, 0.08)])
-	scale_range = cfg.get("scale", Vector2(0.8, 1.3))
+	scale_range = cfg.get("scale", Vector2(1.4, 2.1))
 	piece_weight = cfg.get("weight", 0.12)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = cfg.get("seed", 42)
