@@ -455,7 +455,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 
 /* ---------- Escritorio ---------- */
 @media (min-width: 820px) {
-  .menu-grid { grid-template-columns: repeat(6, 1fr); }
+  .menu-grid { grid-template-columns: repeat(4, 1fr); }
   .screen { padding-top: 26px; }
 }
 /* ---------- Móvil ---------- */
@@ -698,3 +698,72 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .day-next small { display: block; color: var(--muted); font-size: .75rem; }
 .day-next b { font-size: 1.3rem; color: var(--accent); }
 .inv-tag { background: rgba(255,255,255,.15); color: var(--text); font-size: .62rem; vertical-align: middle; }
+
+/* ---------- Premios extremadamente raros ---------- */
+.rare-overlay {
+  position: fixed; inset: 0; z-index: 88; display: flex; align-items: center; justify-content: center; padding: 20px;
+  opacity: 0; transition: opacity .4s; overflow: hidden;
+}
+.rare-overlay.on { opacity: 1; }
+.ro-card {
+  position: relative; z-index: 2; width: min(440px, 100%); text-align: center; padding: 26px 20px 20px; border-radius: 26px;
+  background: rgba(10, 6, 30, .82); border: 2px solid var(--rc, #fff); box-shadow: 0 0 60px var(--rc, #fff);
+  opacity: 0; transform: scale(.4); transition: opacity .5s, transform .6s cubic-bezier(.2,1.6,.4,1);
+}
+.rare-overlay.reveal .ro-card { opacity: 1; transform: none; }
+.ro-icon { font-size: 4.4rem; animation: float 2.2s ease-in-out infinite; }
+.ro-odds { display: inline-block; margin-top: 6px; padding: 4px 12px; border-radius: 99px; font-size: .8rem; font-weight: 900; letter-spacing: 2px; background: var(--rc); color: #120a24; }
+.ro-title { font-size: clamp(1.9rem, 8vw, 2.6rem); font-weight: 900; margin: 8px 0; color: var(--rc); text-shadow: 0 0 24px var(--rc); }
+.ro-amount { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: clamp(2rem, 9vw, 3rem); font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; }
+.ro-sub { color: var(--muted); font-size: .85rem; margin: 8px 0 16px; }
+.ro-close { opacity: 0; pointer-events: none; transition: opacity .4s 1.2s; }
+.rare-overlay.reveal .ro-close { opacity: 1; pointer-events: auto; }
+.ro-dot, .ro-count { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+
+/* 🌠 Estrella fugaz: cielo nocturno */
+.rare-star { --rc: #9fe8ff; background: radial-gradient(ellipse at 50% 120%, rgba(30,60,140,.85), rgba(4,8,30,.92)); }
+/* 💰 Lluvia de oro: oscuridad con resplandor dorado que late */
+.rare-goldrain { --rc: #ffcf3f; background: radial-gradient(circle at 50% 40%, rgba(255,190,40,.35), rgba(20,10,0,.92) 70%); animation: goldPulse 1.2s ease-in-out infinite; }
+@keyframes goldPulse { 50% { background-color: rgba(255,200,60,.08); } }
+/* 💥 Supernova: apagón total y punto de luz que crece hasta estallar */
+.rare-supernova { --rc: #ff8ab5; background: #000; }
+.rare-supernova .ro-dot { width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, #fff 0 9%, rgba(255,255,255,.85) 14%, rgba(255,138,181,.55) 30%, rgba(255,138,181,0) 70%); animation: novaGrow .85s ease-in forwards; }
+@keyframes novaGrow { from { transform: translate(-50%, -50%) scale(.1); } to { transform: translate(-50%, -50%) scale(1.4); } }
+.rare-supernova.boom .ro-dot { animation: novaBoom .8s ease-out forwards; }
+@keyframes novaBoom { from { transform: translate(-50%, -50%) scale(1.4); opacity: 1; } to { transform: translate(-50%, -50%) scale(30); opacity: 0; } }
+.rare-supernova.boom { background: radial-gradient(circle, rgba(255,138,181,.45), rgba(20,0,20,.95) 70%); transition: background 1s; }
+/* 🌌 Big Bang: negro, cuenta atrás y estallido de todos los colores */
+.rare-bigbang { --rc: #d6c4ff; background: #000; }
+.rare-bigbang .ro-count { font-size: clamp(6rem, 30vw, 12rem); font-weight: 900; color: #fff; text-shadow: 0 0 40px #b388ff; }
+.rare-bigbang .ro-count.pop { animation: countPop .9s ease-out; }
+@keyframes countPop { from { transform: translate(-50%, -50%) scale(2.2); opacity: 0; } 30% { opacity: 1; } to { transform: translate(-50%, -50%) scale(.8); opacity: .2; } }
+.rare-bigbang.boom::after { content: ''; position: absolute; inset: -20%; z-index: 0; background: conic-gradient(from 0deg, #ff4d6d, #ffd166, #06d6a0, #4cc9f0, #b388ff, #ff4d6d); animation: cosmic 3s linear infinite; }
+.rare-bigbang.boom::before { content: ''; position: absolute; inset: 0; z-index: 1; background: radial-gradient(circle, rgba(0,0,0,.2), rgba(0,0,0,.75) 75%); }
+@keyframes cosmic { to { filter: hue-rotate(360deg); } }
+.rare-bigbang .ro-card { border-width: 3px; }
+
+/* ---------- Álbum ---------- */
+.al-group.complete { border-color: #2ee6a088; background: linear-gradient(135deg, rgba(46,230,160,.12), rgba(255,255,255,.04)); }
+.al-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+.al-done { color: var(--good); font-weight: 800; font-size: .85rem; }
+.al-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+.al-grid.rare-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.al-slot { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 10px 4px; border-radius: 12px; background: rgba(0,0,0,.25); border: 1px dashed rgba(255,255,255,.15); text-align: center; }
+.al-slot .al-ico { font-size: 1.8rem; filter: grayscale(1); opacity: .35; }
+.al-slot small { font-size: .7rem; color: var(--muted); font-weight: 700; }
+.al-slot.got { background: rgba(255,255,255,.08); border: 1px solid rgba(255,207,63,.45); }
+.al-slot.got .al-ico { filter: none; opacity: 1; }
+.al-slot.got small { color: var(--text); }
+.al-slot em { position: absolute; top: 3px; right: 6px; font-style: normal; font-size: .62rem; font-weight: 900; color: var(--accent); }
+.al-slot.rare { padding: 14px 8px; }
+.al-slot.rare b { font-size: .85rem; }
+.al-slot.rare.got { border-color: var(--rc); box-shadow: 0 0 18px color-mix(in srgb, var(--rc) 50%, transparent); }
+
+/* ---------- Renacer ---------- */
+.prestige-card { background: linear-gradient(135deg, rgba(255,243,176,.12), rgba(179,136,255,.1)); }
+.prestige-card.ready { border-color: #ffe48a; box-shadow: 0 0 24px #ffe48a55; animation: glow 1.8s infinite; }
+.prestige-card.pulse { animation: pop .5s; }
+.prestige-badge { color: #ffe48a; font-size: .8rem; }
+.modal-box.prestige { background: linear-gradient(160deg, #5a4a10, #2a0f45); box-shadow: 0 0 60px #ffe48a77; }
+.mb-album { background: linear-gradient(135deg, #4cc9f033, #b388ff22); }
+.mb-prest { background: linear-gradient(135deg, #ffe48a33, #b388ff22); }

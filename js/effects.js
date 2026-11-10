@@ -42,11 +42,12 @@
       if (p.life <= 0) return false;
       p.vx *= p.drag;
       p.vy = p.vy * p.drag + p.g * dt;
+      if (p.accel) { p.vx *= 1 + p.accel * dt; p.vy *= 1 + p.accel * dt; }
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.rot += p.vr * dt;
       draw(p);
-      return p.y < H + 60;
+      return p.y < H + 260 && p.y > -400 && p.x > -400 && p.x < W + 400;
     });
     if (parts.length) requestAnimationFrame(loop);
     else {
@@ -102,6 +103,49 @@
         ctx.fillStyle = p.color;
         ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
         break;
+      case 'streak': { // estrella fugaz con estela
+        ctx.rotate(-p.rot);
+        const sp = Math.hypot(p.vx, p.vy) || 1;
+        const tx = (-p.vx / sp) * p.len, ty = (-p.vy / sp) * p.len;
+        const g = ctx.createLinearGradient(0, 0, tx, ty);
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(0.2, p.color);
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.strokeStyle = g;
+        ctx.lineWidth = p.size;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size * 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case 'ring': { // onda expansiva
+        ctx.rotate(-p.rot);
+        const k = 1 - p.life / p.max;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = Math.max(1, p.size * (1 - k));
+        ctx.beginPath();
+        ctx.arc(0, 0, p.r0 + k * p.r1, 0, Math.PI * 2);
+        ctx.stroke();
+        break;
+      }
+      case 'warp': { // estrellas saliendo del centro (salto a velocidad luz)
+        ctx.rotate(-p.rot);
+        const sp = Math.hypot(p.vx, p.vy) || 1;
+        const len = Math.min(220, sp * 0.08);
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = p.size;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo((-p.vx / sp) * len, (-p.vy / sp) * len);
+        ctx.stroke();
+        break;
+      }
     }
     ctx.restore();
   }
@@ -143,6 +187,38 @@
       for (let k = 0; k < count; k++) {
         setTimeout(() => FX.burst(rand(W * 0.15, W * 0.85), rand(H * 0.15, H * 0.5), 45), k * 280);
       }
+    },
+    /* ---- Efectos de los premios extremadamente raros ---- */
+    shootingStars(n, spread) {
+      for (let i = 0; i < n; i++) {
+        setTimeout(() => {
+          const x = rand(-W * 0.1, W * 0.7), y = rand(-H * 0.2, H * 0.4);
+          const sp = rand(900, 1500);
+          add({ kind: 'streak', x, y, vx: sp, vy: sp * rand(0.35, 0.6), g: 0, drag: 1, rot: 0, vr: 0, size: rand(2, 3.5), len: rand(120, 260), color: ['#9fe8ff', '#fff7b0', '#ffffff', '#b388ff'][i % 4], life: 1.6, fade: 0.4, max: 1.6 });
+        }, i * (spread || 120));
+      }
+    },
+    goldRain(seconds) {
+      const end = performance.now() + seconds * 1000;
+      const iv = setInterval(() => {
+        if (performance.now() > end) return clearInterval(iv);
+        for (let i = 0; i < 6; i++) add({ kind: 'coin', x: rand(0, W), y: rand(-60, -10), vx: rand(-40, 40), vy: rand(200, 420), g: 500, drag: 0.995, rot: rand(0, 6), vr: rand(-8, 8), size: rand(8, 15), life: 4, fade: 0.6 });
+      }, 60);
+    },
+    shockwave(x, y, color, count) {
+      for (let i = 0; i < (count || 1); i++) {
+        setTimeout(() => add({ kind: 'ring', x, y, vx: 0, vy: 0, g: 0, drag: 1, rot: 0, vr: 0, size: 14, r0: 10, r1: Math.max(W, H) * 0.9, color: color || '#ffffff', life: 1.3, max: 1.3, fade: 1.3 }), i * 220);
+      }
+    },
+    warp(seconds) {
+      const end = performance.now() + seconds * 1000;
+      const iv = setInterval(() => {
+        if (performance.now() > end) return clearInterval(iv);
+        for (let i = 0; i < 10; i++) {
+          const a = rand(0, Math.PI * 2), sp = rand(60, 160);
+          add({ kind: 'warp', x: W / 2 + Math.cos(a) * 10, y: H / 2 + Math.sin(a) * 10, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0, drag: 1, accel: 3.2, rot: 0, vr: 0, size: rand(1, 2.5), color: ['#ffffff', '#b9f6ff', '#d6c4ff'][i % 3], life: 2.5, fade: 0.3 });
+        }
+      }, 40);
     },
     flash(color) {
       const el = document.getElementById('flash');

@@ -7,7 +7,7 @@ Juego de boletos de rasca virtuales hecho con HTML, CSS y JavaScript puro, sin d
 
 Abre `index.html` en el navegador (doble clic o cualquier servidor estático, por ejemplo GitHub Pages).
 
-1. Empiezas con **1.000 monedas**.
+1. Empiezas con **500 monedas** (más si has renacido).
 2. Compra boletos en la **Tienda** (de uno en uno, ×5 o ×10).
 3. **Rasca** arrastrando el ratón o el dedo sobre la capa metálica; el contenido se descubre poco a poco. El botón «⚡ Rascar todo» se desbloquea con la habilidad «Rascado automático».
 4. Si salen **3 símbolos iguales**, ganas su premio. En Oro, Diamante y Legendario, la casilla **MULTIPLICADOR** lo multiplica.
@@ -17,12 +17,12 @@ Abre `index.html` en el navegador (doble clic o cualquier servidor estático, po
 
 La partida avanza **por días**. Cada día tienes un número de **jugadas** (cada boleto o partida gasta una) y un **objetivo de monedas** que tienes que tener cuando se acaben.
 
-- **Objetivo:** 1.000 el día 1 y un 25 % más cada día (1.250, 1.550, 1.950… unos 9.300 el día 11 y unos 28.500 el día 16).
+- **Objetivo:** 500 el día 1 y un 25 % más cada día (650, 800, 1.000… unos 4.650 el día 11 y unos 14.000 el día 16).
 - **Jugadas:** 12 el día 1, y 1 o 2 más cada día, hasta un máximo de 40.
 - **Al empezar cada día** recibes un bonus del 12 % del objetivo de ese día, proporcional a las jugadas que usaste el día anterior (si cierras el día antes, recibes menos), la producción de tu ⛏️ mina y, con la habilidad 🏦 Banco, intereses sobre lo que superaste el objetivo (como mucho, el 50 % del nuevo objetivo).
 - **Terminar antes:** si ya tienes el objetivo, puedes cerrar el día sin gastar el resto de jugadas, para no arriesgar.
 - **Si no llegas**, la partida termina y empiezas de cero, salvo que tengas una **❤️ Segunda vida**: te salva, conservas tu progreso y pasas al día siguiente.
-- `node tools/simulate-days.js` simula miles de partidas para ajustar la dificultad. Sin habilidades, mina ni objetos y usando todas las jugadas, la mitad de las partidas llega al día 5 y un 17 % pasa del día 7; las mejoras son las que permiten llegar más lejos.
+- `node tools/simulate-days.js` simula miles de partidas para ajustar la dificultad. Sin habilidades, mina ni objetos y usando todas las jugadas, la mitad de las partidas llega al día 6 y un 23 % pasa del día 7; las mejoras son las que permiten llegar más lejos.
 
 ## Boletos
 
@@ -41,6 +41,34 @@ Las tablas completas están en `js/data.js` y se pueden ver dentro del juego, en
 - El resultado se sortea **al comprar** el boleto según su tabla de probabilidades, y se guarda con él. Recargar la página no cambia el resultado.
 - Después se genera una cuadrícula **coherente** con ese resultado. En un boleto premiado hay exactamente 3 símbolos ganadores y ningún otro símbolo aparece 3 veces. En uno sin premio, ningún símbolo aparece 3 veces.
 - `node tools/simulate.js [n]` simula `n` boletos de cada tipo. Compara la teoría con lo observado y comprueba que todas las cuadrículas sean coherentes.
+
+## ✨ Premios extremadamente raros
+
+Además del premio normal, cada boleto o partida tiene un sorteo aparte de acontecimientos muy raros. El premio es un múltiplo del precio de lo que juegas, así que cada nivel solo suma un 1 % al retorno medio. Cada uno tiene su propia animación y su propio sonido:
+
+| Acontecimiento | Probabilidad | Premio | Animación |
+|---|---|---|---|
+| 🌠 Estrella fugaz | 1 de 10.000 | ×100 el precio | cielo nocturno cruzado por estrellas fugaces |
+| 💰 Lluvia de oro | 1 de 100.000 | ×1.000 | la pantalla se oscurece y llueven monedas durante segundos |
+| 💥 Supernova | 1 de 1.000.000 | ×10.000 | apagón; un punto de luz crece y estalla con ondas expansivas |
+| 🌌 Big Bang | 1 de 10.000.000 | ×100.000 | salto a velocidad luz, cuenta atrás 3-2-1 y explosión de todos los colores |
+
+## 📒 Álbum de premios
+
+Colección de los 132 premios del juego: cada símbolo ganador de cada boleto (normales, secretos y de edición limitada) y de cada juego, más los 4 acontecimientos raros. Muestra los que has conseguido (con cuántas veces) y los que faltan como «?». **Se conserva siempre**, aunque pierdas o renazcas. Completar el 25 % y el 50 % da logros.
+
+## 🌟 Renacer
+
+Al llegar al nivel 10 puedes renacer: empiezas una partida nueva desde el día 1, pero con mejoras permanentes que se acumulan con cada renacimiento. Cada renacimiento posterior pide 3 niveles más (13, 16, 19…).
+
+| Por cada renacimiento | |
+|---|---|
+| 🍀 Premios | +4 % |
+| 📚 Experiencia | +10 % |
+| 💰 Monedas iniciales | +150 |
+| 🎟️ Jugadas al día | +1 |
+
+Al renacer se conservan el álbum, los récords y los renacimientos, y también se mantienen si pierdes una partida.
 
 ## Juegos sin rascar
 
@@ -92,7 +120,7 @@ El precio de los objetos sube con el nivel del jugador.
 - **Inventario:** boletos comprados pendientes de rascar.
 - **Historial:** los últimos 300 boletos, con filtros.
 - **Estadísticas:** gastado, ganado, balance, porcentaje de premiados, retorno real por tipo, mayor premio y rachas.
-- **Logros:** 33 retos con recompensa.
+- **Logros:** 40 retos con recompensa.
 - **Fin de la partida:** si al acabar el día no llegas al objetivo, empiezas de cero (salvo con una ❤️ Segunda vida). Antes de una compra que te dejaría sin dinero para jugar, el juego pide confirmación.
 - **Récords** de todas las partidas (día alcanzado, nivel, saldo, mayor premio y número de partida): se conservan al empezar de cero.
 - La partida se guarda automáticamente en `localStorage`.

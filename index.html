@@ -20,7 +20,7 @@
           <span class="coin-ico"></span><span id="coins">0</span>
         </div>
         <div class="pill level-pill" title="Nivel y experiencia">
-          <span class="lvl-badge">Nv <b id="level">1</b></span>
+          <span class="lvl-badge">Nv <b id="level">1</b> <span id="prestige-badge" class="prestige-badge"></span></span>
           <span class="xp-bar"><span id="xp-fill"></span></span>
         </div>
         <button class="icon-btn" id="sound-btn" aria-label="Activar o desactivar sonido">🔊</button>
@@ -61,6 +61,7 @@
 
         <div class="jackpot-banner"><div class="jp-mode">🌍 JACKPOT MUNDIAL</div><div class="jp-row"><span class="coin-ico lg"></span><span class="jp-value">100.000</span></div><div class="jp-subline"></div><div class="jp-help">Cada jugada aporta el 1 % y tiene una pequeña probabilidad (mayor cuanto más cara) de llevarse el bote entero.</div></div>
         <div class="card mine-card" id="mine-card"></div>
+        <div class="card mine-card prestige-card" id="prestige-card"></div>
 
         <div class="menu-grid">
           <button class="menu-btn mb-shop" data-go="shop"><span>🛒</span>Tienda</button>
@@ -69,6 +70,8 @@
           <button class="menu-btn mb-ach" data-go="achievements"><span>🏆</span>Logros<small id="ach-count"></small></button>
           <button class="menu-btn mb-hist" data-go="history"><span>📜</span>Historial</button>
           <button class="menu-btn mb-stats" data-go="stats"><span>📊</span>Estadísticas</button>
+          <button class="menu-btn mb-album" data-go="album"><span>📒</span>Álbum<small id="album-count"></small></button>
+          <button class="menu-btn mb-prest" data-prestige-info><span>🌟</span>Renacer</button>
         </div>
 
         <div class="card">
@@ -177,6 +180,16 @@
           <div class="skill-summary" id="skill-summary"></div>
         </div>
         <div class="skill-tree" id="skill-tree"></div>
+      </section>
+
+      <!-- ÁLBUM -->
+      <section class="screen" id="screen-album">
+        <div class="screen-head">
+          <h2>📒 Álbum de premios</h2>
+          <p class="muted">Todos los premios que has descubierto y los que faltan. El álbum se conserva aunque pierdas o renazcas.</p>
+        </div>
+        <div class="card" id="album-progress"></div>
+        <div id="album-list"></div>
       </section>
 
       <!-- LOGROS -->

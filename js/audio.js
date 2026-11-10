@@ -126,12 +126,56 @@
       [0, 5, 9, 12, 17, 21, 24].forEach((s, i) => tone(N(12 + s), i * 0.07, 0.3, 'triangle', 0.1));
     },
 
+    /** Sonido propio de cada acontecimiento raro (nivel 0-3). */
+    rare(level) {
+      if (!ensure()) return;
+      if (level === 0) { // estrella fugaz: destellos brillantes
+        [24, 28, 31, 36, 40, 43, 48].forEach((s, i) => tone(N(s), i * 0.07, 0.4, 'sine', 0.09));
+        tone(N(19), 0, 1.2, 'triangle', 0.05, N(43));
+      } else if (level === 1) { // lluvia de oro: cascada de monedas y fanfarria
+        coinShower(50, 0.1);
+        [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => tone(N(12 + s), 0.3 + i * 0.12, 0.4, 'square', 0.06));
+      } else if (level === 2) { // supernova: silencio, estallido grave y acorde
+        noise(0.9, 1.2, 0.35);
+        tone(N(-24), 0.85, 2.2, 'sine', 0.35, N(-36));
+        [0, 4, 7, 11, 14].forEach((s, i) => tone(N(s), 1.2 + i * 0.05, 2.5, 'sawtooth', 0.04));
+        [12, 16, 19, 24].forEach((s, i) => tone(N(s), 1.6 + i * 0.18, 0.6, 'triangle', 0.08));
+      } else { // big bang: subida larga, explosión y fanfarria extendida
+        tone(N(-24), 0, 4.2, 'sawtooth', 0.06, N(24));
+        tone(N(-12), 0, 4.2, 'sine', 0.08, N(36));
+        noise(4.2, 2.0, 0.5);
+        tone(N(-36), 4.2, 3, 'sine', 0.4, N(-48));
+        const seq = [0, 4, 7, 12, 16, 19, 24, 28, 31, 36];
+        seq.forEach((s, i) => tone(N(s), 4.6 + i * 0.14, 0.9, 'square', 0.05));
+        seq.forEach((s, i) => tone(N(s - 12), 4.6 + i * 0.14, 0.9, 'triangle', 0.07));
+        coinShower(60, 5);
+      }
+    },
+
     achievement() {
       tone(N(24), 0, 0.15, 'sine', 0.12);
       tone(N(31), 0.12, 0.15, 'sine', 0.12);
       tone(N(36), 0.24, 0.4, 'sine', 0.12);
     },
   };
+
+  /** Ráfaga de ruido que se apaga (explosiones). */
+  function noise(start, dur, vol) {
+    if (!ensure()) return;
+    const len = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 1200;
+    const g = ctx.createGain();
+    g.gain.value = vol;
+    src.connect(f).connect(g).connect(master);
+    src.start(ctx.currentTime + start);
+  }
 
   function coinShower(n, start) {
     for (let i = 0; i < n; i++) {

@@ -6,13 +6,14 @@
 const D = require('../js/data.js');
 const RUNS = +process.argv[2] || 3000;
 const T1 = +process.argv[3] || D.DAYS.target(1);
-const G = +process.argv[4] || D.DAYS.target(2) / D.DAYS.target(1);
+const G = +process.argv[4] || 1.25;
 const B = process.argv[5] !== undefined ? +process.argv[5] : D.DAYS.bonusShare;
-const EARLY = process.argv[6] === 'antes'; // estrategia: cerrar el día antes cuando se pueda
+const EARLY = process.argv[6] === 'antes';
+const START = +process.argv[7] || D.DAYS.startCoins; // estrategia: cerrar el día antes cuando se pueda
 const target = (n) => Math.round(T1 * Math.pow(G, n - 1));
 const days = [];
 for (let r = 0; r < RUNS; r++) {
-  let coins = 1000, xp = 0, level = 1, day = 1;
+  let coins = START, xp = 0, level = 1, day = 1;
   for (;;) {
     let plays = D.DAYS.plays(day);
     while (plays > 0) {

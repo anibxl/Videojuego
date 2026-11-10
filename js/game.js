@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  const { DAYS, TIERS, TIER_BY_ID, SECRET_TIERS, EVENTS, LIMITED_TIERS, eventAt, JACKPOT, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward } = window.GameData;
+  const { RARE_EVENTS, rollRare, PRESTIGE, albumSlots, albumProgress, DAYS, TIERS, TIER_BY_ID, SECRET_TIERS, EVENTS, LIMITED_TIERS, eventAt, JACKPOT, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward } = window.GameData;
   const SAVE_KEY = 'rascamania_save_v1';
   const HISTORY_MAX = 300;
   const $ = (id) => document.getElementById(id);
@@ -36,7 +36,7 @@
 
   function defaultState() {
     return {
-      coins: 1000,
+      coins: DAYS.startCoins,
       level: 1,
       xp: 0,
       inventory: [],
@@ -53,12 +53,14 @@
       lastEventSeen: null,
       jpLocal: { round: 1, startedAt: Date.now(), contrib: 0, lastWin: null },
       // Récords de todas las partidas: se conservan al empezar de cero
-      records: { runs: 1, bestLevel: 1, bestCoins: 1000, bestWin: 0, bestDay: 1 },
+      records: { runs: 1, bestLevel: 1, bestCoins: DAYS.startCoins, bestWin: 0, bestDay: 1 },
+      prestige: 0, // renacimientos (permanente)
+      album: {}, // premios descubiertos (permanente)
       stats: {
         spent: 0, won: 0, bonus: 0, skillSpent: 0, shopSpent: 0, refunds: 0, bought: 0, scratched: 0, wins: 0,
         games: 0, items: 0, mineEarned: 0, wildWins: 0, livesUsed: 0,
         secrets: 0, jackpots: 0, eventIds: [],
-        biggestWin: 0, biggestTier: null, streak: 0, bestStreak: 0, peakCoins: 1000,
+        biggestWin: 0, biggestTier: null, streak: 0, bestStreak: 0, peakCoins: DAYS.startCoins, rares: 0,
         perTier: freshPerTier(),
       },
       createdAt: Date.now(),
@@ -87,7 +89,9 @@
     out.secret = Object.assign({ nextAt: 0, tier: null, until: 0, left: 0 }, s.secret || {});
     out.jpLocal = Object.assign({ round: 1, startedAt: Date.now(), contrib: 0, lastWin: null }, s.jpLocal || {});
     out.stats.eventIds = Array.isArray(savedStats.eventIds) ? savedStats.eventIds.slice() : [];
-    out.records = Object.assign({ runs: 1, bestLevel: 1, bestCoins: 1000, bestWin: 0, bestDay: 1 }, s.records || {});
+    out.records = Object.assign({ runs: 1, bestLevel: 1, bestCoins: DAYS.startCoins, bestWin: 0, bestDay: 1 }, s.records || {});
+    out.album = Object.assign({}, s.album || {});
+    out.prestige = Number(s.prestige) || 0;
     out.day = Object.assign({ n: 1, target: DAYS.target(1), plays: DAYS.plays(1), playsTotal: DAYS.plays(1) }, s.day || {});
     out.day.target = DAYS.target(out.day.n); // por si cambia la fórmula
     // Partidas anteriores a los días: lo acumulado en la mina se cobra una vez
@@ -124,6 +128,12 @@
     return { lvl, cost, state: S.coins >= cost ? 'available' : 'expensive' };
   }
   const affordableSkills = () => SKILLS.filter((s) => skillState(s).state === 'available').length;
+
+  /* ---------- Renacer: mejoras permanentes ---------- */
+  const P = () => S.prestige || 0;
+  const prestigePrize = () => P() * PRESTIGE.prizeBonus;
+  const prestigeXp = () => P() * PRESTIGE.xpBonus;
+  const dayPlaysFor = (n) => DAYS.plays(n) + P() * PRESTIGE.extraPlays;
 
   /* ---------- Objetos y mina ---------- */
   function itemPrice(it) {
@@ -194,6 +204,7 @@
     const need = xpForLevel(S.level);
     const pct = Math.min(100, (S.xp / need) * 100);
     $('level').textContent = S.level;
+    $('prestige-badge').textContent = P() ? '🌟' + P() : '';
     $('home-level').textContent = S.level;
     $('xp-fill').style.width = pct + '%';
     $('home-xp-fill').style.width = pct + '%';
@@ -378,13 +389,14 @@
   }
 
   let bankruptTimer = null;
+  let rareShowing = false;
   /** Comprueba si el día ha terminado (con retraso para que se vea antes el resultado). */
   function checkBankrupt(delay) {
     clearTimeout(bankruptTimer);
     bankruptTimer = setTimeout(() => {
       renderDay();
       if (!dayOver()) return;
-      if (modalOpen) return checkBankrupt(600); // espera a que se cierren otras ventanas
+      if (modalOpen || rareShowing) return checkBankrupt(600); // espera a que se cierren otras ventanas
       endDay();
     }, delay === undefined ? 300 : delay);
   }
@@ -400,7 +412,7 @@
     const prev = S.day;
     const n = prev.n + 1;
     const target = DAYS.target(n);
-    const plays = DAYS.plays(n);
+    const plays = dayPlaysFor(n);
     const surplus = Math.max(0, S.coins - prev.target);
     const interest = saved ? 0 : Math.min(Math.round(surplus * skEffect('storage')), Math.round(target * DAYS.interestCap));
     const used = prev.playsTotal ? (prev.playsTotal - Math.max(0, prev.plays)) / prev.playsTotal : 1;
@@ -481,7 +493,7 @@
           ${row('Mayor premio', st.biggestWin ? fmt(st.biggestWin) : '—')}
         </div>
         <p class="small">💡 Una <b>❤️ Segunda vida</b> (tienda → Objetos) te salva cuando no llegas al objetivo.</p>`,
-      buttons: [{ label: '🔄 Empezar de cero', cls: 'btn', action: () => resetRun('💀 Nueva partida: día 1, ¡1.000 monedas para empezar!') }],
+      buttons: [{ label: '🔄 Empezar de cero', cls: 'btn', action: () => resetRun('💀 Nueva partida: día 1. ¡A por ello!') }],
     });
   }
 
@@ -522,9 +534,9 @@
   });
 
   /** Empieza una partida nueva conservando sonido y récords. */
-  function resetRun(msg) {
+  function resetRun(msg, opts) {
     noteRecords();
-    const keep = { sound: S.sound, records: S.records };
+    const keep = { sound: S.sound, records: S.records, prestige: S.prestige || 0, album: S.album || {} };
     if (play.card) {
       play.card.destroy();
       play.card = null;
@@ -537,6 +549,12 @@
     S.sound = keep.sound;
     S.records = keep.records;
     S.records.runs++;
+    S.prestige = keep.prestige + (opts && opts.prestige ? 1 : 0);
+    S.album = keep.album;
+    // Mejoras de los renacimientos
+    S.coins += P() * PRESTIGE.startCoins;
+    S.stats.peakCoins = S.coins;
+    S.day.plays = S.day.playsTotal = dayPlaysFor(1);
     save();
     refreshHeader(false);
     go('home');
@@ -577,8 +595,11 @@
     const got = Object.keys(S.achievements).length;
     $('ach-count').textContent = `${got}/${ACHIEVEMENTS.length}`;
     renderMineCard();
+    renderPrestigeCard();
     renderBoosts();
     renderJackpot();
+    const ap = albumProgress(S.album);
+    $('album-count').textContent = `${ap.got}/${ap.total}`;
     const wins = S.history.filter((h) => h.prize > 0).slice(0, 5);
     $('recent-list').innerHTML = wins.length
       ? wins.map(historyRow).join('')
@@ -788,6 +809,9 @@
     if (tk.prize && Math.random() < skEffect('golden')) tk.golden = true;
     // Sorteo del jackpot mundial (probabilidad proporcional al precio)
     if (Math.random() < PRODUCT_BY_ID[id].price * JACKPOT.chancePerCoin) tk.jackpot = true;
+    // Premios extremadamente raros (1 de 10.000 … 1 de 10.000.000)
+    const rare = rollRare();
+    if (rare >= 0) tk.rare = rare;
     return tk;
   }
 
@@ -977,7 +1001,7 @@
     }
     const used = useBoosts(!isGame);
     const base = tk.prize;
-    const luckBonus = skEffect('lucky') + (isGame ? skEffect('lever') : 0) + (used.charm ? 0.1 : 0);
+    const luckBonus = skEffect('lucky') + (isGame ? skEffect('lever') : 0) + (used.charm ? 0.1 : 0) + prestigePrize();
     const payout = base ? Math.round(base * (tk.golden ? 2 : 1) * (1 + luckBonus)) : 0;
     const paid = tk.paid || t.price;
     const refund = base ? 0 : Math.round(paid * (skEffect('refund') + (used.shield ? 0.1 : 0)));
@@ -998,6 +1022,8 @@
       pt.won += payout;
       pt.best = Math.max(pt.best, payout);
       if (tk.wild) S.stats.wildWins++;
+      const ak = t.id + ':' + tk.winSym;
+      S.album[ak] = (S.album[ak] || 0) + 1;
       if (payout > S.stats.biggestWin) {
         S.stats.biggestWin = payout;
         S.stats.biggestTier = t.id;
@@ -1014,9 +1040,23 @@
     S.history.unshift({ tier: t.id, prize: payout, sym: tk.winSym, mult: tk.mult, t: Date.now(), id: tk.id });
     if (S.history.length > HISTORY_MAX) S.history.length = HISTORY_MAX;
 
-    const xpGain = Math.round((t.xp + Math.min(Math.floor(payout / 20), t.xp * 5)) * (1 + skEffect('xp')) * (used.xp2 ? 2 : 1));
+    // Acontecimiento extremadamente raro: premio aparte, multiplicado por el precio
+    let rareAmount = 0;
+    if (tk.rare >= 0 && RARE_EVENTS[tk.rare]) {
+      const ev = RARE_EVENTS[tk.rare];
+      rareAmount = Math.round(t.price * ev.mult * (1 + luckBonus));
+      S.coins += rareAmount;
+      S.stats.won += rareAmount;
+      S.stats.rares++;
+      S.album['rare:' + ev.id] = (S.album['rare:' + ev.id] || 0) + 1;
+      if (rareAmount > S.stats.biggestWin) { S.stats.biggestWin = rareAmount; S.stats.biggestTier = t.id; }
+      notePeak();
+      rareShowing = true;
+      setTimeout(() => playRareEvent(tk.rare, rareAmount, t), 1600);
+    }
+    const xpGain = Math.round((t.xp + Math.min(Math.floor(payout / 20), t.xp * 5)) * (1 + skEffect('xp') + prestigeXp()) * (used.xp2 ? 2 : 1));
     addXP(xpGain);
-    return { payout, refund, consolation, xpGain, luckBonus, used };
+    return { payout, refund, consolation, xpGain, luckBonus, used, rareAmount };
   }
 
   /** Texto de bonificaciones aplicadas a un resultado. */
@@ -1718,6 +1758,183 @@
     document.querySelectorAll('.jp-mode').forEach((el) => (el.textContent = JP.online ? '🌍 JACKPOT MUNDIAL' : '🌍 JACKPOT (MODO LOCAL)'));
   }
 
+  /* =========================================================
+     Premios extremadamente raros: una animación distinta para cada nivel
+     ========================================================= */
+  function playRareEvent(level, amount, t) {
+    const ev = RARE_EVENTS[level];
+    rareShowing = true;
+    const ov = document.createElement('div');
+    ov.className = `rare-overlay rare-${ev.id}`;
+    ov.innerHTML = `<div class="ro-dot"></div><div class="ro-count"></div>
+      <div class="ro-card">
+        <div class="ro-icon">${ev.icon}</div>
+        <div class="ro-odds">1 entre ${fmt(ev.odds)}</div>
+        <div class="ro-title">¡${ev.name.toUpperCase()}!</div>
+        <div class="ro-amount"><span class="coin-ico lg"></span><span class="ro-num">0</span></div>
+        <div class="ro-sub">Un acontecimiento en tu ${GAME_BY_ID[t.id] ? 'partida de' : 'boleto'} ${esc(t.name)} (×${fmt(ev.mult)} su precio)</div>
+        <button class="btn btn-pink ro-close">¡INCREÍBLE!</button>
+      </div>`;
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add('on'));
+    Sound.rare(level);
+    const at = (ms, fn) => setTimeout(fn, ms);
+    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+    const reveal = (ms, countMs) => at(ms, () => {
+      ov.classList.add('reveal');
+      countUp(ov.querySelector('.ro-num'), amount, countMs);
+    });
+    if (level === 0) {
+      // 🌠 Estrella fugaz: lluvia de estrellas fugaces sobre un cielo nocturno
+      FX.shootingStars(16, 110);
+      at(900, () => FX.sparkle(cx, cy, 30, '#bff7ff'));
+      reveal(700, 1200);
+    } else if (level === 1) {
+      // 💰 Lluvia de oro: la pantalla se oscurece y caen monedas sin parar
+      FX.goldRain(4.5);
+      at(300, () => FX.flash('#ffe48a'));
+      at(500, () => FX.coins(cx, cy, 60));
+      reveal(900, 1800);
+    } else if (level === 2) {
+      // 💥 Supernova: apagón, un punto de luz crece y estalla con ondas expansivas
+      at(850, () => {
+        ov.classList.add('boom');
+        FX.flash('#ffffff');
+        FX.shake();
+        FX.shockwave(cx, cy, '#ffffff', 3);
+        FX.shockwave(cx, cy, '#ff8ab5', 2);
+        FX.burst(cx, cy, 120);
+        FX.confetti(200);
+      });
+      reveal(1500, 2200);
+    } else {
+      // 🌌 Big Bang: salto a velocidad luz, cuenta atrás y explosión de todos los colores
+      FX.warp(4.2);
+      const cnt = ov.querySelector('.ro-count');
+      [['3', 1200], ['2', 2200], ['1', 3200]].forEach(([n, ms]) => at(ms, () => {
+        cnt.textContent = n;
+        cnt.classList.remove('pop');
+        void cnt.offsetWidth;
+        cnt.classList.add('pop');
+      }));
+      at(4200, () => {
+        cnt.textContent = '';
+        ov.classList.add('boom');
+        FX.flash('#ffffff');
+        FX.shake();
+        FX.shockwave(cx, cy, '#ffffff', 4);
+        FX.shockwave(cx, cy, '#b388ff', 3);
+        FX.fireworks(14);
+        FX.confetti(400);
+        FX.coins(cx, cy, 120);
+      });
+      at(5600, () => FX.shake());
+      reveal(4700, 3000);
+    }
+    ov.querySelector('.ro-close').addEventListener('click', () => {
+      Sound.click();
+      ov.classList.remove('on');
+      setTimeout(() => ov.remove(), 400);
+      rareShowing = false;
+      checkAchievements();
+      save();
+      refreshHeader(true);
+      checkBankrupt(300);
+    });
+  }
+
+  /* =========================================================
+     Álbum de premios (se conserva siempre)
+     ========================================================= */
+  function renderAlbum() {
+    const slots = albumSlots();
+    const ap = albumProgress(S.album);
+    $('album-progress').innerHTML = `<div class="dp-goal"><span>Premios descubiertos</span><b>${ap.got} / ${ap.total} · ${ap.pct} %</b></div>
+      <div class="xp-bar wide dp-bar"><span style="width:${ap.pct}%"></span></div>`;
+    const slot = (x) => {
+      const n = S.album[x.key] || 0;
+      if (x.rare) {
+        return `<div class="al-slot rare ${n ? 'got' : ''}" style="--rc:${x.rare.color}">
+          <span class="al-ico">${n ? x.rare.icon : '❔'}</span><b>${n ? x.rare.name : '???'}</b>
+          <small>1 entre ${fmt(x.rare.odds)} · ×${fmt(x.rare.mult)}</small>${n ? `<em>×${n}</em>` : ''}</div>`;
+      }
+      return `<div class="al-slot ${n ? 'got' : ''}"><span class="al-ico">${n ? x.sym.e : '❔'}</span>
+        <small>${n ? fmtShort(x.sym.v) : '???'}</small>${n ? `<em>×${n}</em>` : ''}</div>`;
+    };
+    const groups = [
+      ['✨ Acontecimientos extremadamente raros', slots.filter((x) => x.rare), true],
+    ];
+    const byProduct = (list, label) => list.forEach((t) => groups.push([`${label} ${t.icon || ''} ${t.name}`, slots.filter((x) => x.product === t), false]));
+    byProduct(TIERS, '🎟️');
+    byProduct(SECRET_TIERS, '🕵️');
+    byProduct(LIMITED_TIERS, '🎉');
+    byProduct(GAMES, '🎰');
+    $('album-list').innerHTML = groups.map(([title, list, isRare]) => {
+      const got = list.filter((x) => (S.album[x.key] || 0) > 0).length;
+      return `<div class="card al-group ${got === list.length ? 'complete' : ''}">
+        <div class="al-head"><b>${title}</b><span class="${got === list.length ? 'al-done' : 'muted'}">${got === list.length ? '✔ Completo' : `${got}/${list.length}`}</span></div>
+        <div class="al-grid ${isRare ? 'rare-grid' : ''}">${list.map(slot).join('')}</div>
+      </div>`;
+    }).join('');
+  }
+  renderers.album = renderAlbum;
+
+  /* =========================================================
+     Renacer: reinicia la partida a cambio de mejoras permanentes
+     ========================================================= */
+  const canPrestige = () => S.level >= PRESTIGE.minLevel(P());
+  function prestigeBoostsText(p) {
+    return `+${Math.round(p * PRESTIGE.prizeBonus * 100)} % premios · +${Math.round(p * PRESTIGE.xpBonus * 100)} % XP · +${fmt(p * PRESTIGE.startCoins)} monedas iniciales · +${p * PRESTIGE.extraPlays} jugada${p === 1 ? '' : 's'} al día`;
+  }
+  function renderPrestigeCard() {
+    const el = $('prestige-card');
+    const need = PRESTIGE.minLevel(P());
+    const ready = canPrestige();
+    el.classList.toggle('ready', ready);
+    el.innerHTML = `<div class="mine-row"><span class="mine-ico">🌟</span>
+      <div class="grow"><b>Renacer${P() ? ` · llevas ${P()}` : ''}</b>
+        <small class="muted">${ready ? `¡Ya puedes renacer! Empezarás de cero con: ${prestigeBoostsText(P() + 1)}` : `Disponible en el nivel ${need} (te faltan ${need - S.level}).${P() ? ' Mejoras actuales: ' + prestigeBoostsText(P()) : ' Te da mejoras permanentes para siempre.'}`}</small>
+        ${ready ? '' : `<div class="xp-bar wide mine-bar"><span style="width:${Math.min(100, (S.level / need) * 100)}%"></span></div>`}</div>
+      ${ready ? '<button class="btn small-btn" data-prestige>🌟 Renacer</button>' : ''}</div>`;
+  }
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-prestige-info]')) return;
+    Sound.click();
+    const card = $('prestige-card');
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.remove('pulse');
+    void card.offsetWidth;
+    card.classList.add('pulse');
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-prestige]') || !canPrestige()) return;
+    Sound.click();
+    const next = P() + 1;
+    modal({
+      cls: 'prestige',
+      icon: '🌟',
+      title: `¿Renacer por ${next === 1 ? 'primera' : next + 'ª'} vez?`,
+      html: `<p>Empezarás una partida nueva desde el día 1. <b>Pierdes</b> el saldo, el nivel, las habilidades, los objetos, la mina y los logros de esta partida.</p>
+        <p><b>Conservas</b> el álbum, los récords y tus renacimientos, y ganas estas mejoras permanentes:</p>
+        <div class="go-stats">
+          <div class="go-row"><span>🍀 Premios</span><b>+${Math.round(next * PRESTIGE.prizeBonus * 100)} %</b></div>
+          <div class="go-row"><span>📚 Experiencia</span><b>+${Math.round(next * PRESTIGE.xpBonus * 100)} %</b></div>
+          <div class="go-row"><span>💰 Monedas iniciales</span><b>${fmt(DAYS.startCoins + next * PRESTIGE.startCoins)}</b></div>
+          <div class="go-row"><span>🎟️ Jugadas extra al día</span><b>+${next * PRESTIGE.extraPlays}</b></div>
+        </div>
+        <p class="small">El siguiente renacimiento pedirá el nivel ${PRESTIGE.minLevel(next)}.</p>`,
+      buttons: [
+        { label: '🌟 Renacer', cls: 'btn', action: () => {
+          resetRun(`🌟 ¡Has renacido! Renacimientos: ${next}`, { prestige: true });
+          Sound.levelUp();
+          FX.flash('#fff3b0');
+          FX.confetti(160);
+        } },
+        { label: 'Todavía no', cls: 'btn btn-ghost' },
+      ],
+    });
+  });
+
   /* ---------- Árbol de habilidades ---------- */
   function renderSkills() {
     const active = SKILLS.filter((k) => sk(k.id) > 0);
@@ -1822,12 +2039,14 @@
       ['Boletos secretos', fmt(st.secrets)],
       ['Eventos jugados', fmt(st.eventIds.length)],
       ['Jackpots ganados', fmt(st.jackpots)],
+      ['Premios extremadamente raros', fmt(st.rares)],
     ];
     noteRecords();
     const rec = S.records;
     $('record-grid').innerHTML = [
       ['Partida nº', fmt(rec.runs)],
       ['Récord de días', fmt(Math.max(rec.bestDay || 1, S.day.n))],
+      ['Renacimientos', fmt(P())],
       ['Récord de nivel', fmt(rec.bestLevel)],
       ['Récord de saldo', fmt(rec.bestCoins)],
       ['Récord de premio', rec.bestWin ? fmt(rec.bestWin) : '—'],
@@ -1866,7 +2085,7 @@
         {
           label: 'Sí, reiniciar',
           cls: 'btn btn-pink',
-          action: () => resetRun('🔄 Partida reiniciada. ¡1.000 monedas para empezar!'),
+          action: () => resetRun('🔄 Partida reiniciada.'),
         },
         { label: 'Cancelar', cls: 'btn btn-ghost' },
       ],
@@ -1937,7 +2156,7 @@
     modal({
       icon: '🎟️',
       title: '¡Bienvenido a RascaManía!',
-      html: `<p>Empiezas con <b style="color:var(--accent)">1.000 monedas</b> ficticias.</p>
+      html: `<p>Empiezas con <b style="color:var(--accent)">${fmt(S.coins)} monedas</b> ficticias.</p>
         <p>Compra boletos en la tienda, <b>ráscalos arrastrando el dedo o el ratón</b> y encuentra 3 símbolos iguales para ganar.</p>
         <p>Sube de nivel para desbloquear boletos mejores, juegos sin rascar, objetos, una mina de monedas y el árbol de habilidades.</p>
         <p>📅 La partida va <b>por días</b>: cada día tienes unas jugadas y un <b>objetivo de monedas</b> que crece cada día. Si al acabar las jugadas no lo alcanzas, <b>empiezas de cero</b>… salvo que tengas una ❤️ Segunda vida.</p>`,
@@ -1946,5 +2165,5 @@
   }
 
   // Acceso de depuración desde la consola
-  window.RascaMania = { get state() { return S; }, save, go, setShopTab: (t) => { shopTab = t; } };
+  window.RascaMania = { get state() { return S; }, save, go, setShopTab: (t) => { shopTab = t; }, playRareEvent: (l, a) => playRareEvent(l, a, TIERS[0]) };
 })();

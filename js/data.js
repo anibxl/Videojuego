@@ -519,10 +519,45 @@
     return Math.round(x / step) * step;
   }
   const DAYS = {
-    target: (n) => niceRound(1000 * Math.pow(1.25, n - 1)),
+    startCoins: 500, // monedas al empezar una partida
+    target: (n) => niceRound(500 * Math.pow(1.25, n - 1)),
     plays: (n) => Math.min(40, 12 + Math.floor((n - 1) * 1.5)),
     bonusShare: 0.12, // bonus al empezar el día: 12 % del objetivo, proporcional a las jugadas usadas el día anterior
     interestCap: 0.5, // los intereses del Banco no superan el 50 % del objetivo del día
+  };
+
+  /* ---------- Premios extremadamente raros ----------
+   * Sorteo aparte en cada boleto o partida (decidido al comprar). El premio es
+   * un múltiplo del precio, así que cada nivel aporta un 1 % al retorno medio.
+   */
+  const RARE_EVENTS = [
+    { id: 'star', name: 'Estrella fugaz', icon: '🌠', odds: 10000, mult: 100, color: '#9fe8ff' },
+    { id: 'goldrain', name: 'Lluvia de oro', icon: '💰', odds: 100000, mult: 1000, color: '#ffcf3f' },
+    { id: 'supernova', name: 'Supernova', icon: '💥', odds: 1000000, mult: 10000, color: '#ff8ab5' },
+    { id: 'bigbang', name: 'Big Bang', icon: '🌌', odds: 10000000, mult: 100000, color: '#b388ff' },
+  ];
+  /** Índice del acontecimiento raro que toca (o -1). */
+  function rollRare(rng) {
+    rng = rng || Math.random;
+    let r = rng();
+    for (let i = RARE_EVENTS.length - 1; i >= 0; i--) {
+      const p = 1 / RARE_EVENTS[i].odds;
+      if (r < p) return i;
+      r -= p;
+    }
+    return -1;
+  }
+
+  /* ---------- Renacer (prestigio) ----------
+   * Al llegar a cierto nivel puedes reiniciar la partida a cambio de mejoras
+   * permanentes que se acumulan con cada renacimiento.
+   */
+  const PRESTIGE = {
+    minLevel: (p) => 10 + 3 * p, // nivel necesario para el renacimiento nº p+1
+    prizeBonus: 0.04, // +4 % en todos los premios por renacimiento
+    xpBonus: 0.1, // +10 % de experiencia
+    startCoins: 150, // +150 monedas al empezar
+    extraPlays: 1, // +1 jugada cada día
   };
 
   /* ---------- Niveles ---------- */
@@ -639,10 +674,34 @@
     { id: 'day7', icon: '📆', name: 'Una semana', desc: 'Llega al día 7', reward: 800, test: (s) => ((s.day || {}).n || 1) >= 7 },
     { id: 'day15', icon: '🗓️', name: 'Quincena de oro', desc: 'Llega al día 15', reward: 5000, test: (s) => ((s.day || {}).n || 1) >= 15 },
     { id: 'day30', icon: '🏅', name: 'Mes legendario', desc: 'Llega al día 30', reward: 50000, test: (s) => ((s.day || {}).n || 1) >= 30 },
+    { id: 'rare1', icon: '🌠', name: 'Estrella fugaz', desc: 'Consigue un premio de 1 entre 10.000', reward: 1000, test: (s) => ((s.album || {})['rare:star'] || 0) >= 1 },
+    { id: 'rare2', icon: '💰', name: 'Lluvia de oro', desc: 'Consigue un premio de 1 entre 100.000', reward: 5000, test: (s) => ((s.album || {})['rare:goldrain'] || 0) >= 1 },
+    { id: 'rare3', icon: '💥', name: 'Supernova', desc: 'Consigue un premio de 1 entre 1.000.000', reward: 25000, test: (s) => ((s.album || {})['rare:supernova'] || 0) >= 1 },
+    { id: 'rare4', icon: '🌌', name: 'Big Bang', desc: 'Consigue un premio de 1 entre 10.000.000', reward: 100000, test: (s) => ((s.album || {})['rare:bigbang'] || 0) >= 1 },
+    { id: 'album25', icon: '📒', name: 'Coleccionista', desc: 'Completa el 25 % del álbum', reward: 1000, test: (s) => albumProgress(s.album).pct >= 25 },
+    { id: 'album50', icon: '📗', name: 'Medio álbum', desc: 'Completa el 50 % del álbum', reward: 5000, test: (s) => albumProgress(s.album).pct >= 50 },
+    { id: 'prestige1', icon: '🌟', name: 'Renacido', desc: 'Renace por primera vez', reward: 500, test: (s) => (s.prestige || 0) >= 1 },
     { id: 'skillall', icon: '🧙', name: 'Gran maestro', desc: 'Lleva al máximo todo el árbol', reward: 50000, test: (s) => SKILLS.every((k) => (s.skills || {})[k.id] >= k.max) },
   ];
 
-  const api = { DAYS, TIERS, TIER_BY_ID, SECRET_TIERS, EVENTS, LIMITED_TIERS, eventAt, JACKPOT, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward };
+    /* ---------- Álbum de premios ----------
+   * Cada premio (símbolo ganador de cada boleto o juego) y cada acontecimiento raro.
+   * Claves: '<producto>:<índice de símbolo>' y 'rare:<id>'.
+   */
+  function albumSlots() {
+    const slots = [];
+    TIERS.concat(SECRET_TIERS, LIMITED_TIERS, GAMES).forEach((t) => t.symbols.forEach((sym, i) => slots.push({ key: t.id + ':' + i, product: t, sym, i })));
+    RARE_EVENTS.forEach((ev) => slots.push({ key: 'rare:' + ev.id, rare: ev }));
+    return slots;
+  }
+  function albumProgress(album) {
+    album = album || {};
+    const slots = albumSlots();
+    const got = slots.filter((x) => (album[x.key] || 0) > 0).length;
+    return { got, total: slots.length, pct: Math.floor((got / slots.length) * 100) };
+  }
+
+  const api = { RARE_EVENTS, rollRare, PRESTIGE, albumSlots, albumProgress, DAYS, TIERS, TIER_BY_ID, SECRET_TIERS, EVENTS, LIMITED_TIERS, eventAt, JACKPOT, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GameData = api;
 })(typeof window !== 'undefined' ? window : globalThis);
