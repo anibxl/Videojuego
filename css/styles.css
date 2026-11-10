@@ -475,3 +475,58 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- Bonus diario (fila completa) ---------- */
+.menu-btn.mb-daily { width: 100%; flex-direction: row; justify-content: center; gap: 10px; padding: 12px; margin-bottom: 12px; }
+.menu-btn.mb-daily span { font-size: 1.6rem; }
+.mb-skill { background: linear-gradient(135deg, #2ee6a033, #4cc9f022); }
+
+/* ---------- Árbol de habilidades ---------- */
+.skill-summary { display: flex; flex-wrap: wrap; gap: 8px; }
+.skill-summary .eff { background: rgba(255,255,255,.08); border: 1px solid var(--card-b); padding: 6px 10px; border-radius: 99px; font-size: .82rem; font-weight: 700; }
+.skill-tree { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+.branch {
+  border-radius: 22px; padding: 14px; border: 1px solid var(--card-b);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bc) 14%, transparent), rgba(255,255,255,.03));
+}
+.branch-head { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+.branch-head > span { font-size: 2rem; width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--bc) 25%, transparent); box-shadow: 0 0 18px color-mix(in srgb, var(--bc) 40%, transparent); }
+.branch-head b { display: block; font-size: 1.15rem; color: var(--bc); }
+.branch-head small { color: var(--muted); font-size: .78rem; }
+.branch-nodes { display: flex; flex-direction: column; gap: 22px; }
+.skill-node {
+  position: relative; display: flex; gap: 12px; padding: 12px; border-radius: 16px;
+  background: rgba(15, 8, 35, .55); border: 1px solid var(--card-b);
+  transition: transform .2s, border-color .3s, box-shadow .3s;
+}
+.skill-node + .skill-node::before { /* conector entre nodos */
+  content: ''; position: absolute; left: 34px; top: -23px; width: 4px; height: 22px; border-radius: 2px;
+  background: rgba(255,255,255,.12);
+}
+.skill-node.owned + .skill-node::before, .skill-node.owned + .skill-node.owned::before { background: var(--bc); box-shadow: 0 0 10px var(--bc); }
+.skill-node.owned { border-color: color-mix(in srgb, var(--bc) 60%, transparent); }
+.skill-node.s-available { border-color: var(--bc); box-shadow: 0 0 16px color-mix(in srgb, var(--bc) 35%, transparent); }
+.skill-node.s-maxed { background: linear-gradient(135deg, color-mix(in srgb, var(--bc) 22%, transparent), rgba(15,8,35,.55)); }
+.skill-node.s-locked { opacity: .55; }
+.skill-node.s-locked .sn-ico { filter: grayscale(1); }
+.skill-node.just { animation: pop .5s; }
+.sn-ico { font-size: 1.7rem; width: 48px; height: 48px; flex: none; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.08); }
+.skill-node.owned .sn-ico { background: color-mix(in srgb, var(--bc) 28%, transparent); }
+.sn-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.sn-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pips { display: flex; gap: 3px; }
+.pips i { width: 10px; height: 10px; border-radius: 3px; background: rgba(255,255,255,.15); }
+.pips i.on { background: var(--bc); box-shadow: 0 0 6px var(--bc); }
+.sn-fx { font-size: .82rem; }
+.sn-next { font-size: .76rem; color: var(--muted); }
+.sn-body .btn { margin-top: 4px; padding: 8px 10px; font-size: .85rem; align-self: flex-start; }
+.sn-lock { font-size: .76rem; color: var(--muted); margin-top: 2px; }
+.sn-max { font-size: .8rem; font-weight: 800; color: var(--bc); margin-top: 2px; }
+
+.result .r-extras { margin-top: 6px; font-size: .88rem; font-weight: 700; color: #bff7d9; }
+.bulk-wins { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; max-height: 140px; overflow: auto; }
+.bulk-wins span { background: rgba(255,255,255,.08); border-radius: 99px; padding: 4px 10px; font-size: .8rem; font-weight: 800; }
+
+@media (max-width: 900px) {
+  .skill-tree { grid-template-columns: 1fr; }
+}

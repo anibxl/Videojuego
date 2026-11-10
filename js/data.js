@@ -313,6 +313,53 @@
     return 75 * l;
   }
 
+  /* ---------- Árbol de habilidades ----------
+   * Cada habilidad se compra con monedas y tiene varios niveles.
+   * `per` es el efecto por nivel; `req` = [habilidad, nivel mínimo] necesaria antes;
+   * `minLevel` = nivel de jugador necesario.
+   * Coste del nivel L (0 = primera compra): base * growth^L, redondeado a 50.
+   */
+  const SKILL_BRANCHES = [
+    { id: 'mastery', name: 'Maestría', icon: '⚡', color: '#4cc9f0', desc: 'Progresa y rasca más rápido' },
+    { id: 'luck', name: 'Suerte', icon: '🍀', color: '#2ee6a0', desc: 'Más y mejores premios' },
+    { id: 'econ', name: 'Economía', icon: '💰', color: '#ffcf3f', desc: 'Gasta menos, recibe más' },
+  ];
+
+  const pct = (x) => Math.round(x * 100) + '%';
+  const SKILLS = [
+    // Suerte
+    { id: 'lucky', branch: 'luck', icon: '🍀', name: 'Trébol de la suerte', max: 5, base: 500, growth: 2.2, minLevel: 2, req: null, per: 0.02,
+      fx: (l) => `Todos los premios +${pct(l * 0.02)}` },
+    { id: 'reroll', branch: 'luck', icon: '🔄', name: 'Segunda oportunidad', max: 4, base: 3000, growth: 2.4, minLevel: 5, req: ['lucky', 2], per: 0.03,
+      fx: (l) => `${pct(l * 0.03)} de que un boleto sin premio se vuelva a sortear` },
+    { id: 'golden', branch: 'luck', icon: '✨', name: 'Toque dorado', max: 3, base: 20000, growth: 2.8, minLevel: 10, req: ['reroll', 2], per: 0.05,
+      fx: (l) => `${pct(l * 0.05)} de que un premio se duplique` },
+    // Economía
+    { id: 'discount', branch: 'econ', icon: '🏷️', name: 'Cliente VIP', max: 5, base: 800, growth: 2.3, minLevel: 2, req: null, per: 0.02,
+      fx: (l) => `Boletos un ${pct(l * 0.02)} más baratos` },
+    { id: 'daily', branch: 'econ', icon: '🎁', name: 'Bonus generoso', max: 3, base: 1500, growth: 2.5, minLevel: 4, req: ['discount', 1], per: 0.3,
+      fx: (l) => `Bonus diario +${pct(l * 0.3)}` },
+    { id: 'refund', branch: 'econ', icon: '🛟', name: 'Seguro de consuelo', max: 5, base: 4000, growth: 2.3, minLevel: 6, req: ['daily', 1], per: 0.04,
+      fx: (l) => `Recuperas el ${pct(l * 0.04)} de cada boleto sin premio` },
+    { id: 'investor', branch: 'econ', icon: '📈', name: 'Inversor', max: 4, base: 12000, growth: 2.5, minLevel: 9, req: ['refund', 2], per: 0.25,
+      fx: (l) => `Recompensas de nivel +${pct(l * 0.25)}` },
+    // Maestría
+    { id: 'xp', branch: 'mastery', icon: '📚', name: 'Aprendiz veloz', max: 5, base: 400, growth: 2.1, minLevel: 1, req: null, per: 0.1,
+      fx: (l) => `Experiencia +${pct(l * 0.1)}` },
+    { id: 'brush', branch: 'mastery', icon: '💅', name: 'Uña de acero', max: 3, base: 600, growth: 2.5, minLevel: 2, req: ['xp', 1], per: 0.25,
+      fx: (l) => `Rascas un ${pct(l * 0.25)} más ancho` },
+    { id: 'peek', branch: 'mastery', icon: '👁️', name: 'Ojo de lince', max: 2, base: 5000, growth: 4, minLevel: 5, req: ['brush', 1], per: 1,
+      fx: (l) => `${l} casilla${l === 1 ? '' : 's'} ya descubierta${l === 1 ? '' : 's'} en cada boleto` },
+    { id: 'bulk', branch: 'mastery', icon: '🚀', name: 'Rascado en lote', max: 1, base: 15000, growth: 1, minLevel: 8, req: ['peek', 1], per: 1,
+      fx: (l) => (l ? 'Botón «Rascar todos» en el inventario' : 'Desbloquea «Rascar todos» en el inventario') },
+  ];
+  const SKILL_BY_ID = {};
+  SKILLS.forEach((s) => (SKILL_BY_ID[s.id] = s));
+
+  function skillCost(skill, level) {
+    return Math.round((skill.base * Math.pow(skill.growth, level)) / 50) * 50;
+  }
+
   /* ---------- Logros ---------- */
   const ACHIEVEMENTS = [
     { id: 'first', icon: '🎟️', name: 'Primer rasca', desc: 'Rasca tu primer boleto', reward: 25, test: (s) => s.stats.scratched >= 1 },
@@ -331,9 +378,12 @@
     { id: 'lvl5', icon: '⭐', name: 'Aprendiz', desc: 'Alcanza el nivel 5', reward: 200, test: (s) => s.level >= 5 },
     { id: 'lvl10', icon: '🌟', name: 'Veterano', desc: 'Alcanza el nivel 10', reward: 1000, test: (s) => s.level >= 10 },
     { id: 'lvl20', icon: '👑', name: 'Leyenda', desc: 'Alcanza el nivel 20', reward: 10000, test: (s) => s.level >= 20 },
+    { id: 'skill1', icon: '🌱', name: 'Primera habilidad', desc: 'Mejora una habilidad del árbol', reward: 100, test: (s) => Object.keys(s.skills || {}).some((k) => s.skills[k] > 0) },
+    { id: 'branch', icon: '🌳', name: 'Rama completa', desc: 'Lleva al máximo una rama del árbol', reward: 5000, test: (s) => SKILL_BRANCHES.some((b) => SKILLS.filter((k) => k.branch === b.id).every((k) => (s.skills || {})[k.id] >= k.max)) },
+    { id: 'skillall', icon: '🧙', name: 'Gran maestro', desc: 'Lleva al máximo todo el árbol', reward: 50000, test: (s) => SKILLS.every((k) => (s.skills || {})[k.id] >= k.max) },
   ];
 
-  const api = { TIERS, TIER_BY_ID, ACHIEVEMENTS, tierMath, generateTicket, xpForLevel, levelReward };
+  const api = { TIERS, TIER_BY_ID, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GameData = api;
 })(typeof window !== 'undefined' ? window : globalThis);

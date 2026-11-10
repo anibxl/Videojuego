@@ -56,10 +56,11 @@
           <div class="next-unlock" id="next-unlock"></div>
         </div>
 
+        <button class="menu-btn mb-daily" id="daily-btn"><span>🎁</span><b>Bonus diario</b><small id="daily-text"></small></button>
         <div class="menu-grid">
           <button class="menu-btn mb-shop" data-go="shop"><span>🛒</span>Tienda</button>
           <button class="menu-btn mb-inv" data-go="inventory"><span>🎟️</span>Mis boletos<em class="badge" id="home-inv-badge"></em></button>
-          <button class="menu-btn mb-daily" id="daily-btn"><span>🎁</span><b>Bonus diario</b><small id="daily-text"></small></button>
+          <button class="menu-btn mb-skill" data-go="skills"><span>🌳</span>Habilidades<em class="badge" id="home-skill-badge"></em></button>
           <button class="menu-btn mb-ach" data-go="achievements"><span>🏆</span>Logros<small id="ach-count"></small></button>
           <button class="menu-btn mb-hist" data-go="history"><span>📜</span>Historial</button>
           <button class="menu-btn mb-stats" data-go="stats"><span>📊</span>Estadísticas</button>
@@ -134,6 +135,19 @@
         <button class="btn btn-danger" id="reset-btn">Reiniciar partida</button>
       </section>
 
+      <!-- HABILIDADES -->
+      <section class="screen" id="screen-skills">
+        <div class="screen-head">
+          <h2>🌳 Árbol de habilidades</h2>
+          <p class="muted">Invierte monedas en mejoras permanentes. Cada rama se desbloquea paso a paso.</p>
+        </div>
+        <div class="card skill-summary-card">
+          <h3 class="card-title">Efectos activos</h3>
+          <div class="skill-summary" id="skill-summary"></div>
+        </div>
+        <div class="skill-tree" id="skill-tree"></div>
+      </section>
+
       <!-- LOGROS -->
       <section class="screen" id="screen-achievements">
         <div class="screen-head">
@@ -148,7 +162,7 @@
       <button data-go="home"><span>🏠</span>Inicio</button>
       <button data-go="shop"><span>🛒</span>Tienda</button>
       <button data-go="inventory"><span>🎟️</span>Boletos<em class="badge" id="nav-inv-badge"></em></button>
-      <button data-go="history"><span>📜</span>Historial</button>
+      <button data-go="skills"><span>🌳</span>Habilidades<em class="badge" id="nav-skill-badge"></em></button>
       <button data-go="stats"><span>📊</span>Datos</button>
     </nav>
   </div>

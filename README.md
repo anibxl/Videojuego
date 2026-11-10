@@ -37,9 +37,29 @@ Las tablas completas están en `js/data.js` y se pueden ver dentro del juego, en
 - **Inventario:** boletos comprados pendientes de rascar.
 - **Historial:** los últimos 300 boletos, con filtros.
 - **Estadísticas:** gastado, ganado, balance, porcentaje de premiados, retorno real por tipo, mayor premio y rachas.
-- **Logros:** 16 retos con recompensa.
+- **Logros:** 19 retos con recompensa.
 - **Bonus diario** cada 20 h, y **ayuda de emergencia** si te quedas sin monedas ni boletos.
 - La partida se guarda automáticamente en `localStorage`.
+
+## Árbol de habilidades
+
+Las habilidades son mejoras permanentes que se compran con monedas. Hay tres ramas, cada habilidad tiene varios niveles y se desbloquea comprando la anterior y alcanzando cierto nivel de jugador. Completar todo el árbol cuesta unas 936.000 monedas.
+
+| Rama | Habilidad | Efecto por nivel | Niveles |
+|---|---|---|---:|
+| ⚡ Maestría | 📚 Aprendiz veloz | +10 % de experiencia | 5 |
+| | 💅 Uña de acero | Rascas un 25 % más ancho | 3 |
+| | 👁️ Ojo de lince | 1 casilla ya descubierta en cada boleto | 2 |
+| | 🚀 Rascado en lote | Botón «Rascar todos» en el inventario | 1 |
+| 🍀 Suerte | 🍀 Trébol de la suerte | Premios +2 % | 5 |
+| | 🔄 Segunda oportunidad | 3 % de que un boleto sin premio se vuelva a sortear al comprarlo | 4 |
+| | ✨ Toque dorado | 5 % de que un premio se duplique | 3 |
+| 💰 Economía | 🏷️ Cliente VIP | Boletos un 2 % más baratos | 5 |
+| | 🎁 Bonus generoso | Bonus diario +30 % | 3 |
+| | 🛟 Seguro de consuelo | Recuperas el 4 % de cada boleto sin premio | 5 |
+| | 📈 Inversor | Recompensas de nivel +25 % | 4 |
+
+Las tablas de probabilidad base no cambian. Las habilidades actúan al comprar el boleto (nuevo sorteo, premio doble) o al cobrarlo (bonificaciones y reembolsos), y el resultado del boleto indica qué habilidad se ha aplicado.
 
 ## Efectos
 

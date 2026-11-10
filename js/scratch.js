@@ -67,7 +67,7 @@
       this.canvas.width = w * dpr;
       this.canvas.height = h * dpr;
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      this.brush = Math.max(13, Math.min(26, Math.min(w, h) * 0.06));
+      this.brush = Math.max(13, Math.min(26, Math.min(w, h) * 0.06)) * (this.opts.brushScale || 1);
 
       if (snapshot) {
         this.ctx.globalCompositeOperation = 'source-over';
@@ -274,6 +274,24 @@
       if (this.opts.onProgress) this.opts.onProgress(this.progress);
 
       if (this.revealed.every(Boolean) || this.progress > 0.8) this.finish();
+    }
+
+    /* ---------- Descubrir casillas concretas (habilidad «Ojo de lince») ---------- */
+    revealCells(indices) {
+      if (this.done) return;
+      indices.forEach((i) => {
+        const r = this.rects[i];
+        if (!r) return;
+        const step = this.brush * 0.8;
+        for (let y = r.y + step * 0.4; y < r.y + r.h; y += step) {
+          for (let x = r.x + step * 0.4; x < r.x + r.w; x += step) this.scratchAt(x, y);
+        }
+        if (window.FX) {
+          const cr = this.canvas.getBoundingClientRect();
+          FX.sparkle(cr.left + r.x + r.w / 2, cr.top + r.y + r.h / 2, 8, '#bff7ff');
+        }
+      });
+      this.scheduleCheck(0);
     }
 
     /* ---------- Rascado automático ---------- */

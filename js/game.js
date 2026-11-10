@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  const { TIERS, TIER_BY_ID, ACHIEVEMENTS, tierMath, generateTicket, xpForLevel, levelReward } = window.GameData;
+  const { TIERS, TIER_BY_ID, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward } = window.GameData;
   const SAVE_KEY = 'rascamania_save_v1';
   const DAILY_MS = 20 * 60 * 60 * 1000; // bonus cada 20 h
   const HISTORY_MAX = 300;
@@ -45,8 +45,9 @@
       lastDaily: 0,
       sound: true,
       achievements: {},
+      skills: {},
       stats: {
-        spent: 0, won: 0, bonus: 0, bought: 0, scratched: 0, wins: 0,
+        spent: 0, won: 0, bonus: 0, skillSpent: 0, refunds: 0, bought: 0, scratched: 0, wins: 0,
         biggestWin: 0, biggestTier: null, streak: 0, bestStreak: 0, peakCoins: 1000,
         perTier: freshPerTier(),
       },
@@ -70,6 +71,7 @@
     Object.keys(out.stats.perTier).forEach((id) => Object.assign(out.stats.perTier[id], (savedStats.perTier || {})[id] || {}));
     // Descarta boletos de tipos desconocidos (por si cambian los datos)
     out.inventory = (out.inventory || []).filter((t) => TIER_BY_ID[t.tier]);
+    out.skills = Object.assign({}, s.skills || {});
     return out;
   }
 
@@ -81,6 +83,22 @@
       /* almacenamiento no disponible: el juego sigue en memoria */
     }
   }
+
+  /* ---------- Habilidades: efectos ---------- */
+  const sk = (id) => (S.skills && S.skills[id]) || 0;
+  const skEffect = (id) => sk(id) * SKILL_BY_ID[id].per;
+  function ticketPrice(t) {
+    return Math.max(1, Math.round(t.price * (1 - skEffect('discount'))));
+  }
+  function skillState(s) {
+    const lvl = sk(s.id);
+    if (lvl >= s.max) return { lvl, state: 'maxed' };
+    if (S.level < s.minLevel) return { lvl, state: 'locked', why: `Requiere nivel de jugador ${s.minLevel}` };
+    if (s.req && sk(s.req[0]) < s.req[1]) return { lvl, state: 'locked', why: `Requiere ${SKILL_BY_ID[s.req[0]].name} nivel ${s.req[1]}` };
+    const cost = skillCost(s, lvl);
+    return { lvl, cost, state: S.coins >= cost ? 'available' : 'expensive' };
+  }
+  const affordableSkills = () => SKILLS.filter((s) => skillState(s).state === 'available').length;
 
   /* ---------- Saldo y XP en la cabecera ---------- */
   let shownCoins = S.coins;
@@ -129,6 +147,9 @@
     const n = S.inventory.length || '';
     $('nav-inv-badge').textContent = n;
     $('home-inv-badge').textContent = n;
+    const k = affordableSkills() || '';
+    $('nav-skill-badge').textContent = k;
+    $('home-skill-badge').textContent = k;
   }
 
   function refreshHeader(animateCoins) {
@@ -224,7 +245,7 @@
       S.xp -= xpForLevel(S.level);
       S.level++;
       leveled = true;
-      const reward = levelReward(S.level);
+      const reward = Math.round(levelReward(S.level) * (1 + skEffect('investor')));
       S.coins += reward;
       S.stats.bonus += reward;
       const unlocked = TIERS.filter((t) => t.level === S.level);
@@ -267,7 +288,7 @@
 
   /* ---------- Bonus diario y ayuda ---------- */
   function dailyAmount() {
-    return 150 + 50 * S.level;
+    return Math.round((150 + 50 * S.level) * (1 + skEffect('daily')));
   }
   function renderDaily() {
     const left = S.lastDaily + DAILY_MS - Date.now();
@@ -348,8 +369,9 @@
       const m = tierMath(t);
       const locked = S.level < t.level;
       const preview = t.symbols.slice(-3).map((s) => s.e).join('');
+      const price = ticketPrice(t);
       const btn = (q, label) => {
-        const cost = t.price * q;
+        const cost = price * q;
         return `<button class="btn ${q === 1 ? '' : 'btn-ghost'}" data-buy="${t.id}" data-q="${q}" ${locked || S.coins < cost ? 'disabled' : ''}>${label}<small>${fmtShort(cost)}</small></button>`;
       };
       return `<div class="shop-card ${locked ? 'locked' : ''}">
@@ -358,7 +380,7 @@
           <div class="mini-ticket mt-${t.id}"><div class="mt-name">${t.name}</div><div class="mt-syms">${preview}</div></div>
           <div class="muted small">${t.tagline}</div>
           <div class="shop-info">
-            <div class="si"><small>Precio</small><b><span class="coin-ico"></span> ${fmt(t.price)}</b></div>
+            <div class="si"><small>Precio</small><b><span class="coin-ico"></span> ${fmt(price)}${price < t.price ? ` <s class="muted small">${fmt(t.price)}</s>` : ''}</b></div>
             <div class="si"><small>Premio máximo</small><b>${fmtShort(m.maxPrize)}</b></div>
             <div class="si"><small>Probabilidad de premio</small><b>1 de ${fmtOdds(m.oddsWin)}</b></div>
             <div class="si"><small>Prob. premio máximo</small><b>1 de ${fmt(Math.round(m.oddsTop))}</b></div>
@@ -379,7 +401,8 @@
   function buy(tierId, qty, srcEl) {
     Sound.unlock();
     const t = TIER_BY_ID[tierId];
-    const cost = t.price * qty;
+    const unit = ticketPrice(t);
+    const cost = unit * qty;
     if (S.level < t.level) return;
     if (S.coins < cost) {
       Sound.error();
@@ -393,7 +416,15 @@
     S.stats.perTier[tierId].spent += cost;
     const created = [];
     for (let i = 0; i < qty; i++) {
-      const tk = generateTicket(tierId);
+      let tk = generateTicket(tierId);
+      // Segunda oportunidad: un boleto perdedor se sortea de nuevo (antes de rascarlo)
+      if (!tk.prize && Math.random() < skEffect('reroll')) {
+        tk = generateTicket(tierId);
+        if (tk.prize) tk.rerolled = true;
+      }
+      // Toque dorado: el premio se duplicará al cobrarlo
+      if (tk.prize && Math.random() < skEffect('golden')) tk.golden = true;
+      tk.paid = unit;
       tk.id = S.serial++;
       tk.bought = Date.now();
       S.inventory.push(tk);
@@ -461,10 +492,25 @@
         onCellReveal: (i, silent) => onCellReveal(tk, cellEls, i, silent),
         onProgress: (p) => ($('play-progress-fill').style.width = Math.min(100, (p / 0.8) * 100) + '%'),
         onDone: () => settle(tk, el, cellEls),
+        brushScale: 1 + skEffect('brush'),
       });
+      // Ojo de lince: descubre casillas al azar nada más empezar
+      const peek = sk('peek');
+      if (peek) {
+        const idx = shuffleIdx(tk.cells.length).slice(0, peek);
+        setTimeout(() => play.card && play.card.revealCells(idx), 350);
+      }
     });
   }
   renderers.play = () => {};
+  function shuffleIdx(n) {
+    const a = Array.from({ length: n }, (_, i) => i);
+    for (let i = n - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
 
   $('auto-btn').addEventListener('click', () => {
     if (play.card && !play.card.done) {
@@ -505,40 +551,59 @@
     }
   }
 
+  /** Cobra un boleto: aplica habilidades y actualiza estado. Devuelve el resultado. */
+  function resolveTicket(tk) {
+    const t = TIER_BY_ID[tk.tier];
+    const idx = S.inventory.findIndex((x) => x.id === tk.id);
+    if (idx < 0) return null; // ya cobrado
+    S.inventory.splice(idx, 1);
+
+    const base = tk.prize;
+    const luckBonus = skEffect('lucky');
+    const payout = base ? Math.round(base * (tk.golden ? 2 : 1) * (1 + luckBonus)) : 0;
+    const refund = base ? 0 : Math.round((tk.paid || t.price) * skEffect('refund'));
+    const pt = S.stats.perTier[t.id];
+    S.stats.scratched++;
+    pt.scratched++;
+    if (payout > 0) {
+      S.coins += payout;
+      S.stats.won += payout;
+      S.stats.wins++;
+      S.stats.streak++;
+      S.stats.bestStreak = Math.max(S.stats.bestStreak, S.stats.streak);
+      pt.wins++;
+      pt.won += payout;
+      pt.best = Math.max(pt.best, payout);
+      if (payout > S.stats.biggestWin) {
+        S.stats.biggestWin = payout;
+        S.stats.biggestTier = t.id;
+      }
+    } else {
+      S.stats.streak = 0;
+      if (refund) {
+        S.coins += refund;
+        S.stats.bonus += refund;
+        S.stats.refunds += refund;
+      }
+    }
+    notePeak();
+    S.history.unshift({ tier: t.id, prize: payout, sym: tk.winSym, mult: tk.mult, t: Date.now(), id: tk.id });
+    if (S.history.length > HISTORY_MAX) S.history.length = HISTORY_MAX;
+
+    const xpGain = Math.round((t.xp + Math.min(Math.floor(payout / 20), t.xp * 5)) * (1 + skEffect('xp')));
+    addXP(xpGain);
+    return { payout, refund, xpGain, luckBonus };
+  }
+
   function settle(tk, el, cellEls) {
     if (play.settled) return;
     play.settled = true;
     revealCount = 0;
     const t = TIER_BY_ID[tk.tier];
-    const idx = S.inventory.findIndex((x) => x.id === tk.id);
-    if (idx < 0) return; // ya cobrado
-    S.inventory.splice(idx, 1);
-
-    const prize = tk.prize;
-    const pt = S.stats.perTier[t.id];
-    S.stats.scratched++;
-    pt.scratched++;
-    if (prize > 0) {
-      S.coins += prize;
-      S.stats.won += prize;
-      S.stats.wins++;
-      S.stats.streak++;
-      S.stats.bestStreak = Math.max(S.stats.bestStreak, S.stats.streak);
-      pt.wins++;
-      pt.won += prize;
-      pt.best = Math.max(pt.best, prize);
-      if (prize > S.stats.biggestWin) {
-        S.stats.biggestWin = prize;
-        S.stats.biggestTier = t.id;
-      }
-    } else {
-      S.stats.streak = 0;
-    }
-    notePeak();
-    S.history.unshift({ tier: t.id, prize, sym: tk.winSym, mult: tk.mult, t: Date.now(), id: tk.id });
-    if (S.history.length > HISTORY_MAX) S.history.length = HISTORY_MAX;
-
-    const xpGain = t.xp + Math.min(Math.floor(prize / 20), t.xp * 5);
+    const r = resolveTicket(tk);
+    if (!r) return;
+    const prize = r.payout;
+    const xpGain = r.xpGain;
     const area = el.querySelector('.scratch-area');
     area.classList.add('finished');
     $('auto-btn').disabled = true;
@@ -558,27 +623,31 @@
       cellEls.forEach((c) => c.classList.remove('hot'));
     }
 
-    celebrate(tk, t, el);
+    celebrate(tk, t, el, prize);
 
     const res = $('result');
     if (prize > 0) {
       res.className = 'result win';
+      const extras = [];
+      if (tk.rerolled) extras.push('🔄 ¡Segunda oportunidad!');
+      if (tk.golden) extras.push('✨ ¡Toque dorado: premio doble!');
+      if (r.luckBonus) extras.push(`🍀 +${Math.round(r.luckBonus * 100)}% suerte`);
       res.innerHTML = `<div class="r-title">¡Has ganado ${fmt(prize)} monedas!</div>
-        <div class="r-sub">${t.symbols[tk.winSym].e} ×3${tk.mult > 1 ? ` · multiplicador ×${tk.mult}` : ''} · +${xpGain} XP</div>`;
+        <div class="r-sub">${t.symbols[tk.winSym].e} ×3${tk.mult > 1 ? ` · multiplicador ×${tk.mult}` : ''} · +${xpGain} XP</div>
+        ${extras.length ? `<div class="r-extras">${extras.join(' · ')}</div>` : ''}`;
     } else {
       res.className = 'result';
-      res.innerHTML = `<div class="r-title">Sin premio esta vez</div><div class="r-sub">¡La suerte cambia! · +${xpGain} XP</div>`;
+      res.innerHTML = `<div class="r-title">Sin premio esta vez</div><div class="r-sub">¡La suerte cambia! · +${xpGain} XP</div>
+        ${r.refund ? `<div class="r-extras">🛟 Seguro de consuelo: recuperas ${fmt(r.refund)} monedas</div>` : ''}`;
     }
 
-    addXP(xpGain);
     checkAchievements();
     save();
     setTimeout(() => refreshHeader(true), prize > 0 ? 450 : 0);
     renderPlayActions(t);
   }
 
-  function celebrate(tk, t, el) {
-    const prize = tk.prize;
+  function celebrate(tk, t, el, prize) {
     const r = el.getBoundingClientRect();
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
@@ -637,8 +706,8 @@
     const acts = [];
     if (same.length) acts.push(`<button class="btn" data-next="${same[0].id}">Siguiente ${t.name} (${same.length}) →</button>`);
     else if (S.inventory.length) acts.push(`<button class="btn" data-next="${S.inventory[0].id}">Siguiente boleto (${S.inventory.length}) →</button>`);
-    const canBuy = S.coins >= t.price && S.level >= t.level;
-    acts.push(`<button class="btn ${same.length ? 'btn-ghost' : 'btn-pink'}" data-again="${t.id}" ${canBuy ? '' : 'disabled'}>Comprar otro · ${fmt(t.price)}</button>`);
+    const canBuy = S.coins >= ticketPrice(t) && S.level >= t.level;
+    acts.push(`<button class="btn ${same.length ? 'btn-ghost' : 'btn-pink'}" data-again="${t.id}" ${canBuy ? '' : 'disabled'}>Comprar otro · ${fmt(ticketPrice(t))}</button>`);
     acts.push(`<button class="btn btn-ghost" data-go="shop">Tienda</button>`);
     $('play-actions').innerHTML = acts.join('');
   }
@@ -665,18 +734,123 @@
         return `<div class="inv-group">
           <div class="inv-thumb mt-${t.id}">🎟️</div>
           <div class="grow"><b>${t.name}</b><span class="muted small">${list.length} boleto${list.length > 1 ? 's' : ''} · premio máx. ${fmtShort(tierMath(t).maxPrize)}</span></div>
-          <div class="inv-actions"><button class="btn" data-open="${list[0].id}">Rascar</button></div>
+          <div class="inv-actions">${sk('bulk') && list.length > 1 ? `<button class="btn btn-ghost" data-bulk="${t.id}">🚀 Rascar todos</button>` : ''}<button class="btn" data-open="${list[0].id}">Rascar</button></div>
         </div>`;
       })
       .join('');
   }
   renderers.inventory = renderInventory;
   $('inv-list').addEventListener('click', (e) => {
+    const bulk = e.target.closest('[data-bulk]');
+    if (bulk) return bulkScratch(bulk.dataset.bulk, bulk);
     const b = e.target.closest('[data-open]');
     if (b) {
       Sound.click();
       openTicket(+b.dataset.open);
     }
+  });
+
+  /* ---------- Rascado en lote (habilidad) ---------- */
+  function bulkScratch(tierId, srcEl) {
+    if (!sk('bulk')) return;
+    Sound.unlock();
+    const t = TIER_BY_ID[tierId];
+    const list = S.inventory.filter((x) => x.tier === tierId);
+    if (!list.length) return;
+    let total = 0, refunds = 0, xp = 0, best = null;
+    const wins = [];
+    list.forEach((tk) => {
+      const r = resolveTicket(tk);
+      if (!r) return;
+      total += r.payout;
+      refunds += r.refund;
+      xp += r.xpGain;
+      if (r.payout) {
+        wins.push({ tk, payout: r.payout });
+        if (!best || r.payout > best.payout) best = { tk, payout: r.payout };
+      }
+    });
+    checkAchievements();
+    save();
+    const rect = (srcEl || document.body).getBoundingClientRect();
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    const bigRatio = best ? best.payout / t.price : 0;
+    if (bigRatio >= 50) { Sound.jackpot(); FX.flash('#fff6c2'); FX.shake(); FX.fireworks(6); FX.confetti(200); }
+    else if (bigRatio >= 5) { Sound.bigWin(); FX.confetti(110); }
+    else if (best) Sound.win();
+    else Sound.lose();
+    if (total) FX.coins(cx, cy, Math.min(80, 10 + wins.length * 4));
+    wins.sort((a, b) => b.payout - a.payout);
+    modal({
+      icon: '🚀',
+      title: `${list.length} boletos ${t.name} rascados`,
+      html: `<p>${wins.length} con premio · +${fmt(xp)} XP</p>
+        <div class="jp-amount"><span class="coin-ico lg"></span>+${fmt(total)}</div>
+        ${refunds ? `<p>🛟 Seguro de consuelo: +${fmt(refunds)}</p>` : ''}
+        <div class="bulk-wins">${wins.slice(0, 12).map((w) => `<span>${t.symbols[w.tk.winSym].e} ${fmtShort(w.payout)}${w.tk.golden ? ' ✨' : ''}</span>`).join('')}${wins.length > 12 ? `<span>+${wins.length - 12} más</span>` : ''}</div>`,
+      buttons: [{ label: '¡Genial!', cls: 'btn' }],
+    });
+    refreshHeader(true);
+    renderInventory();
+  }
+
+  /* ---------- Árbol de habilidades ---------- */
+  function renderSkills() {
+    const active = SKILLS.filter((k) => sk(k.id) > 0);
+    $('skill-summary').innerHTML = active.length
+      ? active.map((k) => `<span class="eff">${k.icon} ${k.fx(sk(k.id))}</span>`).join('')
+      : '<span class="muted">Aún no tienes habilidades. ¡Invierte tus monedas para mejorar tu suerte!</span>';
+    $('skill-tree').innerHTML = SKILL_BRANCHES.map((b) => {
+      const nodes = SKILLS.filter((k) => k.branch === b.id).map((k) => {
+        const st = skillState(k);
+        const pips = Array.from({ length: k.max }, (_, i) => `<i class="${i < st.lvl ? 'on' : ''}"></i>`).join('');
+        let action;
+        if (st.state === 'maxed') action = '<div class="sn-max">✔ Nivel máximo</div>';
+        else if (st.state === 'locked') action = `<div class="sn-lock">🔒 ${st.why}</div>`;
+        else action = `<button class="btn ${st.state === 'available' ? '' : 'btn-ghost'}" data-skill="${k.id}" ${st.state === 'available' ? '' : 'disabled'}>${st.lvl ? 'Mejorar' : 'Comprar'} · <span class="coin-ico"></span> ${fmtShort(st.cost)}</button>`;
+        return `<div class="skill-node s-${st.state}${st.lvl ? ' owned' : ''}" data-node="${k.id}">
+          <div class="sn-ico">${k.icon}</div>
+          <div class="sn-body">
+            <div class="sn-top"><b>${k.name}</b><span class="pips">${pips}</span></div>
+            <div class="sn-fx">${st.lvl ? `Ahora: ${k.fx(st.lvl)}` : k.fx(1)}</div>
+            ${st.state !== 'maxed' && st.lvl ? `<div class="sn-next">Siguiente: ${k.fx(st.lvl + 1)}</div>` : ''}
+            ${action}
+          </div>
+        </div>`;
+      }).join('');
+      const done = SKILLS.filter((k) => k.branch === b.id).reduce((a, k) => a + sk(k.id), 0);
+      const max = SKILLS.filter((k) => k.branch === b.id).reduce((a, k) => a + k.max, 0);
+      return `<div class="branch" style="--bc:${b.color}">
+        <div class="branch-head"><span>${b.icon}</span><div><b>${b.name}</b><small>${b.desc} · ${done}/${max}</small></div></div>
+        <div class="branch-nodes">${nodes}</div>
+      </div>`;
+    }).join('');
+  }
+  renderers.skills = renderSkills;
+
+  $('skill-tree').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-skill]');
+    if (!b || b.disabled) return;
+    Sound.unlock();
+    const k = SKILL_BY_ID[b.dataset.skill];
+    const st = skillState(k);
+    if (st.state !== 'available') {
+      Sound.error();
+      return;
+    }
+    S.coins -= st.cost;
+    S.stats.skillSpent += st.cost;
+    S.skills[k.id] = st.lvl + 1;
+    const r = b.getBoundingClientRect();
+    Sound.levelUp();
+    FX.burst(r.left + r.width / 2, r.top + r.height / 2, 40, [SKILL_BRANCHES.find((x) => x.id === k.branch).color, '#ffffff', '#ffe48a']);
+    toast(k.icon, `<b>${k.name} nivel ${st.lvl + 1}</b><br>${k.fx(st.lvl + 1)}`);
+    checkAchievements();
+    save();
+    refreshHeader(true);
+    renderSkills();
+    const node = document.querySelector(`[data-node="${k.id}"]`);
+    if (node) node.classList.add('just');
   });
 
   /* ---------- Historial ---------- */
@@ -706,6 +880,7 @@
       ['Monedas ganadas en premios', fmt(st.won)],
       ['Balance de boletos', `<span class="${net >= 0 ? 'pos' : 'neg'}">${net >= 0 ? '+' : ''}${fmt(net)}</span>`],
       ['Bonus, niveles y logros', '+' + fmt(st.bonus)],
+      ['Invertido en habilidades', fmt(st.skillSpent)],
       ['Boletos premiados', st.scratched ? `${fmt(st.wins)} (${Math.round((st.wins / st.scratched) * 100)}%)` : '0'],
       ['Mayor premio', st.biggestWin ? fmt(st.biggestWin) + (st.biggestTier ? ` <span class="chip chip-${st.biggestTier}">${TIER_BY_ID[st.biggestTier].name}</span>` : '') : '—'],
       ['Mejor racha', fmt(st.bestStreak)],
