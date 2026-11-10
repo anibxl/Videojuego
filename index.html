@@ -38,6 +38,8 @@
           <p class="hero-sub">Compra boletos, ráscalos y descubre premios ocultos.</p>
         </div>
 
+        <div class="card day-panel" id="day-panel"></div>
+
         <div class="card balance-card">
           <div class="bc-row">
             <div>
@@ -60,7 +62,6 @@
         <div class="jackpot-banner"><div class="jp-mode">🌍 JACKPOT MUNDIAL</div><div class="jp-row"><span class="coin-ico lg"></span><span class="jp-value">100.000</span></div><div class="jp-subline"></div><div class="jp-help">Cada jugada aporta el 1 % y tiene una pequeña probabilidad (mayor cuanto más cara) de llevarse el bote entero.</div></div>
         <div class="card mine-card" id="mine-card"></div>
 
-        <button class="menu-btn mb-daily" id="daily-btn"><span>🎁</span><b>Bonus diario</b><small id="daily-text"></small></button>
         <div class="menu-grid">
           <button class="menu-btn mb-shop" data-go="shop"><span>🛒</span>Tienda</button>
           <button class="menu-btn mb-inv" data-go="inventory"><span>🎟️</span>Mis boletos<em class="badge" id="home-inv-badge"></em></button>
@@ -69,13 +70,12 @@
           <button class="menu-btn mb-hist" data-go="history"><span>📜</span>Historial</button>
           <button class="menu-btn mb-stats" data-go="stats"><span>📊</span>Estadísticas</button>
         </div>
-        <button class="btn btn-rescue hidden" id="rescue-btn">⚠️ ¡Sin monedas! Reclama el bonus diario para seguir jugando</button>
 
         <div class="card">
           <h3 class="card-title">Últimos premios</h3>
           <ul class="recent" id="recent-list"></ul>
         </div>
-        <p class="disclaimer">Juego de entretenimiento con monedas ficticias. No hay apuestas ni dinero real. Si te quedas sin monedas, empiezas de cero.</p>
+        <p class="disclaimer">Juego de entretenimiento con monedas ficticias. No hay apuestas ni dinero real. Si no llegas al objetivo del día, empiezas de cero.</p>
       </section>
 
       <!-- TIENDA -->
@@ -85,6 +85,7 @@
           <p class="muted">Boletos para rascar, juegos rápidos y objetos que te ayudan a progresar.</p>
         </div>
         <div class="jackpot-banner compact"><div class="jp-mode">🌍 JACKPOT MUNDIAL</div><div class="jp-row"><span class="coin-ico lg"></span><span class="jp-value">100.000</span></div><div class="jp-subline"></div><div class="jp-help">Cada jugada aporta el 1 % y tiene una pequeña probabilidad (mayor cuanto más cara) de llevarse el bote entero.</div></div>
+        <div class="day-strip"></div>
         <div class="shop-tabs" id="shop-tabs">
           <button data-tab="tickets" class="active">🎟️ Boletos</button>
           <button data-tab="games">🎰 Juegos</button>
@@ -101,6 +102,7 @@
             <div class="play-progress"><span id="play-progress-fill"></span></div>
             <button class="btn btn-ghost small-btn" id="auto-btn">⚡ Rascar todo</button>
           </div>
+          <div class="day-strip"></div>
           <div class="boost-bar" id="play-boosts"></div>
           <div id="ticket-holder"></div>
           <div class="result" id="result"></div>
@@ -115,6 +117,7 @@
             <button class="btn btn-ghost small-btn" data-shoptab="games">← Juegos</button>
             <div class="boost-bar grow" id="game-boosts"></div>
           </div>
+          <div class="day-strip"></div>
           <div id="game-holder"></div>
           <div class="result" id="game-result"></div>
           <div class="play-actions" id="game-actions"></div>

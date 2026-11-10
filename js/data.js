@@ -485,7 +485,7 @@
    */
   const ITEMS = [
     // Se gasta sola al quedarte sin monedas: evita empezar de cero
-    { id: 'life', icon: '❤️', name: 'Segunda vida', desc: 'Si te quedas sin monedas, te salva de empezar de cero y te da monedas para seguir', uses: 1, price: 1200, level: 2, fixedUses: true, max: 3 },
+    { id: 'life', icon: '❤️', name: 'Segunda vida', desc: 'Si no llegas al objetivo del día, te salva de empezar de cero y te da monedas para seguir', uses: 1, price: 1200, level: 2, fixedUses: true, max: 3 },
     { id: 'xp2', icon: '🧪', name: 'Poción de sabiduría', desc: 'Doble de experiencia', uses: 20, price: 300, level: 2 },
     { id: 'crystal', icon: '🔮', name: 'Bola de cristal', desc: '2 casillas extra descubiertas al abrir cada boleto', uses: 8, price: 450, level: 3, ticketsOnly: true },
     { id: 'charm', icon: '🧿', name: 'Amuleto de la fortuna', desc: 'Premios +10 %', uses: 10, price: 900, level: 4 },
@@ -500,7 +500,29 @@
     maxLevel: 10,
     capHours: 6,
     cost: (l) => Math.round((2000 * Math.pow(1.9, l)) / 50) * 50, // precio para pasar de l a l+1
-    rate: (l) => 3 * l, // monedas por minuto
+    rate: (l) => 3 * l, // (antiguo) monedas por minuto
+    // Producción al empezar cada día: el 20 % de todo lo invertido (cada mejora se amortiza en 5 días)
+    dailyYield: (l) => {
+      let sum = 0;
+      for (let i = 0; i < l; i++) sum += Math.round((2000 * Math.pow(1.9, i)) / 50) * 50;
+      return Math.round(sum * 0.2);
+    },
+  };
+
+  /* ---------- Días y objetivos ----------
+   * La partida avanza por días. Cada día tiene un número de jugadas (cada boleto
+   * o partida gasta una) y un objetivo de monedas que hay que tener al acabarlo.
+   * El objetivo crece un 25 % cada día.
+   */
+  function niceRound(x) {
+    const step = x < 10000 ? 50 : x < 100000 ? 500 : x < 1000000 ? 5000 : 50000;
+    return Math.round(x / step) * step;
+  }
+  const DAYS = {
+    target: (n) => niceRound(1000 * Math.pow(1.25, n - 1)),
+    plays: (n) => Math.min(40, 12 + Math.floor((n - 1) * 1.5)),
+    bonusShare: 0.18, // bonus al empezar el día: 18 % del objetivo de ese día
+    interestCap: 0.5, // los intereses del Banco no superan el 50 % del objetivo del día
   };
 
   /* ---------- Niveles ---------- */
@@ -539,7 +561,7 @@
     { id: 'discount', branch: 'econ', icon: '🏷️', name: 'Cliente VIP', max: 5, base: 800, growth: 2.3, minLevel: 2, req: null, per: 0.02,
       fx: (l) => `Boletos un ${pct(l * 0.02)} más baratos` },
     { id: 'daily', branch: 'econ', icon: '🎁', name: 'Bonus generoso', max: 3, base: 1500, growth: 2.5, minLevel: 4, req: ['discount', 1], per: 0.3,
-      fx: (l) => `Bonus diario +${pct(l * 0.3)}` },
+      fx: (l) => `Bonus de inicio de día +${pct(l * 0.3)}` },
     { id: 'refund', branch: 'econ', icon: '🛟', name: 'Seguro de consuelo', max: 5, base: 4000, growth: 2.3, minLevel: 6, req: ['daily', 1], per: 0.04,
       fx: (l) => `Recuperas el ${pct(l * 0.04)} de cada boleto sin premio` },
     { id: 'investor', branch: 'econ', icon: '📈', name: 'Inversor', max: 4, base: 12000, growth: 2.5, minLevel: 9, req: ['refund', 2], per: 0.25,
@@ -568,9 +590,9 @@
       fx: (l) => `${pct(l * 0.06)} de que una pareja perdedora de símbolos comunes se complete con un comodín` },
     // Negocios
     { id: 'foreman', branch: 'biz', icon: '👷', name: 'Capataz', max: 4, base: 1000, growth: 2.4, minLevel: 3, req: null, per: 0.25,
-      fx: (l) => `La mina produce un ${pct(l * 0.25)} más` },
-    { id: 'storage', branch: 'biz', icon: '📦', name: 'Almacén', max: 3, base: 2500, growth: 2.5, minLevel: 4, req: ['foreman', 1], per: 0.5,
-      fx: (l) => `Capacidad de la mina +${pct(l * 0.5)}` },
+      fx: (l) => `La mina produce un ${pct(l * 0.25)} más cada día` },
+    { id: 'storage', branch: 'biz', icon: '🏦', name: 'Banco', max: 3, base: 2500, growth: 2.5, minLevel: 4, req: ['foreman', 1], per: 0.05,
+      fx: (l) => `Al empezar el día, ${pct(l * 0.05)} de interés sobre lo que superaste el objetivo` },
     { id: 'alchemist', branch: 'biz', icon: '⚗️', name: 'Alquimista', max: 4, base: 3000, growth: 2.3, minLevel: 6, req: ['storage', 1], per: 0.25,
       fx: (l) => `Los objetos duran un ${pct(l * 0.25)} más` },
     { id: 'merchant', branch: 'biz', icon: '🤝', name: 'Comerciante', max: 3, base: 8000, growth: 2.5, minLevel: 8, req: ['alchemist', 1], per: 0.08,
@@ -613,10 +635,14 @@
     { id: 'secret1', icon: '🕵️', name: 'Detective', desc: 'Compra un boleto secreto', reward: 200, test: (s) => (s.stats.secrets || 0) >= 1 },
     { id: 'events3', icon: '🎉', name: 'Coleccionista de eventos', desc: 'Rasca boletos de 3 eventos distintos', reward: 1500, test: (s) => ((s.stats.eventIds || []).length) >= 3 },
     { id: 'jackpot1', icon: '🌍', name: '¡Jackpot mundial!', desc: 'Gana el jackpot mundial', reward: 10000, test: (s) => (s.stats.jackpots || 0) >= 1 },
+    { id: 'day3', icon: '🌅', name: 'Primeros pasos', desc: 'Llega al día 3', reward: 150, test: (s) => ((s.day || {}).n || 1) >= 3 },
+    { id: 'day7', icon: '📆', name: 'Una semana', desc: 'Llega al día 7', reward: 800, test: (s) => ((s.day || {}).n || 1) >= 7 },
+    { id: 'day15', icon: '🗓️', name: 'Quincena de oro', desc: 'Llega al día 15', reward: 5000, test: (s) => ((s.day || {}).n || 1) >= 15 },
+    { id: 'day30', icon: '🏅', name: 'Mes legendario', desc: 'Llega al día 30', reward: 50000, test: (s) => ((s.day || {}).n || 1) >= 30 },
     { id: 'skillall', icon: '🧙', name: 'Gran maestro', desc: 'Lleva al máximo todo el árbol', reward: 50000, test: (s) => SKILLS.every((k) => (s.skills || {})[k.id] >= k.max) },
   ];
 
-  const api = { TIERS, TIER_BY_ID, SECRET_TIERS, EVENTS, LIMITED_TIERS, eventAt, JACKPOT, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward };
+  const api = { DAYS, TIERS, TIER_BY_ID, SECRET_TIERS, EVENTS, LIMITED_TIERS, eventAt, JACKPOT, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GameData = api;
 })(typeof window !== 'undefined' ? window : globalThis);

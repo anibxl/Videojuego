@@ -4,9 +4,8 @@
 (function () {
   'use strict';
 
-  const { TIERS, TIER_BY_ID, SECRET_TIERS, EVENTS, LIMITED_TIERS, eventAt, JACKPOT, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward } = window.GameData;
+  const { DAYS, TIERS, TIER_BY_ID, SECRET_TIERS, EVENTS, LIMITED_TIERS, eventAt, JACKPOT, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward } = window.GameData;
   const SAVE_KEY = 'rascamania_save_v1';
-  const DAILY_MS = 20 * 60 * 60 * 1000; // bonus cada 20 h
   const HISTORY_MAX = 300;
   const $ = (id) => document.getElementById(id);
   const SPECIAL_TIERS = SECRET_TIERS.concat(LIMITED_TIERS);
@@ -43,7 +42,7 @@
       inventory: [],
       history: [],
       serial: 1,
-      lastDaily: 0,
+      day: { n: 1, target: DAYS.target(1), plays: DAYS.plays(1), playsTotal: DAYS.plays(1) },
       sound: true,
       achievements: {},
       skills: {},
@@ -54,7 +53,7 @@
       lastEventSeen: null,
       jpLocal: { round: 1, startedAt: Date.now(), contrib: 0, lastWin: null },
       // Récords de todas las partidas: se conservan al empezar de cero
-      records: { runs: 1, bestLevel: 1, bestCoins: 1000, bestWin: 0 },
+      records: { runs: 1, bestLevel: 1, bestCoins: 1000, bestWin: 0, bestDay: 1 },
       stats: {
         spent: 0, won: 0, bonus: 0, skillSpent: 0, shopSpent: 0, refunds: 0, bought: 0, scratched: 0, wins: 0,
         games: 0, items: 0, mineEarned: 0, wildWins: 0, livesUsed: 0,
@@ -88,7 +87,16 @@
     out.secret = Object.assign({ nextAt: 0, tier: null, until: 0, left: 0 }, s.secret || {});
     out.jpLocal = Object.assign({ round: 1, startedAt: Date.now(), contrib: 0, lastWin: null }, s.jpLocal || {});
     out.stats.eventIds = Array.isArray(savedStats.eventIds) ? savedStats.eventIds.slice() : [];
-    out.records = Object.assign({ runs: 1, bestLevel: 1, bestCoins: 1000, bestWin: 0 }, s.records || {});
+    out.records = Object.assign({ runs: 1, bestLevel: 1, bestCoins: 1000, bestWin: 0, bestDay: 1 }, s.records || {});
+    out.day = Object.assign({ n: 1, target: DAYS.target(1), plays: DAYS.plays(1), playsTotal: DAYS.plays(1) }, s.day || {});
+    out.day.target = DAYS.target(out.day.n); // por si cambia la fórmula
+    // Partidas anteriores a los días: lo acumulado en la mina se cobra una vez
+    if (out.mine.stored >= 1) {
+      out.coins += Math.floor(out.mine.stored);
+      out.stats.bonus += Math.floor(out.mine.stored);
+      out.stats.mineEarned += Math.floor(out.mine.stored);
+    }
+    out.mine.stored = 0;
     return out;
   }
 
@@ -122,17 +130,13 @@
     return Math.max(10, Math.round((it.price * (1 + 0.2 * (S.level - 1)) * (1 - skEffect('merchant'))) / 10) * 10);
   }
   const itemUses = (it) => (it.fixedUses ? it.uses : Math.round(it.uses * (1 + skEffect('alchemist'))));
-  const mineRate = () => MINE.rate(S.mine.level) * (1 + skEffect('foreman')); // monedas/min
-  const mineCap = () => Math.round(mineRate() * 60 * MINE.capHours * (1 + skEffect('storage')));
+  const mineYieldAt = (l) => Math.round(MINE.dailyYield(l) * (1 + skEffect('foreman'))); // monedas por día
+  const mineYield = () => mineYieldAt(S.mine.level);
   const mineUpgradeCost = () => Math.round((MINE.cost(S.mine.level) * (1 - skEffect('merchant'))) / 50) * 50;
   function mineTick() {
-    const now = Date.now();
-    if (S.mine.level > 0) {
-      const dt = Math.max(0, now - (S.mine.last || now));
-      S.mine.stored = Math.min(mineCap(), (S.mine.stored || 0) + (mineRate() * dt) / 60000);
-    }
-    S.mine.last = now;
+    /* La mina produce al empezar cada día (ya no en tiempo real) */
   }
+
   /** Gasta un uso de cada potenciador activo que aplique. */
   function useBoosts(isTicket) {
     const used = {};
@@ -211,6 +215,7 @@
 
   function refreshHeader(animateCoins) {
     renderCoins(animateCoins);
+    if (typeof renderDay === 'function') renderDay();
     renderLevel();
     renderBadges();
     renderBoosts();
@@ -345,64 +350,21 @@
     if (S.coins > S.stats.peakCoins) S.stats.peakCoins = S.coins;
   }
 
-  /* ---------- Bonus diario y ayuda ---------- */
-  function dailyAmount() {
-    return Math.round((150 + 50 * S.level) * (1 + skEffect('daily')));
-  }
-  function renderDaily() {
-    const left = S.lastDaily + DAILY_MS - Date.now();
-    const btn = $('daily-btn');
-    if (left <= 0) {
-      btn.classList.add('ready');
-      $('daily-text').textContent = `¡Reclama ${fmt(dailyAmount())}!`;
-    } else {
-      btn.classList.remove('ready');
-      const h = Math.floor(left / 3600000);
-      const m = Math.floor((left % 3600000) / 60000);
-      $('daily-text').textContent = `en ${h} h ${m} min`;
-    }
-  }
-  $('daily-btn').addEventListener('click', (e) => {
-    Sound.unlock();
-    if (S.lastDaily + DAILY_MS > Date.now()) {
-      Sound.error();
-      toast('⏳', 'El bonus diario aún no está listo.');
-      return;
-    }
-    const amt = dailyAmount();
-    S.lastDaily = Date.now();
-    S.coins += amt;
-    S.stats.bonus += amt;
-    notePeak();
-    Sound.win();
-    const r = e.currentTarget.getBoundingClientRect();
-    FX.coins(r.left + r.width / 2, r.top + r.height / 2, 30);
-    toast('🎁', `<b>Bonus diario</b><br>+${fmt(amt)} monedas`);
-    checkAchievements();
-    save();
-    refreshHeader(true);
-    renderHome();
-  });
-
-  /* ---------- Bancarrota, segunda vida y récords ---------- */
-  const dailyReady = () => S.lastDaily + DAILY_MS <= Date.now();
+  /* ---------- Días, objetivos, segunda vida y récords ---------- */
   /** Precio de lo más barato que se puede jugar ahora mismo. */
   function cheapestPlay() {
     return Math.min(...TIERS.concat(GAMES).filter((t) => S.level >= t.level).map(ticketPrice));
   }
-  /**
-   * Sin dinero = no llega para lo más barato (contando lo que hay en la mina),
-   * sin boletos por rascar, sin partida en curso y sin bonus diario disponible.
-   */
+  const busy = () => S.inventory.length > 0 || !!S.pendingRound || !!(gameRun.tk && !gameRun.done);
+  /** Sin monedas para jugar nada (con ese saldo). */
   function isBroke(coins) {
     if (coins === undefined) coins = S.coins;
-    mineTick();
-    const available = coins + Math.floor(S.mine.stored || 0);
-    return available < cheapestPlay() && S.inventory.length === 0 && !S.pendingRound && !(gameRun.tk && !gameRun.done) && !dailyReady();
+    return coins < cheapestPlay() && !busy();
   }
-  /** Sin monedas pero con el bonus diario listo: se avisa en el inicio. */
-  const needsDaily = () => S.coins + Math.floor(S.mine.stored || 0) < cheapestPlay() && S.inventory.length === 0 && dailyReady();
-  $('rescue-btn').addEventListener('click', () => $('daily-btn').click());
+  /** El día termina al gastar las jugadas o quedarse sin dinero para jugar, con todo rascado. */
+  const dayOver = () => !busy() && (S.day.plays <= 0 || S.coins < cheapestPlay());
+  const canEndEarly = () => !busy() && S.coins >= S.day.target;
+  const playsOk = (q) => S.day.plays >= q;
 
   const reviveCoins = () => 300 + 100 * S.level;
   function noteRecords() {
@@ -410,18 +372,67 @@
     r.bestLevel = Math.max(r.bestLevel, S.level);
     r.bestCoins = Math.max(r.bestCoins, S.stats.peakCoins, S.coins);
     r.bestWin = Math.max(r.bestWin, S.stats.biggestWin);
+    r.bestDay = Math.max(r.bestDay || 1, S.day.n);
   }
 
   let bankruptTimer = null;
-  /** Comprueba la bancarrota (con retraso para que se vea antes el resultado). */
+  /** Comprueba si el día ha terminado (con retraso para que se vea antes el resultado). */
   function checkBankrupt(delay) {
     clearTimeout(bankruptTimer);
     bankruptTimer = setTimeout(() => {
-      if (!isBroke()) return;
+      renderDay();
+      if (!dayOver()) return;
       if (modalOpen) return checkBankrupt(600); // espera a que se cierren otras ventanas
-      if ((S.boosts.life || 0) > 0) return useLife();
-      gameOver();
+      endDay();
     }, delay === undefined ? 300 : delay);
+  }
+
+  function endDay() {
+    if (S.coins >= S.day.target) return passDay();
+    if ((S.boosts.life || 0) > 0) return useLife();
+    gameOver();
+  }
+
+  /** Pasa al día siguiente con su bonus, la mina y los intereses del Banco. */
+  function passDay(saved) {
+    const prev = S.day;
+    const n = prev.n + 1;
+    const target = DAYS.target(n);
+    const plays = DAYS.plays(n);
+    const surplus = Math.max(0, S.coins - prev.target);
+    const interest = saved ? 0 : Math.min(Math.round(surplus * skEffect('storage')), Math.round(target * DAYS.interestCap));
+    const bonus = Math.round(target * DAYS.bonusShare * (1 + skEffect('daily')));
+    const mine = S.mine.level ? mineYield() : 0;
+    const total = bonus + mine + interest;
+    S.coins += total;
+    S.stats.bonus += total;
+    S.stats.mineEarned += mine;
+    S.day = { n, target, plays, playsTotal: plays };
+    notePeak();
+    noteRecords();
+    checkAchievements();
+    save();
+    Sound.levelUp();
+    FX.confetti(80);
+    const row = (k, v) => `<div class="go-row"><span>${k}</span><b>${v}</b></div>`;
+    if (!saved) {
+      modal({
+        cls: 'daypass',
+        icon: '☀️',
+        title: `¡Día ${prev.n} superado!`,
+        html: `<p>Objetivo ${fmt(prev.target)} conseguido. Empieza el <b>día ${n}</b>.</p>
+          <div class="go-stats">
+            ${row('🎁 Bonus de inicio de día', '+' + fmt(bonus))}
+            ${S.mine.level ? row('⛏️ Producción de la mina', '+' + fmt(mine)) : ''}
+            ${sk('storage') ? row('🏦 Intereses del Banco', '+' + fmt(interest)) : ''}
+          </div>
+          <div class="day-next"><div><small>Nuevo objetivo</small><b>${fmt(target)}</b></div><div><small>Jugadas</small><b>${plays}</b></div></div>`,
+        buttons: [{ label: `Empezar el día ${n}`, cls: 'btn' }],
+      });
+    }
+    refreshHeader(true);
+    if (renderers[current]) renderers[current]();
+    return total;
   }
 
   function useLife() {
@@ -430,21 +441,21 @@
     S.coins += amt;
     S.stats.bonus += amt;
     S.stats.livesUsed++;
-    checkAchievements();
-    save();
+    const failed = S.day;
+    passDay(true);
     Sound.levelUp();
     FX.flash('#ff8ab5');
     FX.burst(window.innerWidth / 2, window.innerHeight / 2, 60, ['#ff4d6d', '#ff8ab5', '#ffffff']);
     modal({
       icon: '❤️',
       title: '¡Segunda vida!',
-      html: `<p>Te habías quedado sin monedas, pero tu Segunda vida te ha salvado. Conservas todo tu progreso.</p>
+      html: `<p>No llegaste al objetivo del día ${failed.n} (${fmt(failed.target)}), pero tu Segunda vida te ha salvado: conservas tu progreso y pasas al <b>día ${S.day.n}</b>.</p>
         <div class="jp-amount"><span class="coin-ico lg"></span>+${fmt(amt)}</div>
+        <div class="day-next"><div><small>Nuevo objetivo</small><b>${fmt(S.day.target)}</b></div><div><small>Jugadas</small><b>${S.day.plays}</b></div></div>
         <p>${S.boosts.life ? `Te quedan ${S.boosts.life} vidas.` : 'Ya no te quedan vidas: ¡compra otra en la tienda!'}</p>`,
       buttons: [{ label: '¡A seguir!', cls: 'btn btn-pink' }],
     });
     refreshHeader(true);
-    if (renderers[current]) renderers[current]();
   }
 
   function gameOver() {
@@ -457,19 +468,53 @@
     modal({
       cls: 'gameover',
       icon: '💀',
-      title: '¡Bancarrota!',
-      html: `<p>Te has quedado sin monedas. La partida ha terminado y tendrás que <b>empezar de cero</b>.</p>
+      title: '¡Fin de la partida!',
+      html: `<p>Terminó el <b>día ${S.day.n}</b> con ${fmt(S.coins)} monedas y el objetivo era ${fmt(S.day.target)}. Tendrás que <b>empezar de cero</b>.</p>
         <div class="go-stats">
+          ${row('Día alcanzado', S.day.n)}
+          ${row('Récord de días', S.records.bestDay)}
           ${row('Nivel alcanzado', S.level)}
           ${row('Saldo máximo', fmt(st.peakCoins))}
           ${row('Mayor premio', st.biggestWin ? fmt(st.biggestWin) : '—')}
-          ${row('Boletos rascados', fmt(st.scratched))}
-          ${row('Partidas de juegos', fmt(st.games))}
         </div>
-        <p class="small">💡 La próxima vez, compra una <b>❤️ Segunda vida</b> en la tienda (pestaña Objetos) para no perderlo todo.</p>`,
-      buttons: [{ label: '🔄 Empezar de cero', cls: 'btn', action: () => resetRun('💀 Nueva partida: ¡1.000 monedas para empezar!') }],
+        <p class="small">💡 Una <b>❤️ Segunda vida</b> (tienda → Objetos) te salva cuando no llegas al objetivo.</p>`,
+      buttons: [{ label: '🔄 Empezar de cero', cls: 'btn', action: () => resetRun('💀 Nueva partida: día 1, ¡1.000 monedas para empezar!') }],
     });
   }
+
+  /* Panel del día (inicio) y franja del día (tienda y pantallas de juego) */
+  function renderDay() {
+    const d = S.day;
+    const pct = Math.min(100, (S.coins / d.target) * 100);
+    const reached = S.coins >= d.target;
+    const missing = Math.max(0, d.target - S.coins);
+    const panel = $('day-panel');
+    if (panel) {
+      panel.classList.toggle('reached', reached);
+      panel.innerHTML = `<div class="dp-top"><div><span class="dp-day">☀️ Día ${d.n}</span><small class="muted">Récord: día ${Math.max(S.records.bestDay || 1, d.n)}</small></div>
+          <div class="dp-plays"><b>${d.plays}</b><small>/ ${d.playsTotal} jugadas</small></div></div>
+        <div class="dp-goal"><span>Objetivo del día</span><b>${fmt(S.coins)} / ${fmt(d.target)}</b></div>
+        <div class="xp-bar wide dp-bar"><span style="width:${pct}%"></span></div>
+        <div class="dp-foot">${reached ? '✅ ¡Objetivo conseguido! Puedes seguir jugando o terminar el día ya.' : `Te faltan <b>${fmt(missing)}</b> monedas. Cada boleto o partida gasta una jugada.`}</div>
+        ${canEndEarly() ? `<button class="btn dp-end" data-endday>🌙 Terminar el día ${d.n}</button>` : ''}`;
+    }
+    document.querySelectorAll('.day-strip').forEach((el) => {
+      el.classList.toggle('reached', reached);
+      el.innerHTML = `<span>☀️ Día ${d.n}</span><span>🎯 ${reached ? '✅ ' : ''}${fmt(S.coins)} / ${fmt(d.target)}</span><span>🎟️ ${d.plays} jugada${d.plays === 1 ? '' : 's'}</span>`;
+    });
+  }
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-endday]') || !canEndEarly()) return;
+    const left = S.day.plays;
+    if (left > 0) {
+      modal({
+        icon: '🌙',
+        title: `¿Terminar el día ${S.day.n}?`,
+        html: `<p>Ya tienes el objetivo. Si terminas ahora perderás las <b>${left}</b> jugadas que te quedan hoy, pero no arriesgarás tus monedas.</p>`,
+        buttons: [{ label: 'Terminar el día', cls: 'btn', action: () => passDay() }, { label: 'Seguir jugando', cls: 'btn btn-ghost' }],
+      });
+    } else passDay();
+  });
 
   /** Empieza una partida nueva conservando sonido y récords. */
   function resetRun(msg) {
@@ -499,9 +544,11 @@
     modal({
       icon: '⚠️',
       title: '¿Seguro?',
-      html: (S.boosts.life || 0) > 0
-        ? '<p>Con esta compra te quedarás sin monedas y se gastará una <b>❤️ Segunda vida</b>.</p>'
-        : '<p>Con esta compra te quedarás sin monedas y <b>perderás la partida</b>: tendrás que empezar de cero.</p>',
+      html: S.coins - cost >= S.day.target
+        ? '<p>Con esta compra no te quedará dinero para jugar y <b>terminará el día</b> (aunque llegas al objetivo).</p>'
+        : (S.boosts.life || 0) > 0
+          ? '<p>Con esta compra no te quedará dinero para jugar, no llegarás al objetivo del día y se gastará una <b>❤️ Segunda vida</b>.</p>'
+          : '<p>Con esta compra no te quedará dinero para jugar, no llegarás al objetivo del día y <b>perderás la partida</b>.</p>',
       buttons: [
         { label: 'Comprar igualmente', cls: 'btn btn-pink', action },
         { label: 'Cancelar', cls: 'btn btn-ghost' },
@@ -521,10 +568,9 @@
   function renderHome() {
     renderLevel();
     renderBadges();
-    renderDaily();
+    renderDay();
     const got = Object.keys(S.achievements).length;
     $('ach-count').textContent = `${got}/${ACHIEVEMENTS.length}`;
-    $('rescue-btn').classList.toggle('hidden', !needsDaily());
     renderMineCard();
     renderBoosts();
     renderJackpot();
@@ -544,44 +590,17 @@
     }
     el.classList.remove('locked');
     if (!S.mine.level) {
-      el.innerHTML = `<div class="mine-row"><span class="mine-ico">⛏️</span><div class="grow"><b>Mina de monedas</b><small class="muted">Genera monedas aunque no juegues</small></div>
+      el.innerHTML = `<div class="mine-row"><span class="mine-ico">⛏️</span><div class="grow"><b>Mina de monedas</b><small class="muted">Te da monedas al empezar cada día</small></div>
         <button class="btn btn-ghost small-btn" data-shoptab="items">Construir</button></div>`;
       return;
     }
-    mineTick();
-    const cap = mineCap();
-    const st = Math.floor(S.mine.stored);
     el.innerHTML = `<div class="mine-row"><span class="mine-ico">⛏️</span>
-      <div class="grow"><b>Mina nivel ${S.mine.level}</b><small class="muted">${fmtDec(mineRate())} monedas/min · máx. ${fmt(cap)}</small>
-        <div class="xp-bar wide mine-bar"><span style="width:${Math.min(100, (S.mine.stored / cap) * 100)}%"></span></div></div>
-      <button class="btn small-btn" data-collect ${st < 1 ? 'disabled' : ''}>Recoger <span class="coin-ico"></span> ${fmt(st)}</button></div>`;
+      <div class="grow"><b>Mina nivel ${S.mine.level}</b><small class="muted">Produce <b>${fmt(mineYield())}</b> monedas al empezar cada día</small></div>
+      <button class="btn btn-ghost small-btn" data-shoptab="items">Mejorar</button></div>`;
   }
   const fmtDec = (x) => (Math.round(x * 10) / 10).toString().replace('.', ',');
 
-  function collectMine(srcEl) {
-    mineTick();
-    const amt = Math.floor(S.mine.stored);
-    if (amt < 1) return;
-    S.mine.stored -= amt;
-    S.coins += amt;
-    S.stats.bonus += amt;
-    S.stats.mineEarned += amt;
-    notePeak();
-    Sound.win();
-    if (srcEl) {
-      const r = srcEl.getBoundingClientRect();
-      FX.coins(r.left + r.width / 2, r.top + r.height / 2, Math.min(40, 8 + Math.round(amt / 100)));
-    }
-    toast('⛏️', `<b>Mina</b><br>+${fmt(amt)} monedas`);
-    checkAchievements();
-    save();
-    refreshHeader(true);
-    if (current === 'home') renderMineCard();
-    if (current === 'shop') renderShop();
-  }
   document.addEventListener('click', (e) => {
-    const c = e.target.closest('[data-collect]');
-    if (c && !c.disabled) collectMine(c);
     const t = e.target.closest('[data-shoptab]');
     if (t) {
       shopTab = t.dataset.shoptab;
@@ -602,7 +621,7 @@
       const price = ticketPrice(t);
       const btn = (q, label) => {
         const cost = price * q;
-        return `<button class="btn ${q === 1 ? '' : 'btn-ghost'}" data-buy="${t.id}" data-q="${q}" ${locked || S.coins < cost ? 'disabled' : ''}>${label}<small>${fmtShort(cost)}</small></button>`;
+        return `<button class="btn ${q === 1 ? '' : 'btn-ghost'}" data-buy="${t.id}" data-q="${q}" ${locked || S.coins < cost || !playsOk(q) ? 'disabled' : ''}>${label}<small>${fmtShort(cost)}</small></button>`;
       };
       return `<div class="shop-card ${locked ? 'locked' : ''}">
         ${locked ? `<div class="lock-overlay"><span>🔒</span>Se desbloquea en el nivel ${t.level}<small class="muted">Te faltan ${t.level - S.level} niveles</small></div>` : ''}
@@ -630,7 +649,7 @@
       const price = ticketPrice(g);
       const btn = (q, label) => {
         const cost = price * q;
-        return `<button class="btn ${q === 1 ? '' : 'btn-ghost'}" data-play="${g.id}" data-q="${q}" ${locked || S.coins < cost ? 'disabled' : ''}>${label}<small>${fmtShort(cost)}</small></button>`;
+        return `<button class="btn ${q === 1 ? '' : 'btn-ghost'}" data-play="${g.id}" data-q="${q}" ${locked || S.coins < cost || !playsOk(q) ? 'disabled' : ''}>${label}<small>${fmtShort(cost)}</small></button>`;
       };
       return `<div class="shop-card ${locked ? 'locked' : ''}">
         ${locked ? `<div class="lock-overlay"><span>🔒</span>Se desbloquea en el nivel ${g.level}<small class="muted">Te faltan ${g.level - S.level} niveles</small></div>` : ''}
@@ -654,20 +673,18 @@
     const mineLocked = S.level < MINE.minLevel;
     const maxed = S.mine.level >= MINE.maxLevel;
     const upCost = mineUpgradeCost();
-    const nextRate = MINE.rate(S.mine.level + 1) * (1 + skEffect('foreman'));
+    const nextYield = mineYieldAt(S.mine.level + 1);
     const mineCard = `<div class="shop-card mine-shop ${mineLocked ? 'locked' : ''}">
       ${mineLocked ? `<div class="lock-overlay"><span>🔒</span>Se desbloquea en el nivel ${MINE.minLevel}</div>` : ''}
       <div class="shop-body">
-        <div class="item-head"><span class="item-ico">⛏️</span><div><b>Mina de monedas</b><small class="muted">Ingresos pasivos: produce monedas incluso con el juego cerrado (hasta ${MINE.capHours} h acumuladas).</small></div></div>
+        <div class="item-head"><span class="item-ico">⛏️</span><div><b>Mina de monedas</b><small class="muted">Ingresos pasivos: al empezar cada día te da monedas. Cada mejora se amortiza en unos 5 días.</small></div></div>
         <div class="shop-info">
           <div class="si"><small>Nivel</small><b>${S.mine.level} / ${MINE.maxLevel}</b></div>
-          <div class="si"><small>Producción</small><b>${S.mine.level ? fmtDec(mineRate()) + '/min' : '—'}</b></div>
-          <div class="si"><small>Almacenado</small><b>${fmt(Math.floor(S.mine.stored || 0))}${S.mine.level ? ' / ' + fmtShort(mineCap()) : ''}</b></div>
-          <div class="si"><small>${maxed ? 'Nivel máximo' : 'Siguiente nivel'}</small><b>${maxed ? '✔' : fmtDec(nextRate) + '/min'}</b></div>
+          <div class="si"><small>Producción por día</small><b>${S.mine.level ? fmt(mineYield()) : '—'}</b></div>
+          <div class="si"><small>${maxed ? 'Nivel máximo' : 'Con el siguiente nivel'}</small><b>${maxed ? '✔' : fmt(nextYield) + '/día'}</b></div>
         </div>
-        <div class="buy-row two">
+        <div class="buy-row single">
           <button class="btn" data-mine-up ${mineLocked || maxed || S.coins < upCost ? 'disabled' : ''}>${maxed ? 'Al máximo' : (S.mine.level ? 'Mejorar' : 'Construir') + ` <small>${fmtShort(upCost)}</small>`}</button>
-          <button class="btn btn-ghost" data-collect ${Math.floor(S.mine.stored || 0) < 1 ? 'disabled' : ''}>Recoger <small>${fmt(Math.floor(S.mine.stored || 0))}</small></button>
         </div>
       </div>
     </div>`;
@@ -743,7 +760,7 @@
       S.mine.level++;
       Sound.levelUp();
       FX.burst(r.left + r.width / 2, r.top + r.height / 2, 40, ['#ff9f1c', '#ffcf3f', '#ffffff']);
-      toast('⛏️', `<b>Mina nivel ${S.mine.level}</b><br>${fmtDec(mineRate())} monedas por minuto`);
+      toast('⛏️', `<b>Mina nivel ${S.mine.level}</b><br>${fmt(mineYield())} monedas al empezar cada día`);
       checkAchievements();
       save();
       refreshHeader(true);
@@ -781,11 +798,17 @@
       renderShop();
       return;
     }
+    if (!playsOk(qty)) {
+      Sound.error();
+      toast('🌙', `No te quedan jugadas suficientes hoy (${S.day.plays}).`);
+      return;
+    }
     if (S.coins < cost) {
       Sound.error();
       toast('💸', 'No tienes monedas suficientes.');
       return;
     }
+    S.day.plays -= qty;
     if (t.secret) {
       S.secret.left -= qty;
       S.stats.secrets += qty;
@@ -1115,7 +1138,7 @@
     const acts = [];
     if (same.length) acts.push(`<button class="btn" data-next="${same[0].id}">Siguiente ${t.name} (${same.length}) →</button>`);
     else if (S.inventory.length) acts.push(`<button class="btn" data-next="${S.inventory[0].id}">Siguiente boleto (${S.inventory.length}) →</button>`);
-    const canBuy = S.coins >= ticketPrice(t) && S.level >= t.level;
+    const canBuy = S.coins >= ticketPrice(t) && S.level >= t.level && playsOk(1) && specialAvailable(t, 1);
     acts.push(`<button class="btn ${same.length ? 'btn-ghost' : 'btn-pink'}" data-again="${t.id}" ${canBuy ? '' : 'disabled'}>Comprar otro · ${fmt(ticketPrice(t))}</button>`);
     acts.push(`<button class="btn btn-ghost" data-go="shop">Tienda</button>`);
     $('play-actions').innerHTML = acts.join('');
@@ -1222,11 +1245,17 @@
     if (qty > 1 && !sk('multi')) return;
     const unit = ticketPrice(g);
     const cost = unit * qty;
+    if (!playsOk(qty)) {
+      Sound.error();
+      toast('🌙', `No te quedan jugadas suficientes hoy (${S.day.plays}).`);
+      return;
+    }
     if (S.coins < cost) {
       Sound.error();
       toast('💸', 'No tienes monedas suficientes.');
       return;
     }
+    S.day.plays -= qty;
     S.coins -= cost;
     S.stats.spent += cost;
     S.stats.bought += qty;
@@ -1385,10 +1414,10 @@
 
   function renderGameActions(g) {
     const price = ticketPrice(g);
-    const acts = [`<button class="btn btn-pink" data-replay="${g.id}" data-q="1" ${S.coins >= price ? '' : 'disabled'}>${g.kind === 'slot' ? '🎰 Tirar otra vez' : '🎁 Otra partida'} · ${fmt(price)}</button>`];
+    const acts = [`<button class="btn btn-pink" data-replay="${g.id}" data-q="1" ${S.coins >= price && playsOk(1) ? '' : 'disabled'}>${g.kind === 'slot' ? '🎰 Tirar otra vez' : '🎁 Otra partida'} · ${fmt(price)}</button>`];
     if (sk('multi')) {
-      acts.push(`<button class="btn btn-ghost" data-replay="${g.id}" data-q="5" ${S.coins >= price * 5 ? '' : 'disabled'}>×5 · ${fmtShort(price * 5)}</button>`);
-      acts.push(`<button class="btn btn-ghost" data-replay="${g.id}" data-q="10" ${S.coins >= price * 10 ? '' : 'disabled'}>×10 · ${fmtShort(price * 10)}</button>`);
+      acts.push(`<button class="btn btn-ghost" data-replay="${g.id}" data-q="5" ${S.coins >= price * 5 && playsOk(5) ? '' : 'disabled'}>×5 · ${fmtShort(price * 5)}</button>`);
+      acts.push(`<button class="btn btn-ghost" data-replay="${g.id}" data-q="10" ${S.coins >= price * 10 && playsOk(10) ? '' : 'disabled'}>×10 · ${fmtShort(price * 10)}</button>`);
     }
     acts.push('<button class="btn btn-ghost" data-shoptab="games">Juegos</button>');
     $('game-actions').innerHTML = acts.join('');
@@ -1428,7 +1457,7 @@
       const t = PRODUCT_BY_ID[S.secret.tier];
       const m = tierMath(t);
       const price = ticketPrice(t);
-      const q = (n) => `<button class="btn ${n === 1 ? '' : 'btn-ghost'}" data-buy="${t.id}" data-q="${n}" ${S.coins < price * n ? 'disabled' : ''}>${n === 1 ? 'Comprar' : '×' + n}<small>${fmtShort(price * n)}</small></button>`;
+      const q = (n) => `<button class="btn ${n === 1 ? '' : 'btn-ghost'}" data-buy="${t.id}" data-q="${n}" ${S.coins < price * n || !playsOk(n) ? 'disabled' : ''}>${n === 1 ? 'Comprar' : '×' + n}<small>${fmtShort(price * n)}</small></button>`;
       html += `<div class="shop-card special-card secret-card">
         <div class="special-head"><span class="sp-tag">🕵️ BOLETO SECRETO</span><span class="sp-timer" data-countdown="secret">${fmtLeft(S.secret.until - now)}</span></div>
         <div class="shop-body">
@@ -1451,7 +1480,7 @@
       const m = tierMath(t);
       const locked = S.level < t.level;
       const price = ticketPrice(t);
-      const q = (n, label) => `<button class="btn ${n === 1 ? '' : 'btn-ghost'}" data-buy="${t.id}" data-q="${n}" ${locked || S.coins < price * n ? 'disabled' : ''}>${label}<small>${fmtShort(price * n)}</small></button>`;
+      const q = (n, label) => `<button class="btn ${n === 1 ? '' : 'btn-ghost'}" data-buy="${t.id}" data-q="${n}" ${locked || S.coins < price * n || !playsOk(n) ? 'disabled' : ''}>${label}<small>${fmtShort(price * n)}</small></button>`;
       html += `<div class="shop-card special-card event-card ${locked ? 'locked' : ''}" style="--ev1:${ev.event.colors[0]};--ev2:${ev.event.colors[1]}">
         ${locked ? `<div class="lock-overlay"><span>🔒</span>Los boletos de evento se desbloquean en el nivel ${t.level}</div>` : ''}
         <div class="special-head"><span class="sp-tag">${ev.event.icon} EVENTO · EDICIÓN LIMITADA</span><span class="sp-timer">termina en <b data-countdown="event">${fmtLeft(ev.end - now)}</b></span></div>
@@ -1767,6 +1796,7 @@
     const st = S.stats;
     const net = st.won - st.spent;
     const items = [
+      ['Día actual', `${S.day.n} · objetivo ${fmt(S.day.target)}`],
       ['Saldo actual', fmt(S.coins)],
       ['Boletos rascados', fmt(st.scratched)],
       ['Monedas gastadas', fmt(st.spent)],
@@ -1792,6 +1822,7 @@
     const rec = S.records;
     $('record-grid').innerHTML = [
       ['Partida nº', fmt(rec.runs)],
+      ['Récord de días', fmt(Math.max(rec.bestDay || 1, S.day.n))],
       ['Récord de nivel', fmt(rec.bestLevel)],
       ['Récord de saldo', fmt(rec.bestCoins)],
       ['Récord de premio', rec.bestWin ? fmt(rec.bestWin) : '—'],
@@ -1882,9 +1913,6 @@
   refreshHeader(false);
   go('home');
   checkBankrupt(900);
-  setInterval(() => {
-    if (current === 'home') renderDaily();
-  }, 30000);
   // Secretos, eventos y jackpot
   setInterval(() => {
     tickSpecials();
@@ -1892,11 +1920,7 @@
   }, 1000);
   tickSpecials();
   initJackpot();
-  // La mina va sumando en tiempo real
-  setInterval(() => {
-    if (current === 'home' && S.mine.level) renderMineCard();
-  }, 2000);
-  // Guarda la producción de la mina al salir
+  // Guarda al salir
   window.addEventListener('pagehide', () => {
     mineTick();
     save();
@@ -1911,7 +1935,7 @@
       html: `<p>Empiezas con <b style="color:var(--accent)">1.000 monedas</b> ficticias.</p>
         <p>Compra boletos en la tienda, <b>ráscalos arrastrando el dedo o el ratón</b> y encuentra 3 símbolos iguales para ganar.</p>
         <p>Sube de nivel para desbloquear boletos mejores, juegos sin rascar, objetos, una mina de monedas y el árbol de habilidades.</p>
-        <p>⚠️ Si te quedas sin monedas, <b>pierdes y empiezas de cero</b>… salvo que tengas una ❤️ Segunda vida.</p>`,
+        <p>📅 La partida va <b>por días</b>: cada día tienes unas jugadas y un <b>objetivo de monedas</b> que crece cada día. Si al acabar las jugadas no lo alcanzas, <b>empiezas de cero</b>… salvo que tengas una ❤️ Segunda vida.</p>`,
       buttons: [{ label: '¡A rascar!', cls: 'btn', action: () => go('shop') }],
     });
   }

@@ -13,6 +13,17 @@ Abre `index.html` en el navegador (doble clic o cualquier servidor estático, po
 4. Si salen **3 símbolos iguales**, ganas su premio. En Oro, Diamante y Legendario, la casilla **MULTIPLICADOR** lo multiplica.
 5. Gana experiencia, sube de nivel y desbloquea boletos mejores.
 
+## 📅 Partida por días
+
+La partida avanza **por días**. Cada día tienes un número de **jugadas** (cada boleto o partida gasta una) y un **objetivo de monedas** que tienes que tener cuando se acaben.
+
+- **Objetivo:** 1.000 el día 1 y un 25 % más cada día (1.250, 1.550, 1.950… unos 9.300 el día 11 y unos 28.500 el día 16).
+- **Jugadas:** 12 el día 1, y 1 o 2 más cada día, hasta un máximo de 40.
+- **Al empezar cada día** recibes un bonus (18 % del objetivo de ese día), la producción de tu ⛏️ mina y, con la habilidad 🏦 Banco, intereses sobre lo que superaste el objetivo (como mucho, el 50 % del nuevo objetivo).
+- **Terminar antes:** si ya tienes el objetivo, puedes cerrar el día sin gastar el resto de jugadas, para no arriesgar.
+- **Si no llegas**, la partida termina y empiezas de cero, salvo que tengas una **❤️ Segunda vida**: te salva, conservas tu progreso y pasas al día siguiente.
+- `node tools/simulate-days.js` simula miles de partidas para ajustar la dificultad. Sin habilidades, mina ni objetos, la mitad de las partidas llega al día 9 y el 20 % pasa del día 15.
+
 ## Boletos
 
 | Boleto | Precio | Nivel | Prob. de premio | Premio máximo | Retorno teórico |
@@ -66,12 +77,12 @@ Es un bote que se acumula: empieza en 100.000, crece 50 monedas por minuto y sum
 
 ## Objetos
 
-- ❤️ **Segunda vida:** te salva de la bancarrota (máximo 3).
+- ❤️ **Segunda vida:** te salva cuando no llegas al objetivo del día (máximo 3).
 - 🧪 **Poción de sabiduría:** doble de experiencia durante 20 partidas.
 - 🔮 **Bola de cristal:** 2 casillas extra descubiertas en los próximos 8 boletos.
 - 🧿 **Amuleto de la fortuna:** premios +10 % durante 10 partidas.
 - 🛡️ **Escudo de consuelo:** recuperas el 10 % de cada partida sin premio durante 10 partidas.
-- ⛏️ **Mina de monedas:** ingresos pasivos que se acumulan aunque el juego esté cerrado (hasta 6 h). Tiene 10 niveles y se recoge desde el inicio o la tienda.
+- ⛏️ **Mina de monedas:** ingresos pasivos: al empezar cada día te da el 20 % de todo lo que has invertido en ella (cada mejora se amortiza en unos 5 días). Tiene 10 niveles.
 
 El precio de los objetos sube con el nivel del jugador.
 
@@ -81,10 +92,9 @@ El precio de los objetos sube con el nivel del jugador.
 - **Inventario:** boletos comprados pendientes de rascar.
 - **Historial:** los últimos 300 boletos, con filtros.
 - **Estadísticas:** gastado, ganado, balance, porcentaje de premiados, retorno real por tipo, mayor premio y rachas.
-- **Logros:** 29 retos con recompensa.
-- **Bonus diario** cada 20 h.
-- **Bancarrota:** si no te llega para lo más barato, no tienes boletos sin rascar, no puedes recoger nada de la mina y no hay bonus diario disponible, pierdes la partida y **empiezas de cero**. Si tienes una **❤️ Segunda vida**, se gasta sola, conservas tu progreso y recibes monedas (300 + 100 × nivel). Antes de una compra que te dejaría sin nada, el juego pide confirmación.
-- **Récords** de todas las partidas (nivel, saldo, mayor premio y número de partida): se conservan al empezar de cero.
+- **Logros:** 33 retos con recompensa.
+- **Fin de la partida:** si al acabar el día no llegas al objetivo, empiezas de cero (salvo con una ❤️ Segunda vida). Antes de una compra que te dejaría sin dinero para jugar, el juego pide confirmación.
+- **Récords** de todas las partidas (día alcanzado, nivel, saldo, mayor premio y número de partida): se conservan al empezar de cero.
 - La partida se guarda automáticamente en `localStorage`.
 
 ## Árbol de habilidades
@@ -102,7 +112,7 @@ Las habilidades son mejoras permanentes que se compran con monedas. Hay cinco ra
 | | 🔄 Segunda oportunidad | 3 % de que un boleto sin premio se vuelva a sortear al comprarlo | 4 |
 | | ✨ Toque dorado | 5 % de que un premio se duplique | 3 |
 | 💰 Economía | 🏷️ Cliente VIP | Boletos un 2 % más baratos | 5 |
-| | 🎁 Bonus generoso | Bonus diario +30 % | 3 |
+| | 🎁 Bonus generoso | Bonus de inicio de día +30 % | 3 |
 | | 🛟 Seguro de consuelo | Recuperas el 4 % de cada boleto sin premio | 5 |
 | | 📈 Inversor | Recompensas de nivel +25 % | 4 |
 | 🎰 Arcade | 🎰 Palanca engrasada | Premios de los juegos +4 % | 5 |
@@ -110,7 +120,7 @@ Las habilidades son mejoras permanentes que se compran con monedas. Hay cinco ra
 | | 🔁 Tirada múltiple | Jugar ×5 y ×10 de golpe | 1 |
 | | 🃏 Comodín | 6 % de que una pareja perdedora de símbolos comunes se complete | 3 |
 | ⛏️ Negocios | 👷 Capataz | La mina produce +25 % | 4 |
-| | 📦 Almacén | Capacidad de la mina +50 % | 3 |
+| | 🏦 Banco | Al empezar el día, 5 % de interés sobre lo que superaste el objetivo | 3 |
 | | ⚗️ Alquimista | Los objetos duran +25 % | 4 |
 | | 🤝 Comerciante | Objetos y mina −8 % | 3 |
 

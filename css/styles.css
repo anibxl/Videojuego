@@ -669,3 +669,31 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .tier-secret { --t-ink: #f1e6ff; --t-panel: #f4efff; --t-panel-ink: #1d1236; box-shadow: 0 18px 40px rgba(0,0,0,.5), 0 0 30px #b388ff66, inset 0 0 0 2px rgba(255,255,255,.3); }
 .tier-limited { --t-ink: #fff; --t-panel: #fffaf2; --t-panel-ink: #2a1a10; }
 .tier-limited .t-name, .tier-secret .t-name { font-size: 1.25rem; letter-spacing: 1px; text-transform: none; }
+
+/* ---------- Días y objetivos ---------- */
+.day-panel { background: linear-gradient(135deg, rgba(255,159,28,.2), rgba(255,77,141,.12)); border-color: #ffb34766; }
+.day-panel.reached { background: linear-gradient(135deg, rgba(46,230,160,.22), rgba(76,201,240,.12)); border-color: #2ee6a088; }
+.dp-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.dp-day { display: block; font-size: 1.6rem; font-weight: 900; }
+.dp-top small { display: block; }
+.dp-plays { text-align: right; }
+.dp-plays b { font-size: 1.6rem; font-weight: 900; color: var(--accent); }
+.dp-plays small { display: block; color: var(--muted); font-size: .75rem; }
+.dp-goal { display: flex; justify-content: space-between; margin-top: 12px; font-size: .9rem; }
+.dp-goal b { font-variant-numeric: tabular-nums; }
+.dp-bar { margin-top: 6px; height: 14px; }
+.dp-bar span { background: linear-gradient(90deg, #ff9f1c, #ffcf3f); }
+.day-panel.reached .dp-bar span { background: linear-gradient(90deg, #2ee6a0, #4cc9f0); }
+.dp-foot { margin-top: 8px; font-size: .85rem; color: var(--muted); }
+.dp-end { width: 100%; margin-top: 12px; }
+.day-strip {
+  display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; padding: 8px 12px;
+  border-radius: 12px; background: rgba(255,159,28,.14); border: 1px solid #ffb34755; font-size: .82rem; font-weight: 800;
+}
+.day-strip.reached { background: rgba(46,230,160,.14); border-color: #2ee6a066; }
+.day-strip:empty { display: none; }
+.modal-box.daypass { background: linear-gradient(160deg, #6b3a0a, #2a0f45); box-shadow: 0 0 60px #ffb34777; }
+.day-next { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.day-next div { background: rgba(255,255,255,.08); border-radius: 12px; padding: 8px; }
+.day-next small { display: block; color: var(--muted); font-size: .75rem; }
+.day-next b { font-size: 1.3rem; color: var(--accent); }
