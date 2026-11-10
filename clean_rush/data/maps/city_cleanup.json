@@ -1,0 +1,32 @@
+{
+  "id": "city_cleanup",
+  "name": "City Cleanup",
+  "description": "A tired little high street covered in litter and graffiti. Give the neighbourhood its pride back.",
+  "difficulty": 3,
+  "builder": "res://scripts/maps/map_city_cleanup.gd",
+  "thumbnail": "res://assets/icons/maps/city_cleanup.svg",
+  "unlock": {"type": "contracts", "count": 5, "text": "Complete 5 contracts"},
+  "coins_per_percent": 4.0,
+  "recommended_tools": ["trash_picker", "pressure_washer", "scrubber"],
+  "spawn": [0, 0, 0],
+  "discoveries": [
+    {"id": "street_badge", "name": "Clean Rush Badge: City", "description": "Hidden under the graffiti: a badge for street heroes.", "model": "badge", "coins": 100},
+    {"id": "vintage_coin", "name": "Vintage Coin", "description": "Minted decades ago, lost in the gutter.", "model": "coin", "coins": 90},
+    {"id": "toy_robot", "name": "Tiny Robot", "description": "A wind-up robot buried under a pile of litter.", "model": "toy", "coins": 70}
+  ],
+  "contracts": [
+    {"id": "cc_litter", "title": "Litter Patrol", "description": "Pick up the rubbish and drop it into the street bins.",
+     "reward": 500, "xp": 110, "par_time": 150, "perfect": 0.5,
+     "objectives": [{"type": "debris", "tag": "trash", "target": 0.95, "label": "Remove the rubbish"}]},
+    {"id": "cc_graffiti", "title": "Wall of Fame", "description": "Unauthorised tags have appeared overnight. Wash them all away.",
+     "reward": 650, "xp": 130, "par_time": 180, "perfect": 0.6,
+     "objectives": [{"type": "surfaces", "group": "graffiti", "target": 0.95, "label": "Remove the graffiti"}]},
+    {"id": "cc_sidewalk", "title": "Sparkling Sidewalks", "description": "Wash the pavements and restore the public benches.",
+     "reward": 650, "xp": 130, "par_time": 200, "perfect": 0.7,
+     "objectives": [{"type": "surfaces", "group": "sidewalk", "target": 0.9, "label": "Clean the sidewalks"},
+                    {"type": "surfaces", "group": "benches", "target": 0.9, "label": "Restore the benches"}]},
+    {"id": "cc_model", "title": "Model Street", "description": "Win the city's Cleanest Street award. Everything must shine.",
+     "reward": 1200, "xp": 220, "par_time": 420, "perfect": 0.98,
+     "objectives": [{"type": "overall", "target": 0.95, "label": "Clean 95% of the street"}]}
+  ]
+}

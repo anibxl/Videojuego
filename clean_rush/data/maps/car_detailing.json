@@ -1,0 +1,34 @@
+{
+  "id": "car_detailing",
+  "name": "Car Detailing",
+  "description": "A classic convertible straight from a muddy rally. Wash, foam, vacuum and polish it to a showroom shine.",
+  "difficulty": 3,
+  "builder": "res://scripts/maps/map_car_detailing.gd",
+  "thumbnail": "res://assets/icons/maps/car_detailing.svg",
+  "unlock": {"type": "tool_owned", "tools": ["foam_sprayer", "scrubber", "polisher", "turbo_nozzle", "pool_vacuum"], "text": "Buy any professional tool (Foam Sprayer or better)"},
+  "coins_per_percent": 4.5,
+  "recommended_tools": ["pressure_washer", "sponge", "leaf_vacuum", "polisher"],
+  "spawn": [0, 0, 5.5],
+  "discoveries": [
+    {"id": "car_keys", "name": "Spare Car Key", "description": "Found under the seat dust. The owner had been looking everywhere.", "model": "key", "coins": 80},
+    {"id": "air_freshener", "name": "Pine Air Freshener", "description": "Vintage 'Forest Breeze' scent. Still smells... sort of.", "model": "tree", "coins": 60},
+    {"id": "car_badge", "name": "Clean Rush Badge: Chrome", "description": "A badge for bringing a classic back to life.", "model": "badge", "coins": 100}
+  ],
+  "contracts": [
+    {"id": "cd_mud", "title": "Mud Bath Rescue", "description": "The rally is over. Get all the mud off the bodywork.",
+     "reward": 500, "xp": 110, "par_time": 150, "perfect": 0.6,
+     "objectives": [{"type": "surfaces", "group": "body", "layer": "mud", "target": 0.95, "label": "Remove mud from the bodywork"}]},
+    {"id": "cd_wheels", "title": "Wheels & Windows", "description": "Wash the wheels, clear the leftover foam and make the glass spotless.",
+     "reward": 600, "xp": 120, "par_time": 150, "perfect": 0.7,
+     "objectives": [{"type": "surfaces", "group": "wheels", "target": 0.95, "label": "Wash the wheels"},
+                    {"type": "surfaces", "group": "foam", "target": 0.95, "label": "Rinse off the foam"},
+                    {"type": "surfaces", "group": "windows", "target": 0.95, "label": "Wash the windows"}]},
+    {"id": "cd_interior", "title": "Interior Refresh", "description": "Vacuum and wipe the seats, floor and dashboard.",
+     "reward": 600, "xp": 120, "par_time": 140, "perfect": 0.7,
+     "objectives": [{"type": "surfaces", "group": "interior", "target": 0.95, "label": "Clean the interior"}]},
+    {"id": "cd_showroom", "title": "Showroom Shine", "description": "Full detail: mud off, foam off, glass clear, interior fresh and polished to a mirror finish.",
+     "reward": 1500, "xp": 260, "par_time": 480, "perfect": 0.99,
+     "objectives": [{"type": "surfaces", "group": "body", "target": 0.95, "label": "Wash and polish the bodywork"},
+                    {"type": "overall", "target": 0.95, "label": "Complete vehicle restoration"}]}
+  ]
+}

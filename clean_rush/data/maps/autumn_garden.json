@@ -1,0 +1,31 @@
+{
+  "id": "autumn_garden",
+  "name": "Autumn Garden",
+  "description": "A cosy family garden buried under a blanket of fallen leaves. Rake, blow and vacuum it back to life.",
+  "difficulty": 1,
+  "builder": "res://scripts/maps/map_autumn_garden.gd",
+  "thumbnail": "res://assets/icons/maps/autumn_garden.svg",
+  "unlock": {"type": "none", "text": "Available"},
+  "coins_per_percent": 2.0,
+  "recommended_tools": ["rake", "leaf_blower", "leaf_vacuum"],
+  "spawn": [0, 0, 11],
+  "discoveries": [
+    {"id": "garden_gnome", "name": "Grumpy Gnome", "description": "A little garden gnome who has been hiding under the leaves since September.", "model": "gnome", "coins": 60},
+    {"id": "lost_ball", "name": "Lost Football", "description": "The neighbour's kid will be thrilled.", "model": "ball", "coins": 40},
+    {"id": "patio_coin", "name": "Lucky Coin", "description": "A shiny old coin wedged between the patio pavers.", "model": "coin", "coins": 80}
+  ],
+  "contracts": [
+    {"id": "ag_path", "title": "Clear the Main Pathway", "description": "The owners can't even find the front path. Clear every leaf from it.",
+     "reward": 150, "xp": 40, "par_time": 75, "perfect": 0.6,
+     "objectives": [{"type": "debris", "tag": "leaves", "zone": "path", "target": 0.95, "label": "Clear leaves from the pathway"}]},
+    {"id": "ag_patio", "title": "Patio Party Prep", "description": "A garden party is coming. Clear the patio and wipe the outdoor furniture.",
+     "reward": 260, "xp": 60, "par_time": 140, "perfect": 0.75,
+     "objectives": [{"type": "debris", "tag": "leaves", "zone": "patio", "target": 0.95, "label": "Remove all leaves from the patio"},
+                    {"type": "surfaces", "group": "furniture", "target": 0.9, "label": "Clean the outdoor furniture"}]},
+    {"id": "ag_full", "title": "Full Autumn Makeover", "description": "The complete package: lawn, flower beds, patio, path and furniture.",
+     "reward": 480, "xp": 100, "par_time": 300, "perfect": 0.97,
+     "objectives": [{"type": "debris", "tag": "leaves", "target": 0.92, "label": "Clear leaves from the whole garden"},
+                    {"type": "debris", "tag": "leaves", "zone": "beds", "target": 0.9, "label": "Free the flower beds"},
+                    {"type": "surfaces", "group": "furniture", "target": 0.9, "label": "Clean the outdoor furniture"}]}
+  ]
+}

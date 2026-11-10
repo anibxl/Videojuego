@@ -1,0 +1,29 @@
+{
+  "achievements": [
+    {"id": "first_contract", "name": "Open for Business", "description": "Complete your first contract.", "stat": "contracts_completed", "target": 1, "reward": 50},
+    {"id": "ten_contracts", "name": "Busy Bee", "description": "Complete 10 contracts.", "stat": "contracts_completed", "target": 10, "reward": 200},
+    {"id": "leaf_rookie", "name": "Leaf Rookie", "description": "Clear 1,000 leaves.", "stat": "leaves_cleared", "target": 1000, "reward": 60},
+    {"id": "leaf_legend", "name": "Leaf Legend", "description": "Clear 10,000 leaves.", "stat": "leaves_cleared", "target": 10000, "reward": 300},
+    {"id": "washer_pro", "name": "Pressure Pro", "description": "Clean 500 m² of dirty surfaces.", "stat": "area_cleaned", "target": 500, "reward": 200},
+    {"id": "washer_master", "name": "Surface Master", "description": "Clean 3,000 m² of dirty surfaces.", "stat": "area_cleaned", "target": 3000, "reward": 500},
+    {"id": "trash_hero", "name": "Litter Hero", "description": "Pick up 300 pieces of rubbish.", "stat": "trash_cleared", "target": 300, "reward": 150},
+    {"id": "perfectionist", "name": "Perfectionist", "description": "Earn 3 stars on a contract.", "stat": "three_star_count", "target": 1, "reward": 100},
+    {"id": "star_collector", "name": "Star Collector", "description": "Collect 30 stars.", "stat": "stars", "target": 30, "reward": 300},
+    {"id": "explorer", "name": "Treasure Hunter", "description": "Find 5 hidden discoveries.", "stat": "discoveries", "target": 5, "reward": 100},
+    {"id": "collector", "name": "Collector", "description": "Find all 18 hidden discoveries.", "stat": "discoveries", "target": 18, "reward": 600},
+    {"id": "tool_owner", "name": "Fully Equipped", "description": "Own 8 cleaning tools.", "stat": "tools_owned", "target": 8, "reward": 200},
+    {"id": "upgrader", "name": "Tinkerer", "description": "Buy 10 tool upgrades.", "stat": "upgrades_bought", "target": 10, "reward": 150},
+    {"id": "rich", "name": "Clean Fortune", "description": "Earn 10,000 coins in total.", "stat": "coins_earned", "target": 10000, "reward": 400},
+    {"id": "all_maps", "name": "Globetrotter", "description": "Unlock all six locations.", "stat": "maps_unlocked", "target": 6, "reward": 300},
+    {"id": "speedy", "name": "Speed Cleaner", "description": "Finish a contract in under half its par time.", "stat": "speed_runs", "target": 1, "reward": 120},
+    {"id": "daily", "name": "Daily Devotion", "description": "Claim 5 daily missions.", "stat": "dailies_claimed", "target": 5, "reward": 200}
+  ],
+  "daily_templates": [
+    {"id": "d_leaves", "text": "Clear %d leaves", "stat": "leaves_cleared", "targets": [200, 300, 400], "reward": 120},
+    {"id": "d_area", "text": "Clean %d m² of surfaces", "stat": "area_cleaned", "targets": [40, 60, 90], "reward": 140},
+    {"id": "d_contracts", "text": "Complete %d contracts", "stat": "contracts_completed", "targets": [1, 2, 3], "reward": 150},
+    {"id": "d_trash", "text": "Pick up %d pieces of rubbish", "stat": "trash_cleared", "targets": [20, 40, 60], "reward": 120},
+    {"id": "d_stars", "text": "Earn %d stars", "stat": "stars_earned", "targets": [2, 3, 5], "reward": 160},
+    {"id": "d_surfaces", "text": "Fully clean %d surfaces", "stat": "surfaces_completed", "targets": [10, 15, 25], "reward": 130}
+  ]
+}

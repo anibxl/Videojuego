@@ -1,0 +1,31 @@
+{
+  "id": "pool_rescue",
+  "name": "Pool Rescue",
+  "description": "A swampy, forgotten pool. Skim it, scrub it and bring back the crystal-clear water.",
+  "difficulty": 2,
+  "builder": "res://scripts/maps/map_pool_rescue.gd",
+  "thumbnail": "res://assets/icons/maps/pool_rescue.svg",
+  "unlock": {"type": "coins_earned", "amount": 1200, "text": "Earn 1,200 coins in total"},
+  "coins_per_percent": 3.5,
+  "recommended_tools": ["pool_net", "pool_vacuum", "scrubber"],
+  "spawn": [0, 0, 6.5],
+  "water": {"surfaces": ["pool", "tiles"], "debris": ["floating"]},
+  "discoveries": [
+    {"id": "toy_boat", "name": "Toy Sailboat", "description": "A little wooden boat hiding beneath the floating leaves.", "model": "boat", "coins": 70},
+    {"id": "lost_ring", "name": "Lost Ring", "description": "Somebody will be very happy to see this again. Found under the algae.", "model": "ring", "coins": 120},
+    {"id": "rubber_duck", "name": "Captain Duck", "description": "The pool's original lifeguard, finally back on duty.", "model": "duck", "coins": 60}
+  ],
+  "contracts": [
+    {"id": "pr_skim", "title": "Skim the Surface", "description": "Fish every floating leaf out of the water.",
+     "reward": 400, "xp": 90, "par_time": 120, "perfect": 0.5,
+     "objectives": [{"type": "debris", "tag": "floating", "target": 0.95, "label": "Remove floating leaves"}]},
+    {"id": "pr_edges", "title": "Edge Detail", "description": "Scrub the pool coping and the deck so nobody slips.",
+     "reward": 450, "xp": 100, "par_time": 150, "perfect": 0.6,
+     "objectives": [{"type": "surfaces", "group": "edges", "target": 0.95, "label": "Clean the pool edges"},
+                    {"type": "surfaces", "group": "deck", "target": 0.8, "label": "Clean the pool deck"}]},
+    {"id": "pr_clear", "title": "Crystal Clear", "description": "Full restoration: skim, remove algae, scrub the tiles. Make the water sparkle.",
+     "reward": 900, "xp": 180, "par_time": 360, "perfect": 0.95,
+     "objectives": [{"type": "water", "target": 0.95, "label": "Restore water clarity"},
+                    {"type": "surfaces", "group": "tiles", "target": 0.9, "label": "Clean the waterline tiles"}]}
+  ]
+}

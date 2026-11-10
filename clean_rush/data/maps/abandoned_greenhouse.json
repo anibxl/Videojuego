@@ -1,0 +1,30 @@
+{
+  "id": "abandoned_greenhouse",
+  "name": "Abandoned Greenhouse",
+  "description": "A Victorian glasshouse lost to moss and leaves. Restore it and watch the garden bloom again.",
+  "difficulty": 4,
+  "builder": "res://scripts/maps/map_abandoned_greenhouse.gd",
+  "thumbnail": "res://assets/icons/maps/abandoned_greenhouse.svg",
+  "unlock": {"type": "stars", "count": 20, "text": "Earn 20 stars"},
+  "coins_per_percent": 6.0,
+  "recommended_tools": ["leaf_blower", "pressure_washer", "sponge", "leaf_vacuum"],
+  "spawn": [0, 0, 8],
+  "discoveries": [
+    {"id": "rare_ornament", "name": "Glass Hummingbird", "description": "A rare garden ornament, hand-blown glass. Found under the leaves.", "model": "bird", "coins": 120},
+    {"id": "gardener_note", "name": "Gardener's Note", "description": "\"Whoever finds this: please look after my orchids.\" Hidden under the moss.", "model": "note", "coins": 80},
+    {"id": "green_badge", "name": "Clean Rush Badge: Bloom", "description": "The rarest badge, for those who restore nature itself.", "model": "badge", "coins": 150}
+  ],
+  "contracts": [
+    {"id": "gh_way", "title": "Clear the Way", "description": "Clear the leaves and moss from the central path.",
+     "reward": 800, "xp": 150, "par_time": 180, "perfect": 0.6,
+     "objectives": [{"type": "debris", "tag": "leaves", "zone": "path", "target": 0.95, "label": "Clear leaves from the path"},
+                    {"type": "surfaces", "group": "path", "target": 0.85, "label": "Wash the path stones"}]},
+    {"id": "gh_light", "title": "Let the Light In", "description": "Clean the glass walls so the sun can reach the plants again.",
+     "reward": 900, "xp": 170, "par_time": 240, "perfect": 0.7,
+     "objectives": [{"type": "surfaces", "group": "glass", "target": 0.9, "label": "Clean the glass panels"}]},
+    {"id": "gh_reborn", "title": "Greenhouse Reborn", "description": "Restore everything: glass, planters, furniture, path, leaves and rubbish.",
+     "reward": 2000, "xp": 320, "par_time": 540, "perfect": 0.99,
+     "objectives": [{"type": "overall", "target": 0.95, "label": "Restore 95% of the greenhouse"},
+                    {"type": "debris", "tag": "trash", "target": 0.95, "label": "Remove the rubbish"}]}
+  ]
+}

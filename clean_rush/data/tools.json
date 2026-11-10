@@ -1,0 +1,107 @@
+{
+  "order": ["rake", "broom", "sponge", "leaf_blower", "trash_picker", "pressure_washer", "pool_net", "leaf_vacuum", "foam_sprayer", "scrubber", "pool_vacuum", "turbo_nozzle", "polisher"],
+  "tools": {
+    "rake": {
+      "name": "Basic Rake", "category": "starter", "price": 0, "color": [0.85, 0.55, 0.25],
+      "description": "Gathers fallen leaves right in front of you. Slow, quiet and reliable.",
+      "debris": {"mode": "collect", "reach": 1.3, "radius": 1.0, "power": 16, "kinds": ["leaf", "floating"]},
+      "upgrades": ["power", "radius"], "sound": "rake", "anim": "sweep"
+    },
+    "broom": {
+      "name": "Basic Broom", "category": "starter", "price": 0, "color": [0.9, 0.75, 0.35],
+      "description": "Sweeps dust and leaf litter off floors and nudges debris aside.",
+      "surface": {"mode": "contact", "range": 2.0, "radius": 0.55, "power": 1.0, "floor_only": true,
+        "types": {"dust": 1.3, "litter": 1.2, "mud": 0.5, "grime": 0.4, "silt": 0.5, "moss": 0.2, "algae": 0.2, "smudge": 0.2, "foam": 0.6, "graffiti": 0.05, "dull": 0.0}},
+      "debris": {"mode": "push", "reach": 1.4, "radius": 0.9, "power": 5, "kinds": ["leaf", "trash"]},
+      "upgrades": ["power", "radius"], "sound": "broom", "anim": "sweep"
+    },
+    "sponge": {
+      "name": "Basic Sponge", "category": "starter", "price": 0, "color": [1.0, 0.85, 0.2],
+      "description": "Scrubs small surfaces by hand. Great on glass, grime and foam.",
+      "surface": {"mode": "contact", "range": 2.0, "radius": 0.4, "power": 1.2,
+        "types": {"grime": 1.0, "smudge": 1.4, "foam": 1.5, "dust": 1.0, "litter": 0.8, "mud": 0.6, "moss": 0.35, "algae": 0.45, "silt": 0.5, "graffiti": 0.25, "dull": 0.3}},
+      "upgrades": ["power", "radius"], "sound": "sponge", "anim": "scrub"
+    },
+    "leaf_blower": {
+      "name": "Electric Leaf Blower", "category": "advanced", "price": 300, "color": [0.1, 0.75, 0.75],
+      "description": "Blasts leaves and light litter away in a wide cone. Clear lawns in seconds!",
+      "surface": {"mode": "spray", "range": 4.0, "radius": 0.8, "power": 0.9, "types": {"litter": 1.3, "dust": 0.9}},
+      "debris": {"mode": "push", "reach": 5.5, "radius": 2.2, "power": 11, "kinds": ["leaf", "trash"]},
+      "upgrades": ["power", "range", "radius"], "sound": "blower", "anim": "aim", "fx": "air"
+    },
+    "trash_picker": {
+      "name": "Litter Picker", "category": "advanced", "price": 250, "color": [0.35, 0.8, 0.35],
+      "description": "Waste collection grabber with a bin bag. Empty the bag at any bin.",
+      "debris": {"mode": "collect", "reach": 1.5, "radius": 0.9, "power": 6, "kinds": ["trash", "leaf"], "capacity": 30},
+      "upgrades": ["power", "radius", "capacity"], "sound": "picker", "anim": "sweep"
+    },
+    "pressure_washer": {
+      "name": "Pressure Washer", "category": "advanced", "price": 600, "color": [0.15, 0.45, 0.95],
+      "description": "The classic. Blasts mud, grime and moss off any hard surface. Toggle wide or narrow nozzle.",
+      "surface": {"mode": "spray", "range": 6.5, "radius": 0.6, "power": 1.6, "nozzles": true,
+        "types": {"mud": 1.0, "grime": 1.0, "moss": 0.8, "algae": 0.8, "graffiti": 0.5, "dust": 1.0, "litter": 1.0, "foam": 1.3, "smudge": 0.7, "silt": 0.9, "dull": 0.0}},
+      "debris": {"mode": "push", "reach": 6.0, "radius": 0.6, "power": 3, "kinds": ["leaf", "floating"]},
+      "upgrades": ["power", "range", "radius"], "sound": "washer", "anim": "aim", "fx": "water"
+    },
+    "pool_net": {
+      "name": "Pool Net", "category": "advanced", "price": 400, "color": [0.2, 0.85, 0.95],
+      "description": "Long-handled skimmer net for floating leaves and debris. Empty it at a bin.",
+      "debris": {"mode": "collect", "reach": 3.6, "radius": 1.1, "power": 22, "kinds": ["floating", "leaf"], "capacity": 60},
+      "upgrades": ["power", "range", "radius", "capacity"], "sound": "net", "anim": "sweep"
+    },
+    "leaf_vacuum": {
+      "name": "Pro Leaf Vacuum", "category": "advanced", "price": 800, "color": [0.95, 0.5, 0.15],
+      "description": "Sucks up leaves and litter into its bag. Watch the capacity and empty at a bin.",
+      "surface": {"mode": "contact", "range": 2.4, "radius": 0.6, "power": 1.0, "floor_only": true, "types": {"litter": 1.2, "dust": 1.2, "silt": 0.3}},
+      "debris": {"mode": "suck", "reach": 2.4, "radius": 1.3, "power": 30, "kinds": ["leaf", "trash", "floating"], "capacity": 140},
+      "upgrades": ["power", "range", "radius", "capacity"], "sound": "vacuum", "anim": "aim", "fx": "suck"
+    },
+    "foam_sprayer": {
+      "name": "Foam Sprayer", "category": "advanced", "price": 900, "color": [0.95, 0.95, 1.0],
+      "description": "Coats surfaces in thick cleaning foam. Foamed dirt washes off 2.5x faster with any tool.",
+      "surface": {"mode": "spray", "range": 5.0, "radius": 1.0, "power": 0.45, "foam": true,
+        "types": {"grime": 0.5, "mud": 0.4, "dust": 0.6, "smudge": 0.4, "litter": 0.4}},
+      "upgrades": ["power", "range", "radius"], "sound": "foam", "anim": "aim", "fx": "foam"
+    },
+    "scrubber": {
+      "name": "Pro Scrubber", "category": "advanced", "price": 1000, "color": [0.55, 0.3, 0.9],
+      "description": "Rotary brush that tears through moss, algae and graffiti up close.",
+      "surface": {"mode": "contact", "range": 2.2, "radius": 0.65, "power": 1.8,
+        "types": {"moss": 1.4, "algae": 1.4, "graffiti": 1.3, "grime": 1.2, "mud": 0.9, "silt": 1.0, "smudge": 0.6, "dust": 1.0, "litter": 1.0, "foam": 1.0, "dull": 0.2}},
+      "upgrades": ["power", "radius"], "sound": "scrubber", "anim": "scrub"
+    },
+    "pool_vacuum": {
+      "name": "Pool Vacuum", "category": "advanced", "price": 1200, "color": [0.1, 0.6, 0.8],
+      "description": "Telescopic underwater vacuum. Lifts silt and algae from pool floors and walls.",
+      "surface": {"mode": "spray", "range": 7.0, "radius": 0.85, "power": 1.4, "prefer_down": true,
+        "types": {"silt": 1.5, "algae": 1.1, "dust": 0.8, "mud": 0.6, "grime": 0.5}},
+      "debris": {"mode": "suck", "reach": 3.0, "radius": 1.0, "power": 14, "kinds": ["floating"], "capacity": 80},
+      "upgrades": ["power", "range", "radius"], "sound": "vacuum", "anim": "aim", "fx": "bubbles"
+    },
+    "turbo_nozzle": {
+      "name": "High-Pressure Nozzle", "category": "advanced", "price": 1500, "color": [0.95, 0.25, 0.3],
+      "description": "Turbo-rotating nozzle with brutal power. Stubborn moss and graffiti don't stand a chance.",
+      "surface": {"mode": "spray", "range": 7.5, "radius": 0.45, "power": 3.2, "nozzles": true,
+        "types": {"mud": 1.0, "grime": 1.0, "moss": 1.2, "algae": 1.1, "graffiti": 1.1, "dust": 1.0, "litter": 1.0, "foam": 1.3, "smudge": 0.6, "silt": 1.0, "dull": 0.0}},
+      "upgrades": ["power", "range", "radius"], "sound": "washer", "anim": "aim", "fx": "water"
+    },
+    "polisher": {
+      "name": "Polishing Machine", "category": "advanced", "price": 2000, "color": [0.95, 0.75, 0.2],
+      "description": "Dual-action buffer. Turns dull paint into a mirror shine and erases smudges.",
+      "surface": {"mode": "contact", "range": 2.0, "radius": 0.65, "power": 1.5,
+        "types": {"dull": 1.5, "smudge": 1.2, "grime": 0.3, "dust": 0.5}},
+      "upgrades": ["power", "radius"], "sound": "polisher", "anim": "scrub"
+    }
+  },
+  "upgrade_effects": {
+    "power":    {"name": "Power",    "per_level": 0.30, "max": 4},
+    "range":    {"name": "Range",    "per_level": 0.12, "max": 4},
+    "radius":   {"name": "Width",    "per_level": 0.15, "max": 4},
+    "capacity": {"name": "Capacity", "per_level": 0.50, "max": 4}
+  },
+  "gear": {
+    "shoes":  {"name": "Running Shoes",   "description": "Move faster around every job site.",        "per_level": 0.10, "max": 3, "base_cost": 250},
+    "magnet": {"name": "Treasure Magnet", "description": "Pick up hidden discoveries from further away.", "per_level": 0.5,  "max": 3, "base_cost": 200},
+    "bags":   {"name": "Big Bags",        "description": "All bags and nets hold more debris.",        "per_level": 0.25, "max": 3, "base_cost": 300}
+  }
+}

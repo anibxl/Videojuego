@@ -1,0 +1,32 @@
+{
+  "id": "power_wash_patio",
+  "name": "Power Wash Patio",
+  "description": "Years of mud and moss on a grand stone terrace. Reveal the gleaming stone underneath.",
+  "difficulty": 2,
+  "builder": "res://scripts/maps/map_power_wash_patio.gd",
+  "thumbnail": "res://assets/icons/maps/power_wash_patio.svg",
+  "unlock": {"type": "map_contracts", "map": "autumn_garden", "count": 1, "text": "Complete 1 Autumn Garden contract"},
+  "coins_per_percent": 3.0,
+  "recommended_tools": ["pressure_washer", "turbo_nozzle", "foam_sprayer"],
+  "spawn": [0, 0, 7],
+  "discoveries": [
+    {"id": "carved_heart", "name": "Carved Heart", "description": "\"R + L, summer 1998\" carved under the moss on the old wall.", "model": "note", "coins": 70},
+    {"id": "old_key", "name": "Old Brass Key", "description": "It opens... something. Probably the shed.", "model": "key", "coins": 70},
+    {"id": "patio_badge", "name": "Clean Rush Badge: Stone", "description": "A collectible badge for restoring stone to its former glory.", "model": "badge", "coins": 100}
+  ],
+  "contracts": [
+    {"id": "pw_spring", "title": "Spring Clean", "description": "Blast the mud off at least 80% of the patio floor.",
+     "reward": 300, "xp": 70, "par_time": 150, "perfect": 0.6,
+     "objectives": [{"type": "surfaces", "group": "floor", "target": 0.8, "label": "Clean 80% of the patio floor"}]},
+    {"id": "pw_moss", "title": "Moss Be Gone", "description": "The moss is taking over. Remove every last patch.",
+     "reward": 340, "xp": 80, "par_time": 150, "perfect": 0.7,
+     "objectives": [{"type": "surfaces", "group": "moss", "target": 0.97, "label": "Remove all moss"}]},
+    {"id": "pw_stairs", "title": "Restore the Stairs", "description": "Wash the stone stairs and freshen up the garden furniture.",
+     "reward": 400, "xp": 90, "par_time": 150, "perfect": 0.75,
+     "objectives": [{"type": "surfaces", "group": "stairs", "target": 0.95, "label": "Restore the stairs"},
+                    {"type": "surfaces", "group": "furniture", "target": 0.9, "label": "Clean the furniture"}]},
+    {"id": "pw_showroom", "title": "Showroom Terrace", "description": "Make the whole terrace look brand new: floor, tiles, walls and stairs.",
+     "reward": 800, "xp": 160, "par_time": 360, "perfect": 0.99,
+     "objectives": [{"type": "overall", "target": 0.95, "label": "Clean 95% of the terrace"}]}
+  ]
+}
