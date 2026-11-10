@@ -9,7 +9,7 @@ Abre `index.html` en el navegador (doble clic o cualquier servidor estático, po
 
 1. Empiezas con **1.000 monedas**.
 2. Compra boletos en la **Tienda** (de uno en uno, ×5 o ×10).
-3. **Rasca** arrastrando el ratón o el dedo sobre la capa metálica; el contenido se descubre poco a poco. También puedes pulsar «⚡ Rascar todo».
+3. **Rasca** arrastrando el ratón o el dedo sobre la capa metálica; el contenido se descubre poco a poco. El botón «⚡ Rascar todo» se desbloquea con la habilidad «Rascado automático».
 4. Si salen **3 símbolos iguales**, ganas su premio. En Oro, Diamante y Legendario, la casilla **MULTIPLICADOR** lo multiplica.
 5. Gana experiencia, sube de nivel y desbloquea boletos mejores.
 
@@ -75,6 +75,7 @@ Las habilidades son mejoras permanentes que se compran con monedas. Hay cinco ra
 |---|---|---|---:|
 | ⚡ Maestría | 📚 Aprendiz veloz | +10 % de experiencia | 5 |
 | | 💅 Uña de acero | Rascas un 25 % más ancho | 3 |
+| | 🤖 Rascado automático | Botón «⚡ Rascar todo» en cada boleto | 1 |
 | | 👁️ Ojo de lince | 1 casilla ya descubierta en cada boleto | 2 |
 | | 🚀 Rascado en lote | Botón «Rascar todos» en el inventario | 1 |
 | 🍀 Suerte | 🍀 Trébol de la suerte | Premios +2 % | 5 |

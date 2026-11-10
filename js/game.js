@@ -833,6 +833,7 @@
     $('play-actions').innerHTML = '';
     $('play-progress-fill').style.width = '0%';
     $('auto-btn').disabled = false;
+    $('auto-btn').classList.toggle('hidden', !sk('auto')); // mejora del árbol
 
     const area = el.querySelector('.scratch-area');
     const cellEls = Array.from(area.querySelectorAll('.cell'));
@@ -872,7 +873,7 @@
   }
 
   $('auto-btn').addEventListener('click', () => {
-    if (play.card && !play.card.done) {
+    if (play.card && !play.card.done && sk('auto')) {
       Sound.unlock();
       $('auto-btn').disabled = true;
       play.card.autoScratch();
