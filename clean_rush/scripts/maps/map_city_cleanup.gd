@@ -92,7 +92,7 @@ func build() -> void:
 		var f := debris({"tag": "trash", "kind": "trash", "mesh": spec[0], "count": spec[1], "y": 0.15,
 			"spawn": [{"rect": area[0], "weight": 1.2}, {"rect": area[1], "weight": 1.2}, {"rect": area[2], "weight": 0.5}],
 			"bounds": bounds, "obstacles": obstacles, "drop_zones": bins_r, "colors": spec[2], "seed": seed_i,
-			"scale": Vector2(0.9, 1.2), "weight": 0.25,
+			"scale": Vector2(1.7, 2.3), "weight": 0.25,
 			"points": [Vector3(-3.6, 0, 1.6), Vector3(-3.4, 0, 1.9), Vector3(-3.8, 0, 1.8)] if spec[0] == "paper" else []})
 		if first_field == null:
 			first_field = f

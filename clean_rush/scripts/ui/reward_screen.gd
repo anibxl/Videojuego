@@ -13,6 +13,7 @@ func _ready() -> void:
 	add_child(UIKit.backdrop(0.7))
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.offset_top = 150   # leave room for toasts (achievements / unlocks)
 	add_child(center)
 	var p := UIKit.panel(Color(UIKit.BLUE, 0.97), 30)
 	p.custom_minimum_size = Vector2(820, 0)
@@ -23,13 +24,12 @@ func _ready() -> void:
 	var r: Dictionary = data["rewards"]
 	var res: Dictionary = data["result"]
 	var stars := int(r["stars"])
-	v.add_child(UIKit.label("PERFECT CLEAN!" if stars == 3 else "JOB DONE!", 44, UIKit.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
-	v.add_child(UIKit.label(String(c.get("title", "")), 24, UIKit.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
+	v.add_child(UIKit.label(("PERFECT CLEAN!" if stars == 3 else "JOB DONE!") + "  " + String(c.get("title", "")), 32, UIKit.GOLD, HORIZONTAL_ALIGNMENT_CENTER))
 	var sr := UIKit.hbox(18)
 	sr.alignment = BoxContainer.ALIGNMENT_CENTER
 	for i in 3:
-		var s := UIKit.icon_rect(Data.ui_icon("star_empty"), 96)
-		s.pivot_offset = Vector2(48, 48)
+		var s := UIKit.icon_rect(Data.ui_icon("star_empty"), 64)
+		s.pivot_offset = Vector2(32, 32)
 		sr.add_child(s)
 		_star_nodes.append(s)
 	v.add_child(sr)

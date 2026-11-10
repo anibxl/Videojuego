@@ -115,3 +115,10 @@ js/audio.js       sonidos sintetizados
 js/game.js        estado, tienda, inventario, progresión e interfaz
 tools/simulate.js verificación de probabilidades
 ```
+
+---
+
+## 🧽 CLEAN RUSH (juego 3D para Android, Godot 4.3)
+
+La carpeta [`clean_rush/`](clean_rush/) contiene un proyecto independiente: **CLEAN RUSH**, un simulador de limpieza 3D para móviles con 6 mapas, 13 herramientas, contratos, mejoras, colección, logros y guardado local.
+Instrucciones de apertura, exportación a APK e instalación: [`clean_rush/README.md`](clean_rush/README.md). Estado verificado y hoja de ruta: [`clean_rush/docs/DELIVERY.md`](clean_rush/docs/DELIVERY.md).

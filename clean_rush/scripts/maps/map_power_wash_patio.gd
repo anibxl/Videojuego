@@ -7,7 +7,7 @@ func build() -> void:
 	setup_environment(Color(0.3, 0.55, 0.95), Color(0.85, 0.92, 1.0), Color(0.45, 0.5, 0.4), Vector3(0.6, -1.0, -0.5), Color(1.0, 0.97, 0.9), 1.2)
 	boundary_walls(Rect2(-8.6, -11.0, 17.2, 18.2))
 	ground_plane(Rect2(-30, -30, 60, 60), ground_material(Color(0.4, 0.62, 0.25), Color(0.3, 0.5, 0.18), Color(0.5, 0.68, 0.3), 0.3))
-	var pavers := {"a": Color(0.8, 0.75, 0.66), "b": Color(0.66, 0.6, 0.52), "pattern": 3, "roughness": 0.8, "scale": 1.0}
+	var pavers := {"a": Color(0.72, 0.67, 0.58), "b": Color(0.58, 0.53, 0.45), "pattern": 3, "roughness": 0.8, "scale": 1.0}
 	var granite := {"a": Color(0.78, 0.78, 0.8), "b": Color(0.66, 0.66, 0.7), "pattern": 1, "roughness": 0.7, "scale": 1.0}
 	var wall_look := {"a": Color(0.88, 0.8, 0.68), "b": Color(0.74, 0.66, 0.55), "pattern": 4, "roughness": 0.85, "scale": 1.0}
 	# Lower terrace base + dirty floor tiles.

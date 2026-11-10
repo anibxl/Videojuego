@@ -13,7 +13,7 @@ var current_map: MapBase
 var player: Player
 var rig: CameraRig
 var runner: ContractRunner
-var hud: Control
+var hud: GameHUD
 var playing := false
 var session_map := ""
 var session_contract := ""
@@ -31,13 +31,13 @@ func _ready() -> void:
 	ui_layer.layer = 10
 	add_child(ui_layer)
 	ui_root = Control.new()
-	ui_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ui_root.theme = UIKit.theme()
 	ui_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui_layer.add_child(ui_root)
 	toast_box = UIKit.vbox(8)
 	toast_box.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	toast_box.position = Vector2(-300, 100)
+	toast_box.position = Vector2(-300, 12)
 	toast_box.custom_minimum_size = Vector2(600, 0)
 	toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui_layer.add_child(toast_box)
@@ -46,14 +46,18 @@ func _ready() -> void:
 	Audio.play_music()
 	var args := OS.get_cmdline_user_args()
 	_dev_args(args)
-	if args.size() >= 2 and args[0] == "--play":
-		start_contract(args[1], args[2] if args.size() > 2 else Data.map_def(args[1])["contracts"][0]["id"])
+	var pi := args.find("--play")
+	if pi >= 0 and pi + 1 < args.size() and Data.maps.has(args[pi + 1]):
+		var mid := args[pi + 1]
+		var cid: String = args[pi + 2] if pi + 2 < args.size() and not args[pi + 2].begins_with("--") else Data.map_def(mid)["contracts"][0]["id"]
+		start_contract(mid, cid)
 	else:
 		goto("menu")
 
 
 ## Developer hooks (only active with user args after "--"):
 ##   --shot <png> <seconds>   save a screenshot then quit
+##   --touch                  force the touch layout (desktop testing)
 ##   --smoke                  run the automated smoke test (tests/smoke_test.gd)
 func _dev_args(args: PackedStringArray) -> void:
 	var i := args.find("--shot")
@@ -63,6 +67,8 @@ func _dev_args(args: PackedStringArray) -> void:
 		get_tree().create_timer(secs, true).timeout.connect(func():
 			get_viewport().get_texture().get_image().save_png(path)
 			get_tree().quit())
+	if args.has("--touch"):
+		Game.state["settings"]["touch"] = 1
 	if args.has("--debug-aim"):
 		var d: Node = load("res://tests/debug_aim.gd").new()
 		d.set("main", self)
@@ -128,9 +134,9 @@ func goto(screen_name: String, arg = null) -> void:
 			s = MainMenuScreen.new()
 	s.set("main", self)
 	s.set("arg", arg)
-	s.set_anchors_preset(Control.PRESET_FULL_RECT)
 	screen = s
 	ui_root.add_child(s)
+	s.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ui_root.move_child(s, 0)
 
 
@@ -138,8 +144,8 @@ func open_overlay(c: Control) -> void:
 	close_overlay()
 	overlay = c
 	c.set("main", self)
-	c.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui_root.add_child(c)
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 
 func close_overlay() -> void:
@@ -151,7 +157,7 @@ func close_overlay() -> void:
 func show_toast(text: String, kind := "info") -> void:
 	var colors := {"info": UIKit.BLUE2, "good": UIKit.GREEN.darkened(0.2), "unlock": UIKit.ORANGE, "achievement": Color("8a4be0"), "warn": UIKit.RED}
 	var p := UIKit.panel(Color(colors.get(kind, UIKit.BLUE2), 0.95), 26)
-	var l := UIKit.label(text, 24, UIKit.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	var l := UIKit.label(text, 20, UIKit.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
 	p.add_child(l)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	toast_box.add_child(p)
@@ -241,8 +247,8 @@ func start_contract(map_id: String, contract_id: String) -> void:
 	runner.setup(m, map_id, Data.contract_def(map_id, contract_id))
 	hud = GameHUD.new()
 	hud.set("main", self)
-	hud.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui_root.add_child(hud)
+	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ui_root.move_child(hud, 0)
 	playing = true
 	m.message.connect(func(t, k): show_toast(t, k))
@@ -340,6 +346,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_LEFT:
+			# On touch layouts the CLEAN button is used instead (avoids emulated-mouse cleaning).
+			if hud and hud.touch and hud.touch.visible:
+				return
 			player.mouse_cleaning = mb.pressed
 			if not mb.pressed:
 				player.tool.mouse_target = null

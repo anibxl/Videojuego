@@ -63,7 +63,7 @@ func build() -> void:
 		for s in [-1, 1]:
 			box(Vector3(x, BASE_H + GLASS_H + 1.0, s * 3.0), Vector3(0.08, 0.08, 6.4), frame, false, Vector3(s * -18.0, 0, 0))
 	# Central stone path.
-	var stone := {"a": Color(0.82, 0.8, 0.74), "b": Color(0.68, 0.66, 0.6), "pattern": 3, "roughness": 0.85}
+	var stone := {"a": Color(0.74, 0.72, 0.66), "b": Color(0.6, 0.58, 0.52), "pattern": 3, "roughness": 0.85}
 	box(Vector3(0, 0.04, 1.0), Vector3(2.2, 0.04, 14), mat(Color(0.75, 0.73, 0.68)), false)
 	var path_tiles := []
 	for i in 7:
@@ -113,7 +113,7 @@ func build() -> void:
 			["bottle", 18, [Color(0.3, 0.7, 0.4), Color(0.6, 0.8, 0.85)]], ["paper", 30, [Color(0.9, 0.88, 0.8)]]]:
 		debris({"tag": "trash", "kind": "trash", "mesh": spec[0], "count": spec[1], "y": 0.06,
 			"spawn": [Rect2(-7.8, -5.8, 15.6, 11.6)], "bounds": Rect2(-7.85, -5.85, 15.7, 15.0),
-			"obstacles": obstacles, "drop_zones": [outside_bin], "colors": spec[2], "seed": 62 + int(spec[1]), "weight": 0.25})
+			"obstacles": obstacles, "drop_zones": [outside_bin], "colors": spec[2], "seed": 62 + int(spec[1]), "weight": 0.25, "scale": Vector2(1.6, 2.2)})
 	# Discoveries.
 	discovery(0, Vector3(-6.5, 0.05, -1.2), null, leaves)
 	var pt: CleanSurface = path_tiles[3]

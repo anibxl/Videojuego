@@ -230,7 +230,7 @@ func _do_surface(delta: float, fwd: Vector3) -> void:
 		aim_surface = s
 		if s != null:
 			var removed := s.clean_at(aim_point, radius, power * delta, types)
-			if removed < 0.0:
+			if removed < 0.0 and deb.is_empty():
 				_show_hint("%s can't clean %s. Try another tool!" % [def.get("name", ""), Data.dirt_def(s.current_type()).get("name", "this")])
 			elif removed > 0.0:
 				_area_accum += removed

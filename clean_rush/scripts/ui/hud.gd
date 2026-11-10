@@ -241,9 +241,11 @@ func show_hint(text: String, duration := 2.5) -> void:
 func _on_contract_completed() -> void:
 	Audio.play("complete")
 	banner = UIKit.panel(Color(UIKit.BLUE, 0.95), 28)
-	banner.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	banner.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	banner.position.y = 120
+	var holder := CenterContainer.new()
+	holder.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	holder.offset_top = 190
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(banner)
 	var v := UIKit.vbox(10)
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
 	banner.add_child(v)
@@ -252,21 +254,21 @@ func _on_contract_completed() -> void:
 	v.add_child(UIKit.label("Keep cleaning for more stars, or finish the job.", 20, UIKit.WHITE, HORIZONTAL_ALIGNMENT_CENTER))
 	var h := UIKit.hbox(16)
 	h.alignment = BoxContainer.ALIGNMENT_CENTER
-	var keep := UIKit.button("Keep cleaning", UIKit.BLUE2, Vector2(240, 70), 22, func(): banner.visible = false)
+	var keep := UIKit.button("Keep cleaning", UIKit.BLUE2, Vector2(240, 70), 22, func(): holder.visible = false)
 	var fin := UIKit.button("Finish ★", UIKit.GREEN.darkened(0.1), Vector2(240, 70), 24, func(): main.finish_contract())
 	keep.add_to_group("hud_button")
 	fin.add_to_group("hud_button")
 	h.add_child(keep)
 	h.add_child(fin)
 	v.add_child(h)
-	add_child(banner)
-	banner.position.x = -banner.size.x / 2
+	add_child(holder)
 	var _s := stars_now
 	# A persistent finish button stays available after the banner is hidden.
 	var finish_small := UIKit.button("Finish ★", UIKit.GREEN.darkened(0.1), Vector2(180, 64), 22, func(): main.finish_contract())
 	finish_small.add_to_group("hud_button")
 	finish_small.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	finish_small.position = Vector2(-280, 100)
+	finish_small.offset_left = -210
+	finish_small.offset_top = 100
 	add_child(finish_small)
 
 

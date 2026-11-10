@@ -38,6 +38,22 @@ func shot(name: String) -> void:
 	get_viewport().get_texture().get_image().save_png(shots.path_join(name + ".png"))
 
 
+func _touch(idx: int, pos: Vector2, pressed: bool) -> void:
+	var e := InputEventScreenTouch.new()
+	e.index = idx
+	e.position = pos
+	e.pressed = pressed
+	Input.parse_input_event(e)
+
+
+func _drag(idx: int, pos: Vector2, rel: Vector2) -> void:
+	var e := InputEventScreenDrag.new()
+	e.index = idx
+	e.position = pos
+	e.relative = rel
+	Input.parse_input_event(e)
+
+
 func _run() -> void:
 	# Fresh state for deterministic results.
 	Game.state = Game.default_state()
@@ -124,6 +140,26 @@ func _run() -> void:
 		check(Game.coins() > coins_before, "%s: reward paid (%d coins)" % [map_id, Game.coins() - coins_before])
 		check(Game.is_contract_completed(c["id"]), "%s: contract saved as completed" % map_id)
 		await shot("%02d_%s_reward" % [idx + 2, map_id])
+	# Multitouch: joystick (finger 0) + CLEAN button (finger 1) at the same time.
+	Game.state["settings"]["touch"] = 1
+	main.start_contract("autumn_garden", "ag_path")
+	await wait(0.6)
+	var tc: TouchControls = main.hud.touch
+	check(tc.visible, "touch controls visible when enabled")
+	var pl: Player = main.player
+	var start_pos: Vector3 = pl.global_position
+	var joy := tc.joy_home()
+	_touch(0, joy, true)
+	_drag(0, joy + Vector2(0, -80), Vector2(0, -80))
+	_touch(1, tc.clean_center(), true)
+	await wait(1.2)
+	check(pl.clean_held, "CLEAN button held by second finger")
+	check(pl.global_position.distance_to(start_pos) > 1.0, "joystick moves the player (%.1f m) while cleaning" % pl.global_position.distance_to(start_pos))
+	_touch(1, tc.clean_center(), false)
+	_touch(0, joy, false)
+	await wait(0.2)
+	check(not pl.clean_held and pl.move_input == Vector2.ZERO, "releasing fingers stops movement and cleaning")
+	Game.state["settings"]["touch"] = 0
 	# Unlocks.
 	for map_id in Data.map_order:
 		check(Game.is_map_unlocked(map_id) or map_id == "abandoned_greenhouse", "unlock state ok: " + map_id)
