@@ -629,3 +629,43 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .record-grid { margin-bottom: 0; }
 .record-grid .stat { background: rgba(255,207,63,.08); }
 .btn-rescue { background: linear-gradient(180deg, #ffd95e, #f5a700); color: #3a2300; box-shadow: 0 4px 0 #b77a00; animation: glow 1.6s infinite; }
+
+/* ---------- Jackpot mundial ---------- */
+.jackpot-banner {
+  position: relative; overflow: hidden; text-align: center; padding: 16px; margin-bottom: 16px; border-radius: var(--radius);
+  background: radial-gradient(circle at 20% 0%, #4cc9f055, transparent 50%), radial-gradient(circle at 80% 100%, #b388ff55, transparent 50%), linear-gradient(135deg, #0b2a5a, #2a0b5a);
+  border: 1px solid #4cc9f077; box-shadow: 0 0 30px #4cc9f033;
+}
+.jackpot-banner::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.12) 50%, transparent 65%) 0 0 / 250% 100%; animation: shine 4s linear infinite; pointer-events: none; }
+.jp-mode { font-size: .78rem; font-weight: 900; letter-spacing: 3px; color: #9fe8ff; }
+.jp-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 0; }
+.jp-value { font-size: clamp(2rem, 8vw, 2.8rem); font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 0 18px #4cc9f0; }
+.jp-subline { font-size: .82rem; color: #d7e9ff; }
+.jp-help { font-size: .72rem; color: var(--muted); margin-top: 6px; }
+.jackpot-banner.compact { padding: 10px 14px; }
+.jackpot-banner.compact .jp-value { font-size: 1.7rem; }
+.jackpot-banner.compact .jp-help { display: none; }
+.modal-box.world { background: linear-gradient(160deg, #0b3a7a, #2a0b5a); box-shadow: 0 0 80px #4cc9f0aa; }
+
+/* ---------- Boletos especiales en la tienda ---------- */
+.special-card { grid-column: 1 / -1; }
+.special-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sp-tag { font-size: .75rem; font-weight: 900; letter-spacing: 2px; padding: 4px 10px; border-radius: 99px; background: rgba(255,255,255,.12); }
+.sp-timer { font-size: .85rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.secret-card { background: linear-gradient(135deg, #1a1030, #0a0812); border: 1px solid #b388ff; box-shadow: 0 0 26px #b388ff66; animation: glowPurple 1.4s ease-in-out infinite; }
+.secret-card .sp-tag { background: #b388ff; color: #1a0b2e; }
+.secret-card .sp-timer { color: #ffcf3f; font-size: 1.1rem; }
+@keyframes glowPurple { 50% { box-shadow: 0 0 40px #b388ffaa; } }
+.event-card { background: linear-gradient(135deg, color-mix(in srgb, var(--ev1) 30%, transparent), color-mix(in srgb, var(--ev2) 40%, transparent)); border-color: color-mix(in srgb, var(--ev1) 70%, transparent); }
+.next-event { opacity: .85; }
+.next-ev-body { display: flex; gap: 12px; align-items: center; }
+.next-ev-body b { display: block; }
+.next-ev-ico { font-size: 2.4rem; }
+.bottomnav button.secret-alert span { animation: bump .8s infinite; filter: drop-shadow(0 0 10px #b388ff); }
+.bottomnav button.secret-alert::after { content: '🕵️'; position: absolute; top: 2px; right: calc(50% - 30px); font-size: .9rem; }
+
+/* Boletos especiales al rascar */
+.t-badge { display: inline-block; font-size: .68rem; font-weight: 900; letter-spacing: 2px; padding: 3px 9px; border-radius: 99px; background: rgba(0,0,0,.35); margin-bottom: 6px; }
+.tier-secret { --t-ink: #f1e6ff; --t-panel: #f4efff; --t-panel-ink: #1d1236; box-shadow: 0 18px 40px rgba(0,0,0,.5), 0 0 30px #b388ff66, inset 0 0 0 2px rgba(255,255,255,.3); }
+.tier-limited { --t-ink: #fff; --t-panel: #fffaf2; --t-panel-ink: #2a1a10; }
+.tier-limited .t-name, .tier-secret .t-name { font-size: 1.25rem; letter-spacing: 1px; text-transform: none; }

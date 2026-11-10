@@ -209,6 +209,100 @@
   const TIER_BY_ID = {};
   TIERS.forEach((t) => (TIER_BY_ID[t.id] = t));
 
+  /* ---------- Boletos secretos ----------
+   * Aparecen al azar en la tienda durante unos segundos (máx. 3 por aparición).
+   * Sus símbolos y premios no existen en los boletos normales y, como premio
+   * por estar atento, devuelven algo más de lo que cuestan (retorno > 100 %).
+   */
+  const SECRET_TIERS = [
+    {
+      id: 'shadow', name: 'Sombra', tagline: 'Boleto secreto para detectives', secret: true,
+      price: 100, level: 1, xp: 40, cols: 3, rows: 3,
+      symbols: [
+        { e: '🕶️', v: 50 }, { e: '🗝️', v: 100 }, { e: '🦉', v: 250 }, { e: '🕯️', v: 600 },
+        { e: '🧿', v: 1500 }, { e: '🎩', v: 6000 }, { e: '🕵️', v: 30000 },
+      ],
+      multipliers: null,
+      outcomes: [[0, 1, 0.2], [1, 1, 0.15], [2, 1, 0.1], [3, 1, 0.045], [4, 1, 0.01], [5, 1, 0.0015], [6, 1, 0.0002]],
+      cover: { colors: ['#2b2b3a', '#0f0f17', '#5a4b8a'], ink: 'rgba(214,190,255,.8)', label: 'SECRETO' },
+    },
+    {
+      id: 'phantom', name: 'Fantasma', tagline: 'Solo aparece a quien lo busca', secret: true,
+      price: 800, level: 6, xp: 200, cols: 4, rows: 3,
+      symbols: [
+        { e: '👻', v: 400 }, { e: '🦇', v: 800 }, { e: '🕸️', v: 2000 }, { e: '🔮', v: 5000 },
+        { e: '💀', v: 15000 }, { e: '🌕', v: 60000 }, { e: '🏚️', v: 300000 },
+      ],
+      multipliers: [{ m: 1, w: 65 }, { m: 2, w: 25 }, { m: 5, w: 10 }],
+      outcomes: [[0, 1, 0.16], [0, 2, 0.04], [1, 1, 0.12], [1, 2, 0.03], [2, 1, 0.06], [2, 5, 0.005], [3, 1, 0.025], [3, 2, 0.006], [4, 1, 0.008], [5, 1, 0.0015], [6, 1, 0.0002]],
+      cover: { colors: ['#3a3f5c', '#151827', '#9fb4ff'], ink: 'rgba(220,230,255,.75)', label: 'SECRETO' },
+    },
+    {
+      id: 'mythic', name: 'Mítico', tagline: 'Una leyenda que casi nadie ha visto', secret: true,
+      price: 4000, level: 12, xp: 700, cols: 4, rows: 3,
+      symbols: [
+        { e: '🧚', v: 2000 }, { e: '🐺', v: 4000 }, { e: '🦂', v: 10000 }, { e: '🗿', v: 25000 },
+        { e: '🐙', v: 80000 }, { e: '🧞', v: 300000 }, { e: '🌋', v: 1500000 },
+      ],
+      multipliers: [{ m: 1, w: 60 }, { m: 2, w: 25 }, { m: 3, w: 10 }, { m: 10, w: 5 }],
+      outcomes: [[0, 1, 0.14], [0, 2, 0.04], [1, 1, 0.1], [1, 2, 0.025], [2, 1, 0.05], [2, 3, 0.008], [3, 1, 0.024], [3, 2, 0.005], [4, 1, 0.007], [4, 3, 0.001], [5, 1, 0.0015], [6, 1, 0.0003]],
+      cover: { colors: ['#1a0b2e', '#05030a', '#d4af37'], ink: 'rgba(255,225,140,.85)', label: 'SECRETO' },
+    },
+  ];
+
+  /* ---------- Eventos y boletos de edición limitada ----------
+   * Calendario común para todos los jugadores (basado en la fecha UTC):
+   * cada 3 días empieza un evento que dura 2 días; luego hay 1 día de descanso.
+   * Cada evento tiene su boleto de edición limitada con símbolos exclusivos,
+   * que desaparece de la tienda al terminar el evento.
+   */
+  const EVENTS = [
+    { id: 'halloween', icon: '🎃', name: 'Noche de Halloween', colors: ['#ff7a18', '#3b0a45', '#ffb347'], ink: 'rgba(255,240,220,.85)', symbols: ['🍬', '🕷️', '🦇', '🎃', '👻', '🧛', '🧙'] },
+    { id: 'xmas', icon: '🎄', name: 'Navidad mágica', colors: ['#c62828', '#1b5e20', '#ffffff'], ink: 'rgba(255,255,255,.85)', symbols: ['🍪', '🧦', '⛄', '🎁', '🦌', '🎄', '🎅'] },
+    { id: 'spring', icon: '🌸', name: 'Festival de primavera', colors: ['#f48fb1', '#7cb342', '#fff3e0'], ink: 'rgba(80,30,60,.75)', symbols: ['🌱', '🐝', '🌷', '🦋', '🌸', '🐞', '🦄'] },
+    { id: 'summer', icon: '🏖️', name: 'Verano tropical', colors: ['#00bcd4', '#ff9800', '#fff59d'], ink: 'rgba(0,60,80,.75)', symbols: ['🐚', '🍹', '🦀', '🐠', '🌴', '🐬', '🏝️'] },
+    { id: 'lunar', icon: '🏮', name: 'Festival lunar', colors: ['#d32f2f', '#4a0000', '#ffd54f'], ink: 'rgba(255,230,150,.85)', symbols: ['🥮', '🧧', '🎐', '🏮', '🎆', '🐲', '🌕'] },
+    { id: 'space', icon: '🚀', name: 'Expedición espacial', colors: ['#311b92', '#000000', '#00e5ff'], ink: 'rgba(200,240,255,.8)', symbols: ['🛰️', '👽', '☄️', '🌍', '🚀', '🌌', '🌠'] },
+  ];
+  const LIMITED_PRICE = 300;
+  const LIMITED_VALUES = [0.5, 1, 2.5, 6, 20, 80, 500]; // × precio
+  const LIMITED_TIERS = EVENTS.map((ev) => ({
+    id: 'ltd_' + ev.id, name: ev.name, tagline: 'Edición limitada del evento', limited: true, event: ev.id, icon: ev.icon,
+    price: LIMITED_PRICE, level: 3, xp: 45, cols: 4, rows: 3,
+    symbols: ev.symbols.map((e, i) => ({ e, v: Math.round(LIMITED_PRICE * LIMITED_VALUES[i]) })),
+    multipliers: [{ m: 1, w: 70 }, { m: 2, w: 22 }, { m: 5, w: 8 }],
+    outcomes: [[0, 1, 0.15], [0, 2, 0.04], [1, 1, 0.1], [1, 2, 0.025], [2, 1, 0.05], [2, 2, 0.012], [3, 1, 0.02], [3, 5, 0.002], [4, 1, 0.006], [5, 1, 0.0015], [6, 1, 0.0002]],
+    cover: { colors: ev.colors, ink: ev.ink, label: 'EDICIÓN LIMITADA' },
+  }));
+  SECRET_TIERS.concat(LIMITED_TIERS).forEach((t) => (TIER_BY_ID[t.id] = t));
+
+  const DAY_MS = 86400000;
+  const EVENT_CYCLE_DAYS = 3;
+  const EVENT_ACTIVE_DAYS = 2;
+  /** Evento en curso (o el próximo) para un instante dado. */
+  function eventAt(now) {
+    const slot = Math.floor(now / DAY_MS / EVENT_CYCLE_DAYS);
+    const start = slot * EVENT_CYCLE_DAYS * DAY_MS;
+    const end = start + EVENT_ACTIVE_DAYS * DAY_MS;
+    const ev = EVENTS[slot % EVENTS.length];
+    if (now < end) return { active: true, event: ev, start, end };
+    const nextStart = start + EVENT_CYCLE_DAYS * DAY_MS;
+    return { active: false, event: EVENTS[(slot + 1) % EVENTS.length], start: nextStart, end: nextStart + EVENT_ACTIVE_DAYS * DAY_MS };
+  }
+
+  /* ---------- Jackpot mundial ----------
+   * Bote compartido: base + crecimiento por tiempo + 1 % de lo que juega
+   * cada jugador. Cada jugada tiene una probabilidad diminuta, proporcional
+   * a su precio, de llevarse el bote entero.
+   */
+  const JACKPOT = {
+    base: 100000,
+    perMinute: 50,
+    contribution: 0.01,
+    chancePerCoin: 1e-7, // Legendario (5.000): 1 de 2.000 · Básico (10): 1 de 1.000.000
+    epoch: Date.UTC(2026, 10, 10), // inicio de la primera ronda si aún no hay datos
+  };
+
   /* ---------- Estadísticas teóricas de cada boleto ---------- */
   function tierMath(tier) {
     let pWin = 0;
@@ -516,10 +610,13 @@
     { id: 'miner1', icon: '⛏️', name: 'Primera mina', desc: 'Compra la mina de monedas', reward: 200, test: (s) => ((s.mine || {}).level || 0) >= 1 },
     { id: 'miner5', icon: '💎', name: 'Magnate minero', desc: 'Mejora la mina al nivel 5', reward: 3000, test: (s) => ((s.mine || {}).level || 0) >= 5 },
     { id: 'survivor', icon: '❤️', name: 'Superviviente', desc: 'Salva la partida con una Segunda vida', reward: 300, test: (s) => (s.stats.livesUsed || 0) >= 1 },
+    { id: 'secret1', icon: '🕵️', name: 'Detective', desc: 'Compra un boleto secreto', reward: 200, test: (s) => (s.stats.secrets || 0) >= 1 },
+    { id: 'events3', icon: '🎉', name: 'Coleccionista de eventos', desc: 'Rasca boletos de 3 eventos distintos', reward: 1500, test: (s) => ((s.stats.eventIds || []).length) >= 3 },
+    { id: 'jackpot1', icon: '🌍', name: '¡Jackpot mundial!', desc: 'Gana el jackpot mundial', reward: 10000, test: (s) => (s.stats.jackpots || 0) >= 1 },
     { id: 'skillall', icon: '🧙', name: 'Gran maestro', desc: 'Lleva al máximo todo el árbol', reward: 50000, test: (s) => SKILLS.every((k) => (s.skills || {})[k.id] >= k.max) },
   ];
 
-  const api = { TIERS, TIER_BY_ID, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward };
+  const api = { TIERS, TIER_BY_ID, SECRET_TIERS, EVENTS, LIMITED_TIERS, eventAt, JACKPOT, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GameData = api;
 })(typeof window !== 'undefined' ? window : globalThis);

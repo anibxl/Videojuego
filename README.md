@@ -44,6 +44,26 @@ Siguen la misma mecánica (3 símbolos iguales = premio, resultado sorteado con 
 
 Si cierras la página mientras giran los rodillos, la partida se cobra al volver.
 
+## Mecánicas especiales
+
+### 🕵️ Boletos secretos
+Aparecen al azar en la tienda cada pocos minutos y solo durante **45 segundos**. Puedes comprar un máximo de 3 por aparición. Tienen símbolos y premios que no existen en ningún otro boleto, y como recompensa por estar atento devuelven algo más de lo que cuestan.
+
+| Boleto | Precio | Nivel | Prob. de premio | Premio máximo | Retorno |
+|---|---:|---:|---:|---:|---:|
+| Sombra | 100 | 1 | 1 de 1,97 | 30.000 | 107 % |
+| Fantasma | 800 | 6 | 1 de 2,19 | 300.000 (×5) | 108 % |
+| Mítico | 4.000 | 12 | 1 de 2,49 | 1.500.000 | 108 % |
+
+### 🎉 Eventos y boletos de edición limitada
+El calendario de eventos es el mismo para todos los jugadores (se calcula con la fecha UTC). Cada 3 días empieza un evento que dura 2 días; después hay un día de descanso y la tienda muestra la cuenta atrás del siguiente. Hay 6 eventos que se van turnando: Halloween, Navidad, Primavera, Verano, Festival lunar y Expedición espacial. Cada uno trae su boleto de **edición limitada** (300 monedas, nivel 3, retorno del 97 %) con símbolos y premios exclusivos de hasta 150.000. Cuando el evento termina, el boleto desaparece de la tienda; los que ya hayas comprado se conservan.
+
+### 🌍 Jackpot mundial
+Es un bote que se acumula: empieza en 100.000, crece 50 monedas por minuto y suma el 1 % de lo que juega **cada jugador**. Cada boleto o partida tiene una probabilidad de llevarse el bote entero proporcional a su precio (Legendario: 1 de 2.000; Básico: 1 de 1.000.000). Al ganarlo, el bote vuelve a empezar para todos.
+
+- En la versión publicada en **claude.ai**, el bote es compartido entre todos los que abren el juego. Usa la base de datos de la página: cada jugador guarda solo su aportación (el bote es la suma de todas) y, para cobrarlo, se toma un bloqueo corto que impide que dos personas se lleven el mismo bote.
+- Al abrir `index.html` o GitHub Pages no hay servidor, así que el bote funciona en **modo local** (solo en ese navegador) y el juego lo indica.
+
 ## Objetos
 
 - ❤️ **Segunda vida:** te salva de la bancarrota (máximo 3).
@@ -61,7 +81,7 @@ El precio de los objetos sube con el nivel del jugador.
 - **Inventario:** boletos comprados pendientes de rascar.
 - **Historial:** los últimos 300 boletos, con filtros.
 - **Estadísticas:** gastado, ganado, balance, porcentaje de premiados, retorno real por tipo, mayor premio y rachas.
-- **Logros:** 26 retos con recompensa.
+- **Logros:** 29 retos con recompensa.
 - **Bonus diario** cada 20 h.
 - **Bancarrota:** si no te llega para lo más barato, no tienes boletos sin rascar, no puedes recoger nada de la mina y no hay bonus diario disponible, pierdes la partida y **empiezas de cero**. Si tienes una **❤️ Segunda vida**, se gasta sola, conservas tu progreso y recibes monedas (300 + 100 × nivel). Antes de una compra que te dejaría sin nada, el juego pide confirmación.
 - **Récords** de todas las partidas (nivel, saldo, mayor premio y número de partida): se conservan al empezar de cero.

@@ -4,11 +4,12 @@
 (function () {
   'use strict';
 
-  const { TIERS, TIER_BY_ID, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward } = window.GameData;
+  const { TIERS, TIER_BY_ID, SECRET_TIERS, EVENTS, LIMITED_TIERS, eventAt, JACKPOT, GAMES, GAME_BY_ID, PRODUCT_BY_ID, WILD, generateRound, ITEMS, ITEM_BY_ID, MINE, ACHIEVEMENTS, SKILL_BRANCHES, SKILLS, SKILL_BY_ID, skillCost, tierMath, generateTicket, xpForLevel, levelReward } = window.GameData;
   const SAVE_KEY = 'rascamania_save_v1';
   const DAILY_MS = 20 * 60 * 60 * 1000; // bonus cada 20 h
   const HISTORY_MAX = 300;
   const $ = (id) => document.getElementById(id);
+  const SPECIAL_TIERS = SECRET_TIERS.concat(LIMITED_TIERS);
 
   /* ---------- Utilidades ---------- */
   const fmt = (n) => (n < 0 ? '-' : '') + String(Math.abs(Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -30,7 +31,7 @@
   /* ---------- Estado y guardado ---------- */
   function freshPerTier() {
     const perTier = {};
-    TIERS.concat(GAMES).forEach((t) => (perTier[t.id] = { bought: 0, scratched: 0, wins: 0, spent: 0, won: 0, best: 0 }));
+    TIERS.concat(SPECIAL_TIERS, GAMES).forEach((t) => (perTier[t.id] = { bought: 0, scratched: 0, wins: 0, spent: 0, won: 0, best: 0 }));
     return perTier;
   }
 
@@ -49,11 +50,15 @@
       boosts: {},
       mine: { level: 0, stored: 0, last: Date.now() },
       pendingRound: null,
+      secret: { nextAt: 0, tier: null, until: 0, left: 0 },
+      lastEventSeen: null,
+      jpLocal: { round: 1, startedAt: Date.now(), contrib: 0, lastWin: null },
       // Récords de todas las partidas: se conservan al empezar de cero
       records: { runs: 1, bestLevel: 1, bestCoins: 1000, bestWin: 0 },
       stats: {
         spent: 0, won: 0, bonus: 0, skillSpent: 0, shopSpent: 0, refunds: 0, bought: 0, scratched: 0, wins: 0,
         games: 0, items: 0, mineEarned: 0, wildWins: 0, livesUsed: 0,
+        secrets: 0, jackpots: 0, eventIds: [],
         biggestWin: 0, biggestTier: null, streak: 0, bestStreak: 0, peakCoins: 1000,
         perTier: freshPerTier(),
       },
@@ -80,6 +85,9 @@
     out.skills = Object.assign({}, s.skills || {});
     out.boosts = Object.assign({}, s.boosts || {});
     out.mine = Object.assign({ level: 0, stored: 0, last: Date.now() }, s.mine || {});
+    out.secret = Object.assign({ nextAt: 0, tier: null, until: 0, left: 0 }, s.secret || {});
+    out.jpLocal = Object.assign({ round: 1, startedAt: Date.now(), contrib: 0, lastWin: null }, s.jpLocal || {});
+    out.stats.eventIds = Array.isArray(savedStats.eventIds) ? savedStats.eventIds.slice() : [];
     out.records = Object.assign({ runs: 1, bestLevel: 1, bestCoins: 1000, bestWin: 0 }, s.records || {});
     return out;
   }
@@ -519,6 +527,7 @@
     $('rescue-btn').classList.toggle('hidden', !needsDaily());
     renderMineCard();
     renderBoosts();
+    renderJackpot();
     const wins = S.history.filter((h) => h.prize > 0).slice(0, 5);
     $('recent-list').innerHTML = wins.length
       ? wins.map(historyRow).join('')
@@ -586,7 +595,7 @@
     document.querySelectorAll('#shop-tabs [data-tab]').forEach((b) => b.classList.toggle('active', b.dataset.tab === shopTab));
     if (shopTab === 'games') return renderGamesTab();
     if (shopTab === 'items') return renderItemsTab();
-    $('shop-grid').innerHTML = TIERS.map((t) => {
+    $('shop-grid').innerHTML = renderSpecials() + TIERS.map((t) => {
       const m = tierMath(t);
       const locked = S.level < t.level;
       const preview = t.symbols.slice(-3).map((s) => s.e).join('');
@@ -755,6 +764,8 @@
     }
     // Toque dorado: el premio se duplicará al cobrarlo
     if (tk.prize && Math.random() < skEffect('golden')) tk.golden = true;
+    // Sorteo del jackpot mundial (probabilidad proporcional al precio)
+    if (Math.random() < PRODUCT_BY_ID[id].price * JACKPOT.chancePerCoin) tk.jackpot = true;
     return tk;
   }
 
@@ -764,11 +775,22 @@
     const unit = ticketPrice(t);
     const cost = unit * qty;
     if (S.level < t.level) return;
+    if (!specialAvailable(t, qty)) {
+      Sound.error();
+      toast('⌛', t.secret ? 'El boleto secreto ya no está disponible.' : 'El evento de este boleto ha terminado.');
+      renderShop();
+      return;
+    }
     if (S.coins < cost) {
       Sound.error();
       toast('💸', 'No tienes monedas suficientes.');
       return;
     }
+    if (t.secret) {
+      S.secret.left -= qty;
+      S.stats.secrets += qty;
+    }
+    contributeJackpot(cost);
     S.coins -= cost;
     S.stats.spent += cost;
     S.stats.bought += qty;
@@ -799,13 +821,18 @@
   function renderTicketEl(tk) {
     const t = PRODUCT_BY_ID[tk.tier];
     const el = document.createElement('div');
-    el.className = `ticket tier-${t.id}`;
+    el.className = `ticket tier-${t.id}${t.secret ? ' tier-secret' : ''}${t.limited ? ' tier-limited' : ''}`;
+    if (t.limited || t.secret) {
+      const [c1, c2, c3] = t.cover.colors;
+      el.style.cssText = `--t-bg:${c2};--t-bg2:${c1};--t-accent:${c3}`;
+    }
     const cells = tk.cells
       .map((s, i) => `<div class="cell" data-i="${i}"><span class="sym">${t.symbols[s].e}</span><span class="val">${fmtShort(t.symbols[s].v)}</span></div>`)
       .join('');
     const mult = t.multipliers ? `<div class="cell mult-cell" data-i="${tk.cells.length}"><span class="mlabel">MULTIPLICADOR</span><span class="mval">×${tk.mult}</span></div>` : '';
     el.innerHTML = `${t.id === 'legendary' ? '<div class="rainbow-border"></div>' : ''}
       <div class="t-body">
+        ${t.secret ? '<div class="t-badge">🕵️ BOLETO SECRETO</div>' : ''}${t.limited ? `<div class="t-badge">${t.icon} EDICIÓN LIMITADA</div>` : ''}
         <div class="t-head"><div class="t-name">${t.name}</div><div class="t-price"><span class="coin-ico"></span>${fmt(t.price)}</div></div>
         <div class="t-sub">¡Encuentra <b>3 símbolos iguales</b> y gana su premio!${t.multipliers ? ' El <b>multiplicador</b> lo aumenta.' : ''}</div>
         <div class="scratch-area cols-${t.cols}" style="grid-template-columns: repeat(${t.cols}, 1fr)">${cells}${mult}</div>
@@ -928,6 +955,8 @@
     const refund = base ? 0 : Math.round(paid * (skEffect('refund') + (used.shield ? 0.1 : 0)));
     const consolation = !base && isGame && tk.pair ? Math.round(paid * skEffect('consol')) : 0;
     const pt = S.stats.perTier[t.id];
+    if (t.limited && !S.stats.eventIds.includes(t.event)) S.stats.eventIds.push(t.event);
+    if (tk.jackpot) setTimeout(() => winJackpot(t), 2200);
     if (isGame) S.stats.games++;
     else S.stats.scratched++;
     pt.scratched++;
@@ -1203,6 +1232,7 @@
     S.stats.bought += qty;
     S.stats.perTier[g.id].bought += qty;
     S.stats.perTier[g.id].spent += cost;
+    contributeJackpot(cost);
     const rounds = [];
     for (let i = 0; i < qty; i++) {
       const tk = makeRound(g.id);
@@ -1368,6 +1398,292 @@
     if (b && !b.disabled) playGame(b.dataset.replay, +b.dataset.q, b);
   });
 
+  /* =========================================================
+     Boletos secretos y eventos de edición limitada
+     ========================================================= */
+  const fmtLeft = (ms) => {
+    const sec = Math.max(0, Math.ceil(ms / 1000));
+    if (sec < 60) return sec + ' s';
+    const m = Math.floor(sec / 60), h = Math.floor(m / 60), d = Math.floor(h / 24);
+    if (d) return `${d} d ${h % 24} h`;
+    if (h) return `${h} h ${m % 60} min`;
+    return `${m} min ${sec % 60} s`;
+  };
+  const secretActive = () => !!(S.secret.tier && S.secret.until > Date.now() && S.secret.left > 0);
+
+  function specialAvailable(t, qty) {
+    if (t.secret) return secretActive() && S.secret.tier === t.id && S.secret.left >= qty;
+    if (t.limited) {
+      const ev = eventAt(Date.now());
+      return ev.active && ev.event.id === t.event;
+    }
+    return true;
+  }
+
+  function renderSpecials() {
+    const now = Date.now();
+    let html = '';
+    // Boleto secreto
+    if (secretActive()) {
+      const t = PRODUCT_BY_ID[S.secret.tier];
+      const m = tierMath(t);
+      const price = ticketPrice(t);
+      const q = (n) => `<button class="btn ${n === 1 ? '' : 'btn-ghost'}" data-buy="${t.id}" data-q="${n}" ${S.coins < price * n ? 'disabled' : ''}>${n === 1 ? 'Comprar' : '×' + n}<small>${fmtShort(price * n)}</small></button>`;
+      html += `<div class="shop-card special-card secret-card">
+        <div class="special-head"><span class="sp-tag">🕵️ BOLETO SECRETO</span><span class="sp-timer" data-countdown="secret">${fmtLeft(S.secret.until - now)}</span></div>
+        <div class="shop-body">
+          <div class="mini-ticket" style="background:linear-gradient(135deg,${t.cover.colors[0]},${t.cover.colors[1]});color:${t.cover.ink}"><div class="mt-kind">SECRETO</div><div class="mt-name">${t.name}</div><div class="mt-syms">${t.symbols.slice(-3).map((x) => x.e).join('')}</div></div>
+          <div class="muted small">${t.tagline}. Premios que no existen en ningún otro boleto · quedan ${S.secret.left}</div>
+          <div class="shop-info">
+            <div class="si"><small>Precio</small><b><span class="coin-ico"></span> ${fmt(price)}</b></div>
+            <div class="si"><small>Premio máximo</small><b>${fmtShort(m.maxPrize)}</b></div>
+            <div class="si"><small>Probabilidad de premio</small><b>1 de ${fmtOdds(m.oddsWin)}</b></div>
+            <div class="si"><small>Retorno</small><b>${Math.round(m.rtp * 100)} %</b></div>
+          </div>
+          <div class="buy-row two">${q(1)}${S.secret.left > 1 ? q(S.secret.left) : ''}</div>
+        </div>
+      </div>`;
+    }
+    // Evento
+    const ev = eventAt(now);
+    if (ev.active) {
+      const t = LIMITED_TIERS.find((x) => x.event === ev.event.id);
+      const m = tierMath(t);
+      const locked = S.level < t.level;
+      const price = ticketPrice(t);
+      const q = (n, label) => `<button class="btn ${n === 1 ? '' : 'btn-ghost'}" data-buy="${t.id}" data-q="${n}" ${locked || S.coins < price * n ? 'disabled' : ''}>${label}<small>${fmtShort(price * n)}</small></button>`;
+      html += `<div class="shop-card special-card event-card ${locked ? 'locked' : ''}" style="--ev1:${ev.event.colors[0]};--ev2:${ev.event.colors[1]}">
+        ${locked ? `<div class="lock-overlay"><span>🔒</span>Los boletos de evento se desbloquean en el nivel ${t.level}</div>` : ''}
+        <div class="special-head"><span class="sp-tag">${ev.event.icon} EVENTO · EDICIÓN LIMITADA</span><span class="sp-timer">termina en <b data-countdown="event">${fmtLeft(ev.end - now)}</b></span></div>
+        <div class="shop-body">
+          <div class="mini-ticket" style="background:linear-gradient(135deg,${ev.event.colors[0]},${ev.event.colors[1]})"><div class="mt-kind">EDICIÓN LIMITADA</div><div class="mt-name">${ev.event.icon} ${t.name}</div><div class="mt-syms">${t.symbols.slice(-3).map((x) => x.e).join('')}</div></div>
+          <div class="muted small">Símbolos y premios exclusivos de este evento. Cuando termine, desaparece de la tienda.</div>
+          <div class="shop-info">
+            <div class="si"><small>Precio</small><b><span class="coin-ico"></span> ${fmt(price)}${price < t.price ? ` <s class="muted small">${fmt(t.price)}</s>` : ''}</b></div>
+            <div class="si"><small>Premio máximo</small><b>${fmtShort(m.maxPrize)}</b></div>
+            <div class="si"><small>Probabilidad de premio</small><b>1 de ${fmtOdds(m.oddsWin)}</b></div>
+            <div class="si"><small>Prob. premio máximo</small><b>1 de ${fmt(Math.round(m.oddsTop))}</b></div>
+          </div>
+          <div class="buy-row">${q(1, 'Comprar')}${q(5, '×5')}${q(10, '×10')}</div>
+        </div>
+      </div>`;
+    } else {
+      html += `<div class="shop-card special-card next-event">
+        <div class="special-head"><span class="sp-tag">📅 PRÓXIMO EVENTO</span><span class="sp-timer">empieza en <b data-countdown="event">${fmtLeft(ev.start - now)}</b></span></div>
+        <div class="next-ev-body"><span class="next-ev-ico">${ev.event.icon}</span><div><b>${ev.event.name}</b><small class="muted">Traerá un boleto de edición limitada con premios exclusivos durante 2 días.</small></div></div>
+      </div>`;
+    }
+    return html;
+  }
+
+  /** Se llama cada segundo: aparición de secretos, cambios de evento y cuentas atrás. */
+  function tickSpecials() {
+    const now = Date.now();
+    let changed = false;
+    // Boleto secreto: desaparece al acabar el tiempo o agotarse
+    if (S.secret.tier && (S.secret.until <= now || S.secret.left <= 0)) {
+      S.secret = { nextAt: now + (180 + Math.random() * 300) * 1000, tier: null, until: 0, left: 0 };
+      changed = true;
+    }
+    if (!S.secret.tier && !S.secret.nextAt) {
+      S.secret.nextAt = now + (60 + Math.random() * 90) * 1000; // el primero llega pronto
+      changed = true;
+    }
+    if (!S.secret.tier && now >= S.secret.nextAt) {
+      const pool = SECRET_TIERS.filter((t) => S.level >= t.level);
+      const t = pool[Math.floor(Math.random() * pool.length)];
+      S.secret = { nextAt: 0, tier: t.id, until: now + 45000, left: 3 };
+      changed = true;
+      Sound.achievement();
+      toast('🕵️', `<b>¡Boleto secreto!</b><br>«${t.name}» está en la tienda durante 45 s`, 5000);
+    }
+    // Evento nuevo
+    const ev = eventAt(now);
+    const evKey = ev.active ? ev.event.id + '@' + ev.start : null;
+    if (evKey !== S.lastEventSeen) {
+      if (evKey && S.lastEventSeen !== null) toast(ev.event.icon, `<b>¡Nuevo evento!</b><br>${ev.event.name}: boleto de edición limitada en la tienda`, 5000);
+      S.lastEventSeen = evKey;
+      changed = true;
+    }
+    if (changed) {
+      save();
+      if (current === 'shop' && shopTab === 'tickets') renderShop();
+    } else if (current === 'shop') {
+      document.querySelectorAll('[data-countdown="secret"]').forEach((el) => (el.textContent = fmtLeft(S.secret.until - now)));
+      document.querySelectorAll('[data-countdown="event"]').forEach((el) => (el.textContent = fmtLeft((ev.active ? ev.end : ev.start) - now)));
+    }
+    document.querySelector('.bottomnav [data-go="shop"]').classList.toggle('secret-alert', secretActive());
+  }
+
+  /* =========================================================
+     Jackpot mundial
+     - En claude.ai: bote compartido entre todos los jugadores (capacidad db).
+       Cada jugador escribe solo su aportación (jpc/<id>); el bote es la suma.
+       Para cobrarlo se toma un bloqueo corto sobre jackpot/state.
+     - Fuera de claude.ai: "modo local" con la misma mecánica en este navegador.
+     ========================================================= */
+  const JP = { db: null, user: null, uid: null, online: false, loading: true, state: null, contribs: {}, pending: 0, writing: false, flushTimer: null, names: {} };
+  const defaultJpState = () => ({ round: 1, startedAt: JACKPOT.epoch, base: JACKPOT.base, lastWin: null, winners: [] });
+
+  function jackpotPot() {
+    const now = Date.now();
+    if (JP.online) {
+      const st = JP.state || defaultJpState();
+      let sum = 0;
+      Object.values(JP.contribs).forEach((c) => { if (c && c.round === st.round) sum += Number(c.amount) || 0; });
+      if (JP.pending) sum += JP.pending;
+      return Math.floor((st.base || JACKPOT.base) + Math.max(0, now - st.startedAt) / 60000 * JACKPOT.perMinute + sum);
+    }
+    const L = S.jpLocal;
+    return Math.floor(JACKPOT.base + Math.max(0, now - L.startedAt) / 60000 * JACKPOT.perMinute + L.contrib);
+  }
+
+  function contributeJackpot(cost) {
+    const amt = Math.round(cost * JACKPOT.contribution * 100) / 100;
+    if (!JP.online) {
+      S.jpLocal.contrib += amt;
+      return;
+    }
+    JP.pending += amt;
+    clearTimeout(JP.flushTimer);
+    JP.flushTimer = setTimeout(flushContribution, 2500); // agrupa varias jugadas en una escritura
+  }
+
+  async function flushContribution() {
+    if (!JP.online || JP.writing || !JP.pending) return;
+    JP.writing = true;
+    const round = (JP.state || defaultJpState()).round;
+    const mine = JP.contribs[JP.uid];
+    const prev = mine && mine.round === round ? Number(mine.amount) || 0 : 0;
+    const add = JP.pending;
+    JP.pending = 0;
+    try {
+      await JP.db.doc('jpc/' + JP.uid).set({ round, amount: Math.round((prev + add) * 100) / 100 });
+    } catch (e) {
+      JP.pending += add; // se reintenta con la siguiente jugada
+    }
+    JP.writing = false;
+    if (JP.pending) JP.flushTimer = setTimeout(flushContribution, 2500);
+  }
+
+  async function initJackpot() {
+    try {
+      if (!window.claude || typeof window.claude.use !== 'function') throw new Error('sin runtime');
+      const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+      if (!db || !user) throw new Error('sin db');
+      const uid = await user.id();
+      if (!uid) throw new Error('sin id');
+      JP.db = db;
+      JP.user = user;
+      JP.uid = uid;
+      JP.online = true;
+      const loadTimer = setTimeout(() => { JP.loading = false; renderJackpot(); }, 10000);
+      db.doc('jackpot/state').onSnapshot(
+        (snap) => {
+          JP.state = snap.exists ? Object.assign(defaultJpState(), snap.data()) : defaultJpState();
+          if (!snap.metadata.fromCache) { JP.loading = false; clearTimeout(loadTimer); }
+          renderJackpot();
+        },
+        () => { JP.loading = false; renderJackpot(); }
+      );
+      db.collection('jpc').onSnapshot(
+        (qs) => {
+          const c = {};
+          qs.docs.forEach((d) => (c[d.id] = d.data()));
+          JP.contribs = c;
+          renderJackpot();
+        },
+        () => {}
+      );
+    } catch (e) {
+      JP.online = false;
+      JP.loading = false;
+    }
+    renderJackpot();
+  }
+
+  async function claimOnline() {
+    const ref = JP.db.doc('jackpot/state');
+    for (let attempt = 0; attempt < 6; attempt++) {
+      try {
+        const lease = await ref.acquire({ holder: JP.uid, ttlMs: 8000 });
+        if (lease.acquired) {
+          await flushContribution();
+          const snap = await ref.get();
+          const st = snap.exists ? Object.assign(defaultJpState(), snap.data()) : defaultJpState();
+          JP.state = st;
+          const amount = jackpotPot();
+          const win = { amount, at: Date.now(), by: JP.uid };
+          await ref.set({
+            round: st.round + 1, startedAt: Date.now(), base: JACKPOT.base, lastWin: win,
+            winners: [win].concat(st.winners || []).slice(0, 5),
+          });
+          return amount;
+        }
+      } catch (e) { /* se reintenta */ }
+      await new Promise((r) => setTimeout(r, 900 + Math.random() * 600));
+    }
+    return null;
+  }
+
+  async function winJackpot(t) {
+    let amount = null;
+    if (JP.online) amount = await claimOnline();
+    if (amount === null) {
+      // Modo local (o el bote compartido no respondió): se cobra el bote local
+      amount = Math.floor(JACKPOT.base + Math.max(0, Date.now() - S.jpLocal.startedAt) / 60000 * JACKPOT.perMinute + S.jpLocal.contrib);
+      S.jpLocal = { round: S.jpLocal.round + 1, startedAt: Date.now(), contrib: 0, lastWin: { amount, at: Date.now() } };
+    }
+    S.coins += amount;
+    S.stats.won += amount;
+    S.stats.jackpots++;
+    if (amount > S.stats.biggestWin) { S.stats.biggestWin = amount; S.stats.biggestTier = t.id; }
+    notePeak();
+    checkAchievements();
+    save();
+    Sound.jackpot();
+    FX.flash('#b9f6ff');
+    FX.shake();
+    FX.fireworks(10);
+    FX.confetti(300);
+    FX.coins(window.innerWidth / 2, window.innerHeight / 2, 100);
+    banner('¡JACKPOT MUNDIAL!', '#4cc9f0');
+    modal({
+      cls: 'jackpot world',
+      icon: '🌍',
+      title: '¡JACKPOT MUNDIAL!',
+      html: `<p>Tu ${GAME_BY_ID[t.id] ? 'partida de' : 'boleto'} ${esc(t.name)} se ha llevado el bote${JP.online ? ' que comparten todos los jugadores' : ''}.</p>
+        <div class="jp-amount"><span class="coin-ico lg"></span><span id="jp-count">0</span></div>`,
+      buttons: [{ label: '¡INCREÍBLE!', cls: 'btn btn-pink' }],
+      onShow: (m) => countUp(m.querySelector('#jp-count'), amount, 2500),
+    });
+    refreshHeader(true);
+  }
+
+  function renderJackpot() {
+    const pot = jackpotPot();
+    let sub;
+    if (JP.online && JP.loading) sub = 'Conectando con el bote mundial…';
+    else if (JP.online) {
+      const lw = JP.state && JP.state.lastWin;
+      const players = Object.values(JP.contribs).filter((c) => c && JP.state && c.round === JP.state.round).length;
+      sub = lw
+        ? `Último ganador: ${lw.by === JP.uid ? '¡tú!' : esc(JP.names[lw.by] || 'un jugador')} · ${fmtShort(lw.amount)} · ${timeAgo(lw.at)}`
+        : 'Nadie lo ha ganado todavía';
+      if (players) sub += ` · ${players} jugador${players === 1 ? '' : 'es'} aportando`;
+      if (lw && lw.by !== JP.uid && !JP.names[lw.by] && JP.user && JP.user.profiles) {
+        JP.names[lw.by] = '';
+        JP.user.profiles([lw.by]).then((ps) => { const p = ps && ps[lw.by]; if (p && p.name) { JP.names[lw.by] = p.name; renderJackpot(); } }).catch(() => {});
+      }
+    } else {
+      const lw = S.jpLocal.lastWin;
+      sub = 'Modo local: abre el juego en claude.ai para jugar por el bote compartido' + (lw ? ` · último: ${fmtShort(lw.amount)}` : '');
+    }
+    document.querySelectorAll('.jp-value').forEach((el) => (el.textContent = fmt(pot)));
+    document.querySelectorAll('.jp-subline').forEach((el) => (el.innerHTML = sub));
+    document.querySelectorAll('.jp-mode').forEach((el) => (el.textContent = JP.online ? '🌍 JACKPOT MUNDIAL' : '🌍 JACKPOT (MODO LOCAL)'));
+  }
+
   /* ---------- Árbol de habilidades ---------- */
   function renderSkills() {
     const active = SKILLS.filter((k) => sk(k.id) > 0);
@@ -1433,9 +1749,9 @@
   /* ---------- Historial ---------- */
   let histFilter = 'all';
   function renderHistory() {
-    const filters = [['all', 'Todos'], ['wins', 'Premios'], ['games', 'Juegos']].concat(TIERS.map((t) => [t.id, t.name]));
+    const filters = [['all', 'Todos'], ['wins', 'Premios'], ['games', 'Juegos'], ['special', 'Especiales']].concat(TIERS.map((t) => [t.id, t.name]));
     $('hist-filter').innerHTML = filters.map(([id, n]) => `<button data-hf="${id}" class="${histFilter === id ? 'active' : ''}">${n}</button>`).join('');
-    const list = S.history.filter((h) => histFilter === 'all' || (histFilter === 'wins' ? h.prize > 0 : histFilter === 'games' ? !!GAME_BY_ID[h.tier] : h.tier === histFilter));
+    const list = S.history.filter((h) => histFilter === 'all' || (histFilter === 'wins' ? h.prize > 0 : histFilter === 'games' ? !!GAME_BY_ID[h.tier] : histFilter === 'special' ? SPECIAL_TIERS.some((t) => t.id === h.tier) : h.tier === histFilter));
     $('hist-list').innerHTML = list.length ? list.slice(0, 150).map(historyRow).join('') : '<li class="empty">Todavía no hay boletos rascados aquí.</li>';
   }
   renderers.history = renderHistory;
@@ -1468,6 +1784,9 @@
       ['Retorno real', st.spent ? Math.round((st.won / st.spent) * 100) + '%' : '—'],
       ['Logros', `${Object.keys(S.achievements).length}/${ACHIEVEMENTS.length}`],
       ['Segundas vidas usadas', fmt(st.livesUsed)],
+      ['Boletos secretos', fmt(st.secrets)],
+      ['Eventos jugados', fmt(st.eventIds.length)],
+      ['Jackpots ganados', fmt(st.jackpots)],
     ];
     noteRecords();
     const rec = S.records;
@@ -1481,14 +1800,14 @@
 
     $('tier-table').innerHTML =
       `<tr><th>Boleto / juego</th><th>Comprados</th><th>Jugados</th><th>Premiados</th><th>Gastado</th><th>Ganado</th><th>Retorno</th><th>Mejor</th></tr>` +
-      TIERS.concat(GAMES).map((t) => {
+      TIERS.concat(SPECIAL_TIERS, GAMES).filter((t) => !t.limited || st.perTier[t.id].bought).map((t) => {
         const p = st.perTier[t.id];
         return `<tr><td><span class="chip chip-${t.id}">${t.name}</span></td><td>${fmt(p.bought)}</td><td>${fmt(p.scratched)}</td>
           <td>${p.scratched ? Math.round((p.wins / p.scratched) * 100) + '%' : '—'}</td><td>${fmt(p.spent)}</td><td>${fmt(p.won)}</td>
           <td>${p.spent ? Math.round((p.won / p.spent) * 100) + '%' : '—'}</td><td>${p.best ? fmt(p.best) : '—'}</td></tr>`;
       }).join('');
 
-    $('odds-list').innerHTML = TIERS.concat(GAMES).map((t) => {
+    $('odds-list').innerHTML = TIERS.concat(SECRET_TIERS, LIMITED_TIERS.slice(0, 1), GAMES).map((t) => {
       const m = tierMath(t);
       const rows = t.outcomes
         .slice()
@@ -1542,6 +1861,12 @@
   });
 
   /* ---------- Arranque ---------- */
+  let firstTime = true;
+  try {
+    firstTime = !localStorage.getItem(SAVE_KEY);
+  } catch (e) {
+    /* sin almacenamiento: se muestra la bienvenida */
+  }
   // Partida de un juego que quedó a medias (página cerrada durante la animación)
   if (S.pendingRound && GAME_BY_ID[S.pendingRound.tier]) {
     const tk = S.pendingRound;
@@ -1560,6 +1885,13 @@
   setInterval(() => {
     if (current === 'home') renderDaily();
   }, 30000);
+  // Secretos, eventos y jackpot
+  setInterval(() => {
+    tickSpecials();
+    renderJackpot();
+  }, 1000);
+  tickSpecials();
+  initJackpot();
   // La mina va sumando en tiempo real
   setInterval(() => {
     if (current === 'home' && S.mine.level) renderMineCard();
@@ -1568,14 +1900,9 @@
   window.addEventListener('pagehide', () => {
     mineTick();
     save();
+    flushContribution();
   });
 
-  let firstTime = true;
-  try {
-    firstTime = !localStorage.getItem(SAVE_KEY);
-  } catch (e) {
-    /* sin almacenamiento: se muestra la bienvenida */
-  }
   save();
   if (firstTime) {
     modal({

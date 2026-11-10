@@ -5,7 +5,7 @@
 const D = require('../js/data.js');
 const N = parseInt(process.argv[2] || '200000', 10);
 let ok = true;
-for (const tier of D.TIERS) {
+for (const tier of D.TIERS.concat(D.SECRET_TIERS, D.LIMITED_TIERS)) {
   const m = D.tierMath(tier);
   let wins = 0, paid = 0;
   for (let i = 0; i < N; i++) {
