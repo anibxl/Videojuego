@@ -521,7 +521,7 @@
   const DAYS = {
     target: (n) => niceRound(1000 * Math.pow(1.25, n - 1)),
     plays: (n) => Math.min(40, 12 + Math.floor((n - 1) * 1.5)),
-    bonusShare: 0.18, // bonus al empezar el día: 18 % del objetivo de ese día
+    bonusShare: 0.12, // bonus al empezar el día: 12 % del objetivo, proporcional a las jugadas usadas el día anterior
     interestCap: 0.5, // los intereses del Banco no superan el 50 % del objetivo del día
   };
 

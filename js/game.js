@@ -367,6 +367,8 @@
   const playsOk = (q) => S.day.plays >= q;
 
   const reviveCoins = () => 300 + 100 * S.level;
+  /** Bonus al empezar el día n: proporcional a la parte de las jugadas usadas el día anterior. */
+  const dayBonus = (n, used) => Math.round(DAYS.target(n) * DAYS.bonusShare * (1 + skEffect('daily')) * used);
   function noteRecords() {
     const r = S.records;
     r.bestLevel = Math.max(r.bestLevel, S.level);
@@ -401,7 +403,8 @@
     const plays = DAYS.plays(n);
     const surplus = Math.max(0, S.coins - prev.target);
     const interest = saved ? 0 : Math.min(Math.round(surplus * skEffect('storage')), Math.round(target * DAYS.interestCap));
-    const bonus = Math.round(target * DAYS.bonusShare * (1 + skEffect('daily')));
+    const used = prev.playsTotal ? (prev.playsTotal - Math.max(0, prev.plays)) / prev.playsTotal : 1;
+    const bonus = dayBonus(n, used);
     const mine = S.mine.level ? mineYield() : 0;
     const total = bonus + mine + interest;
     S.coins += total;
@@ -422,7 +425,7 @@
         title: `¡Día ${prev.n} superado!`,
         html: `<p>Objetivo ${fmt(prev.target)} conseguido. Empieza el <b>día ${n}</b>.</p>
           <div class="go-stats">
-            ${row('🎁 Bonus de inicio de día', '+' + fmt(bonus))}
+            ${row(`🎁 Bonus de inicio de día (${prev.playsTotal - Math.max(0, prev.plays)}/${prev.playsTotal} jugadas usadas)`, '+' + fmt(bonus))}
             ${S.mine.level ? row('⛏️ Producción de la mina', '+' + fmt(mine)) : ''}
             ${sk('storage') ? row('🏦 Intereses del Banco', '+' + fmt(interest)) : ''}
           </div>
@@ -496,6 +499,7 @@
         <div class="dp-goal"><span>Objetivo del día</span><b>${fmt(S.coins)} / ${fmt(d.target)}</b></div>
         <div class="xp-bar wide dp-bar"><span style="width:${pct}%"></span></div>
         <div class="dp-foot">${reached ? '✅ ¡Objetivo conseguido! Puedes seguir jugando o terminar el día ya.' : `Te faltan <b>${fmt(missing)}</b> monedas. Cada boleto o partida gasta una jugada.`}</div>
+        ${S.inventory.length ? `<button class="btn btn-pink dp-end" data-go="inventory">🎟️ Tienes ${S.inventory.length} boleto${S.inventory.length === 1 ? '' : 's'} sin rascar${d.plays <= 0 ? ': rásca' + (S.inventory.length === 1 ? 'lo' : 'los') + ' para terminar el día' : ''}</button>` : ''}
         ${canEndEarly() ? `<button class="btn dp-end" data-endday>🌙 Terminar el día ${d.n}</button>` : ''}`;
     }
     document.querySelectorAll('.day-strip').forEach((el) => {
@@ -510,7 +514,8 @@
       modal({
         icon: '🌙',
         title: `¿Terminar el día ${S.day.n}?`,
-        html: `<p>Ya tienes el objetivo. Si terminas ahora perderás las <b>${left}</b> jugadas que te quedan hoy, pero no arriesgarás tus monedas.</p>`,
+        html: `<p>Ya tienes el objetivo. Si terminas ahora perderás las <b>${left}</b> jugadas que te quedan hoy, pero no arriesgarás tus monedas.</p>
+          <p>⚠️ El bonus de mañana depende de las jugadas que uses: bajará de <b>${fmt(dayBonus(S.day.n + 1, 1))}</b> a <b>${fmt(dayBonus(S.day.n + 1, (S.day.playsTotal - left) / S.day.playsTotal))}</b>.</p>`,
         buttons: [{ label: 'Terminar el día', cls: 'btn', action: () => passDay() }, { label: 'Seguir jugando', cls: 'btn btn-ghost' }],
       });
     } else passDay();
@@ -1160,12 +1165,12 @@
       $('inv-list').innerHTML = `<div class="card empty">No tienes boletos sin rascar.<br><br><button class="btn" data-go="shop">🛒 Ir a la tienda</button></div>`;
       return;
     }
-    $('inv-list').innerHTML = TIERS.filter((t) => S.inventory.some((x) => x.tier === t.id))
+    $('inv-list').innerHTML = TIERS.concat(SPECIAL_TIERS).filter((t) => S.inventory.some((x) => x.tier === t.id))
       .map((t) => {
         const list = S.inventory.filter((x) => x.tier === t.id);
         return `<div class="inv-group">
-          <div class="inv-thumb mt-${t.id}">🎟️</div>
-          <div class="grow"><b>${t.name}</b><span class="muted small">${list.length} boleto${list.length > 1 ? 's' : ''} · premio máx. ${fmtShort(tierMath(t).maxPrize)}</span></div>
+          <div class="inv-thumb mt-${t.id}"${t.secret || t.limited ? ` style="background:linear-gradient(135deg,${t.cover.colors[0]},${t.cover.colors[1]})"` : ''}>${t.secret ? '🕵️' : t.limited ? t.icon : '🎟️'}</div>
+          <div class="grow"><b>${t.name}${t.secret ? ' <span class="chip inv-tag">SECRETO</span>' : t.limited ? ' <span class="chip inv-tag">EDICIÓN LIMITADA</span>' : ''}</b><span class="muted small">${list.length} boleto${list.length > 1 ? 's' : ''} · premio máx. ${fmtShort(tierMath(t).maxPrize)}</span></div>
           <div class="inv-actions">${sk('bulk') && list.length > 1 ? `<button class="btn btn-ghost" data-bulk="${t.id}">🚀 Rascar todos</button>` : ''}<button class="btn" data-open="${list[0].id}">Rascar</button></div>
         </div>`;
       })

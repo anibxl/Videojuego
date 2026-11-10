@@ -697,3 +697,4 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .day-next div { background: rgba(255,255,255,.08); border-radius: 12px; padding: 8px; }
 .day-next small { display: block; color: var(--muted); font-size: .75rem; }
 .day-next b { font-size: 1.3rem; color: var(--accent); }
+.inv-tag { background: rgba(255,255,255,.15); color: var(--text); font-size: .62rem; vertical-align: middle; }

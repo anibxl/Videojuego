@@ -19,10 +19,10 @@ La partida avanza **por días**. Cada día tienes un número de **jugadas** (cad
 
 - **Objetivo:** 1.000 el día 1 y un 25 % más cada día (1.250, 1.550, 1.950… unos 9.300 el día 11 y unos 28.500 el día 16).
 - **Jugadas:** 12 el día 1, y 1 o 2 más cada día, hasta un máximo de 40.
-- **Al empezar cada día** recibes un bonus (18 % del objetivo de ese día), la producción de tu ⛏️ mina y, con la habilidad 🏦 Banco, intereses sobre lo que superaste el objetivo (como mucho, el 50 % del nuevo objetivo).
+- **Al empezar cada día** recibes un bonus del 12 % del objetivo de ese día, proporcional a las jugadas que usaste el día anterior (si cierras el día antes, recibes menos), la producción de tu ⛏️ mina y, con la habilidad 🏦 Banco, intereses sobre lo que superaste el objetivo (como mucho, el 50 % del nuevo objetivo).
 - **Terminar antes:** si ya tienes el objetivo, puedes cerrar el día sin gastar el resto de jugadas, para no arriesgar.
 - **Si no llegas**, la partida termina y empiezas de cero, salvo que tengas una **❤️ Segunda vida**: te salva, conservas tu progreso y pasas al día siguiente.
-- `node tools/simulate-days.js` simula miles de partidas para ajustar la dificultad. Sin habilidades, mina ni objetos, la mitad de las partidas llega al día 9 y el 20 % pasa del día 15.
+- `node tools/simulate-days.js` simula miles de partidas para ajustar la dificultad. Sin habilidades, mina ni objetos y usando todas las jugadas, la mitad de las partidas llega al día 5 y un 17 % pasa del día 7; las mejoras son las que permiten llegar más lejos.
 
 ## Boletos
 
