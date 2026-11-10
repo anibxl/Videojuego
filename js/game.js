@@ -749,7 +749,7 @@
           cls: 'btn btn-pink',
           action: () => {
             const sound = S.sound;
-            localStorage.removeItem(SAVE_KEY);
+            try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* sin almacenamiento */ }
             S = load();
             S.sound = sound;
             save();
@@ -794,7 +794,12 @@
     if (current === 'home') renderDaily();
   }, 30000);
 
-  const firstTime = !localStorage.getItem(SAVE_KEY);
+  let firstTime = true;
+  try {
+    firstTime = !localStorage.getItem(SAVE_KEY);
+  } catch (e) {
+    /* sin almacenamiento: se muestra la bienvenida */
+  }
   save();
   if (firstTime) {
     modal({
