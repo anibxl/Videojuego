@@ -5,6 +5,9 @@ jusqu'au panier.
 
 **Étape 5 (actuelle) :** le gameplay principal et 6 niveaux. Le menu de l'étape 4 est inchangé.
 
+📘 **Documentation complète du projet (concept, mécaniques, architecture, roadmap, tâches, bugs, journal) :
+[PROJECT.md](PROJECT.md).** Ce README n'est qu'un guide rapide.
+
 ## Le menu principal (`index.html`)
 
 - **Décor vivant** (canvas, `src/menu/scene.js`) : salle de basket la nuit, tribunes et lumières floues,
