@@ -1,3 +1,5 @@
+> **Nouveau projet :** [`hoop-bounce/`](hoop-bounce/) — jeu mobile Android (ballon de basket à faire rebondir jusqu'au panier). Voir son README.
+
 # 🎟️ RascaManía
 
 Juego de boletos de rasca virtuales hecho con HTML, CSS y JavaScript puro, sin dependencias ni paso de compilación.
