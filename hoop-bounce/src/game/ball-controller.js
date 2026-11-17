@@ -1,16 +1,17 @@
-// Transforme les commandes du joueur en mouvement de la balle.
+// Transforme les commandes du joueur en mouvement du ballon.
 //
 // Trois commandes : ◀, ▶ et REBOND.
 //
-// Déplacement : la balle a de l'inertie. ◀ / ▶ l'accélèrent progressivement ; relâchée, elle
-// continue de rouler et ralentit doucement. En l'air, le contrôle est réduit et l'élan conservé.
+// Déplacement : de l'inertie, mais une réponse vive. En l'air, contrôle réduit et élan conservé.
 //
-// Rebond : une balle ne rebondit que contre une surface.
-//  - Appui quand la balle touche le sol (ou vient de le quitter) → rebond immédiat.
-//  - Appui en l'air → mémorisé, le rebond part au prochain contact. On peut donc jouer en rythme.
-//  - Chaque rebond enchaîné augmente la puissance d'un niveau (5 niveaux). Sans rebondir pendant
-//    ~1,6 s, la puissance redescend progressivement vers le niveau 1.
-//  - Même niveau = même hauteur : c'est prévisible et apprenable.
+// REBOND — le principe du dribble. Chaque pression a un effet immédiat :
+//  - ballon au sol (ou qui vient de le quitter) → il rebondit tout de suite ;
+//  - ballon en l'air → il est renvoyé vers le sol d'un coup sec (comme une main qui dribble)
+//    et rebondit dès qu'il le touche.
+// Chaque rebond déclenché par le joueur monte la puissance d'un niveau (5 niveaux) : en tapant
+// vite, on enchaîne de petits dribbles qui chargent la puissance, puis on laisse partir le grand
+// rebond. Quand le ballon reste au sol quelques instants, la puissance redescend progressivement.
+// Même niveau = même hauteur : c'est prévisible, donc maîtrisable.
 //
 // Toute la logique tourne dans le pas fixe de la simulation : elle est déterministe.
 
@@ -37,9 +38,10 @@ export class BallController {
     this.right = false;
     this.level = 1;           // puissance du PROCHAIN rebond (1..maxLevel)
     this.time = 0;
-    this.lastBounceTime = -Infinity;
+    this.restTime = 0;        // temps passé posé au sol sans rebondir
     this._decayAcc = 0;
-    this._pendingTtl = 0;
+    this._pressQueued = false;
+    this._pending = false;    // rebond à déclencher au prochain contact
     this._cooldown = 0;
     this.enabled = true;
   }
@@ -48,13 +50,13 @@ export class BallController {
     return (this.right ? 1 : 0) - (this.left ? 1 : 0);
   }
 
-  /** Appui sur REBOND. */
+  /** Appui sur REBOND (traité au pas de simulation suivant). */
   pressBounce() {
-    this._pendingTtl = this.cfg.bufferTime;
+    this._pressQueued = true;
   }
 
   get hasPendingBounce() {
-    return this._pendingTtl > 0;
+    return this._pending;
   }
 
   get onGround() {
@@ -65,10 +67,10 @@ export class BallController {
     return this._cooldown <= 0 && this.body.timeSinceGrounded <= this.cfg.coyoteTime;
   }
 
-  /** Temps restant avant que la puissance commence à redescendre (0 = déjà en train). */
+  /** Temps restant avant que la puissance commence à redescendre (Infinity si en l'air). */
   get decayIn() {
-    if (this.level <= 1) return 0;
-    return Math.max(0, this.cfg.comboDecayDelay - (this.time - this.lastBounceTime));
+    if (this.level <= 1 || this.restTime <= 0) return Infinity;
+    return Math.max(0, this.cfg.restDelay - this.restTime);
   }
 
   /** À appeler à chaque pas fixe, AVANT body.step(). */
@@ -78,7 +80,8 @@ export class BallController {
     this.time += dt;
     if (this._cooldown > 0) this._cooldown -= dt;
     if (!this.enabled) {
-      this._pendingTtl = 0;
+      this._pressQueued = false;
+      this._pending = false;
       return;
     }
 
@@ -104,22 +107,32 @@ export class BallController {
     b.vx = baseVx + newRel;
     if (b.grounded) b.angularVelocity = -newRel / b.radius; // roule sans glisser
 
-    // ── La puissance redescend si l'on n'enchaîne plus
-    if (this.level > 1 && this.time - this.lastBounceTime > c.comboDecayDelay) {
+    // ── Appui sur REBOND
+    if (this._pressQueued) {
+      this._pressQueued = false;
+      if (this.canBounce) {
+        this._bounce();
+      } else if (!this._pending) {
+        // En l'air : on renvoie le ballon vers le sol, il rebondira au contact
+        this._pending = true;
+        if (b.vy > -c.slamSpeed) b.vy = -c.slamSpeed;
+        this.events?.emit('slam', { x: b.x, y: b.y, level: this.level });
+      }
+    }
+    if (this._pending && this.canBounce) this._bounce();
+
+    // ── La puissance redescend si le ballon reste au sol
+    if (b.timeSinceGrounded <= c.restHopGrace && !this._pending) this.restTime += dt;
+    else this.restTime = 0;
+    if (this.level > 1 && this.restTime > c.restDelay) {
       this._decayAcc += dt;
-      if (this._decayAcc >= c.comboDecayStep) {
-        this._decayAcc -= c.comboDecayStep;
+      if (this._decayAcc >= c.restStep) {
+        this._decayAcc -= c.restStep;
         this.level--;
         this.events?.emit('powerDown', { level: this.level });
       }
     } else {
       this._decayAcc = 0;
-    }
-
-    // ── Rebond
-    if (this._pendingTtl > 0) {
-      if (this.canBounce) this._bounce();
-      else this._pendingTtl -= dt;
     }
   }
 
@@ -129,9 +142,9 @@ export class BallController {
     const baseVy = this.onGround ? b.groundVy : 0;
     b.vy = baseVy + this.velocities[level - 1];
     b.timeSinceGrounded = Infinity; // décollage : pas de double rebond
-    this._pendingTtl = 0;
+    this._pending = false;
     this._cooldown = this.cfg.bounceCooldown;
-    this.lastBounceTime = this.time;
+    this.restTime = 0;
     this._decayAcc = 0;
     this.level = Math.min(this.maxLevel, level + 1);
     this.events?.emit('bounce', { level, next: this.level, x: b.x, y: b.y });
@@ -142,6 +155,7 @@ export class BallController {
     const b = this.body;
     b.vy = Math.max(b.vy, velocity);
     b.timeSinceGrounded = Infinity;
+    this._pending = false;
     this._cooldown = this.cfg.bounceCooldown;
   }
 }

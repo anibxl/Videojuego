@@ -20,6 +20,10 @@ export class Camera {
     this.x = 0;
     this.y = 0;
     this.scale = 40; // pixels CSS par unité
+    this.baseScale = 40;
+    this.zoom = 1;
+    this.zoomTarget = 1;
+    this.focus = null; // point à cadrer à la place du ballon (ex. : le panier au moment du panier)
     this.width = 1;
     this.height = 1;
   }
@@ -27,7 +31,8 @@ export class Camera {
   setViewport(width, height) {
     this.width = width;
     this.height = height;
-    this.scale = Math.min(height / this.cfg.viewHeight, width / this.cfg.minViewWidth);
+    this.baseScale = Math.min(height / this.cfg.viewHeight, width / this.cfg.minViewWidth);
+    this.scale = this.baseScale * this.zoom;
   }
 
   get halfWidth() {
@@ -36,6 +41,14 @@ export class Camera {
 
   get halfHeight() {
     return this.height / 2 / this.scale;
+  }
+
+  /** Revient au cadrage normal (nouvelle partie). */
+  resetEffects() {
+    this.zoom = this.zoomTarget = 1;
+    this.focus = null;
+    this.trauma = 0;
+    this.scale = this.baseScale;
   }
 
   snap(x, y, bounds) {
@@ -60,6 +73,8 @@ export class Camera {
   update(dt, target, bounds, smoothScale = 1) {
     const c = this.cfg;
     this.time += dt;
+    this.zoom = damp(this.zoom, this.zoomTarget, 3.2, dt);
+    this.scale = this.baseScale * this.zoom;
 
     const lookTarget = clamp(target.vx * c.lookAhead, -c.maxLookAhead, c.maxLookAhead);
     this.look = damp(this.look, lookTarget, 1 / c.lookAheadSmooth, dt);
@@ -70,7 +85,9 @@ export class Camera {
     if (ty > this.focusY + c.verticalDeadZone) this.focusY = ty - c.verticalDeadZone;
     else if (ty < this.focusY - c.verticalDeadZone) this.focusY = ty + c.verticalDeadZone;
 
-    const t = this._clamp(target.x + this.look, this.focusY, bounds);
+    const t = this.focus
+      ? this._clamp(this.focus.x, this.focus.y, bounds)
+      : this._clamp(target.x + this.look, this.focusY, bounds);
     smoothDamp(this.sx, t.x, c.smoothTimeX * smoothScale, dt);
     smoothDamp(this.sy, t.y, c.smoothTimeY * smoothScale, dt);
 

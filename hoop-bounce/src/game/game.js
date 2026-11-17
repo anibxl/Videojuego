@@ -30,6 +30,14 @@ export class Game {
     this.restart();
   }
 
+  /** Charge un autre niveau (et le démarre). */
+  load(levelDef) {
+    this.levelDef = levelDef;
+    this.level = buildLevel(levelDef, this.cfg);
+    this.inFan = false;
+    this.restart();
+  }
+
   /** Recommence le niveau depuis le début. */
   restart() {
     const L = this.level;
@@ -48,6 +56,7 @@ export class Game {
     }
     for (const d of L.doors) d.reset();
     for (const t of L.teleporters) t.cooldown = 0;
+    L.hoop.reset();
     this.result = null;
     this._updateMoving(0);
     this._respawn();
@@ -93,7 +102,12 @@ export class Game {
 
     if (this.state === 'dying') {
       this._stateTimer -= dt;
-      if (this._stateTimer <= 0) this._respawn();
+      if (this._stateTimer <= 0) {
+        // Niveaux courts : une chute fait recommencer le niveau (étoiles comprises)
+        const deaths = this.deaths;
+        this.restart();
+        this.deaths = deaths;
+      }
       L.hoop.step(dt, { x: -1000, y: -1000, radius: b.radius });
       return;
     }

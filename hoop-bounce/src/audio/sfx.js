@@ -143,6 +143,13 @@ export class Sfx {
     if (level >= 5) this._tone(1320, 1320, 0.18, 0.05, 'triangle', 0.03);
   }
 
+  /** Dribble en l'air : le ballon est renvoyé vers le sol (souffle descendant bref). */
+  slam() {
+    if (!this.ready || !this._throttle('slam', 0.05)) return;
+    this._noiseBurst(0.12, 0.16, 'bandpass', 2600, 1.4, 700);
+    this._tone(320, 150, 0.09, 0.12, 'sine');
+  }
+
   /** La puissance redescend d'un cran. */
   powerDown() {
     if (!this.ready) return;

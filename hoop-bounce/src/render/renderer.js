@@ -52,11 +52,16 @@ export class Renderer {
     this.tex = createBallTextures();
     this.starSprite = makeStarSprite();
     this.glowSprites = new Map();
-    this.background = new Background(level);
+    this.setLevel(level);
     this.dpr = 1;
     this.w = 1;
     this.h = 1;
     this.fps = 60;
+  }
+
+  /** Nouveau niveau : le décor de fond s'adapte à sa longueur. */
+  setLevel(level) {
+    this.background = new Background(level);
   }
 
   resize(cssWidth, cssHeight) {

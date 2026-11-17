@@ -5,8 +5,8 @@
 export const CONFIG = Object.freeze({
   physics: Object.freeze({
     fixedDt: 1 / 120,          // pas de simulation fixe (s) — indépendant du framerate
-    gravity: 30,               // u/s²
-    maxFallSpeed: 26,          // vitesse de chute maximale (u/s)
+    gravity: 34,               // u/s² — franche : aucune sensation de flottement
+    maxFallSpeed: 28,          // vitesse de chute maximale (u/s)
     maxSubstepTravel: 0.2,     // déplacement max par sous-pas, en fraction du rayon (anti-traversée)
     maxSubsteps: 16,
     solverIterations: 3,
@@ -35,24 +35,27 @@ export const CONFIG = Object.freeze({
   }),
 
   controls: Object.freeze({
-    // Déplacement : la balle a de l'inertie (elle accélère et ralentit progressivement)
+    // Déplacement : de l'inertie, mais une réponse vive (aucune lourdeur)
     maxSpeed: 7.5,             // u/s
-    groundAccel: 20,           // u/s² en appuyant sur ◀ / ▶ au sol
-    airAccel: 10,              // contrôle en l'air, plus faible
+    groundAccel: 26,           // u/s² en appuyant sur ◀ / ▶ au sol (pleine vitesse en ~0,3 s)
+    airAccel: 13,              // contrôle en l'air, plus faible
     turnBoost: 1.9,            // freinage plus franc quand on appuie dans l'autre sens
-    groundBrake: 2.5,          // sans appui au sol, la balle roule longtemps
+    groundBrake: 3.5,          // sans appui au sol, la balle roule encore un peu
     airBrake: 0,               // en l'air, l'élan est conservé
     groundGrace: 0.06,
 
-    // Rebond : hauteur (u) pour chaque niveau de puissance
-    bounceHeights: Object.freeze([1.5, 2.3, 3.2, 4.2, 5.3]),
-    comboDecayDelay: 1.6,      // s sans rebondir avant que la puissance redescende
-    comboDecayStep: 0.4,       // s pour perdre un niveau ensuite
-    coyoteTime: 0.16,          // on peut encore rebondir juste après avoir quitté le sol
-    bufferTime: 0.45,          // un appui en l'air déclenche le rebond au prochain contact
-    bounceCooldown: 0.1,
+    // Rebond : hauteur (u) pour chaque niveau de puissance (le centre du ballon monte de…)
+    bounceHeights: Object.freeze([1.4, 2.2, 3.1, 4.1, 5.2]),
+    coyoteTime: 0.12,          // on peut encore rebondir juste après avoir quitté le sol
+    bounceCooldown: 0.06,
+    // Dribble : en l'air, un appui renvoie le ballon vers le sol, et il rebondit au contact
+    slamSpeed: 15,             // u/s vers le bas
+    // La puissance redescend quand le ballon reste au sol
+    restDelay: 0.55,           // s au sol avant de commencer à perdre de la puissance
+    restStep: 0.32,            // s pour perdre un niveau ensuite
+    restHopGrace: 0.15,        // les petits rebonds naturels comptent comme « au sol »
 
-    trampolineVelocity: 19,    // ≈ 6 u de haut
+    trampolineVelocity: 20,    // ≈ 5,9 u de haut
   }),
 
   fans: Object.freeze({

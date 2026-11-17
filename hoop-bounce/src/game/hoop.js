@@ -63,31 +63,54 @@ export class Hoop {
     this.net = new Net(this.innerLeft, this.innerRight, this.rimY, cfg);
     this.ballRadius = ballRadius;
     this._blocked = false; // vrai si le ballon est passé par en dessous (panier refusé)
+    this.entering = false; // le ballon a franchi le cercle par le haut, pas encore entièrement
     this.lastScoreTime = -Infinity;
   }
 
   /**
-   * Détecte un panier : le centre du ballon traverse la ligne du cercle vers le bas,
-   * entre les deux bords. Un ballon passé par en dessous ne compte pas.
-   * @returns {boolean}
+   * Détecte un panier, en deux temps :
+   *  1. le centre du ballon traverse la ligne du cercle vers le bas, entre les deux bords
+   *     (« il entre ») ;
+   *  2. le ballon est entièrement passé sous le cercle, toujours dans l'axe du filet (« il est
+   *     dedans »). Un ballon qui ressort par le haut (rebond sur le cercle) ne compte pas.
+   * Un ballon passé par en dessous ne compte pas non plus.
+   * @returns {boolean} vrai au moment où le panier est validé
    */
   checkScore(prevX, prevY, x, y) {
     const Y = this.rimY;
+    const R = this.ballRadius;
     const inside = (px) => px > this.innerLeft && px < this.innerRight;
 
-    if (prevY < Y && y >= Y && inside((prevX + x) / 2)) this._blocked = true;
+    if (prevY < Y && y >= Y && inside((prevX + x) / 2)) {
+      if (this.entering) this.entering = false; // ressorti par le haut
+      else this._blocked = true;                // arrivé par en dessous
+    }
     if (this._blocked) {
-      const far = Math.abs(x - this.centerX) > (this.rightX - this.leftX) / 2 + 2 * this.ballRadius;
-      if (far || y < Y - 3 * this.ballRadius) this._blocked = false;
+      const far = Math.abs(x - this.centerX) > (this.rightX - this.leftX) / 2 + 2 * R;
+      if (far || y < Y - 3 * R) this._blocked = false;
     }
 
     if (prevY >= Y && y < Y && !this._blocked) {
       // Position exacte du croisement (interpolée)
       const t = (prevY - Y) / (prevY - y);
       const cx = prevX + (x - prevX) * t;
-      if (inside(cx)) return true;
+      if (inside(cx)) this.entering = true;
+    }
+
+    if (this.entering) {
+      // Sorti sur le côté (entre le cercle et le filet) : ce n'est pas un panier
+      if (x < this.leftX - R || x > this.rightX + R) this.entering = false;
+      else if (y < Y - R * 1.05) {
+        this.entering = false;
+        return true;
+      }
     }
     return false;
+  }
+
+  reset() {
+    this.entering = false;
+    this._blocked = false;
   }
 
   step(dt, ball) {

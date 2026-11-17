@@ -1,11 +1,13 @@
-// Point d'entrée : assemble la logique (Game) et la présentation (rendu, caméra, son,
-// vibrations, interface). C'est le seul fichier qui connaît tout le monde.
+// Écran de jeu : assemble la logique (Game) et la présentation (rendu, caméra, son, vibrations,
+// interface). Gère aussi l'enchaînement des niveaux, la pause et la progression.
 
 import { CONFIG } from './config.js';
 import { clamp, damp, lerp } from './core/math.js';
 import { FixedLoop } from './core/loop.js';
 import { Game } from './game/game.js';
-import { LEVEL_01 } from './game/levels/level-01.js';
+import { LEVELS } from './game/levels/index.js';
+import { Progress } from './game/progress.js';
+import { gt } from './game/i18n.js';
 import { Input } from './input/input.js';
 import { Camera } from './render/camera.js';
 import { BallVisual } from './render/ball-visual.js';
@@ -15,68 +17,104 @@ import { Sfx } from './audio/sfx.js';
 import { Haptics } from './platform/haptics.js';
 import { Settings } from './shared/settings.js';
 
-const LEVEL = LEVEL_01;
 const R = CONFIG.ball.radius;
 const DT = CONFIG.physics.fixedDt;
 const MAX_LEVEL = CONFIG.controls.bounceHeights.length;
-const STORAGE_KEY = `hoopbounce.${LEVEL.id}.best`;
+const TUTO_KEY = 'hoopbounce.tutorialDone';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('game');
 const ui = {
-  stars: [...$('stars').querySelectorAll('.star')],
+  levelNum: $('level-num'),
   levelName: $('level-name'),
-  timer: $('timer'),
+  stars: [...document.querySelectorAll('#stars .star')],
   restart: $('btn-restart'),
-  sound: $('btn-sound'),
+  pauseBtn: $('btn-pause'),
   padLeft: $('pad-left'),
   padRight: $('pad-right'),
   padBounce: $('pad-bounce'),
   ring: $('power-ring'),
-  results: $('results'),
-  resLevel: $('res-level'),
-  resultStars: [...$('result-stars').querySelectorAll('.star')],
-  resTime: $('res-time'),
-  resDeaths: $('res-deaths'),
-  resBest: $('res-best'),
-  resRecord: $('res-record'),
+  tutoMove: $('tuto-move'),
+  tutoBounce: $('tuto-bounce'),
+  pause: $('pause'),
+  resume: $('btn-resume'),
+  pauseRestart: $('btn-pause-restart'),
+  win: $('win'),
+  winLevel: $('win-level'),
+  winTitle: $('win-title'),
+  winStars: [...document.querySelectorAll('#win-stars .star')],
+  winBody: $('win-body'),
+  winTime: $('win-time'),
+  winRecord: $('win-record'),
+  next: $('btn-next'),
   replay: $('btn-replay'),
+  fade: $('fade'),
 };
 
-const game = new Game(CONFIG, LEVEL);
+const settings = new Settings();
+const lang = settings.get('lang');
+const progress = new Progress(LEVELS.length);
+const params = new URLSearchParams(location.search);
+const requested = parseInt(params.get('level') ?? '', 10);
+let levelIndex = Number.isInteger(requested) && requested >= 1 && requested <= LEVELS.length ? requested - 1 : progress.resumeIndex;
+
+const game = new Game(CONFIG, localizedLevel(levelIndex));
 const renderer = new Renderer(canvas, game.level);
 const camera = new Camera(CONFIG.camera);
 const visual = new BallVisual(CONFIG.feel);
 const particles = new Particles();
 const sfx = new Sfx();
 const haptics = new Haptics();
-// Réglages choisis dans le menu (volume des effets, vibrations)
-const settings = new Settings();
 sfx.setVolume(settings.get('sfx'));
 haptics.enabled = settings.get('vibration');
 
 const state = {
-  debug: new URLSearchParams(location.search).has('debug'),
+  debug: params.has('debug'),
   time: 0,
   flash: 0,
+  paused: false,
+  overlay: null,         // 'pause' | 'win' | null
   sinceRespawn: 10,
   sinceTeleport: 10,
   sinceBounce: 10,
-  groundY: 0,
   lastRimTime: -10,
   gaugeAlpha: 0,
   ringKey: '',
+  groundY: 0,
+  tutorial: false,
+  tutoMoved: false,
+  tutoBounces: 0,
   ball: { x: 0, y: 0, angle: 0, r: R, scale: 1 },
 };
 
-ui.levelName.textContent = `Niveau 1 · ${LEVEL.name}`;
-ui.resLevel.textContent = `Niveau 1 · ${LEVEL.name}`;
+/** Copie du niveau avec ses textes d'aide traduits. */
+function localizedLevel(i) {
+  const def = LEVELS[i];
+  return { ...def, hints: (def.hints ?? []).map((h) => ({ ...h, text: gt(lang, h.key) })) };
+}
+
+// ─── Textes statiques ───────────────────────────────────────────────────────
+
+document.documentElement.lang = lang;
+for (const el of document.querySelectorAll('[data-t]')) el.textContent = gt(lang, el.dataset.t);
+for (const el of document.querySelectorAll('[data-t-html]')) el.innerHTML = gt(lang, el.dataset.tHtml);
+for (const el of document.querySelectorAll('[data-label]')) {
+  el.setAttribute('aria-label', gt(lang, el.dataset.label));
+  el.title = gt(lang, el.dataset.label);
+}
+
+function updateLevelLabels() {
+  const def = LEVELS[levelIndex];
+  ui.levelNum.textContent = gt(lang, 'hud.level', { n: def.number });
+  ui.levelName.textContent = gt(lang, def.nameKey);
+  ui.stars.forEach((s) => s.classList.remove('on'));
+}
 
 // ─── Anneau de puissance autour du bouton REBOND ───────────────────────────
 
 (function buildRing() {
   const n = MAX_LEVEL;
-  const gap = 0.16; // radians entre deux segments
+  const gap = 0.16;
   const r = 47;
   let html = '';
   for (let i = 0; i < n; i++) {
@@ -101,42 +139,15 @@ function updateRing(level, warn) {
   ui.ring.classList.toggle('l5', level >= 5);
 }
 
-// ─── Taille de l'écran ──────────────────────────────────────────────────────
+// ─── Écran ──────────────────────────────────────────────────────────────────
 
 function resize() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  renderer.resize(w, h);
-  camera.setViewport(w, h);
+  renderer.resize(window.innerWidth, window.innerHeight);
+  camera.setViewport(window.innerWidth, window.innerHeight);
 }
 window.addEventListener('resize', resize);
 window.visualViewport?.addEventListener('resize', resize);
 resize();
-camera.snap(game.body.x, game.body.y, game.level.bounds);
-
-// ─── Records ───────────────────────────────────────────────────────────────
-
-function loadBest() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function saveBest(best) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(best));
-  } catch {
-    /* stockage indisponible : le record n'est simplement pas gardé */
-  }
-}
-
-const formatTime = (t, tenths = false) => {
-  const m = Math.floor(t / 60);
-  const s = t - m * 60;
-  return tenths ? `${m}:${s.toFixed(1).padStart(4, '0')}` : `${m}:${String(Math.floor(s)).padStart(2, '0')}`;
-};
 
 // ─── Réactions aux événements de jeu ───────────────────────────────────────
 
@@ -160,7 +171,14 @@ game.events.on('bounce', (e) => {
   const color = e.level >= MAX_LEVEL ? 'rgba(255,214,90,0.95)' : e.level >= 4 ? 'rgba(255,181,71,0.9)' : 'rgba(255,255,255,0.8)';
   particles.ring(e.x, e.y - R * 0.95, 0.35 + e.level * 0.1, color, 0.3 + e.level * 0.03);
   particles.dust(e.x, e.y - R, 0, 1, 0.15 + e.level * 0.1);
-  if (e.level >= MAX_LEVEL) camera.addTrauma(0.18);
+  if (e.level >= MAX_LEVEL) camera.addTrauma(0.16);
+  state.tutoBounces++;
+  updateTutorial();
+});
+
+game.events.on('slam', () => {
+  sfx.slam();
+  visual.onSlam();
 });
 
 game.events.on('powerDown', () => sfx.powerDown());
@@ -178,7 +196,7 @@ game.events.on('switch', (e) => {
   particles.sparkle(e.x, e.y + 0.3, 14, '#ffe0a3', 2.8);
   if (e.doors.length) {
     setTimeout(() => sfx.door(), 120);
-    particles.text(e.x, e.y + 1.6, 'La porte s’ouvre !', '#ffe0a3', 0.6);
+    particles.text(e.x, e.y + 1.6, gt(lang, 'popup.door'), '#ffe0a3', 0.6);
   }
 });
 
@@ -200,13 +218,7 @@ game.events.on('star', (e) => {
   haptics.success();
   particles.sparkle(e.x, e.y, 18);
   particles.ring(e.x, e.y, 0.8, 'rgba(255,214,90,0.9)', 0.4);
-  ui.stars[e.index]?.classList.add('on');
-});
-
-game.events.on('checkpoint', (e) => {
-  sfx.checkpoint();
-  haptics.light();
-  particles.sparkle(e.x + 0.3, e.y + 1.1, 12, '#a6ffe6', 2.5);
+  ui.stars[e.count - 1]?.classList.add('on');
 });
 
 game.events.on('death', (e) => {
@@ -215,71 +227,169 @@ game.events.on('death', (e) => {
   haptics.impact(1);
   camera.addTrauma(e.cause === 'fall' ? 0.3 : 0.7);
   state.flash = 1;
+  ui.stars.forEach((s) => s.classList.remove('on'));
 });
 
 game.events.on('respawn', (e) => {
   visual.reset();
   state.sinceRespawn = 0;
   state.groundY = e.y - R;
-  if (game.time < 0.05) camera.snap(e.x, e.y, game.level.bounds);
+  ui.stars.forEach((s) => s.classList.remove('on'));
 });
 
 game.events.on('win', (e) => {
   const swish = game.time - state.lastRimTime > 0.8;
-  particles.confetti(e.x, e.y - 0.3, 70);
-  particles.text(e.x - 1.5, e.y + 2.2, swish ? 'SWISH !' : 'PANIER !', swish ? '#ffd65a' : '#ffffff', 1.15);
+  const h = game.level.hoop;
+  particles.confetti(e.x, e.y - 0.4, 80);
+  particles.text(e.x - 1.2, e.y + 2.2, gt(lang, swish ? 'popup.swish' : 'popup.score'), swish ? '#ffd65a' : '#ffffff', 1.15);
   sfx.win(swish);
   haptics.success();
-  camera.addTrauma(0.4);
-  loop.timeScale = CONFIG.feel.winSlowMo; // ralenti : on savoure le panier
+  // Effet de caméra : ralenti, léger zoom sur le panier, secousse
+  camera.addTrauma(0.35);
+  camera.focus = { x: h.centerX - 1, y: h.rimY - 0.5 };
+  camera.zoomTarget = 1.14;
+  loop.timeScale = CONFIG.feel.winSlowMo;
   setTimeout(() => (loop.timeScale = 1), 900);
-  setTimeout(() => showResults(e), 1400);
+  setTimeout(() => showWin(e), 1500);
 });
 
-// ─── Interface ─────────────────────────────────────────────────────────────
+// ─── Victoire ──────────────────────────────────────────────────────────────
 
-function showResults(r) {
-  const best = loadBest();
-  const isRecord = !best || r.stars > best.stars || (r.stars === best.stars && r.time < best.time);
-  const newBest = isRecord ? { time: r.time, stars: r.stars } : best;
-  if (isRecord) saveBest(newBest);
-  ui.resTime.textContent = formatTime(r.time, true);
-  ui.resDeaths.textContent = String(r.deaths);
-  ui.resBest.textContent = formatTime(newBest.time, true);
-  ui.resRecord.classList.toggle('hidden', !isRecord || !best);
-  ui.resultStars.forEach((s, i) => {
+const formatTime = (t) => {
+  const m = Math.floor(t / 60);
+  const s = t - m * 60;
+  return `${m}:${s.toFixed(1).padStart(4, '0')}`;
+};
+
+function showWin(r) {
+  const def = LEVELS[levelIndex];
+  const { newRecord } = progress.complete(levelIndex, def.id, r.stars, r.time);
+  const last = levelIndex >= LEVELS.length - 1;
+  ui.winLevel.textContent = `${gt(lang, 'hud.level', { n: def.number })} · ${gt(lang, def.nameKey)}`;
+  ui.winTitle.textContent = gt(lang, last ? 'win.done.title' : 'win.title');
+  ui.winBody.hidden = !last;
+  ui.winBody.textContent = gt(lang, 'win.done.body');
+  ui.winTime.textContent = formatTime(r.time);
+  ui.winRecord.hidden = !newRecord;
+  ui.winRecord.textContent = gt(lang, 'win.record');
+  ui.next.hidden = last;
+  ui.winStars.forEach((s, i) => {
     s.classList.remove('on');
-    if (i < r.stars) setTimeout(() => s.classList.add('on'), 250 + i * 220);
+    if (i < r.stars) setTimeout(() => {
+      s.classList.add('on');
+      sfx.star(i + 1);
+      haptics.light();
+    }, 380 + i * 260);
   });
-  ui.results.classList.remove('hidden');
+  openOverlay('win');
+  (last ? ui.replay : ui.next).focus({ preventScroll: true });
+}
+
+// ─── Pause, overlays, enchaînement des niveaux ─────────────────────────────
+
+function openOverlay(name) {
+  state.overlay = name;
+  document.body.classList.add('overlay-open');
+  (name === 'pause' ? ui.pause : ui.win).classList.remove('hidden');
   input.enabled = false;
   input.releaseAll();
+  sfx.wind(false);
+}
+
+function closeOverlays() {
+  state.overlay = null;
+  document.body.classList.remove('overlay-open');
+  ui.pause.classList.add('hidden');
+  ui.win.classList.add('hidden');
+  input.enabled = true;
+}
+
+function pause() {
+  if (state.paused || game.state === 'won') return;
+  state.paused = true;
+  loop.stop();
+  openOverlay('pause');
+  ui.resume.focus({ preventScroll: true });
+}
+
+function resume() {
+  if (!state.paused) return;
+  state.paused = false;
+  closeOverlays();
+  loop.start();
+}
+
+function startLevel(index) {
+  levelIndex = index;
+  game.load(localizedLevel(index));
+  renderer.setLevel(game.level);
+  camera.resetEffects();
+  camera.snap(game.body.x, game.body.y, game.level.bounds);
+  loop.timeScale = 1;
+  particles.items.forEach((p) => (p.alive = false));
+  particles.texts.forEach((t) => (t.alive = false));
+  updateLevelLabels();
+  history.replaceState(null, '', `?level=${index + 1}`);
+  setupTutorial();
 }
 
 function restart() {
-  ui.results.classList.add('hidden');
-  ui.stars.forEach((s) => s.classList.remove('on'));
-  input.enabled = true;
-  input.releaseAll();
+  closeOverlays();
   sfx.wind(false);
-  game.restart();
-  camera.snap(game.body.x, game.body.y, game.level.bounds);
-  loop.timeScale = 1;
+  state.paused = false;
+  startLevel(levelIndex);
+  loop.start();
 }
 
-function toggleSound() {
-  sfx.setEnabled(!sfx.enabled);
-  haptics.enabled = sfx.enabled && settings.get('vibration');
-  ui.sound.classList.toggle('muted', !sfx.enabled);
-  if (!sfx.enabled) sfx.wind(false);
+function nextLevel() {
+  closeOverlays();
+  ui.fade.classList.remove('out');
+  setTimeout(() => {
+    startLevel(Math.min(levelIndex + 1, LEVELS.length - 1));
+    ui.fade.classList.add('out');
+  }, 280);
 }
 
 ui.restart.addEventListener('click', restart);
+ui.pauseBtn.addEventListener('click', pause);
+ui.resume.addEventListener('click', resume);
+ui.pauseRestart.addEventListener('click', restart);
 ui.replay.addEventListener('click', restart);
-ui.sound.addEventListener('click', () => {
-  sfx.unlock();
-  toggleSound();
-});
+ui.next.addEventListener('click', nextLevel);
+
+// ─── Tutoriel (premier lancement) ───────────────────────────────────────────
+
+function tutorialDone() {
+  try {
+    return localStorage.getItem(TUTO_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setupTutorial() {
+  state.tutorial = levelIndex === 0 && !tutorialDone();
+  state.tutoMoved = false;
+  state.tutoBounces = 0;
+  document.body.classList.toggle('tutorial', state.tutorial);
+  ui.tutoMove.classList.remove('done');
+  ui.tutoBounce.classList.remove('done');
+}
+
+function updateTutorial() {
+  if (!state.tutorial) return;
+  ui.tutoMove.classList.toggle('done', state.tutoMoved);
+  ui.tutoBounce.classList.toggle('done', state.tutoBounces >= 3);
+  if (state.tutoMoved && state.tutoBounces >= 3) {
+    state.tutorial = false;
+    try {
+      localStorage.setItem(TUTO_KEY, '1');
+    } catch {
+      /* ignoré */
+    }
+    setTimeout(() => document.body.classList.remove('tutorial'), 600);
+  }
+}
 
 // ─── Entrées ───────────────────────────────────────────────────────────────
 
@@ -287,6 +397,10 @@ const input = new Input(canvas, { left: ui.padLeft, right: ui.padRight, bounce: 
   onDirection(left, right) {
     game.controller.left = left;
     game.controller.right = right;
+    if ((left || right) && !state.tutoMoved) {
+      state.tutoMoved = true;
+      updateTutorial();
+    }
   },
   onBounce() {
     if (game.playing) game.controller.pressBounce();
@@ -295,13 +409,15 @@ const input = new Input(canvas, { left: ui.padLeft, right: ui.padRight, bounce: 
     sfx.unlock();
   },
   onShortcut(code) {
-    if (code === 'Enter' && game.state === 'won') restart();
+    if (code === 'Escape' || code === 'KeyP') (state.paused ? resume : pause)();
     else if (code === 'KeyR') restart();
-    else if (code === 'KeyM') toggleSound();
-    else if (code === 'Escape') location.href = 'index.html';
+    else if (code === 'Enter' && state.overlay === 'win') (ui.next.hidden ? restart : nextLevel)();
     else if (code === 'Backquote' || code === 'F3') state.debug = !state.debug;
   },
 });
+
+// Les boutons des fenêtres doivent rester utilisables même quand le jeu ignore les touchers
+for (const el of document.querySelectorAll('.overlay')) el.addEventListener('pointerdown', () => sfx.unlock());
 
 // ─── Boucle ────────────────────────────────────────────────────────────────
 
@@ -317,7 +433,6 @@ function render(frameDt, alpha) {
   state.ball.x = lerp(p.x, b.x, alpha);
   state.ball.y = lerp(p.y, b.y, alpha);
   state.ball.angle = lerp(p.angle, b.angle, alpha);
-  // Apparition (réapparition, sortie de téléporteur) : petit « pop »
   const pop = clamp(Math.min(state.sinceRespawn, state.sinceTeleport) / 0.28, 0, 1);
   state.ball.scale = game.state === 'dying' ? 0 : pop >= 1 ? 1 : easeOutBack(pop);
 
@@ -327,14 +442,13 @@ function render(frameDt, alpha) {
   visual.update(frameDt, b);
   particles.update(frameDt * loop.timeScale);
 
-  // Jauge de puissance : visible dès qu'elle a monté, discrète au repos
-  const warn = ctrl.level > 1 && ctrl.decayIn < 0.5;
+  // Jauge : visible dès qu'elle a monté, discrète au repos ; le dernier cran clignote avant de baisser
+  const warn = ctrl.level > 1 && ctrl.decayIn < 0.35;
   const showGauge = game.state === 'playing' && (ctrl.level > 1 || state.sinceBounce < 1.2);
   state.gaugeAlpha = damp(state.gaugeAlpha, showGauge ? 1 : 0, showGauge ? 14 : 4, frameDt);
   updateRing(ctrl.level, warn);
 
   state.flash = Math.max(0, state.flash - frameDt * 2.5);
-  if (game.playing) ui.timer.textContent = formatTime(game.runTime);
 
   renderer.draw({
     frameDt,
@@ -361,18 +475,25 @@ function easeOutBack(t) {
 }
 
 const loop = new FixedLoop({ dt: DT, update: (dt) => game.fixedUpdate(dt), render });
-loop.start();
 
+// L'application passe en arrière-plan : on met en pause (le joueur reprend quand il veut)
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    loop.stop();
     input.releaseAll();
     sfx.wind(false);
     sfx.suspend();
-  } else {
+    if (state.overlay !== 'win') pause();
+    else loop.stop();
+  } else if (state.overlay === 'win') {
     loop.start();
   }
 });
 
+// ─── Démarrage ──────────────────────────────────────────────────────────────
+
+startLevel(levelIndex);
+loop.start();
+requestAnimationFrame(() => ui.fade.classList.add('out'));
+
 // Accès depuis la console pour régler / déboguer / tests automatisés
-window.__game = { game, camera, loop, input, renderer, CONFIG };
+window.__game = { game, camera, loop, input, renderer, CONFIG, LEVELS, startLevel, progress };

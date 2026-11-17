@@ -43,6 +43,14 @@ export class BallVisual {
     this.squashVel = -18;
   }
 
+  /** Dribble en l'air : le ballon s'étire vers le bas, comme poussé par la main. */
+  onSlam() {
+    this.squash = -0.2;
+    this.squashVel = 0;
+    this.nx = 0;
+    this.ny = 1;
+  }
+
   /**
    * @param {number} dt
    * @param {{vx:number, vy:number, grounded:boolean, groundNx:number, groundNy:number}} body
