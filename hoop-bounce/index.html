@@ -3,72 +3,84 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0a1222">
+  <meta name="theme-color" content="#04070f">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="screen-orientation" content="landscape">
   <title>Hoop Bounce</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="preload" href="assets/fonts/unbounded.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/outfit.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/menu.css">
 </head>
 <body>
-  <canvas id="game" aria-label="Zone de jeu"></canvas>
+  <canvas id="scene" aria-hidden="true"></canvas>
 
-  <div class="hud">
-    <div class="stars" id="stars" aria-label="Étoiles ramassées">
-      <svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>
-      <svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>
-      <svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>
-    </div>
-    <div class="title">
-      <span class="level-name" id="level-name">Niveau 1</span>
-      <span class="timer" id="timer">0:00</span>
-    </div>
-    <div class="buttons">
-      <button class="btn" id="btn-restart" title="Recommencer le niveau (R)" aria-label="Recommencer le niveau">
-        <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>
+  <div class="app" id="app" data-page="home">
+    <!-- Barre du haut : solde de pièces -->
+    <header class="topbar">
+      <button class="chip coins pressable" id="coins-chip" data-nav="magasin">
+        <span class="chip-icon" data-icon="coin"></span>
+        <span class="chip-value" id="coin-count">0</span>
       </button>
-      <button class="btn" id="btn-sound" title="Son (M)" aria-label="Couper ou activer le son">
-        <svg class="on" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
-        <svg class="off" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4zm15.6 3 2.1-2.1-1.4-1.4-2.1 2.1-2.1-2.1-1.4 1.4 2.1 2.1-2.1 2.1 1.4 1.4 2.1-2.1 2.1 2.1 1.4-1.4z"/></svg>
-      </button>
-    </div>
-  </div>
+    </header>
 
-  <div class="controls" aria-hidden="true">
-    <div class="dpad">
-      <div class="pad" id="pad-left"><svg viewBox="0 0 24 24"><path d="M15.4 5.4 14 4l-8 8 8 8 1.4-1.4L8.8 12z"/></svg></div>
-      <div class="pad" id="pad-right"><svg viewBox="0 0 24 24"><path d="M8.6 5.4 10 4l8 8-8 8-1.4-1.4 6.6-6.6z"/></svg></div>
-    </div>
-    <div class="bounce" id="pad-bounce">
-      <svg class="ring" viewBox="0 0 100 100" id="power-ring"></svg>
-      <svg class="icon" viewBox="0 0 24 24"><path d="M12 4 5 11l1.4 1.4L11 7.8V20h2V7.8l4.6 4.6L19 11z"/></svg>
-    </div>
-  </div>
-
-  <div class="overlay hidden" id="results" role="dialog" aria-labelledby="results-title">
-    <div class="card">
-      <p class="eyebrow" id="res-level">Niveau 1</p>
-      <h1 id="results-title">Panier !</h1>
-      <div class="result-stars" id="result-stars">
-        <svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>
-        <svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>
-        <svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>
+    <!-- Écran d'accueil -->
+    <main class="home" id="home">
+      <div class="brand">
+        <div class="logo" role="img" aria-label="Hoop Bounce">
+          <span class="logo-ball" aria-hidden="true"></span>
+          <span class="wordmark" aria-hidden="true"><span class="w1">HOOP</span><span class="w2">BOUNCE</span></span>
+        </div>
+        <p class="tagline" data-i18n="logo.tagline"></p>
       </div>
-      <dl class="stats">
-        <div><dt>Temps</dt><dd id="res-time">0:00.0</dd></div>
-        <div><dt>Chutes</dt><dd id="res-deaths">0</dd></div>
-        <div><dt>Record</dt><dd id="res-best">—</dd></div>
-      </dl>
-      <p class="badge hidden" id="res-record">Nouveau record !</p>
-      <button class="primary" id="btn-replay">Rejouer</button>
+
+      <button class="play pressable" id="btn-play">
+        <span class="play-icon" data-icon="play"></span>
+        <span class="play-text">
+          <span class="play-label" data-i18n="play"></span>
+          <span class="play-sub" data-i18n="play.sub"></span>
+        </span>
+        <span class="play-clip" aria-hidden="true"><span class="play-shine"></span></span>
+      </button>
+
+      <nav class="dock" aria-label="Menu">
+        <button class="tile pressable" data-nav="mondes" style="--accent: 96,190,255; --i: 0"><span class="tile-icon" data-icon="worlds"></span><span class="tile-label" data-i18n="nav.worlds"></span></button>
+        <button class="tile pressable" data-nav="modes" style="--accent: 167,139,255; --i: 1"><span class="tile-icon" data-icon="modes"></span><span class="tile-label" data-i18n="nav.modes"></span></button>
+        <button class="tile pressable" data-nav="magasin" style="--accent: 255,201,77; --i: 2"><span class="tile-icon" data-icon="shop"></span><span class="tile-label" data-i18n="nav.shop"></span></button>
+        <button class="tile pressable" data-nav="collection" style="--accent: 255,122,47; --i: 3"><span class="tile-icon" data-icon="collection"></span><span class="tile-label" data-i18n="nav.collection"></span></button>
+        <button class="tile pressable" data-nav="parametres" style="--accent: 170,190,230; --i: 4"><span class="tile-icon" data-icon="settings"></span><span class="tile-label" data-i18n="nav.settings"></span></button>
+      </nav>
+    </main>
+
+    <!-- Pages (remplies par src/menu/pages.js) -->
+    <section class="page" id="page-mondes" aria-labelledby="title-mondes"></section>
+    <section class="page" id="page-modes" aria-labelledby="title-modes"></section>
+    <section class="page" id="page-magasin" aria-labelledby="title-magasin"></section>
+    <section class="page" id="page-collection" aria-labelledby="title-collection"></section>
+    <section class="page" id="page-parametres" aria-labelledby="title-parametres"></section>
+
+    <!-- Fenêtre (confidentialité, crédits) -->
+    <div class="sheet-backdrop" id="sheet" hidden>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+        <div class="sheet-head">
+          <h2 id="sheet-title"></h2>
+          <button class="icon-btn pressable" id="sheet-close" data-icon="close"></button>
+        </div>
+        <div class="sheet-body" id="sheet-body"></div>
+      </div>
     </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
+
+  <!-- Rideau de transition vers la partie -->
+  <div class="curtain" id="curtain" aria-hidden="true"></div>
 
   <div class="rotate" id="rotate">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 2h-9A1.5 1.5 0 0 0 6 3.5v17A1.5 1.5 0 0 0 7.5 22h9a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 16.5 2zM12 20.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM16 17H8V4h8z"/></svg>
-    <p>Tourne ton téléphone<br>à l’horizontale</p>
+    <span class="rotate-icon" aria-hidden="true"></span>
+    <p data-i18n-html="rotate"></p>
   </div>
 
-  <script type="module" src="src/main.js"></script>
+  <script type="module" src="src/menu/main.js"></script>
 </body>
 </html>

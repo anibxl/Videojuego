@@ -13,6 +13,7 @@ import { Particles } from './render/particles.js';
 import { Renderer } from './render/renderer.js';
 import { Sfx } from './audio/sfx.js';
 import { Haptics } from './platform/haptics.js';
+import { Settings } from './shared/settings.js';
 
 const LEVEL = LEVEL_01;
 const R = CONFIG.ball.radius;
@@ -49,6 +50,10 @@ const visual = new BallVisual(CONFIG.feel);
 const particles = new Particles();
 const sfx = new Sfx();
 const haptics = new Haptics();
+// Réglages choisis dans le menu (volume des effets, vibrations)
+const settings = new Settings();
+sfx.setVolume(settings.get('sfx'));
+haptics.enabled = settings.get('vibration');
 
 const state = {
   debug: new URLSearchParams(location.search).has('debug'),
@@ -264,7 +269,7 @@ function restart() {
 
 function toggleSound() {
   sfx.setEnabled(!sfx.enabled);
-  haptics.enabled = sfx.enabled;
+  haptics.enabled = sfx.enabled && settings.get('vibration');
   ui.sound.classList.toggle('muted', !sfx.enabled);
   if (!sfx.enabled) sfx.wind(false);
 }
@@ -293,6 +298,7 @@ const input = new Input(canvas, { left: ui.padLeft, right: ui.padRight, bounce: 
     if (code === 'Enter' && game.state === 'won') restart();
     else if (code === 'KeyR') restart();
     else if (code === 'KeyM') toggleSound();
+    else if (code === 'Escape') location.href = 'index.html';
     else if (code === 'Backquote' || code === 'F3') state.debug = !state.debug;
   },
 });

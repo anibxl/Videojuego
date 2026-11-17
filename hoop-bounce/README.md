@@ -3,7 +3,28 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 3 (actuelle) :** nouveau gameplay et un premier niveau, « Premier dribble ».
+**Étape 4 (actuelle) :** le menu principal. Le gameplay et le niveau 1 de l'étape 3 sont inchangés
+(JOUER les lance).
+
+## Le menu principal (`index.html`)
+
+- **Décor vivant** (canvas, `src/menu/scene.js`) : salle de basket la nuit, tribunes et lumières floues,
+  bandeau LED animé, faisceaux de projecteurs, parquet verni en perspective avec reflets, panier au loin,
+  balle qui rebondit lentement (avec ombre et reflet), poussières dans la lumière, parallaxe sur 4 plans.
+- **Accueil** : logo, bouton JOUER, dock de 5 tuiles (Mondes, Modes, Magasin, Collection, Paramètres),
+  solde de pièces.
+- **Pages** : Mondes (bientôt), Modes (Trickshot, Endless, Défis quotidiens, Multijoueur — verrouillés,
+  « À venir »), Magasin (onglets et emplacements prêts, catalogue dans `src/menu/shop-data.js`),
+  Collection (état vide), Paramètres (musique, effets sonores, vibrations, langue, qualité graphique,
+  politique de confidentialité, crédits).
+- **Boutons** : pression avec léger grossissement au relâcher, éclat lumineux au point touché, son et
+  vibration. Pages qui glissent, accueil qui s'efface, bouton retour d'Android (historique) géré.
+- **Sons et musique** synthétisés (`src/menu/sound.js`) : aucun fichier, une ambiance douce en boucle.
+- **3 langues** (FR, EN, ES — `src/menu/i18n.js`), langue de l'appareil par défaut.
+- **Réglages enregistrés** sur l'appareil et partagés avec le jeu (`src/shared/settings.js`).
+- **Polices embarquées** (fonctionnent hors ligne) : Unbounded et Outfit, licence SIL OFL 1.1
+  (`assets/fonts/`).
+- 60 images/s stables, même sans carte graphique ; la qualité graphique basse allège encore le décor.
 
 ## Les commandes
 
@@ -56,7 +77,7 @@ cd hoop-bounce
 python3 -m http.server 8080
 ```
 
-Ordinateur : <http://localhost:8080>. Téléphone Android : même Wi-Fi, `http://<IP-de-l-ordinateur>:8080`
+Ordinateur : <http://localhost:8080> (le menu ; `play.html` ouvre directement la partie). Téléphone Android : même Wi-Fi, `http://<IP-de-l-ordinateur>:8080`
 dans Chrome, téléphone tenu à l'horizontale. `?debug` dans l'adresse (ou `²`) affiche les collisions et
 la zone du vent.
 
@@ -64,10 +85,14 @@ la zone du vent.
 
 ```
 hoop-bounce/
-├── index.html, css/style.css   page et interface (HUD, boutons tactiles, écran de fin)
+├── index.html, css/menu.css    menu principal
+├── play.html, css/style.css    partie (HUD, boutons tactiles, écran de fin)
+├── css/fonts.css, assets/fonts polices embarquées (licence OFL)
 ├── src/
 │   ├── config.js               ★ TOUS les réglages (physique, déplacement, puissances, caméra…)
-│   ├── main.js                 assemble tout (seul fichier qui connaît tout le monde)
+│   ├── main.js                 assemble la partie
+│   ├── menu/                   menu : décor, pages, sons, icônes, textes (FR/EN/ES), boutique
+│   ├── shared/                 réglages du joueur et version, communs au menu et au jeu
 │   ├── core/                   boucle à pas fixe (120 Hz), maths, bus d'événements
 │   ├── physics/                balle, formes de collision, éléments mobiles
 │   ├── game/                   contrôleur, éléments (porte, ventilateur, téléporteur), pièges, panier
@@ -96,7 +121,7 @@ sa règle dans `game/game.js`, son dessin dans `render/renderer.js`.
 
 ```bash
 cd hoop-bounce
-npm test                               # 39 tests : physique, commandes, puissance, éléments, niveau faisable
+npm test                               # 46 tests : physique, commandes, éléments, niveau faisable, menu
 node tools/route-check.mjs 500         # difficulté de chaque passage
 node tools/route-check.mjs 500 --save  # après une modification voulue du niveau
 ```

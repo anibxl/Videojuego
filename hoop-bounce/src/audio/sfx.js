@@ -8,6 +8,7 @@ export class Sfx {
     this.ctx = null;
     this.master = null;
     this.enabled = true;
+    this.volume = 0.8;
     this._noise = null;
     this._lastByTag = new Map();
   }
@@ -19,7 +20,7 @@ export class Sfx {
       if (!AC) return;
       this.ctx = new AC({ latencyHint: 'interactive' });
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.8;
+      this.master.gain.value = this.enabled ? this.volume : 0;
       // Compresseur léger : plusieurs sons simultanés ne saturent jamais
       const comp = this.ctx.createDynamicsCompressor();
       comp.threshold.value = -14;
@@ -34,9 +35,15 @@ export class Sfx {
     this.ctx?.suspend();
   }
 
+  /** Volume réglé dans les paramètres du menu (0..1). */
+  setVolume(v) {
+    this.volume = 0.8 * v * v;
+    if (this.master) this.master.gain.value = this.enabled ? this.volume : 0;
+  }
+
   setEnabled(on) {
     this.enabled = on;
-    if (this.master) this.master.gain.value = on ? 0.8 : 0;
+    if (this.master) this.master.gain.value = on ? this.volume : 0;
   }
 
   get ready() {
