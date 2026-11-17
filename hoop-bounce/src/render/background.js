@@ -1,157 +1,141 @@
-// Décor de fond : le ciel passe du crépuscule (bas de la tour) à la nuit étoilée (sommet).
-// Silhouettes de la ville en parallaxe, étoiles, lune. Tout est procédural (aucune image).
+// Décor de fond : nuit bleu profond, lumières floues (bokeh) et silhouettes géométriques en
+// plusieurs plans de profondeur. Tout est procédural (aucune image) et peu coûteux à dessiner.
 
-import { clamp, createRng, lerp } from '../core/math.js';
-
-// Palette du ciel selon l'altitude (0 = bas du niveau, 1 = sommet)
-const SKY = [
-  { at: 0.0, top: '#5b3a8e', bottom: '#ff9a6a' },
-  { at: 0.45, top: '#2b2167', bottom: '#8a4f9e' },
-  { at: 1.0, top: '#070a1f', bottom: '#1e1a4f' },
-];
-
-function hexToRgb(h) {
-  const n = parseInt(h.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-const SKY_RGB = SKY.map((s) => ({ at: s.at, top: hexToRgb(s.top), bottom: hexToRgb(s.bottom) }));
-
-function skyAt(t, key) {
-  for (let i = 0; i < SKY_RGB.length - 1; i++) {
-    const a = SKY_RGB[i];
-    const b = SKY_RGB[i + 1];
-    if (t <= b.at) {
-      const k = (t - a.at) / (b.at - a.at);
-      const c = a[key].map((v, j) => Math.round(lerp(v, b[key][j], k)));
-      return `rgb(${c[0]},${c[1]},${c[2]})`;
-    }
-  }
-  const c = SKY_RGB[SKY_RGB.length - 1][key];
-  return `rgb(${c[0]},${c[1]},${c[2]})`;
-}
+import { createRng } from '../core/math.js';
 
 export class Background {
-  constructor(levelHeight) {
-    this.levelHeight = levelHeight;
-    const rng = createRng(42);
+  constructor(level) {
+    const rng = createRng(7);
+    const { minX, maxX } = level.bounds;
+    const span = maxX - minX;
+    const layer = (p, color, minH, maxH, minW, maxW) => ({
+      parallax: p,
+      color,
+      shapes: makeSkyline(rng, minX * p - 25, minX * p + span * p + 35, minH, maxH, minW, maxW),
+    });
 
-    // Deux rangées d'immeubles (u, repère monde, parallaxe différente)
+    // Plans de silhouettes : plus ils sont loin, plus ils sont clairs (brume) et lents
     this.layers = [
-      { parallax: 0.35, color: '#4a3272', buildings: makeSkyline(rng, 2.2, 4.4, 0.9), windows: false },
-      { parallax: 0.55, color: '#2c1f4f', buildings: makeSkyline(rng, 1.3, 3.2, 1.3), windows: true },
+      layer(0.18, '#1b3150', 3.5, 8.5, 1.6, 3.2),
+      layer(0.34, '#162a45', 2.2, 6, 1.2, 2.6),
+      layer(0.55, '#112139', 1.2, 3.8, 1, 2.2),
     ];
-    for (const layer of this.layers) {
-      if (!layer.windows) continue;
-      layer.lights = [];
-      for (const b of layer.buildings) {
-        for (let y = 0.6; y < b.h - 0.4; y += 0.55) {
-          for (let x = 0.25; x < b.w - 0.3; x += 0.42) {
-            if (rng() < 0.32) layer.lights.push({ x: b.x + x, y, a: 0.35 + rng() * 0.5 });
-          }
-        }
-      }
-    }
 
-    // Étoiles (apparaissent avec l'altitude)
-    this.stars = Array.from({ length: 140 }, () => ({
-      x: rng() * 14 - 2.5,
-      y: 14 + rng() * (levelHeight * 0.55),
-      r: 0.012 + rng() * 0.03,
-      tw: rng() * Math.PI * 2,
+    // Lumières floues
+    const colors = ['255,190,140', '120,200,255', '255,140,170', '160,140,255'];
+    this.bokeh = Array.from({ length: 26 }, () => ({
+      x: minX * 0.25 + rng() * (span * 0.25 + 30) - 10,
+      y: 2 + rng() * 9,
+      r: 0.6 + rng() * 1.8,
+      a: 0.05 + rng() * 0.09,
+      c: colors[(rng() * colors.length) | 0],
+      phase: rng() * Math.PI * 2,
     }));
+    this._sprites = new Map();
+  }
+
+  _bokehSprite(c) {
+    let s = this._sprites.get(c);
+    if (s) return s;
+    const size = 64;
+    s = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(size, size) : document.createElement('canvas');
+    s.width = s.height = size;
+    const g = s.getContext('2d');
+    const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    grad.addColorStop(0, `rgba(${c},1)`);
+    grad.addColorStop(0.55, `rgba(${c},0.4)`);
+    grad.addColorStop(1, `rgba(${c},0)`);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, size, size);
+    this._sprites.set(c, s);
+    return s;
   }
 
   /**
-   * @param {CanvasRenderingContext2D} ctx  en espace écran (px CSS)
-   * @param {import('./camera.js').Camera} cam
+   * Ciel + halo d'horizon, précalculés en basse résolution (dégradés doux : aucune perte visible).
+   * Un seul plaquage par image au lieu de deux grands remplissages en dégradé.
    */
-  draw(ctx, cam, w, h, time) {
-    const alt = clamp(cam.y / this.levelHeight, 0, 1);
-    const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, skyAt(alt, 'top'));
-    g.addColorStop(1, skyAt(alt, 'bottom'));
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
+  _skyCanvas(w, h) {
+    if (this._sky && this._skyW === w && this._skyH === h) return this._sky;
+    const sw = Math.max(16, Math.round(w / 4));
+    const sh = Math.max(16, Math.round(h / 4));
+    const c = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(sw, sh) : document.createElement('canvas');
+    c.width = sw;
+    c.height = sh;
+    const g = c.getContext('2d');
+    const lin = g.createLinearGradient(0, 0, 0, sh);
+    lin.addColorStop(0, '#0a1222');
+    lin.addColorStop(0.55, '#12233d');
+    lin.addColorStop(1, '#1d3757');
+    g.fillStyle = lin;
+    g.fillRect(0, 0, sw, sh);
+    const glow = g.createRadialGradient(sw * 0.5, sh * 0.62, 0, sw * 0.5, sh * 0.62, Math.max(sw, sh) * 0.7);
+    glow.addColorStop(0, 'rgba(255,170,120,0.12)');
+    glow.addColorStop(1, 'rgba(255,170,120,0)');
+    g.fillStyle = glow;
+    g.fillRect(0, 0, sw, sh);
+    this._sky = c;
+    this._skyW = w;
+    this._skyH = h;
+    return c;
+  }
 
+  draw(ctx, cam, w, h, time) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(this._skyCanvas(w, h), 0, 0, w, h);
     const s = cam.scale;
 
-    // Étoiles
-    const starAlpha = clamp((alt - 0.15) / 0.4, 0, 1);
-    if (starAlpha > 0) {
-      const p = 0.5;
-      ctx.fillStyle = '#ffffff';
-      for (const st of this.stars) {
-        const sx = (st.x - cam.x) * s + w / 2;
-        const sy = h / 2 - (st.y - cam.y * p) * s;
-        if (sy < -4 || sy > h + 4) continue;
-        ctx.globalAlpha = starAlpha * (0.45 + 0.55 * Math.sin(time * 2 + st.tw) ** 2);
-        ctx.beginPath();
-        ctx.arc(sx, sy, Math.max(0.7, st.r * s), 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // Lune (vers le sommet)
-    {
-      const p = 0.55;
-      const mx = (6.6 - cam.x) * s + w / 2;
-      const my = h / 2 - (this.levelHeight * 0.59 - cam.y * p) * s;
-      const mr = 1.1 * s;
-      if (my > -mr * 4 && my < h + mr * 4) {
-        const glow = ctx.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * 4);
-        glow.addColorStop(0, 'rgba(255,240,210,0.22)');
-        glow.addColorStop(1, 'rgba(255,240,210,0)');
-        ctx.fillStyle = glow;
-        ctx.fillRect(mx - mr * 4, my - mr * 4, mr * 8, mr * 8);
-        ctx.fillStyle = '#fff3dc';
-        ctx.beginPath();
-        ctx.arc(mx, my, mr, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'rgba(200,180,160,0.25)';
-        ctx.beginPath();
-        ctx.arc(mx - mr * 0.3, my - mr * 0.2, mr * 0.22, 0, Math.PI * 2);
-        ctx.arc(mx + mr * 0.35, my + mr * 0.3, mr * 0.14, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Ville en parallaxe (posée au pied de la tour, elle disparaît en montant)
-    // La ville s'efface en montant : au-dessus des toits, il ne reste que le ciel
-    const cityAlpha = clamp(1 - (cam.y - 8) / 14, 0, 1);
-    if (cityAlpha > 0) ctx.globalAlpha = cityAlpha;
-    for (const layer of this.layers) {
-      if (cityAlpha <= 0) break;
-      const p = layer.parallax;
-      const baseY = h / 2 - (0 - cam.y * p) * s; // y écran du pied des immeubles
-      if (baseY < -2) continue;
-      ctx.fillStyle = layer.color;
-      for (const b of layer.buildings) {
-        const x = (b.x - cam.x * p) * s + w / 2;
-        ctx.fillRect(x, baseY - b.h * s, b.w * s + 1, b.h * s + h);
-      }
-      if (layer.lights) {
-        ctx.fillStyle = '#ffc978';
-        for (const l of layer.lights) {
-          const x = (l.x - cam.x * p) * s + w / 2;
-          const y = baseY - (l.y + 0.22) * s;
-          ctx.globalAlpha = l.a * cityAlpha;
-          ctx.fillRect(x, y, 0.16 * s, 0.22 * s);
-        }
-        ctx.globalAlpha = cityAlpha;
-      }
+    // Bokeh
+    ctx.globalCompositeOperation = 'lighter';
+    for (const b of this.bokeh) {
+      const p = 0.25;
+      const x = (b.x - cam.x * p) * s + w / 2;
+      const y = h / 2 - (b.y - cam.y * p) * s;
+      const r = b.r * s;
+      if (x < -r || x > w + r || y < -r || y > h + r) continue;
+      ctx.globalAlpha = b.a * (0.75 + 0.25 * Math.sin(time * 0.6 + b.phase));
+      ctx.drawImage(this._bokehSprite(b.c), x - r, y - r, r * 2, r * 2);
     }
     ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Silhouettes. Sous son pied, chaque plan n'est rempli que jusqu'au pied du plan suivant
+    // (plus proche) : on évite de repeindre trois fois le bas de l'écran.
+    for (let li = 0; li < this.layers.length; li++) {
+      const layer = this.layers[li];
+      const p = layer.parallax;
+      const baseY = h / 2 + cam.y * p * s; // pied des silhouettes
+      const next = this.layers[li + 1];
+      const fillTo = next ? Math.min(h, h / 2 + cam.y * next.parallax * s) : h;
+      ctx.fillStyle = layer.color;
+      for (const sh of layer.shapes) {
+        const x = (sh.x - cam.x * p) * s + w / 2;
+        const ww = sh.w * s;
+        if (x + ww < 0 || x > w) continue;
+        const top = baseY - sh.h * s;
+        const r = Math.min(ww * 0.5, sh.round * s);
+        ctx.beginPath();
+        ctx.moveTo(x, baseY + 1);
+        ctx.lineTo(x, top + r);
+        ctx.quadraticCurveTo(x, top, x + r, top);
+        ctx.lineTo(x + ww - r, top);
+        ctx.quadraticCurveTo(x + ww, top, x + ww, top + r);
+        ctx.lineTo(x + ww, baseY + 1);
+        ctx.closePath();
+        ctx.fill();
+      }
+      if (baseY < fillTo) ctx.fillRect(0, baseY, w, fillTo - baseY);
+    }
   }
 }
 
-function makeSkyline(rng, minH, maxH, minW) {
+function makeSkyline(rng, x0, x1, minH, maxH, minW, maxW) {
   const out = [];
-  let x = -8;
-  while (x < 18) {
-    const w = minW + rng() * 1.6;
-    out.push({ x, w, h: minH + rng() * (maxH - minH) });
-    x += w + rng() * 0.25;
+  let x = x0;
+  while (x < x1) {
+    const w = minW + rng() * (maxW - minW);
+    out.push({ x, w, h: minH + rng() * (maxH - minH), round: rng() < 0.3 ? w * 0.5 : 0.22 });
+    x += w + rng() * 0.6;
   }
   return out;
 }

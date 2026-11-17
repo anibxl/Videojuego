@@ -1,19 +1,19 @@
-// Tests des contrôles, de la jauge et des règles du niveau.
+// Tests des contrôles, de la puissance de rebond et des éléments du niveau 1.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { CONFIG } from '../src/config.js';
 import { Game } from '../src/game/game.js';
-import { DEMO_LEVEL } from '../src/game/levels/demo.js';
+import { LEVEL_01 } from '../src/game/levels/level-01.js';
 
 const DT = CONFIG.physics.fixedDt;
 const R = CONFIG.ball.radius;
 const C = CONFIG.controls;
-const JUMP = (C.bounceVelocity * C.bounceVelocity) / (2 * CONFIG.physics.gravity);
+const H = C.bounceHeights;
 
-/** Partie avec le ballon posé à (x, y = surface). */
-function gameAt(x, surfaceY = 0, levelPatch = {}) {
-  const game = new Game(CONFIG, { ...DEMO_LEVEL, spawn: { x, y: surfaceY }, ...levelPatch });
+/** Partie avec la balle posée en (x, surface). */
+function gameAt(x, surfaceY = 0) {
+  const game = new Game(CONFIG, { ...LEVEL_01, spawn: { x, y: surfaceY } });
   run(game, 0.3);
   return game;
 }
@@ -26,158 +26,215 @@ function run(game, seconds, onStep) {
   }
 }
 
+/** Avance jusqu'au sommet du saut et renvoie la hauteur atteinte. */
 function untilApex(game) {
   let guard = 0;
   do game.fixedUpdate(DT);
-  while (game.body.vy > 0 && ++guard < 1000);
+  while (game.body.vy > 0 && ++guard < 2000);
   return game.body.y;
 }
 
-test('toucher fait rebondir le ballon à la hauteur prévue', () => {
-  const g = gameAt(1.5);
+/** Avance jusqu'au prochain contact avec le sol. */
+function untilLanding(game) {
+  let guard = 0;
+  do game.fixedUpdate(DT);
+  while (!game.body.grounded && ++guard < 2000);
+}
+
+test('un appui au sol fait rebondir immédiatement à la hauteur du niveau 1', () => {
+  const g = gameAt(2.5);
   const y0 = g.body.y;
-  g.controller.requestBounce();
+  g.controller.pressBounce();
+  g.fixedUpdate(DT);
+  assert.ok(g.body.vy > 0, 'le rebond part au pas suivant');
   const apex = untilApex(g);
-  assert.ok(Math.abs(apex - y0 - JUMP) < 0.08, `hauteur ${apex - y0} attendu≈${JUMP}`);
+  assert.ok(Math.abs(apex - y0 - H[0]) < 0.08, `hauteur ${apex - y0} attendu≈${H[0]}`);
 });
 
-test('rebond en l\'air au sommet : on regagne une hauteur de saut', () => {
-  const g = gameAt(1.5);
+test('enchaîner les rebonds augmente la puissance, niveau par niveau', () => {
+  const g = gameAt(2.5);
   const y0 = g.body.y;
-  g.controller.requestBounce();
-  untilApex(g);
-  g.controller.requestBounce();
-  const apex = untilApex(g);
-  assert.ok(Math.abs(apex - y0 - 2 * JUMP) < 0.15, `hauteur ${apex - y0} attendu≈${2 * JUMP}`);
-});
-
-test('jauge : un saut + deux rebonds en l\'air, puis refus', () => {
-  const g = gameAt(1.5);
-  let bounces = 0;
-  let denied = 0;
-  g.events.on('bounce', () => bounces++);
-  g.events.on('bounceDenied', () => denied++);
-  for (let i = 0; i < 4; i++) {
-    g.controller.requestBounce();
-    untilApex(g);
+  const levels = [];
+  g.events.on('bounce', (e) => levels.push(e.level));
+  for (let i = 0; i < H.length + 1; i++) {
+    g.controller.pressBounce();
+    const apex = untilApex(g);
+    const expected = H[Math.min(i, H.length - 1)];
+    assert.ok(Math.abs(apex - y0 - expected) < 0.1, `rebond ${i + 1} : ${(apex - y0).toFixed(2)} attendu≈${expected}`);
+    untilLanding(g);
   }
-  assert.equal(bounces, C.gaugeSegments);
-  assert.equal(denied, 1);
-  assert.ok(g.controller.gauge < 1e-6);
+  assert.deepEqual(levels, [1, 2, 3, 4, 5, 5]);
 });
 
-test('jauge : se recharge progressivement une fois au sol', () => {
-  const g = gameAt(1.5);
-  g.controller.gauge = 0;
-  run(g, 0.1);
-  const partial = g.controller.gauge;
-  assert.ok(partial > 0.05 && partial < 0.5, `recharge partielle ${partial}`);
-  run(g, 1);
-  assert.equal(g.controller.gauge, 1);
-});
-
-test('jauge : pas de recharge en l\'air', () => {
-  const g = gameAt(1.5);
-  g.controller.requestBounce();
-  run(g, 0.05);
-  const after = g.controller.gauge;
-  run(g, 0.3);
-  assert.equal(g.controller.gauge, after);
-});
-
-test('déplacement très réactif au sol, arrêt rapide quand on lâche', () => {
-  const g = gameAt(1.5);
-  g.controller.setAxis(1);
-  run(g, 0.2);
-  assert.ok(g.body.vx > C.maxSpeed * 0.95, `vx après 0,2 s : ${g.body.vx}`);
-  g.controller.setAxis(-1);
-  run(g, 0.2);
-  assert.ok(g.body.vx < -C.maxSpeed * 0.6, `demi-tour : ${g.body.vx}`);
-  g.controller.setAxis(0);
-  run(g, 0.35);
-  assert.ok(Math.abs(g.body.vx) < 0.05, `arrêt : ${g.body.vx}`);
-});
-
-test('au sol, le ballon roule sans glisser', () => {
-  const g = gameAt(1.5);
-  g.controller.setAxis(1);
-  run(g, 0.4);
-  assert.ok(Math.abs(g.body.vx + g.body.angularVelocity * R) < 1e-6);
-});
-
-test('plateforme traversable : on passe par en dessous, on se pose dessus', () => {
-  // Planche à 3,3 entre x = 3 et 6 : on saute dessous avec deux rebonds
-  const g = gameAt(4.5);
-  g.controller.requestBounce();
+test('un appui en l\'air est mémorisé et part au contact', () => {
+  const g = gameAt(2.5);
+  let bounces = 0;
+  g.events.on('bounce', () => bounces++);
+  g.controller.pressBounce();
   untilApex(g);
-  g.controller.requestBounce();
+  // Descente : on appuie un peu avant de toucher le sol
+  while (g.body.y > R + 0.6) g.fixedUpdate(DT);
+  g.controller.pressBounce();
+  run(g, 0.3);
+  assert.equal(bounces, 2);
+  assert.equal(g.controller.level, 3);
+});
+
+test('un appui trop tôt en l\'air n\'est pas gardé indéfiniment', () => {
+  const g = gameAt(2.5);
+  let bounces = 0;
+  g.events.on('bounce', () => bounces++);
+  for (let i = 0; i < 3; i++) {
+    g.controller.pressBounce();
+    untilApex(g);
+    untilLanding(g);
+  }
+  // Rebond niveau 4 : on appuie juste après le décollage, l'appui expire avant l'atterrissage
+  g.controller.pressBounce();
+  run(g, 0.05);
+  g.controller.pressBounce();
   run(g, 2.5);
-  assert.ok(g.body.grounded);
-  assert.ok(Math.abs(g.body.y - (3.3 + R)) < 0.01, `posé à y=${g.body.y}`);
+  assert.equal(bounces, 4);
 });
 
-test('les piques tuent et on réapparaît au dernier point de contrôle', () => {
-  const g = gameAt(4.0, 26.4); // sur la dalle piégée, piques à x = 5,4 → 6,8
-  let deaths = 0;
-  g.events.on('death', () => deaths++);
-  g.checkpoint = { x: 1.3, y: 23.2 };
-  g.controller.setAxis(1);
-  run(g, 1.0);
-  assert.equal(deaths, 1);
-  run(g, CONFIG.feel.deathDelay + 0.1);
-  assert.equal(g.state, 'playing');
-  assert.ok(Math.abs(g.body.x - 1.3) < 0.2 && Math.abs(g.body.y - (23.2 + R)) < 0.2);
+test('sans rebondir quelques secondes, la puissance redescend progressivement', () => {
+  const g = gameAt(2.5);
+  for (let i = 0; i < 3; i++) {
+    g.controller.pressBounce();
+    untilApex(g);
+    untilLanding(g);
+  }
+  assert.equal(g.controller.level, 4);
+  const since = () => g.controller.time - g.controller.lastBounceTime;
+  while (since() < C.comboDecayDelay - 0.05) g.fixedUpdate(DT);
+  assert.equal(g.controller.level, 4, 'pas encore de baisse');
+  run(g, 0.05 + C.comboDecayStep + 0.02);
+  assert.equal(g.controller.level, 3, 'un niveau perdu');
+  run(g, 3);
+  assert.equal(g.controller.level, 1, 'retour au niveau normal');
 });
 
-test('ramasser une étoile', () => {
-  const g = gameAt(7.6, 1.2); // sur la marche, étoile à (7,8 ; 3,0)
-  let stars = 0;
-  g.events.on('star', () => stars++);
-  g.controller.requestBounce();
+test('inertie : accélération progressive, la balle continue de rouler une fois relâchée', () => {
+  const g = gameAt(96.5); // terrain plat de la fin
+  g.controller.right = true;
+  run(g, 0.15);
+  const early = g.body.vx;
+  assert.ok(early > 2 && early < C.maxSpeed * 0.6, `pas instantané : ${early}`);
+  run(g, 0.4);
+  assert.ok(g.body.vx > C.maxSpeed * 0.97, `vitesse max : ${g.body.vx}`);
+  g.controller.right = false;
+  run(g, 0.5);
+  assert.ok(g.body.vx > C.maxSpeed * 0.75, `elle garde son élan : ${g.body.vx}`);
+  assert.ok(Math.abs(g.body.vx + g.body.angularVelocity * R) < 1e-6, 'roule sans glisser');
+});
+
+test('appuyer dans l\'autre sens freine franchement', () => {
+  const g = gameAt(96.5);
+  g.controller.right = true;
   run(g, 0.6);
-  assert.equal(stars, 1);
-  assert.equal(g.starsCollected, 1);
-});
-
-test('le tremplin propulse sans consommer la jauge', () => {
-  const g = gameAt(2.0, 37.6); // à côté du tremplin
-  let pads = 0;
-  g.events.on('pad', () => pads++);
-  g.controller.setAxis(1);
+  g.controller.right = false;
+  g.controller.left = true;
   run(g, 0.25);
-  g.controller.setAxis(0);
-  let apex = 0;
-  run(g, 1.2, (gg) => (apex = Math.max(apex, gg.body.y)));
-  assert.ok(pads >= 1);
-  assert.ok(apex > 37.6 + 5.5, `apex ${apex}`);
-  assert.equal(g.controller.gauge, 1);
+  assert.ok(g.body.vx < 0, `demi-tour en 0,25 s : ${g.body.vx}`);
 });
 
-test('la plateforme mobile entraîne le ballon', () => {
-  const m = DEMO_LEVEL.movers[0];
+test('le trampoline propulse au-dessus des pics', () => {
+  const g = gameAt(24.5);
+  let tramp = 0;
+  let deaths = 0;
+  g.events.on('trampoline', () => tramp++);
+  g.events.on('death', () => deaths++);
+  g.controller.right = true;
+  run(g, 2.6);
+  assert.ok(tramp >= 1, 'trampoline utilisé');
+  assert.equal(deaths, 0, 'les pics sont franchis');
+  assert.ok(g.body.x > 35.2, `x=${g.body.x}`);
+  assert.equal(g.starsCollected, 1, 'l\'étoile au sommet du saut est ramassée');
+});
+
+test('le ventilateur fait flotter la balle jusqu\'à la corniche', () => {
+  const g = gameAt(55.6);
+  let maxY = 0;
+  // Entrer dans le souffle puis freiner, comme un joueur
+  g.controller.right = true;
+  while (g.body.x < 57.9) g.fixedUpdate(DT);
+  g.controller.right = false;
+  g.controller.left = true;
+  while (g.body.vx > 0.5) g.fixedUpdate(DT);
+  g.controller.left = false;
+  run(g, 2.5, (gg) => (maxY = Math.max(maxY, gg.body.y)));
+  assert.ok(maxY > 4.5, `hauteur atteinte ${maxY}`);
+  // Puis on glisse vers la corniche
+  g.controller.right = true;
+  run(g, 1.5);
+  assert.ok(g.body.grounded && Math.abs(g.body.y - (3.8 + R)) < 0.05, `posée sur la corniche : y=${g.body.y}`);
+});
+
+test('l\'interrupteur ouvre la porte', () => {
+  const g = gameAt(67.3, 6.15 + 0.14);
+  const door = g.level.doors[0];
+  run(g, 0.2);
+  assert.equal(g.level.switches[0].pressed, true);
+  run(g, 1);
+  assert.ok(door.isOpen, 'porte ouverte');
+});
+
+test('porte fermée : on ne passe pas ; ouverte : on passe', () => {
+  const g = gameAt(76);
+  g.controller.right = true;
+  run(g, 2);
+  assert.ok(g.body.x < 79.2, `bloquée par la porte : x=${g.body.x}`);
+  g.level.doors[0].open();
+  run(g, 2);
+  assert.ok(g.body.x > 80.5, `passée : x=${g.body.x}`);
+});
+
+test('le téléporteur fait passer le grand mur en gardant la vitesse', () => {
+  const g = gameAt(84);
+  let tp = null;
+  g.events.on('teleport', (e) => (tp = e));
+  g.controller.right = true;
+  run(g, 1.5);
+  assert.ok(tp, 'téléporté');
+  assert.ok(tp.vx > 3, `vitesse conservée : ${tp.vx}`);
+  assert.ok(g.body.x > 92, `de l'autre côté du mur : x=${g.body.x}`);
+});
+
+test('tomber dans le vide fait réapparaître au dernier point de contrôle', () => {
+  const g = gameAt(39.8);
+  let cause = null;
+  g.events.on('death', (e) => (cause = e.cause));
+  // Attendre que la plateforme soit loin, puis rouler dans le vide
+  while (g.level.movers[0].mover.offsetX < 4) g.fixedUpdate(DT);
+  g.controller.right = true;
+  run(g, 2);
+  assert.equal(cause, 'fall');
+  run(g, CONFIG.feel.deathDelay);
+  assert.ok(Math.abs(g.body.x - 39.5) < 0.6, `réapparition : x=${g.body.x}`);
+});
+
+test('la plateforme mobile transporte la balle au-dessus du vide', () => {
+  const m = LEVEL_01.movers[0];
   const g = gameAt(m.x + m.w / 2, m.y + m.h);
-  // Laisser la plateforme bouger : le ballon doit rester dessus sans rien faire
   run(g, m.path.period / 2);
   const mover = g.level.movers[0].mover;
-  const center = m.x + m.w / 2 + mover.offsetX;
-  assert.ok(g.body.grounded, 'toujours posé');
-  assert.ok(Math.abs(g.body.x - center) < 0.3, `x=${g.body.x} centre=${center}`);
+  assert.ok(g.body.grounded);
+  assert.ok(Math.abs(g.body.x - (m.x + m.w / 2 + mover.offsetX)) < 0.3);
 });
 
 test('marquer le panier termine le niveau', () => {
-  const g = gameAt(1.5);
+  const g = gameAt(2.5);
   const h = g.level.hoop;
   g.body.reset(h.centerX, h.rimY + 2);
   let win = null;
   g.events.on('win', (e) => (win = e));
   run(g, 1);
-  assert.ok(win, 'victoire');
+  assert.ok(win);
   assert.equal(g.state, 'won');
-  assert.equal(win.stars, 0);
 });
 
-test('pas de panier si le ballon passe par en dessous', () => {
-  const g = gameAt(1.5);
+test('pas de panier si la balle passe par en dessous', () => {
+  const g = gameAt(2.5);
   const h = g.level.hoop;
   g.body.reset(h.centerX, h.rimY - 1.2);
   g.body.vy = 11;
@@ -187,13 +244,12 @@ test('pas de panier si le ballon passe par en dessous', () => {
   assert.equal(win, 0);
 });
 
-test('recommencer remet tout à zéro', () => {
-  const g = gameAt(7.6, 1.2);
-  g.controller.requestBounce();
-  run(g, 0.6);
-  assert.equal(g.starsCollected, 1);
+test('recommencer remet tout à zéro (étoiles, interrupteur, porte)', () => {
+  const g = gameAt(67.3, 6.29);
+  run(g, 1);
+  assert.ok(g.level.doors[0].opening);
   g.restart();
+  assert.equal(g.level.switches[0].pressed, false);
+  assert.equal(g.level.doors[0].progress, 0);
   assert.equal(g.starsCollected, 0);
-  assert.ok(g.level.stars.every((s) => !s.collected));
-  assert.equal(g.runTime, 0);
 });

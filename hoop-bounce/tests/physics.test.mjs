@@ -20,7 +20,7 @@ function makeBall(physicsOverrides = {}) {
   });
 }
 
-function floorWorld(material = CONFIG.materials.wood) {
+function floorWorld(material = CONFIG.materials.ground) {
   const world = new PhysicsWorld({ gravity: G });
   world.add(createPolygonEdges(boxPoints(-100, -5, 200, 5), material, 'floor'));
   return world;
@@ -53,7 +53,7 @@ test('la hauteur de rebond suit e² (restitution du parquet)', () => {
     if (bounced) apex = Math.max(apex, ball.y - R);
     if (bounced && ball.vy < 0 && apex > 0.5) break;
   }
-  const e = CONFIG.materials.wood.restitution;
+  const e = CONFIG.materials.ground.restitution;
   const ratio = apex / h0;
   assert.ok(Math.abs(ratio - e * e) < 0.03, `ratio=${ratio.toFixed(3)} attendu≈${(e * e).toFixed(3)}`);
 });

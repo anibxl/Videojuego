@@ -1,33 +1,30 @@
-// Entrées, pensées pour jouer d'une seule main en mode portrait.
+// Commandes tactiles (paysage, deux pouces) et clavier.
 //
-//  - Poser le doigt n'importe où = REBONDIR (immédiatement, au toucher : aucune latence).
-//  - Garder le doigt et GLISSER à gauche / à droite = DIRIGER (comme un joystick invisible,
-//    centré là où le doigt s'est posé). Pleine vitesse après ~34 px de glissement.
-//  - Le centre du joystick suit le doigt quand on dépasse : un demi-tour est instantané,
-//    sans devoir revenir au point de départ.
-//  - Un second doigt peut taper pour rebondir pendant que le premier dirige (jeu à deux pouces).
+// L'écran est découpé en deux grandes zones, bien plus larges que les boutons dessinés :
+//  - moitié gauche : direction. Le pouce choisit ◀ ou ▶ selon qu'il est à gauche ou à droite
+//    du milieu des deux boutons. On peut glisser d'un bouton à l'autre sans lever le pouce.
+//  - moitié droite : REBOND. Chaque nouveau contact = un appui (au toucher, sans latence).
+// Plusieurs doigts sont gérés en même temps (diriger et rebondir simultanément).
 //
-// Clavier (ordinateur) : ← → / Q D / A D pour diriger, Espace / ↑ / Z / W pour rebondir.
+// Clavier : ← → (ou Q/A, D) pour diriger, Espace / ↑ / Z / W pour rebondir.
 
 export class Input {
   /**
-   * @param {HTMLElement} surface
-   * @param {object} opts  CONFIG.input
+   * @param {HTMLElement} surface      élément qui reçoit les touchers (plein écran)
+   * @param {object} ui                { left, right, bounce } : éléments des boutons dessinés
    * @param {object} h
+   * @param {(left:boolean, right:boolean) => void} h.onDirection
    * @param {() => void} h.onBounce
-   * @param {(axis:number) => void} h.onAxis
-   * @param {(code:string) => void} [h.onShortcut]
    * @param {() => void} [h.onFirstInput]
+   * @param {(code:string) => void} [h.onShortcut]
    */
-  constructor(surface, opts, h) {
+  constructor(surface, ui, h) {
     this.surface = surface;
-    this.opts = opts;
+    this.ui = ui;
     this.h = h;
     this.enabled = true;
-
-    // État du doigt qui dirige (lisible par le rendu pour afficher le repère du pouce)
-    this.steer = { id: null, originX: 0, originY: 0, x: 0, axis: 0 };
-    this.pointers = new Set();
+    this.steering = new Map(); // pointerId → -1 | 1
+    this.bouncing = new Set();
     this.keys = { left: false, right: false };
 
     surface.addEventListener('pointerdown', (e) => this._down(e), { passive: false });
@@ -41,27 +38,44 @@ export class Input {
     window.addEventListener('blur', () => this.releaseAll());
   }
 
-  get touching() {
-    return this.steer.id !== null;
-  }
-
   releaseAll() {
-    this.pointers.clear();
-    this.steer.id = null;
-    this.steer.axis = 0;
+    this.steering.clear();
+    this.bouncing.clear();
     this.keys.left = this.keys.right = false;
-    this._emitAxis();
+    this._emit();
+    this.ui.bounce.classList.remove('pressed');
   }
 
-  _emitAxis() {
-    const k = (this.keys.right ? 1 : 0) - (this.keys.left ? 1 : 0);
-    this.h.onAxis(this.steer.id !== null ? this.steer.axis : k);
+  /** Milieu horizontal des deux boutons de direction (px). */
+  _steerMid() {
+    const a = this.ui.left.getBoundingClientRect();
+    const b = this.ui.right.getBoundingClientRect();
+    return (a.right + b.left) / 2;
+  }
+
+  _isSteerZone(x) {
+    return x < window.innerWidth * 0.5;
+  }
+
+  _dirAt(x) {
+    return x < this._steerMid() ? -1 : 1;
+  }
+
+  _emit() {
+    let left = this.keys.left;
+    let right = this.keys.right;
+    for (const d of this.steering.values()) {
+      if (d < 0) left = true;
+      else right = true;
+    }
+    this.ui.left.classList.toggle('pressed', left);
+    this.ui.right.classList.toggle('pressed', right);
+    this.h.onDirection(left, right);
   }
 
   _down(e) {
     if (e.button !== undefined && e.button > 0) return;
     e.preventDefault();
-    this.pointers.add(e.pointerId);
     try {
       this.surface.setPointerCapture(e.pointerId);
     } catch {
@@ -69,71 +83,62 @@ export class Input {
     }
     this.h.onFirstInput?.();
     if (!this.enabled) return;
-    if (this.steer.id === null) {
-      this.steer.id = e.pointerId;
-      this.steer.originX = this.steer.x = e.clientX;
-      this.steer.originY = e.clientY;
-      this.steer.axis = 0;
-      this._emitAxis();
+    if (this._isSteerZone(e.clientX)) {
+      this.steering.set(e.pointerId, this._dirAt(e.clientX));
+      this._emit();
+    } else {
+      this.bouncing.add(e.pointerId);
+      this.ui.bounce.classList.add('pressed');
+      this.h.onBounce();
     }
-    this.h.onBounce();
   }
 
   _move(e) {
-    if (e.pointerId !== this.steer.id) return;
+    if (!this.steering.has(e.pointerId)) return;
     e.preventDefault();
-    const { dragFullPx, dragDeadPx } = this.opts;
-    const s = this.steer;
-    s.x = e.clientX;
-    let dx = s.x - s.originX;
-    // Le centre suit le doigt au-delà de la course : demi-tour instantané
-    if (dx > dragFullPx) {
-      s.originX = s.x - dragFullPx;
-      dx = dragFullPx;
-    } else if (dx < -dragFullPx) {
-      s.originX = s.x + dragFullPx;
-      dx = -dragFullPx;
+    const d = this._dirAt(e.clientX);
+    if (d !== this.steering.get(e.pointerId)) {
+      this.steering.set(e.pointerId, d);
+      this._emit();
     }
-    s.originY += (e.clientY - s.originY) * 0.2; // le repère suit doucement le pouce en hauteur
-    const mag = Math.abs(dx);
-    s.axis = mag <= dragDeadPx ? 0 : (Math.sign(dx) * (mag - dragDeadPx)) / (dragFullPx - dragDeadPx);
-    this._emitAxis();
   }
 
   _up(e) {
-    if (!this.pointers.delete(e.pointerId)) return;
-    if (e.pointerId === this.steer.id) {
-      this.steer.id = null;
-      this.steer.axis = 0;
-      this._emitAxis();
-    }
+    if (this.steering.delete(e.pointerId)) this._emit();
+    if (this.bouncing.delete(e.pointerId) && this.bouncing.size === 0) this.ui.bounce.classList.remove('pressed');
   }
 
   _keyDown(e) {
-    const code = e.code;
-    if (code === 'ArrowLeft' || code === 'KeyA' || code === 'KeyQ') this.keys.left = true;
-    else if (code === 'ArrowRight' || code === 'KeyD') this.keys.right = true;
-    else if (code === 'Space' || code === 'ArrowUp' || code === 'KeyW' || code === 'KeyZ') {
+    const c = e.code;
+    if (c === 'ArrowLeft' || c === 'KeyA' || c === 'KeyQ') this.keys.left = true;
+    else if (c === 'ArrowRight' || c === 'KeyD') this.keys.right = true;
+    else if (c === 'Space' || c === 'ArrowUp' || c === 'KeyW' || c === 'KeyZ') {
       e.preventDefault();
       if (!e.repeat) {
         this.h.onFirstInput?.();
-        if (this.enabled) this.h.onBounce();
+        if (this.enabled) {
+          this.ui.bounce.classList.add('pressed');
+          this.h.onBounce();
+        }
       }
       return;
     } else {
-      if (!e.repeat) this.h.onShortcut?.(code);
+      if (!e.repeat) this.h.onShortcut?.(c);
       return;
     }
     e.preventDefault();
     this.h.onFirstInput?.();
-    this._emitAxis();
+    if (this.enabled) this._emit();
   }
 
   _keyUp(e) {
-    const code = e.code;
-    if (code === 'ArrowLeft' || code === 'KeyA' || code === 'KeyQ') this.keys.left = false;
-    else if (code === 'ArrowRight' || code === 'KeyD') this.keys.right = false;
-    else return;
-    this._emitAxis();
+    const c = e.code;
+    if (c === 'ArrowLeft' || c === 'KeyA' || c === 'KeyQ') this.keys.left = false;
+    else if (c === 'ArrowRight' || c === 'KeyD') this.keys.right = false;
+    else if (c === 'Space' || c === 'ArrowUp' || c === 'KeyW' || c === 'KeyZ') {
+      if (this.bouncing.size === 0) this.ui.bounce.classList.remove('pressed');
+      return;
+    } else return;
+    this._emit();
   }
 }

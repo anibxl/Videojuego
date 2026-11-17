@@ -1,4 +1,4 @@
-> **Nouveau projet :** [`hoop-bounce/`](hoop-bounce/) — jeu mobile Android en portrait, à une main (ballon de basket à faire grimper jusqu'au panier). Voir son README.
+> **Nouveau projet :** [`hoop-bounce/`](hoop-bounce/) — jeu de plateforme mobile Android à l'horizontale : faire rebondir une balle de basket jusqu'au panier. Voir son README.
 
 # 🎟️ RascaManía
 

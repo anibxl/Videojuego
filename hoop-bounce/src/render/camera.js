@@ -1,8 +1,8 @@
-// Caméra 2D pour un niveau vertical.
-//  - toute la largeur du niveau est visible : on ne perd jamais un mur de vue
-//  - suit le ballon verticalement avec un lissage critique (aucun à-coup, aucun dépassement)
-//  - anticipe vers le haut quand on monte : on voit la prochaine plateforme
-//  - zone morte : les petits rebonds au sol ne secouent pas l'image
+// Caméra 2D pour un niveau horizontal.
+//  - suit la balle avec un lissage critique (aucun à-coup, aucun dépassement)
+//  - anticipe dans le sens de la course : on voit ce qui arrive
+//  - zone morte verticale : les rebonds ne secouent pas l'image
+//  - reste dans les limites du niveau
 //  - secousses sur les gros impacts
 
 import { clamp, damp, smoothDamp } from '../core/math.js';
@@ -17,7 +17,6 @@ export class Camera {
     this.look = 0;
     this.trauma = 0;
     this.time = 0;
-
     this.x = 0;
     this.y = 0;
     this.scale = 40; // pixels CSS par unité
@@ -28,7 +27,7 @@ export class Camera {
   setViewport(width, height) {
     this.width = width;
     this.height = height;
-    this.scale = Math.min(width / this.cfg.viewWidth, height / this.cfg.minViewHeight);
+    this.scale = Math.min(height / this.cfg.viewHeight, width / this.cfg.minViewWidth);
   }
 
   get halfWidth() {
@@ -40,7 +39,7 @@ export class Camera {
   }
 
   snap(x, y, bounds) {
-    this.focusY = y + this.cfg.focusOffsetY;
+    this.focusY = y + this.cfg.focusOffsetY - 0.4;
     this.look = 0;
     const t = this._clamp(x, this.focusY, bounds);
     this.sx.value = this.x = t.x;
@@ -54,22 +53,24 @@ export class Camera {
 
   /**
    * @param {number} dt
-   * @param {{x:number, y:number, vy:number}} target
-   * @param {{minX:number,maxX:number,minY:number,maxY:number}} bounds
-   * @param {number} [smoothScale]  < 1 : suit plus vite (réapparition)
+   * @param {{x:number, y:number, vx:number, groundY:number}} target  groundY = dernière surface touchée
+   * @param {object} bounds
+   * @param {number} [smoothScale]  < 1 : suit plus vite (réapparition, téléportation)
    */
   update(dt, target, bounds, smoothScale = 1) {
     const c = this.cfg;
     this.time += dt;
 
-    const lookTarget = clamp(target.vy * c.lookAheadUp, -c.lookAheadMaxDown, c.lookAheadMaxUp);
+    const lookTarget = clamp(target.vx * c.lookAhead, -c.maxLookAhead, c.maxLookAhead);
     this.look = damp(this.look, lookTarget, 1 / c.lookAheadSmooth, dt);
 
-    const ty = target.y + c.focusOffsetY + this.look;
+    // Cadrage vertical façon jeu de plateforme : on garde la surface où l'on se trouve bien
+    // visible (au-dessus des commandes), et l'on ne suit la balle que si elle monte haut.
+    const ty = Math.max(target.groundY + c.groundLift, target.y - c.followAbove);
     if (ty > this.focusY + c.verticalDeadZone) this.focusY = ty - c.verticalDeadZone;
     else if (ty < this.focusY - c.verticalDeadZone) this.focusY = ty + c.verticalDeadZone;
 
-    const t = this._clamp(target.x, this.focusY, bounds);
+    const t = this._clamp(target.x + this.look, this.focusY, bounds);
     smoothDamp(this.sx, t.x, c.smoothTimeX * smoothScale, dt);
     smoothDamp(this.sy, t.y, c.smoothTimeY * smoothScale, dt);
 
@@ -94,14 +95,5 @@ export class Camera {
 
   worldToScreenY(y) {
     return this.height / 2 - (y - this.y) * this.scale;
-  }
-
-  /** Limites visibles en unités du monde. */
-  get top() {
-    return this.y + this.halfHeight;
-  }
-
-  get bottom() {
-    return this.y - this.halfHeight;
   }
 }

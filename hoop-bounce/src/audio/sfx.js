@@ -117,11 +117,6 @@ export class Sfx {
         this._tone(170 * vary, 90, 0.12, 0.55 * vol, 'sine');
         this._noiseBurst(0.09, 0.35 * vol, 'bandpass', 900, 1.2);
         break;
-      case 'bumper':
-        if (!this._throttle('bumper', 0.06)) return;
-        this._tone(260 * vary, 520 * vary, 0.18, 0.35 * vol, 'triangle');
-        this._tone(150, 70, 0.1, 0.5 * vol, 'sine');
-        break;
       default:
         if (!this._throttle('ground', 0.045)) return;
         // Ballon de basket sur parquet : « bong » grave + claquement du cuir
@@ -131,25 +126,73 @@ export class Sfx {
     }
   }
 
-  /** Rebond du joueur : « pop » élastique. En l'air, chaque rebond monte d'un ton. */
-  bounce(air, index) {
+  /** Rebond du joueur : « pop » élastique, plus aigu et plus ample à chaque niveau de puissance. */
+  bounce(level) {
     if (!this.ready) return;
-    const pitch = air ? Math.pow(1.19, index) : 1; // tierce mineure à chaque rebond en l'air
-    this._tone(210 * pitch, 520 * pitch, 0.11, 0.35, 'sine');
-    this._tone(105 * pitch, 60, 0.12, air ? 0.25 : 0.55, 'sine');
-    this._noiseBurst(0.05, air ? 0.12 : 0.2, 'bandpass', 1800 * pitch, 1.2);
+    const pitch = Math.pow(1.122, level - 1); // un ton de plus par niveau
+    this._tone(200 * pitch, 470 * pitch, 0.1 + level * 0.012, 0.3, 'sine');
+    this._tone(110, 58, 0.13, 0.5, 'sine');
+    this._noiseBurst(0.05, 0.18, 'bandpass', 1700 * pitch, 1.2);
+    if (level >= 5) this._tone(1320, 1320, 0.18, 0.05, 'triangle', 0.03);
   }
 
-  /** Jauge vide : son sourd et court, sans agressivité. */
-  denied() {
-    if (!this.ready || !this._throttle('denied', 0.12)) return;
-    this._tone(150, 110, 0.12, 0.25, 'triangle');
+  /** La puissance redescend d'un cran. */
+  powerDown() {
+    if (!this.ready) return;
+    this._tone(620, 520, 0.07, 0.03, 'sine');
   }
 
-  /** Un cran de jauge vient de se recharger. */
-  gaugeTick(full) {
+  trampoline() {
     if (!this.ready) return;
-    this._tone(full ? 1320 : 990, full ? 1320 : 990, 0.06, 0.035, 'sine');
+    this._tone(160, 640, 0.24, 0.35, 'triangle');
+    this._tone(90, 60, 0.15, 0.4, 'sine');
+    this._noiseBurst(0.16, 0.12, 'bandpass', 700, 1.5, 2600);
+  }
+
+  teleport() {
+    if (!this.ready) return;
+    this._tone(300, 1500, 0.22, 0.12, 'sine');
+    this._tone(1500, 600, 0.3, 0.08, 'triangle', 0.18);
+    this._noiseBurst(0.35, 0.1, 'bandpass', 2000, 4, 5000);
+  }
+
+  switchOn() {
+    if (!this.ready) return;
+    this._tone(900, 900, 0.05, 0.12, 'square');
+    this._tone(1350, 1350, 0.12, 0.08, 'triangle', 0.06);
+  }
+
+  door() {
+    if (!this.ready) return;
+    this._noiseBurst(0.8, 0.14, 'lowpass', 300, 1, 900, 0.15);
+    this._tone(70, 95, 0.7, 0.2, 'sawtooth', 0.15);
+  }
+
+  /** Souffle continu du ventilateur, tant que la balle est dedans. */
+  wind(on) {
+    if (!this.ctx) return;
+    if (on && !this._wind && this.ready) {
+      const src = this.ctx.createBufferSource();
+      src.buffer = this._noise;
+      src.loop = true;
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 900;
+      f.Q.value = 0.7;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.12, this.ctx.currentTime + 0.25);
+      src.connect(f).connect(g).connect(this.master);
+      src.start();
+      this._wind = { src, g };
+    } else if (!on && this._wind) {
+      const { src, g } = this._wind;
+      g.gain.cancelScheduledValues(this.ctx.currentTime);
+      g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), this.ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.3);
+      src.stop(this.ctx.currentTime + 0.32);
+      this._wind = null;
+    }
   }
 
   star(count) {
@@ -166,11 +209,7 @@ export class Sfx {
     this._tone(784, 784, 0.3, 0.09, 'triangle', 0.09);
   }
 
-  pad() {
-    if (!this.ready) return;
-    this._tone(180, 720, 0.22, 0.32, 'triangle');
-    this._noiseBurst(0.18, 0.15, 'bandpass', 600, 1.5, 2400);
-  }
+
 
   death() {
     if (!this.ready) return;
