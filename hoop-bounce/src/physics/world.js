@@ -8,6 +8,18 @@ export class PhysicsWorld {
     this.gravity = gravity;
     /** @type {import('./colliders.js').Capsule[]} */
     this.colliders = [];
+    /** @type {import('./mover.js').Mover[]} */
+    this.movers = [];
+  }
+
+  addMover(mover) {
+    this.movers.push(mover);
+    this.add(mover.colliders);
+  }
+
+  /** Place les éléments mobiles à l'instant t (avant chaque pas du ballon). */
+  update(t) {
+    for (const m of this.movers) m.update(t);
   }
 
   add(...colliders) {

@@ -131,23 +131,63 @@ export class Sfx {
     }
   }
 
-  launch(charge) {
+  /** Rebond du joueur : « pop » élastique. En l'air, chaque rebond monte d'un ton. */
+  bounce(air, index) {
     if (!this.ready) return;
-    this._noiseBurst(0.12 + charge * 0.12, 0.12 + 0.2 * charge, 'bandpass', 500, 1.5, 1600 + 1200 * charge);
+    const pitch = air ? Math.pow(1.19, index) : 1; // tierce mineure à chaque rebond en l'air
+    this._tone(210 * pitch, 520 * pitch, 0.11, 0.35, 'sine');
+    this._tone(105 * pitch, 60, 0.12, air ? 0.25 : 0.55, 'sine');
+    this._noiseBurst(0.05, air ? 0.12 : 0.2, 'bandpass', 1800 * pitch, 1.2);
   }
 
-  chargeMax() {
-    if (!this.ready) return;
-    this._tone(1180, 1180, 0.08, 0.06, 'sine');
+  /** Jauge vide : son sourd et court, sans agressivité. */
+  denied() {
+    if (!this.ready || !this._throttle('denied', 0.12)) return;
+    this._tone(150, 110, 0.12, 0.25, 'triangle');
   }
 
-  score(swish) {
+  /** Un cran de jauge vient de se recharger. */
+  gaugeTick(full) {
     if (!this.ready) return;
-    if (swish) this._noiseBurst(0.35, 0.3, 'bandpass', 5000, 0.9, 2500);
-    else this._noiseBurst(0.22, 0.18, 'bandpass', 3500, 0.9, 2200);
-    const base = swish ? 784 : 659;
-    this._tone(base, base, 0.25, 0.1, 'triangle', 0.05);
-    this._tone(base * 1.5, base * 1.5, 0.35, 0.09, 'triangle', 0.13);
-    if (swish) this._tone(base * 2, base * 2, 0.45, 0.07, 'triangle', 0.21);
+    this._tone(full ? 1320 : 990, full ? 1320 : 990, 0.06, 0.035, 'sine');
   }
+
+  star(count) {
+    if (!this.ready) return;
+    const base = [880, 1047, 1319][Math.min(2, count - 1)] ?? 880;
+    this._tone(base, base, 0.18, 0.12, 'triangle');
+    this._tone(base * 1.5, base * 1.5, 0.3, 0.1, 'triangle', 0.07);
+    this._tone(base * 2, base * 2, 0.4, 0.05, 'sine', 0.12);
+  }
+
+  checkpoint() {
+    if (!this.ready) return;
+    this._tone(523, 523, 0.15, 0.09, 'triangle');
+    this._tone(784, 784, 0.3, 0.09, 'triangle', 0.09);
+  }
+
+  pad() {
+    if (!this.ready) return;
+    this._tone(180, 720, 0.22, 0.32, 'triangle');
+    this._noiseBurst(0.18, 0.15, 'bandpass', 600, 1.5, 2400);
+  }
+
+  death() {
+    if (!this.ready) return;
+    this._noiseBurst(0.3, 0.5, 'lowpass', 1800, 0.8, 300);
+    this._tone(320, 70, 0.35, 0.4, 'sawtooth');
+  }
+
+  win(swish) {
+    if (!this.ready) return;
+    this._noiseBurst(swish ? 0.4 : 0.25, 0.3, 'bandpass', 5000, 0.9, 2500);
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((n, i) => this._tone(n, n, 0.35, 0.11, 'triangle', 0.08 + i * 0.09));
+    this._tone(1568, 1568, 0.8, 0.05, 'sine', 0.45);
+  }
+
+
+
+
+
 }

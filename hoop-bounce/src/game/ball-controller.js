@@ -1,138 +1,120 @@
-// Transforme l'intention du joueur (appuyer / relâcher) en saut du ballon.
+// Transforme les intentions du joueur en mouvement du ballon.
+//
+// Trois actions seulement :
+//  - aller à gauche / à droite : `axis` entre -1 et 1 ;
+//  - rebondir : `requestBounce()`.
 //
 // Règles :
-//  - Appuyer démarre la charge ; plus on maintient, plus le saut sera haut.
-//  - Relâcher demande un saut. S'il touche le sol (ou vient de le quitter : « coyote time »),
-//    le ballon part immédiatement. Sinon la demande est gardée un court instant et
-//    le saut part au prochain contact (« input buffer ») : aucune pression n'est perdue.
-//  - Pendant la charge, le ballon est « pressé » contre le sol : ses rebonds sont amortis,
-//    il se pose vite et le saut part d'une position stable et prévisible.
-//  - Le saut remplace la vitesse du ballon : même charge = même trajectoire. C'est ce qui rend
-//    le contrôle précis et apprenable.
+//  - Le déplacement est très réactif : forte accélération, demi-tour encore plus vif.
+//    En l'air on garde son élan (freinage faible), au sol on s'arrête vite.
+//  - Au sol, le ballon roule sans glisser (sa rotation suit exactement sa vitesse).
+//  - Un rebond donne toujours la même poussée verticale : c'est prévisible et apprenable.
+//    Si l'on monte déjà, la poussée s'ajoute en partie (taper au sommet du saut rapporte le plus).
+//  - Chaque rebond consomme un cran de jauge. La jauge se recharge progressivement
+//    quand le ballon est au sol ou sur une plateforme.
 //
 // Toute la logique tourne dans le pas fixe de la simulation : elle est déterministe.
 
-import { clamp, lerp } from '../core/math.js';
+import { clamp } from '../core/math.js';
 
 export class BallController {
   /**
    * @param {import('../physics/ball-body.js').BallBody} body
    * @param {object} controls  CONFIG.controls
-   * @param {number} gravity
    * @param {import('../core/events.js').EventBus} [events]
    */
-  constructor(body, controls, gravity, events = null) {
+  constructor(body, controls, events = null) {
     this.body = body;
     this.cfg = controls;
-    this.gravity = gravity;
     this.events = events;
-
-    this.charging = false;
-    this.chargeTime = 0;
-    this.direction = 1; // +1 droite, -1 gauche
-    this._reachedMax = false;
-
-    this._pendingCharge = -1; // charge en attente de lancement (-1 = aucune)
-    this._pendingTtl = 0;
-    this._cooldown = 0;
-
-    const a = (controls.launchAngleDeg * Math.PI) / 180;
-    this._tanAngle = Math.tan(a);
+    this.cost = 1 / controls.gaugeSegments;
+    this.reset();
   }
 
   reset() {
-    this.charging = false;
-    this.chargeTime = 0;
-    this._pendingCharge = -1;
-    this._cooldown = 0;
-    this._reachedMax = false;
-    this.body.groundBounceScale = 1;
+    this.axis = 0;
+    this.gauge = 1;
+    this.airBounces = 0;
+    this._bounceQueued = false;
+    this.enabled = true;
   }
 
-  /** Début d'appui. */
-  press(direction) {
-    this.charging = true;
-    this.chargeTime = 0;
-    this._reachedMax = false;
-    this._pendingCharge = -1; // un nouvel appui annule une demande en attente
-    this.setDirection(direction);
-    this.events?.emit('chargeStart', { direction: this.direction });
+  setAxis(axis) {
+    this.axis = clamp(axis, -1, 1);
   }
 
-  setDirection(direction) {
-    if (direction === 1 || direction === -1) this.direction = direction;
+  requestBounce() {
+    this._bounceQueued = true;
   }
 
-  /** Fin d'appui : demande de saut avec la charge accumulée. */
-  release() {
-    if (!this.charging) return;
-    this.charging = false;
-    this._pendingCharge = this.charge;
-    this._pendingTtl = this.cfg.launchBuffer;
+  /** Nombre de rebonds disponibles tout de suite. */
+  get bouncesAvailable() {
+    return Math.floor(this.gauge / this.cost + 1e-6);
   }
 
-  /** Annule l'appui sans sauter (ex. : l'application passe en arrière-plan). */
-  cancel() {
-    this.charging = false;
-    this._pendingCharge = -1;
-  }
-
-  /** Charge mise en forme, entre 0 et 1. */
-  get charge() {
-    const c = clamp(this.chargeTime / this.cfg.chargeTime, 0, 1);
-    return 1 - Math.pow(1 - c, this.cfg.chargeCurve);
-  }
-
-  get hasPendingLaunch() {
-    return this._pendingCharge >= 0;
-  }
-
-  get canLaunch() {
-    return this._cooldown <= 0 && this.body.timeSinceGrounded <= this.cfg.coyoteTime;
-  }
-
-  /** Vitesse de lancement pour une charge (0..1) et une direction. */
-  launchVelocity(charge, direction, out = { vx: 0, vy: 0, w: 0 }) {
-    const h = lerp(this.cfg.minJumpHeight, this.cfg.maxJumpHeight, clamp(charge, 0, 1));
-    const vy = Math.sqrt(2 * this.gravity * h);
-    out.vx = (direction * vy) / this._tanAngle;
-    out.vy = vy;
-    out.w = direction * this.cfg.backspin; // effet arrière
-    return out;
+  get onGround() {
+    return this.body.timeSinceGrounded <= this.cfg.groundGrace;
   }
 
   /** À appeler à chaque pas fixe, AVANT body.step(). */
   fixedUpdate(dt) {
-    if (this._cooldown > 0) this._cooldown -= dt;
-
-    if (this.charging) {
-      this.chargeTime += dt;
-      if (!this._reachedMax && this.chargeTime >= this.cfg.chargeTime) {
-        this._reachedMax = true;
-        this.events?.emit('chargeMax', {});
-      }
+    const b = this.body;
+    const c = this.cfg;
+    if (!this.enabled) {
+      this._bounceQueued = false;
+      return;
     }
-    this.body.groundBounceScale = this.charging ? this.cfg.chargeBounceScale : 1;
+    const grounded = this.onGround;
+    if (b.grounded) this.airBounces = 0;
 
-    if (this._pendingCharge >= 0) {
-      if (this.canLaunch) {
-        this._launch(this._pendingCharge);
+    // ── Déplacement horizontal (relatif à la surface si l'on est sur une plateforme mobile)
+    const baseVx = grounded ? b.groundVx : 0;
+    const rel = b.vx - baseVx;
+    const target = this.axis * c.maxSpeed;
+    let accel;
+    if (this.axis !== 0) {
+      accel = grounded ? c.groundAccel : c.airAccel;
+      if (rel * this.axis < 0) accel *= c.turnBoost;
+      accel *= Math.abs(this.axis) < 1 ? 0.6 + 0.4 * Math.abs(this.axis) : 1;
+    } else {
+      accel = grounded ? c.groundBrake : c.airBrake;
+    }
+    const maxDelta = accel * dt;
+    const newRel = rel + clamp(target - rel, -maxDelta, maxDelta);
+    b.vx = baseVx + newRel;
+    // Au sol : roulement parfait, la rotation suit la vitesse
+    if (b.grounded) b.angularVelocity = -newRel / b.radius;
+
+    // ── Recharge de la jauge
+    if (b.timeSinceGrounded <= c.rechargeGrace && this.gauge < 1) {
+      const before = this.bouncesAvailable;
+      this.gauge = Math.min(1, this.gauge + c.rechargeRate * dt);
+      if (this.bouncesAvailable > before) this.events?.emit('gaugeSegment', { count: this.bouncesAvailable, full: this.gauge >= 1 });
+    }
+
+    // ── Rebond
+    if (this._bounceQueued) {
+      this._bounceQueued = false;
+      if (this.gauge >= this.cost - 1e-6) {
+        this.gauge = Math.max(0, this.gauge - this.cost);
+        const air = !grounded;
+        if (air) this.airBounces++;
+        const baseVy = grounded ? b.groundVy : 0;
+        const vy = b.vy - baseVy;
+        b.vy = baseVy + Math.max(c.bounceVelocity, vy + c.bounceVelocity * c.bounceCarry);
+        b.timeSinceGrounded = Infinity; // décollage : plus de recharge ni de contrôle « au sol »
+        this.events?.emit('bounce', { air, index: this.airBounces, x: b.x, y: b.y, gauge: this.gauge });
       } else {
-        this._pendingTtl -= dt;
-        if (this._pendingTtl <= 0) this._pendingCharge = -1;
+        this.events?.emit('bounceDenied', { x: b.x, y: b.y });
       }
     }
   }
 
-  _launch(charge) {
-    const v = this.launchVelocity(charge, this.direction);
+  /** Tremplin : propulsion gratuite (ne consomme pas la jauge). */
+  launchFromPad(velocity) {
     const b = this.body;
-    b.vx = v.vx;
-    b.vy = v.vy;
-    b.angularVelocity = v.w;
-    b.timeSinceGrounded = Infinity; // pas de double saut grâce au coyote time
-    this._pendingCharge = -1;
-    this._cooldown = this.cfg.launchCooldown;
-    this.events?.emit('launch', { charge, direction: this.direction, x: b.x, y: b.y });
+    b.vy = Math.max(b.vy, velocity);
+    b.timeSinceGrounded = Infinity;
+    this.airBounces = 0;
   }
 }

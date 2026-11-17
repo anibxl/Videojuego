@@ -1,96 +1,103 @@
 # 🏀 Hoop Bounce (titre provisoire)
 
-Jeu mobile pour Android : on fait rebondir un ballon de basket jusqu'au panier, avec un seul doigt.
+Jeu mobile Android, **en mode portrait, jouable d'une seule main** : on fait grimper un ballon de basket
+le long d'une tour jusqu'au panier.
 
-**Étape 1 (actuelle) :** physique, contrôles, caméra et une scène de test. Pas encore de niveaux.
+**Étape 2 (actuelle) :** nouveau gameplay et un niveau de démonstration, « La Tour ».
 
-## Tester le jeu
+## Le jeu en 5 secondes
 
-Il faut un petit serveur web local (les modules JavaScript ne se chargent pas en `file://`) :
+- **Glisser** le pouce à gauche ou à droite → le ballon roule / se dirige.
+- **Toucher** l'écran → le ballon rebondit.
+- La **jauge** au-dessus du ballon (3 crans) : chaque rebond en coûte un. Elle se recharge
+  progressivement quand le ballon est posé. Depuis le sol : un saut + deux rebonds en l'air.
+- But : **marquer dans le panier** en haut de la tour, en ramassant les **3 étoiles** et en évitant les
+  **piques** et la **scie**.
+
+## Tester
 
 ```bash
 cd hoop-bounce
 python3 -m http.server 8080
 ```
 
-- **Sur ordinateur :** ouvrir <http://localhost:8080>.
-- **Sur téléphone Android :** même Wi-Fi que l'ordinateur, ouvrir `http://<IP-de-l-ordinateur>:8080` dans Chrome,
-  puis le bouton plein écran (il bascule aussi en paysage).
-- Ajouter `?debug` à l'adresse (ou le bouton ☰, ou la touche `²`) affiche les formes de collision,
-  les normales de contact, la vitesse, la rotation et un arc de prévisualisation plus long.
+- Ordinateur : <http://localhost:8080> (fenêtre étroite pour simuler un téléphone).
+- Téléphone Android : même Wi-Fi, `http://<IP-de-l-ordinateur>:8080` dans Chrome.
+- `?debug` dans l'adresse (ou la touche `²`) : formes de collision, zones mortelles, vitesse, jauge.
 
-## Contrôles
-
-| Action | Tactile / souris | Clavier |
+| Action | Tactile | Clavier |
 |---|---|---|
-| Charger | maintenir le doigt | maintenir `←` / `→` (ou `Q`/`A`, `D`, `Espace`) |
-| Sauter | relâcher | relâcher la touche |
-| Direction | toucher à droite ou à gauche **du ballon** (on peut changer en glissant) | la flèche choisie |
-| Replacer le ballon | bouton ↺ | `R` |
+| Diriger | garder le doigt et glisser ← → | `←` `→` (ou `Q`/`A`, `D`) |
+| Rebondir | toucher (un 2ᵉ doigt marche aussi) | `Espace`, `↑`, `Z`/`W` |
+| Recommencer | bouton ↺ | `R` |
 | Son | bouton 🔊 | `M` |
 
-- Appui court = petit rebond, appui long = grand saut (pleine charge en 1 s).
-- Pendant la charge, le ballon est « pressé » au sol : il arrête de rebondir pour partir d'une position stable.
-- Relâcher en l'air n'est pas perdu : le saut part au prochain contact (jusqu'à 0,4 s après).
-  On peut aussi encore sauter 0,1 s après avoir quitté un rebord.
-- Même charge = même trajectoire : le contrôle s'apprend. L'arc pointillé montre le début de la trajectoire.
+## Détails de conception
 
-## Choix techniques
+**Contrôles à une main.** Le doigt posé n'importe où devient un joystick invisible : glisser de ~34 px
+donne la pleine vitesse, et le centre suit le doigt quand on dépasse, donc un demi-tour est instantané.
+Chaque nouveau contact fait rebondir, **au moment du toucher** (pas au relâcher) : aucune latence.
+Un repère discret s'affiche au-dessus du pouce.
 
-- **JavaScript (modules ES) + Canvas 2D**, sans dépendance ni étape de compilation.
-  L'application Android sera produite en emballant ce dossier avec **Capacitor** (étape ultérieure) :
-  vrai APK/AAB publiable sur le Google Play Store, plein écran, vibrations natives.
-- **Moteur physique maison**, conçu pour un seul ballon contre un décor statique :
-  - pas fixe de 1/120 s, indépendant de l'écran (60/90/120 Hz), rendu interpolé → fluidité parfaite ;
-  - sous-pas adaptatifs : le ballon ne parcourt jamais plus de 20 % de son rayon par sous-pas → aucune traversée ;
-  - rebond (restitution par matériau), frottement de Coulomb couplé à la rotation → le ballon roule,
-    prend de l'effet, un tir avec effet arrière « mord » la planche ;
-  - inertie d'une sphère creuse (vrai ballon de basket), gravité réaliste à l'échelle du ballon ;
-  - entièrement déterministe : la prévisualisation simule exactement le vrai saut.
-- **Sons synthétisés** en temps réel (Web Audio) : aucun fichier, chaque son dépend de la force de l'impact.
+**Sensations.**
+- Accélération forte, demi-tour encore plus vif. En l'air on garde son élan, au sol on s'arrête net.
+- Au sol, le ballon roule sans glisser.
+- Un rebond donne toujours la même poussée. Taper au **sommet** du saut rapporte le plus de hauteur
+  (taper trop tôt en gaspille) : simple à prendre en main, avec de la marge pour progresser.
+- Chaque rebond en l'air monte d'un ton, avec une onde de choc et une petite vibration.
+- Le ballon s'écrase et s'étire, le filet bouge, les pièges sont un peu plus petits que leur dessin
+  (un frôlement ne tue jamais).
+
+**Le niveau « La Tour »** (`src/game/levels/demo.js`). Chaque salle apprend une chose, puis la combine :
+1. rouler et rebondir ;
+2. rebonds en l'air et gestion de la jauge ;
+3. piques au sol et au plafond (on apprend à ne pas trop rebondir) ;
+4. tremplin, plateforme mobile, scie ;
+5. ascension finale vers le panier, sous un plafond piégé.
+
+Il y a 4 points de contrôle (drapeaux) : après une erreur, on repart du dernier atteint.
+Le temps, le nombre de chutes et les étoiles sont affichés à l'arrivée, avec le record.
 
 ## Architecture
 
 ```
 hoop-bounce/
-├── index.html, css/style.css   page et interface (score, boutons)
+├── index.html, css/style.css   page et interface (étoiles, chrono, boutons, écran de fin)
 ├── src/
-│   ├── config.js               ★ TOUS les réglages (physique, contrôles, caméra, sensations)
+│   ├── config.js               ★ TOUS les réglages (physique, contrôles, jauge, caméra, sensations)
 │   ├── main.js                 assemble tout (seul fichier qui connaît tout le monde)
 │   ├── core/                   boucle à pas fixe, maths, bus d'événements
-│   ├── physics/                moteur physique (ballon, formes de collision, monde) — sans navigateur
-│   ├── game/                   logique de jeu (contrôleur, panier, filet, niveau) — sans navigateur
-│   │   └── levels/             niveaux = simples fichiers de données
-│   ├── render/                 rendu Canvas, caméra, déformations du ballon, particules
-│   ├── audio/                  effets sonores
-│   ├── input/                  tactile, souris, clavier
+│   ├── physics/                ballon, formes de collision (dont planches traversables), éléments mobiles
+│   ├── game/                   contrôleur, jauge, pièges, panier, filet, construction du niveau
+│   │   └── levels/demo.js      le niveau = un simple fichier de données
+│   ├── render/                 rendu Canvas, décor, caméra, déformations, particules
+│   ├── audio/                  sons synthétisés (aucun fichier)
+│   ├── input/                  tactile une main + clavier
 │   └── platform/               vibrations (à remplacer par le plugin Capacitor)
 ├── tests/                      tests automatiques (Node)
-└── tools/shot-finder.mjs       outil de level design : quelles charges marquent depuis où
+└── tools/route-check.mjs       outil de level design : chaque passage est-il faisable ? à quel point ?
 ```
 
-La logique (`physics/`, `game/`) ne dépend pas du navigateur : elle émet des événements
-(`impact`, `launch`, `score`…) que la présentation (son, vibrations, effets, caméra) écoute.
+La logique (`physics/`, `game/`) ne dépend pas du navigateur. Elle émet des événements
+(`bounce`, `star`, `death`, `win`…) que la présentation (son, vibrations, effets, caméra) écoute.
 
-### Régler les sensations
+### Régler les sensations (`src/config.js`)
 
-Tout est dans `src/config.js`, commenté. Exemples :
-
-- rebond trop fort / trop mou → `materials.wood.restitution` ;
-- sauts trop hauts / trop bas → `controls.maxJumpHeight`, `controls.minJumpHeight` ;
-- charge trop rapide → `controls.chargeTime` ;
-- angle des sauts → `controls.launchAngleDeg` ;
-- caméra trop molle / trop nerveuse → `camera.smoothTimeX`, `camera.smoothTimeY` ;
-- taille du ballon à l'écran → `camera.viewMin`.
+- hauteur d'un rebond → `controls.bounceVelocity` ;
+- nombre de rebonds dans la jauge → `controls.gaugeSegments` ; vitesse de recharge → `controls.rechargeRate` ;
+- vitesse et nervosité du déplacement → `controls.maxSpeed`, `groundAccel`, `airAccel`, `airBrake` ;
+- sensibilité du glissement → `input.dragFullPx` ;
+- rebond naturel du ballon → `materials.*.restitution` ;
+- caméra → `camera.*`.
 
 ## Tests
 
 ```bash
 cd hoop-bounce
-npm test                         # ou : node --test tests/*.test.mjs
-node tools/shot-finder.mjs 15 19 # charges qui marquent depuis x = 15…19
+npm test                              # 47 tests : physique, contrôles, jauge, règles, niveau faisable
+node tools/route-check.mjs 600        # difficulté de chaque passage du niveau
+node tools/route-check.mjs 600 --save # après une modif voulue du niveau : enregistre de nouvelles solutions
 ```
 
-Les tests vérifient notamment : hauteur de rebond conforme à la restitution, ballon qui se pose sans trembler,
-aucune traversée même à 800 u/s, roulement sans glissement, déterminisme, petit/grand saut, buffer et coyote time,
-panier compté (et refusé par en dessous), prévisualisation identique au vrai saut.
+Le test `routes.test.mjs` rejoue une solution enregistrée pour chacun des 20 passages du niveau :
+si un réglage rend un passage impossible, il échoue.

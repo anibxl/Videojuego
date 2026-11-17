@@ -81,6 +81,70 @@ export class Particles {
     }
   }
 
+  /** Onde de choc circulaire (rebond en l'air, tremplin). */
+  ring(x, y, radius, color = 'rgba(255,255,255,0.9)', life = 0.35) {
+    const p = this._spawn();
+    p.alive = true;
+    p.kind = 2;
+    p.x = x;
+    p.y = y;
+    p.vx = p.vy = 0;
+    p.size = radius;
+    p.color = color;
+    p.life = p.maxLife = life;
+    p.gravity = 0;
+    p.drag = 0;
+    p.rot = 0;
+    p.vrot = 0;
+  }
+
+  /** Scintillements (étoile ramassée, point de contrôle). */
+  sparkle(x, y, count, color = '#ffe27a', speed = 3.5) {
+    const r = this.rng;
+    for (let i = 0; i < count; i++) {
+      const p = this._spawn();
+      const a = r() * Math.PI * 2;
+      const sp = speed * (0.4 + r() * 0.8);
+      p.alive = true;
+      p.kind = 3;
+      p.x = x;
+      p.y = y;
+      p.vx = Math.cos(a) * sp;
+      p.vy = Math.sin(a) * sp;
+      p.life = p.maxLife = 0.45 + r() * 0.4;
+      p.size = 0.07 + r() * 0.07;
+      p.color = color;
+      p.gravity = 2;
+      p.drag = 3;
+      p.rot = r() * Math.PI;
+      p.vrot = (r() - 0.5) * 8;
+    }
+  }
+
+  /** Le ballon éclate (piège). */
+  burst(x, y, vx, vy) {
+    const r = this.rng;
+    const colors = ['#f47a2a', '#de5f17', '#2b1206', '#ffb070'];
+    for (let i = 0; i < 26; i++) {
+      const p = this._spawn();
+      const a = r() * Math.PI * 2;
+      const sp = 3 + r() * 6;
+      p.alive = true;
+      p.kind = 1;
+      p.x = x + Math.cos(a) * 0.2;
+      p.y = y + Math.sin(a) * 0.2;
+      p.vx = Math.cos(a) * sp + vx * 0.2;
+      p.vy = Math.sin(a) * sp + vy * 0.2 + 2;
+      p.life = p.maxLife = 0.6 + r() * 0.5;
+      p.size = 0.06 + r() * 0.09;
+      p.color = colors[(r() * colors.length) | 0];
+      p.gravity = 22;
+      p.drag = 1.2;
+      p.rot = r() * Math.PI * 2;
+      p.vrot = (r() - 0.5) * 20;
+    }
+  }
+
   text(x, y, text, color = '#fff', size = 1) {
     let t = this.texts.find((tt) => !tt.alive) ?? this.texts[0];
     t.alive = true;

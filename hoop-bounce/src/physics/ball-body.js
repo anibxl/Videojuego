@@ -36,6 +36,8 @@ export class BallBody {
     this.grounded = false;
     this.groundNx = 0;
     this.groundNy = 1;
+    this.groundVx = 0; // vitesse de la surface sous le ballon (plateforme mobile)
+    this.groundVy = 0;
     this.timeSinceGrounded = Infinity;
 
     /** Contacts du dernier pas (un par forme, impact max). Objets réutilisés. */
@@ -72,6 +74,8 @@ export class BallBody {
     this.grounded = o.grounded;
     this.groundNx = o.groundNx;
     this.groundNy = o.groundNy;
+    this.groundVx = o.groundVx;
+    this.groundVy = o.groundVy;
     this.timeSinceGrounded = o.timeSinceGrounded;
     this.contactCount = 0;
   }
@@ -100,6 +104,7 @@ export class BallBody {
 
     // Forces : gravité + légers frottements de l'air
     this.vy -= world.gravity * h;
+    if (this.vy < -cfg.maxFallSpeed) this.vy = -cfg.maxFallSpeed;
     const drag = 1 - cfg.airDrag * h;
     this.vx *= drag;
     this.vy *= drag;
@@ -126,11 +131,11 @@ export class BallBody {
 
     if (groundedNow) {
       this._groundThisStep = true;
-      // Résistance au roulement : le ballon finit par s'arrêter.
+      // Résistance au roulement (relative à la surface) : le ballon finit par s'arrêter.
       const k = 1 - cfg.rollingResistance * h;
       const tx = -this.groundNy;
       const ty = this.groundNx;
-      const vt = this.vx * tx + this.vy * ty;
+      const vt = (this.vx - this.groundVx) * tx + (this.vy - this.groundVy) * ty;
       this.vx -= tx * vt * (1 - k);
       this.vy -= ty * vt * (1 - k);
       this.angularVelocity *= k;
@@ -164,8 +169,17 @@ export class BallBody {
       ny = c.ny;
     }
 
-    // 1) Correction de position : on sort le ballon de la forme.
     const pen = minDist - d;
+
+    // Plateforme traversable : seulement si l'on arrive par le dessus, en descendant,
+    // et sans être déjà enfoncé (sinon on est en train de passer à travers par en dessous).
+    if (c.oneWay) {
+      if (ny < this.cfg.groundNormalMinY) return 0;
+      if (this.vy - c.vy > 1e-6) return 0;
+      if (pen > R * this.cfg.maxSubstepTravel + 0.02) return 0;
+    }
+
+    // 1) Correction de position : on sort le ballon de la forme.
     this.x += nx * pen;
     this.y += ny * pen;
 
@@ -173,14 +187,16 @@ export class BallBody {
     if (isGround) {
       this.groundNx = nx;
       this.groundNy = ny;
+      this.groundVx = c.vx;
+      this.groundVy = c.vy;
     }
 
-    // 2) Vitesse du point de contact : v + ω × r, avec r = -n·R
+    // 2) Vitesse du point de contact relative à la surface : v + ω × r − v_surface, avec r = -n·R
     const rx = -nx * R;
     const ry = -ny * R;
     const w = this.angularVelocity;
-    const vcx = this.vx - w * ry;
-    const vcy = this.vy + w * rx;
+    const vcx = this.vx - w * ry - c.vx;
+    const vcy = this.vy + w * rx - c.vy;
     const vn = vcx * nx + vcy * ny;
 
     const tx = -ny;

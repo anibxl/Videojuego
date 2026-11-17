@@ -35,17 +35,19 @@ export class BallVisual {
     this.ny = ny;
   }
 
-  onLaunch() {
-    // Détente : le ballon passe d'écrasé à étiré
-    this.squashVel = -14;
+  /** Rebond déclenché par le joueur : écrasement vertical puis détente. */
+  onBounce() {
+    this.squash = Math.max(this.squash, this.cfg.bounceSquash);
+    this.nx = 0;
+    this.ny = 1;
+    this.squashVel = -18;
   }
 
   /**
    * @param {number} dt
    * @param {{vx:number, vy:number, grounded:boolean, groundNx:number, groundNy:number}} body
-   * @param {number} chargeSquash  écrasement cible dû à la charge (0..1 × chargeSquash)
    */
-  update(dt, body, chargeSquash) {
+  update(dt, body, chargeSquash = 0) {
     const c = this.cfg;
 
     // Ressort amorti vers la cible (0, ou écrasement de charge si l'on presse le ballon au sol)

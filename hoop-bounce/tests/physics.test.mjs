@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { CONFIG } from '../src/config.js';
 import { BallBody } from '../src/physics/ball-body.js';
 import { PhysicsWorld } from '../src/physics/world.js';
-import { createCapsule, createCircle, createPolygonEdges, boxPoints } from '../src/physics/colliders.js';
+import { createCapsule, createCircle, createPolygonEdges, createOneWay, boxPoints } from '../src/physics/colliders.js';
+import { Mover } from '../src/physics/mover.js';
 
 const DT = CONFIG.physics.fixedDt;
 const R = CONFIG.ball.radius;
@@ -25,7 +26,7 @@ function floorWorld(material = CONFIG.materials.wood) {
   return world;
 }
 
-const NO_DRAG = { airDrag: 0, angularDrag: 0, rollingResistance: 0 };
+const NO_DRAG = { airDrag: 0, angularDrag: 0, rollingResistance: 0, maxFallSpeed: Infinity };
 
 test('chute libre conforme à la formule y = y0 - g·t²/2', () => {
   const world = new PhysicsWorld({ gravity: G });
@@ -140,4 +141,48 @@ test('surfaceBelow trouve le sol et les plateformes', () => {
   assert.ok(Math.abs(world.surfaceBelow(0, 5) - 0) < 1e-9);
   assert.ok(Math.abs(world.surfaceBelow(3, 5) - 1.5) < 1e-9);
   assert.ok(Math.abs(world.surfaceBelow(3, 1) - 0) < 1e-9); // sous la plateforme
+});
+
+test('plateforme traversable : traversée par en dessous, solide par le dessus', () => {
+  const world = floorWorld();
+  world.add(createOneWay(-2, 2, 2, CONFIG.materials.plank));
+  const ball = makeBall(NO_DRAG);
+  ball.reset(0, R);
+  ball.vy = 12; // monte bien au-dessus de la planche
+  let maxY = 0;
+  for (let i = 0; i < 120 * 3; i++) {
+    ball.step(world, DT);
+    maxY = Math.max(maxY, ball.y);
+  }
+  assert.ok(maxY > 2 + R, 'le ballon doit traverser par en dessous');
+  assert.ok(Math.abs(ball.y - (2 + R)) < 1e-3, `il doit se poser sur la planche : y=${ball.y}`);
+});
+
+test('plateforme traversable : un saut trop court retombe au travers', () => {
+  const world = floorWorld();
+  world.add(createOneWay(-2, 2, 2, CONFIG.materials.plank));
+  const ball = makeBall(NO_DRAG);
+  ball.reset(0, R);
+  ball.vy = Math.sqrt(2 * G * 1.9); // le centre monte à 2,3 : le bas du ballon reste sous la planche
+  for (let i = 0; i < 120 * 3; i++) ball.step(world, DT);
+  assert.ok(ball.y < 1, `y=${ball.y}`);
+});
+
+test('surface mobile : le frottement entraîne le ballon posé', () => {
+  const world = new PhysicsWorld({ gravity: G });
+  const mover = new Mover(createPolygonEdges(boxPoints(-2, -0.5, 4, 0.5), CONFIG.materials.platform), { dx: 4, dy: 0, period: 4, phase: 0 });
+  world.addMover(mover);
+  const ball = makeBall();
+  ball.reset(0, R);
+  let t = 0;
+  for (let i = 0; i < 60; i++) {
+    t += DT;
+    world.update(t);
+    ball.step(world, DT);
+  }
+  // Physiquement, un ballon roule vers l'arrière d'un support qui accélère : il prend
+  // k/(1+k) = 40 % de sa vitesse (le contrôleur de jeu compense, voir game.test.mjs).
+  const vPlatform = world.colliders[0].vx;
+  assert.ok(ball.grounded);
+  assert.ok(Math.abs(ball.vx - 0.4 * vPlatform) < 0.1 * vPlatform, `ballon ${ball.vx} plateforme ${vPlatform}`);
 });

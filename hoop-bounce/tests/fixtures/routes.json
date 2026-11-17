@@ -1,0 +1,480 @@
+[
+ {
+  "name": "Sol → marche",
+  "wait": 216,
+  "script": {
+   "segs": [
+    {
+     "until": 0.7251098850741983,
+     "axis": 1
+    }
+   ],
+   "taps": [
+    0.5700061379000545
+   ],
+   "apex": true,
+   "apexTaps": 1,
+   "jitter": 0.033108532335609196
+  }
+ },
+ {
+  "name": "Marche → planche 1",
+  "wait": 81,
+  "script": {
+   "segs": [
+    {
+     "until": 0.053778170794248584,
+     "axis": 0
+    },
+    {
+     "until": 0.27427684254944323,
+     "axis": -1
+    }
+   ],
+   "taps": [
+    0.6749101825989783
+   ],
+   "apex": true,
+   "apexTaps": 1,
+   "jitter": 0.042438108958303924
+  }
+ },
+ {
+  "name": "Planche 1 → planche 2",
+  "wait": 119,
+  "script": {
+   "segs": [
+    {
+     "until": 0.4291724144481122,
+     "axis": 0
+    },
+    {
+     "until": 0.7223231961019336,
+     "axis": -1
+    },
+    {
+     "until": 1.2414004627615212,
+     "axis": -1
+    }
+   ],
+   "taps": [
+    1.542988087749109
+   ],
+   "apex": true,
+   "apexTaps": 2,
+   "jitter": -0.0033659950643777845
+  }
+ },
+ {
+  "name": "Planche 2 → planche 3",
+  "wait": 102,
+  "script": {
+   "segs": [
+    {
+     "until": 1.1824075463227928,
+     "axis": 0
+    },
+    {
+     "until": 2.2719693664461373,
+     "axis": 0
+    },
+    {
+     "until": 3.505723211355507,
+     "axis": 1
+    }
+   ],
+   "taps": [
+    0.7051773522980512
+   ],
+   "apex": true,
+   "apexTaps": 2,
+   "jitter": -0.014179530395194888
+  }
+ },
+ {
+  "name": "Planche 3 → corniche L1",
+  "wait": 63,
+  "script": {
+   "segs": [
+    {
+     "until": 0.6132436994463205,
+     "axis": 0
+    },
+    {
+     "until": 1.741760364547372,
+     "axis": 1
+    },
+    {
+     "until": 2.1353006693534553,
+     "axis": -1
+    }
+   ],
+   "taps": [
+    0.5009749178774655
+   ],
+   "apex": true,
+   "apexTaps": 1,
+   "jitter": -0.006015612753108144
+  }
+ },
+ {
+  "name": "L1 → planche 4 (1 rebond en l'air)",
+  "wait": 210,
+  "script": {
+   "segs": [
+    {
+     "until": 0.34350286526605484,
+     "axis": 1
+    },
+    {
+     "until": 1.0362028166651727,
+     "axis": -1
+    }
+   ],
+   "taps": [
+    0.8126405911985786,
+    0.8908048035111279,
+    1.644117563450709
+   ],
+   "apex": false,
+   "apexTaps": 1,
+   "jitter": 0.04398122359067201
+  }
+ },
+ {
+  "name": "Planche 4 → planche 5",
+  "wait": 97,
+  "script": {
+   "segs": [
+    {
+     "until": 0.8915446810424328,
+     "axis": 0
+    },
+    {
+     "until": 1.446775188483298,
+     "axis": 1
+    },
+    {
+     "until": 1.9837094265036286,
+     "axis": 1
+    }
+   ],
+   "taps": [
+    1.2269317178055645
+   ],
+   "apex": true,
+   "apexTaps": 1,
+   "jitter": 0.04781391251832247
+  }
+ },
+ {
+  "name": "Planche 5 → L2 (2 rebonds en l'air)",
+  "wait": 62,
+  "script": {
+   "segs": [
+    {
+     "until": 0.9898385412059725,
+     "axis": 0
+    },
+    {
+     "until": 1.6001110889948906,
+     "axis": -1
+    }
+   ],
+   "taps": [
+    0.4743582403287292
+   ],
+   "apex": true,
+   "apexTaps": 2,
+   "jitter": -0.055421842793002725
+  }
+ },
+ {
+  "name": "L2 → dalle (avant les piques)",
+  "wait": 133,
+  "script": {
+   "segs": [
+    {
+     "until": 0.8087592994794249,
+     "axis": 1
+    },
+    {
+     "until": 2.0097220906056465,
+     "axis": 0
+    },
+    {
+     "until": 2.712389663234353,
+     "axis": 0
+    }
+   ],
+   "taps": [
+    0.020234341360628606
+   ],
+   "apex": true,
+   "apexTaps": 2,
+   "jitter": -0.056058688480406994
+  }
+ },
+ {
+  "name": "Dalle : saut par-dessus les piques",
+  "wait": 119,
+  "script": {
+   "segs": [
+    {
+     "until": 0.8477854548953474,
+     "axis": 0
+    },
+    {
+     "until": 1.4623325673863292,
+     "axis": 1
+    }
+   ],
+   "taps": [
+    0.6224590940400958
+   ],
+   "apex": false,
+   "apexTaps": 2,
+   "jitter": -0.016688843686133624
+  }
+ },
+ {
+  "name": "Dalle → planche 6",
+  "wait": 70,
+  "script": {
+   "segs": [
+    {
+     "until": 0.47026849705725904,
+     "axis": 0
+    },
+    {
+     "until": 0.9335287700407207,
+     "axis": 1
+    }
+   ],
+   "taps": [
+    0.17915711025707426
+   ],
+   "apex": false,
+   "apexTaps": 1,
+   "jitter": 0.04343252258375287
+  }
+ },
+ {
+  "name": "Planche 6 → dessus du plafond piégé",
+  "wait": 162,
+  "script": {
+   "segs": [
+    {
+     "until": 0.6929494733922184,
+     "axis": 1
+    },
+    {
+     "until": 1.2759157369844616,
+     "axis": 0
+    },
+    {
+     "until": 2.207159607298672,
+     "axis": -1
+    }
+   ],
+   "taps": [
+    0.04273018981330097,
+    1.076764462888241
+   ],
+   "apex": false,
+   "apexTaps": 1,
+   "jitter": 0.01294867462478578
+  }
+ },
+ {
+  "name": "Plafond → planche 7",
+  "wait": 193,
+  "script": {
+   "segs": [
+    {
+     "until": 0.9476753205060959,
+     "axis": -1
+    },
+    {
+     "until": 1.5712859969586135,
+     "axis": 1
+    },
+    {
+     "until": 2.253927229810506,
+     "axis": 0
+    }
+   ],
+   "taps": [
+    0.055972012272104625,
+    1.278249702975154
+   ],
+   "apex": false,
+   "apexTaps": 2,
+   "jitter": -0.03760589132085442
+  }
+ },
+ {
+  "name": "Planche 7 → planche 8",
+  "wait": 195,
+  "script": {
+   "segs": [
+    {
+     "until": 0.5123669991269708,
+     "axis": -1
+    },
+    {
+     "until": 0.6243226385675371,
+     "axis": 1
+    },
+    {
+     "until": 1.5340357004664837,
+     "axis": 1
+    }
+   ],
+   "taps": [
+    1.0497535566799343
+   ],
+   "apex": false,
+   "apexTaps": 2,
+   "jitter": 0.03419344031251967
+  }
+ },
+ {
+  "name": "Planche 8 → L3",
+  "wait": 59,
+  "script": {
+   "segs": [
+    {
+     "until": 0.9697925793938339,
+     "axis": 0
+    },
+    {
+     "until": 1.609658860694617,
+     "axis": -1
+    },
+    {
+     "until": 1.712870481982827,
+     "axis": 1
+    }
+   ],
+   "taps": [
+    0.18012239104136826
+   ],
+   "apex": true,
+   "apexTaps": 1,
+   "jitter": 0.010576747823506594
+  }
+ },
+ {
+  "name": "L3 → plateforme mobile (tremplin)",
+  "wait": 39,
+  "script": {
+   "segs": [
+    {
+     "until": 1.0302711704745888,
+     "axis": 1
+    },
+    {
+     "until": 2.1093295687809586,
+     "axis": 1
+    }
+   ],
+   "taps": [
+    1.303369330847636
+   ],
+   "apex": true,
+   "apexTaps": 1,
+   "jitter": -0.058979531005024906
+  }
+ },
+ {
+  "name": "Plateforme mobile → L4 (scie)",
+  "wait": 315,
+  "script": {
+   "segs": [
+    {
+     "until": 1.0683785748668015,
+     "axis": 1
+    }
+   ],
+   "taps": [
+    0.22173218224197627,
+    0.9521180420648307,
+    2.0398627204354853
+   ],
+   "apex": false,
+   "apexTaps": 2,
+   "jitter": 0.004716500155627727
+  }
+ },
+ {
+  "name": "L4 → planche 9",
+  "wait": 48,
+  "script": {
+   "segs": [
+    {
+     "until": 0.7357170474715531,
+     "axis": 1
+    },
+    {
+     "until": 0.9047553524374962,
+     "axis": -1
+    }
+   ],
+   "taps": [
+    0.31304123084992175,
+    0.8739527084864677,
+    2.0422711102757605
+   ],
+   "apex": false,
+   "apexTaps": 2,
+   "jitter": -0.014886151207610963
+  }
+ },
+ {
+  "name": "Planche 9 → planche 10",
+  "wait": 91,
+  "script": {
+   "segs": [
+    {
+     "until": 0.8950164851732553,
+     "axis": 1
+    },
+    {
+     "until": 1.6663622356019916,
+     "axis": 1
+    },
+    {
+     "until": 2.7080353260040284,
+     "axis": 1
+    }
+   ],
+   "taps": [
+    0.9425249353516848,
+    1.3456310907378795,
+    1.6187258116900922
+   ],
+   "apex": false,
+   "apexTaps": 2,
+   "jitter": -0.0520400742162019
+  }
+ },
+ {
+  "name": "Planche 10 → PANIER",
+  "wait": 197,
+  "script": {
+   "segs": [
+    {
+     "until": 1.2061300983652472,
+     "axis": -1
+    }
+   ],
+   "taps": [
+    0.17560215159319342
+   ],
+   "apex": true,
+   "apexTaps": 2,
+   "jitter": -0.02298956997692585
+  }
+ }
+]
