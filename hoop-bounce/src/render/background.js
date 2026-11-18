@@ -1032,7 +1032,7 @@ function drawBuildingExtras(ctx, layer, sh, x, ww, top, baseY, s, time, bg) {
   }
   if (sh.shop) {
     // Vitrine éclairée au pied de l'immeuble
-    ctx.fillStyle = `rgba(${sh.shop.c},0.55)`;
+    ctx.fillStyle = `rgba(${sh.shop.c},0.32)`;
     ctx.fillRect(x + ww * 0.12, baseY - s * 0.55, ww * 0.76, s * 0.4);
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.fillRect(x + ww * 0.12, baseY - s * 0.62, ww * 0.76, s * 0.07);

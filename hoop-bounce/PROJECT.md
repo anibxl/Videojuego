@@ -3,9 +3,8 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 18/11/2026 · **Version :** 0.6.0 · **Étape en cours :** validation des 5
-> mondes (identité, mécaniques, carte, intro, transitions) par le porteur du projet, avant la création des
-> 50 niveaux.
+> **Dernière mise à jour :** 18/11/2026 · **Version :** 0.7.0 · **Étape en cours :** validation des 50
+> niveaux et des nouveaux décors par le porteur du projet.
 
 ## Sommaire
 
@@ -501,15 +500,24 @@ et recule légèrement quand une page est ouverte.
 
 | # | Monde | Accroche | Couleur | Ambiance | Mécaniques | Niveaux |
 |---|---|---|---|---|---|---|
-| 1 | **Ville** (tutoriel) | Le terrain du coucher de soleil | orange | coucher de soleil, immeubles et fenêtres, graffitis, lampadaires modernes, lumières floues, terrain propre ; lo-fi hip-hop | plateformes, plateformes mobiles, trampolines, ventilateurs, caisse à pousser | 7 / 10 |
-| 2 | **Neige** | Les sommets gelés | bleu glacier | montagnes enneigées, sapins, flocons animés, brume légère, lune, lumière froide ; boîte à musique et nappes | sol glissant, plateformes de glace, vent de neige, stalactites, rampes de glace | 1 / 10 |
-| 3 | **Volcan** | Au cœur de la lave | orange feu | volcans en éruption au loin, roches fissurées, cendres, braises rouges, lumière orange ; tambours graves | lave mortelle, plateformes fragiles, geysers de feu, chutes de pierres, ascenseurs de pierre | 1 / 10 |
-| 4 | **Forêt** | Les bois enchantés | vert | grands arbres, rayons de lumière, champignons, rivière, lucioles, feuilles ; marimba et flûte, reposant | lianes, plateformes en bois, champignons rebondissants, troncs qui roulent, branches mobiles | 1 / 10 |
-| 5 | **Espace** | Au-delà des étoiles | violet | nébuleuses, étoiles qui scintillent, planète à anneaux, la Terre au loin, astéroïdes, cratères ; nappes de synthé | gravité réduite, astéroïdes mobiles, portails, plateformes flottantes, gravité inversée | 1 / 10 |
+| 1 | **Ville** (tutoriel) | Le terrain du coucher de soleil | orange | ville moderne la nuit : gratte-ciel et immeubles détaillés (fenêtres qui s'allument et s'éteignent, néons qui pulsent, châteaux d'eau, balises rouges), voie rapide où passent des voitures (phares et feux arrière), lampadaires, projecteurs qui balaient le ciel, lune, vitrines, graffitis ; lo-fi hip-hop | plateformes, plateformes mobiles, trampolines, ventilateurs, caisse à pousser | 10 / 10 |
+| 2 | **Neige** | Les sommets gelés | bleu glacier | montagnes enneigées ombrées (face éclairée / face à l'ombre), sapins enneigés, brume, soleil d'hiver pâle, petits flocons qui tombent doucement, rafales discrètes, glace qui brille ; boîte à musique | sol glissant, plateformes de glace, vent de neige, stalactites, rampes de glace, planches de bois | 10 / 10 |
+| 3 | **Volcan** | Au cœur de la lave | orange feu | volcans qui fument et rougeoient (coulées incandescentes, éruptions), nuages de fumée, roches éclairées de rouge par la lave, rivière de lave animée, braises qui volent lentement, cendres ; tambours graves | lave mortelle, plateformes fragiles, geysers de feu, chutes de pierres, ascenseurs de pierre | 10 / 10 |
+| 4 | **Forêt** | Les bois enchantés | vert | collines, arbres détaillés (tronc, feuillage éclairé), herbe vivante, rayons de soleil, oiseaux au loin, feuilles qui tombent, champignons, quelques lucioles ; marimba et flûte | lianes, plateformes en bois, champignons rebondissants, troncs qui roulent, branches mobiles, rivière | 10 / 10 |
+| 5 | **Espace** (monde final) | Au-delà des étoiles | violet | nébuleuses colorées, étoiles qui scintillent, étoiles filantes, planète à anneaux, la Terre, station spatiale (anneau qui tourne, feux), astéroïdes, cratères éclairés, poussières spatiales ; nappes de synthé | gravité réduite, astéroïdes mobiles, portails, plateformes flottantes, gravité inversée | 10 / 10 |
 
-- **50 niveaux prévus** (10 par monde). Pour l'instant : les 7 niveaux de la Ville et **un niveau de
-  démonstration** par monde, qui présente toutes ses mécaniques. Les autres emplacements s'affichent
-  « Bientôt » sur la carte. **Les 50 niveaux seront créés après validation des mondes.**
+- **50 niveaux** (10 par monde). **La difficulté augmente dans chaque monde** (niveau 1 très simple, niveau 10
+  difficile) **et d'un monde à l'autre** : la Neige est plus exigeante que la Ville, puis le Volcan, la Forêt, et
+  l'Espace est le monde final. Chaque monde présente ses mécaniques une à une (niveaux 1 à 5), les réunit au
+  niveau 6, les combine aux niveaux 7 à 9, et se termine par un grand final (niveau 10).
+- **Matériaux par monde** (seule l'apparence change, la physique reste celle du rôle de la surface) : Ville :
+  trottoir et asphalte, béton, briques, métal à rivets et bandes de chantier ; Neige : neige, glace brillante,
+  bois enneigé (petites stalactites), roche gelée ; Volcan : basalte poreux aux fissures incandescentes, pierre
+  fissurée, orgues basaltiques, lave ; Forêt : herbe et terre (cailloux, racines, fleurs), pierre moussue, bois ;
+  Espace : pont métallique à bande lumineuse, coque, plateformes lumineuses, cloisons. Les pics et les
+  plateformes mobiles changent aussi (pointes d'acier, éclats de glace, obsidienne brûlante, ronces, pointes
+  néon ; nacelle de chantier, planche enneigée ou moussue, dalle de pierre, plateforme flottante), en gardant
+  toujours une pointe rouge ou brûlante pour que le danger reste lisible.
 - **Déblocage automatique** : un monde s'ouvre quand **tous les niveaux disponibles** du monde précédent sont
   terminés (la Ville est ouverte dès le départ). Dans un monde, chaque niveau terminé ouvre le suivant.
 - La première fois que la carte montre un monde ouvert, elle joue l'**animation de déblocage** (une seule fois).
@@ -518,27 +526,25 @@ et recule légèrement quand une page est ouverte.
 
 ### Les niveaux
 
-**Monde 1 — Ville**
+| # | Ville | Neige | Volcan | Forêt | Espace |
+|---|---|---|---|---|---|
+| 1 | Premier panier — rouler, rebondir | Premières glissades — la glace | Premières braises — deux bassins de lave | La clairière — champignons | Premiers pas lunaires — gravité réduite |
+| 2 | Le mur — charger la puissance | La rampe — rampe de glace et crevasse | Pierres fragiles — gué de pierres qui s'effondrent | Le sentier de bois — tronc et planches | Plateformes flottantes |
+| 3 | Trampoline | Stalactites — couloir sous la glace | Les geysers — trois geysers en vague | La première liane | Portails — dont un portail perché |
+| 4 | Plateforme mobile | Vent glacial — vent de face puis dans le dos | Ascenseurs — deux ascenseurs de pierre | Branches mouvantes | Champ d'astéroïdes |
+| 5 | Le souffle — ventilateur | Glace vive — plateformes de glace sur des pics | Pluie de pierres — cinq chutes de pierres | Liane après liane | Gravité inversée |
+| 6 | L'interrupteur — porte et téléporteur | Le grand lac — tout réuni | Terre de feu — tout réuni | Sous les feuillages — tout réuni | Apesanteur — tout réuni |
+| 7 | La caisse | Bourrasques — glace et vent | Le gué de feu — pierres fragiles et geysers | Rebonds sauvages — champignon vers liane | Portails et astéroïdes |
+| 8 | Les toits — d'immeuble en immeuble | Le pont de bois — planche mobile, stalactites | La forge — radeau de pierre, pierres, ascenseur | Rivière aux troncs — tronc flottant, branches | Monde à l'envers — pics suspendus |
+| 9 | Le chantier — trampoline, monte-charge | Descente glacée — deux crevasses à pleine vitesse | Trampolines de lave | Canopée — quatre lianes et un tronc | Ceinture d'astéroïdes |
+| 10 | Grand final de la ville | Sommet du monde | Cœur du volcan | Cœur de la forêt | Au-delà des étoiles |
 
-| # | Identifiant | Nom | Ce qu'il apprend | Puissance nécessaire pour le panier |
-|---|---|---|---|---|
-| 1 | `first-shot` | Premier panier | rouler, rebondir, enchaîner (les étoiles dessinent la montée vers le panier) | 3 |
-| 2 | `the-wall` | Le mur | charger la puissance pour franchir un mur | 3 pour le mur, 4 pour le panier |
-| 3 | `trampoline` | Trampoline | trampoline au-dessus d'un champ de pics, panier sur une estrade | 2 pour l'estrade, 3–4 pour le panier |
-| 4 | `moving` | Plateforme mobile | traverser le vide sur une plateforme | 4 |
-| 5 | `updraft` | Le souffle | ventilateur jusqu'à une terrasse, panier en hauteur | ventilateur, puis 3–4 |
-| 6 | `final` | Grand final | interrupteur, porte, téléporteur | 3 pour l'interrupteur, 4 pour le panier |
-| 7 | `city-crate` | La caisse | pousser la caisse contre la terrasse (trop haute) et s'en servir de marche | 5 depuis la caisse, puis 3–4 |
-
-**Niveaux de démonstration des autres mondes** (un par monde, toutes les mécaniques du monde) :
-
-| Monde | Identifiant | Nom | Parcours |
-|---|---|---|---|
-| Neige | `snow-1` | Premières glissades | butte enneigée (puissance 3–4) → rampe de glace → lac gelé sous deux stalactites → saut de la crevasse lancé à pleine vitesse → vent de face, plateformes de glace (étoile) → panier |
-| Volcan | `volcano-1` | Terre de feu | bassin de lave avec une plateforme fragile au milieu → deux geysers décalés → ascenseur de pierre jusqu'à la falaise → deux chutes de pierres → panier en hauteur |
-| Forêt | `forest-1` | Sous les feuillages | champignon (étoile en hauteur) → rivière franchie de liane en liane → tronc qui roule → deux branches mobiles → panier sur la cabane |
-| Espace | `space-1` | Apesanteur | gravité réduite : trois plateformes flottantes au-dessus du vide (un astéroïde passe entre elles) → paroi franchie par les portails → zone de gravité inversée au-dessus d'un champ de pics → panier |
-
+- Identifiants : `first-shot`, `the-wall`, `trampoline`, `moving`, `updraft`, `final`, `city-crate`,
+  `city-roofs`, `city-site`, `city-finale`, puis `snow-1` … `snow-10`, `volcano-1` … `volcano-10`,
+  `forest-1` … `forest-10`, `space-1` … `space-10`.
+- Chaque niveau décrit ses **passages** (`passages`) : départ, objectif et une **solution experte** sous forme de
+  plan de manœuvres (rouler jusqu'à, charger, sauter en visant, attendre le bon moment d'un geyser, monter sur
+  une plateforme mobile, se balancer aux lianes…). L'outil les joue et les tests les rejouent.
 - Chaque passage de chaque niveau est vérifié par l'outil (`tools/route-check.mjs`) : solutions aléatoires et
   solutions expertes scriptées, rejouées par les tests.
 - **JOUER** (menu) reprend au premier niveau ouvert non terminé, tous mondes confondus.
@@ -604,7 +610,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Validation par le porteur du projet (passage à l'étape des mondes)
 - 🔴 Réglages fins après retours sur appareil
 
-### Phase 5 — Mondes 🟡
+### Phase 5 — Mondes ✅
 - ✅ 5 mondes définis : Ville, Neige, Volcan, Forêt, Espace (10 niveaux prévus chacun)
 - ✅ Identité de chaque monde : décor, couleurs, ambiance, lumière, particules, effets, animations
 - ✅ Musique et ambiance sonore de chaque monde, sons des mécaniques
@@ -612,9 +618,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Carte des mondes : illustrations, cadenas, déblocage animé, barre de progression, étoiles, pourcentage
 - ✅ Choix du niveau, écran d'introduction de chaque monde, transition entre mondes
 - ✅ Déblocage automatique du monde suivant
-- ✅ Un niveau de démonstration par nouveau monde (+ « La caisse » dans la Ville)
-- 🟡 Validation des mondes par le porteur du projet
-- 🔴 Les 50 niveaux (après validation)
+- ✅ Les 50 niveaux, difficulté progressive dans chaque monde et d'un monde à l'autre, tous vérifiés
+- ✅ Décors de qualité « jeu mobile » refaits pour chaque monde ; matériaux, pics et plateformes par monde
+- 🟡 Validation des 50 niveaux et des décors par le porteur du projet
 - 🔴 Relier la tuile « Mondes » du menu à la carte (en attente d'accord : modification du menu)
 
 ### Phase 6 — Économie, magasin et skins 🔴
@@ -656,11 +662,12 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Réglages du menu appliqués dans le jeu (volume des effets, vibrations, langue)
 - ✅ 5 mondes : thèmes, musiques, ambiances, 21 mécaniques, carte des mondes, intro, transitions, déblocage
 - ✅ Musique pendant la partie (une par monde) ; qualité graphique appliquée aux particules du jeu
-- ✅ 101 tests automatiques + outil de vérification des niveaux (avec pilote pour les solutions expertes)
+- ✅ 50 niveaux (10 par monde) avec solutions expertes en données ; décors et matériaux par monde
+- ✅ 253 tests automatiques + outil de vérification des niveaux (avec pilote pour les solutions expertes)
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur les mondes
+- 🟡 Attente des retours du porteur du projet sur les 50 niveaux et les décors
 
 ### À faire — court terme 🔴
 - 🔴 Ajuster le ressenti (gravité, hauteurs, dribble, inertie) selon les retours
@@ -669,8 +676,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   modification du menu, en attente d'accord
 - 🔴 Faire apparaître le panier du niveau 5 dès le départ (il est hors de l'écran au début)
 - 🔴 Éviter que l'étiquette « Rebondir » du tutoriel recouvre le panier du niveau 1
-- 🔴 Créer les 50 niveaux (10 par monde) après validation des mondes, en réutilisant et en combinant les
-  mécaniques ; ajouter leurs passages à l'outil de vérification
+- 🔴 Équilibrer la difficulté des 50 niveaux après les retours (et sur un vrai téléphone)
 - 🔴 Relier la tuile « Mondes » du menu à `worlds.html` (petite modification du menu, en attente d'accord)
 
 ### À faire — moyen terme 🔴
@@ -745,7 +751,10 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - Pas de grand halo animé ni de dégradé recréé à chaque image (rayons de lumière : un dégradé partagé).
 - Silhouettes de fond : chaque plan n'est rempli que jusqu'au plan suivant (moins de surface repeinte).
 - Résolution interne du canvas plafonnée à 2× (aucun gain visible au-delà, beaucoup plus de pixels).
-- Résultat (Chromium sans carte graphique, écran 844×390 en ×2) : **0 image lente** sur 240 dans chaque monde.
+- Résultat (Chromium sans carte graphique, écran 844×390 en ×2) : **0 à 4 images lentes sur 240** selon le
+  monde, avec les décors détaillés de la v0.7.0 (voitures, fenêtres animées, fumée, oiseaux…).
+- Fenêtres animées, voitures, fumée, oiseaux, étoiles filantes : fonctions du temps, regroupées par couleur
+  dans quelques chemins ; seuls les détails des surfaces visibles à l'écran sont dessinés.
 
 **Menu**
 - Plans fixes du décor précalculés à chaque redimensionnement ; faisceaux des projecteurs incrustés une fois
@@ -775,9 +784,11 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | Faible | Niveau 5 : le panier est hors de l'écran au départ (on le découvre en montant). | 🔴 À corriger |
 | Faible | Niveau 1 : l'étiquette « Rebondir » du tutoriel recouvre en partie le panier (elle disparaît après 3 rebonds). | 🔴 À corriger |
 | Moyenne | La tuile « Mondes » du menu ouvre encore la page d'attente : la carte des mondes n'est accessible que depuis la partie (pause, victoire) ou par `worlds.html`. | 🔴 En attente d'accord (modification du menu) |
-| Faible | Carte : un monde dont tous les niveaux **disponibles** sont terminés affiche « Terminé » même si tous ses niveaux prévus ne sont pas encore créés. | 🟡 Se résoudra avec les 50 niveaux |
+| ✅ | Carte : « Terminé » affiché alors que des niveaux prévus manquaient. | ✅ Résolu (v0.7.0 : les 50 niveaux existent) |
+| Info | Difficulté des 50 niveaux vérifiée par simulation (chaque passage a une solution), mais pas encore éprouvée par des joueurs : certains timings (geysers, astéroïdes) peuvent sembler serrés. | 🟡 À équilibrer après retours |
+| Info | Ancienne progression : les niveaux de démonstration de l'étape 7 (`snow-1`, `volcano-1`, `forest-1`, `space-1`) sont devenus les niveaux 6 de leur monde ; un niveau `…-1` déjà terminé compte pour le nouveau niveau 1. | 🟡 Sans conséquence (phase de développement) |
 | Faible | Le son de déblocage sur la carte peut rester muet si le navigateur n'autorise pas encore l'audio (aucun toucher sur la page). | 🟡 Limitation des navigateurs |
-| Info | Neige : le décor (montagnes et sapins sur 4 plans) est le plus coûteux à dessiner (~6 ms en rendu logiciel, sans image lente mesurée). | 🟡 À surveiller sur appareil réel |
+| Info | Décors plus riches (v0.7.0) : 0 à 4 images lentes sur 240 selon le monde en rendu logiciel. | 🟡 À surveiller sur appareil réel |
 | ✅ | Le réglage « Musique » agit maintenant dans la partie (musique de chaque monde). | ✅ Corrigé (v0.6.0) |
 | ✅ | La qualité graphique agit maintenant sur les particules d'ambiance du jeu. | ✅ Corrigé (v0.6.0) |
 | Faible | Version en ligne (lien de prévisualisation claude.ai) : le bouton « Menu » de la partie n'a pas pu être vérifié sur cet hébergement. En local, il fonctionne. | 🟡 À vérifier |
@@ -787,6 +798,24 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 18/11/2026 — Étape 8 : les 50 niveaux et la refonte des décors (v0.7.0)
+- **Ajouté** :
+  - **50 niveaux** (10 par monde), difficulté progressive dans chaque monde et d'un monde à l'autre ; noms et
+    aides en FR/EN/ES ;
+  - solutions expertes décrites dans les données de chaque niveau (`passages`), jouées par un pilote plus
+    humain (visée selon le temps de vol, correction de la dérive, freinage), avec de nouvelles manœuvres
+    (`fly`, `hopTo`, `stayOn`, `jumpOver`, `dribbleRun`, `ride`…) ; 253 tests ;
+  - décors refaits : ville de nuit (immeubles détaillés, fenêtres qui s'allument, néons, voitures sur une voie
+    rapide, projecteurs, lune), neige (montagnes ombrées, petits flocons, rafales discrètes), volcan (volcans
+    fumants, roches aux reflets rouges, rivière de lave, braises lentes), forêt (arbres détaillés, herbe
+    vivante, oiseaux, feuilles, rayons), espace (station spatiale, étoiles filantes, nébuleuses, poussières) ;
+  - matériaux par monde pour les sols, blocs et murs, pics et plateformes mobiles thématiques.
+- **Modifié** : les niveaux de démonstration deviennent les niveaux 6 de leur monde ; l'ancien « Grand final »
+  de la Ville s'appelle « L'interrupteur » (le grand final est le niveau 10) ; outil de vérification piloté
+  par les données des niveaux. **Gameplay, commandes et menu inchangés.**
+- **Reste à faire** : retours du porteur du projet sur les niveaux et les décors, équilibrage, tests sur
+  téléphone.
 
 ### 18/11/2026 — Étape 7 : les mondes (v0.6.0)
 - **Ajouté** :

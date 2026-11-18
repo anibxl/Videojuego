@@ -3,9 +3,10 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 7 (actuelle) :** les 5 mondes (Ville, Neige, Volcan, Forêt, Espace) : identité visuelle et sonore,
-21 mécaniques, carte des mondes, introduction et transitions, déblocage automatique, un niveau de
-démonstration par monde. Les 50 niveaux viendront après validation. Le menu et les commandes sont inchangés.
+**Étape 8 (actuelle) :** les **50 niveaux** (10 par monde : Ville, Neige, Volcan, Forêt, Espace), avec une
+difficulté qui augmente dans chaque monde et d'un monde à l'autre, et des décors refaits (ville de nuit avec
+voitures et lumières animées, montagnes enneigées, volcan fumant, forêt vivante, espace) avec des matériaux
+propres à chaque monde. Le gameplay, les commandes et le menu sont inchangés.
 
 📘 **Documentation complète du projet (concept, mécaniques, architecture, roadmap, tâches, bugs, journal) :
 [PROJECT.md](PROJECT.md).** Ce README n'est qu'un guide rapide.
@@ -107,7 +108,7 @@ pause et la victoire. L'application mise en arrière-plan se met en pause d'elle
   étoiles, pourcentage, choix du niveau (10 emplacements par monde, « Bientôt » pour ceux à venir).
 - **Introduction** de chaque monde et **transition** colorée entre deux mondes.
 - **Déblocage** : un monde s'ouvre quand tous les niveaux disponibles du précédent sont terminés.
-- Pour l'instant : 7 niveaux dans la Ville et 1 niveau de démonstration par autre monde.
+- 50 niveaux : 10 par monde, du plus simple au plus difficile ; l'Espace est le monde final.
 - La carte s'ouvre depuis la partie (pause → Carte des mondes, victoire → Carte) ou directement :
   `worlds.html` (`worlds.html?unlock=all` ouvre tout, pour tester). La tuile « Mondes » du menu n'y mène pas
   encore (le menu n'a pas été modifié).
@@ -171,10 +172,11 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 101 tests : physique, dribble, éléments, mécaniques des mondes,
+npm test                               # 253 tests : physique, dribble, éléments, mécaniques des mondes,
                                        # panier, progression, niveaux faisables, menu
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
-node tools/route-check.mjs 400 3       # seulement le 3e niveau (numérotation de tous les mondes à la suite)
+node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)
+node tools/route-check.mjs 0           # vérification rapide : solutions expertes seulement
 node tools/route-check.mjs 400 --save  # après une modification voulue d'un niveau
 ```
 

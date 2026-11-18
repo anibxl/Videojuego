@@ -20,8 +20,8 @@ export const THEMES = {
     layers: [
       { parallax: 0.12, color: '#141a38', kind: 'skyscrapers', minH: 5, maxH: 10, minW: 1.4, maxW: 2.6, gap: 0.5, windows: ['rgba(140,180,255,0.35)', 'rgba(255,220,160,0.3)'], beacons: true },
       { parallax: 0.26, color: '#1a1f42', kind: 'buildings', minH: 3, maxH: 7, minW: 1.6, maxW: 3.2, gap: 0.4, windows: ['rgba(255,214,150,0.75)', 'rgba(150,200,255,0.6)'], neon: true, tanks: true },
-      { parallax: 0.42, color: '#11152e', kind: 'highway', deck: 1.7 },
-      { parallax: 0.56, color: '#0b0e22', kind: 'buildings', minH: 1.4, maxH: 3.4, minW: 2, maxW: 3.6, gap: 0.2, windows: ['rgba(255,200,130,0.85)', 'rgba(255,120,170,0.5)'], shops: true, graffiti: true },
+      { parallax: 0.42, color: '#11152e', kind: 'highway', deck: 3.1 },
+      { parallax: 0.56, color: '#0b0e22', kind: 'buildings', minH: 1.2, maxH: 2.5, minW: 2, maxW: 3.6, gap: 0.6, windows: ['rgba(255,200,130,0.85)', 'rgba(255,120,170,0.5)'], shops: true, graffiti: true },
     ],
     effects: { searchlights: 2 },
     particles: { kind: 'motes', count: 18, colors: ['255,210,170', '160,200,255'] },
