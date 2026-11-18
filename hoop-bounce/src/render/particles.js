@@ -145,6 +145,94 @@ export class Particles {
     }
   }
 
+  /** Traits de vitesse qui jaillissent du point d'impact, le long de la surface (gros rebonds). */
+  streaks(x, y, nx, ny, count, speed, color = 'rgba(255,255,255,0.9)') {
+    const r = this.rng;
+    const tx = -ny;
+    const ty = nx;
+    for (let i = 0; i < count; i++) {
+      const p = this._spawn();
+      const side = i % 2 ? 1 : -1;
+      // Éventail : surtout le long de la surface, un peu vers le haut
+      const a = (0.15 + r() * 0.6) * (Math.PI / 2);
+      const dx = tx * side * Math.cos(a) + nx * Math.sin(a);
+      const dy = ty * side * Math.cos(a) + ny * Math.sin(a);
+      const sp = speed * (0.7 + r() * 0.6);
+      p.alive = true;
+      p.kind = 4;
+      p.x = x + dx * 0.25;
+      p.y = y + dy * 0.25;
+      p.vx = dx * sp;
+      p.vy = dy * sp;
+      p.life = p.maxLife = 0.16 + r() * 0.1;
+      p.size = 0.035 + r() * 0.02;
+      p.color = color;
+      p.gravity = 0;
+      p.drag = 7;
+      p.rot = 0;
+      p.vrot = 0;
+    }
+  }
+
+  /** Halo lumineux bref (éclair d'impact, panier) ; rgb = « r,g,b ». */
+  flash(x, y, size, rgb, life = 0.18) {
+    const p = this._spawn();
+    p.alive = true;
+    p.kind = 5;
+    p.x = x;
+    p.y = y;
+    p.vx = p.vy = 0;
+    p.size = size;
+    p.color = rgb;
+    p.life = p.maxLife = life;
+    p.gravity = 0;
+    p.drag = 0;
+    p.rot = 0;
+    p.vrot = 0;
+  }
+
+  /** Petits nuages doux (neige soulevée, vapeur, fumée) ; rgb = « r,g,b ». */
+  puff(x, y, count, rgb, size = 0.3, spread = 1.4, rise = 0.6) {
+    const r = this.rng;
+    for (let i = 0; i < count; i++) {
+      const p = this._spawn();
+      p.alive = true;
+      p.kind = 5;
+      p.x = x + (r() - 0.5) * 0.5;
+      p.y = y + r() * 0.15;
+      p.vx = (r() - 0.5) * 2 * spread;
+      p.vy = rise * (0.4 + r());
+      p.size = size * (0.6 + r() * 0.8);
+      p.color = rgb;
+      p.life = p.maxLife = 0.5 + r() * 0.45;
+      p.gravity = -0.3;
+      p.drag = 2.6;
+      p.rot = 1; // marque : le halo grossit en vieillissant
+      p.vrot = 0;
+    }
+  }
+
+  /** Braises, étincelles ou feuilles projetées (impacts selon le monde). */
+  bits(x, y, count, colors, { speed = 3, up = 2.5, gravity = 6, life = 0.7, size = 0.05, kind = 0, drag = 1.5 } = {}) {
+    const r = this.rng;
+    for (let i = 0; i < count; i++) {
+      const p = this._spawn();
+      p.alive = true;
+      p.kind = kind;
+      p.x = x + (r() - 0.5) * 0.4;
+      p.y = y + r() * 0.1;
+      p.vx = (r() - 0.5) * 2 * speed;
+      p.vy = up * (0.5 + r());
+      p.life = p.maxLife = life * (0.6 + r() * 0.8);
+      p.size = size * (0.6 + r() * 0.9);
+      p.color = colors[(r() * colors.length) | 0];
+      p.gravity = gravity;
+      p.drag = drag;
+      p.rot = r() * Math.PI * 2;
+      p.vrot = (r() - 0.5) * 10;
+    }
+  }
+
   text(x, y, text, color = '#fff', size = 1) {
     let t = this.texts.find((tt) => !tt.alive) ?? this.texts[0];
     t.alive = true;

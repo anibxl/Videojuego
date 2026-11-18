@@ -8,6 +8,8 @@
 //  effects    effets animés propres au monde (projecteurs, rafales, fumée, oiseaux, étoiles filantes…)
 //  particles  particules d'ambiance (type, nombre, couleurs)
 //  light      teinte de la vignette ; hint : couleur des textes d'aide
+//  ballLight  lumières colorées du monde qui bordent le ballon (angle = direction de la source)
+//  grade      halos d'étalonnage (couleur de la lumière ambiante), précalculés avec la vignette
 //  surface    poussière d'impact ; les matériaux détaillés sont dessinés par world-draw.js
 
 export const THEMES = {
@@ -23,11 +25,14 @@ export const THEMES = {
       { parallax: 0.42, color: '#11152e', kind: 'highway', deck: 3.1 },
       { parallax: 0.56, color: '#0b0e22', kind: 'buildings', minH: 1.2, maxH: 2.5, minW: 2, maxW: 3.6, gap: 0.6, windows: ['rgba(255,200,130,0.85)', 'rgba(255,120,170,0.5)'], shops: true, graffiti: true },
     ],
-    effects: { searchlights: 2 },
+    effects: { searchlights: 2, planes: 2, neonSigns: true },
     particles: { kind: 'motes', count: 18, colors: ['255,210,170', '160,200,255'] },
     bokeh: ['255,190,140', '255,120,170', '140,190,255'],
     light: '10,10,40',
     surface: { dust: 'rgba(210,215,230,0.55)' },
+    // Lumière : néons magenta et cyan qui bordent le ballon, halos colorés sur les côtés de l'écran
+    ballLight: [{ color: '255,70,190', angle: 0.5, alpha: 0.55 }, { color: '70,200,255', angle: 2.7, alpha: 0.35 }],
+    grade: [{ x: 0, y: 1, r: 0.7, color: '255,60,170', alpha: 0.16 }, { x: 1, y: 0.85, r: 0.6, color: '40,180,255', alpha: 0.12 }],
     music: 'city',
   },
 
@@ -42,12 +47,14 @@ export const THEMES = {
       { parallax: 0.56, color: '#334d77', kind: 'firs', minH: 1.8, maxH: 3.2, minW: 1, maxW: 1.7, shade: '#283f66', snowCap: 'rgba(245,250,255,0.95)' },
     ],
     fog: { color: '235,243,255', alpha: 0.38 },
-    effects: { gusts: 3 },
+    effects: { gusts: 3, mist: 9 },
     particles: { kind: 'snow', count: 70, colors: ['255,255,255'] },
     bokeh: [],
     light: '20,40,80',
     hint: 'rgba(25,45,85,0.6)',
     surface: { dust: 'rgba(255,255,255,0.85)' },
+    ballLight: [{ color: '235,248,255', angle: 1.3, alpha: 0.6 }, { color: '120,170,255', angle: -1.9, alpha: 0.3 }],
+    grade: [{ x: 0.25, y: 0, r: 0.9, color: '255,255,255', alpha: 0.18 }, { x: 0.5, y: 1.1, r: 0.8, color: '120,170,255', alpha: 0.14 }],
     music: 'snow',
   },
 
@@ -61,12 +68,14 @@ export const THEMES = {
       { parallax: 0.42, color: '#170908', kind: 'lavaRiver' },
       { parallax: 0.56, color: '#110706', kind: 'rocks', minH: 1.2, maxH: 3, minW: 1.5, maxW: 3.5, rim: 'rgba(255,110,50,0.65)' },
     ],
-    effects: { smoke: 5 },
+    effects: { smoke: 5, heat: true },
     particles: { kind: 'embers', count: 40, colors: ['255,140,50', '255,90,30', '255,200,90'] },
     ash: { count: 26, color: '120,105,100' },
     bokeh: ['255,110,40', '255,70,30'],
     light: '60,10,0',
     surface: { dust: 'rgba(255,170,110,0.6)' },
+    ballLight: [{ color: '255,90,30', angle: -1.57, alpha: 0.7 }, { color: '255,180,90', angle: 0.4, alpha: 0.2 }],
+    grade: [{ x: 0.5, y: 1.15, r: 0.95, color: '255,70,20', alpha: 0.26 }, { x: 0.5, y: -0.1, r: 0.7, color: '20,0,0', alpha: 0.3 }],
     music: 'volcano',
   },
 
@@ -81,13 +90,15 @@ export const THEMES = {
       { parallax: 0.56, color: '#1b3424', kind: 'trees', minH: 4.5, maxH: 8, minW: 1, maxW: 1.8, canopy: '#1f4329', light: '#3a6e3e', grass: '#2f5a30' },
     ],
     rays: { color: '255,248,200', count: 5 },
-    effects: { birds: 5 },
+    effects: { birds: 5, butterflies: 6 },
     particles: { kind: 'fireflies', count: 14, colors: ['230,255,140', '255,240,150'] },
     leaves: { count: 16, colors: ['150,190,80', '210,160,70', '190,120,60'] },
     bokeh: ['255,250,190'],
     light: '10,30,10',
     hint: 'rgba(20,45,25,0.6)',
     surface: { dust: 'rgba(170,140,90,0.6)' },
+    ballLight: [{ color: '255,240,180', angle: 2.2, alpha: 0.55 }, { color: '120,220,120', angle: -1.2, alpha: 0.22 }],
+    grade: [{ x: 0.1, y: -0.05, r: 0.85, color: '255,240,170', alpha: 0.22 }, { x: 0.9, y: 1.1, r: 0.7, color: '10,40,10', alpha: 0.22 }],
     music: 'forest',
   },
 
@@ -109,11 +120,13 @@ export const THEMES = {
       { parallax: 0.32, color: '#1b1340', kind: 'craters', minH: 1.5, maxH: 3.5, minW: 4, maxW: 8 },
       { parallax: 0.52, color: '#120c2e', kind: 'craters', minH: 0.8, maxH: 2.2, minW: 3, maxW: 6, lights: true },
     ],
-    effects: { shootingStars: true },
+    effects: { shootingStars: true, floaters: 9 },
     particles: { kind: 'stardust', count: 36, colors: ['200,180,255', '140,200,255', '255,190,240'] },
     bokeh: ['160,120,255', '100,170,255'],
     light: '10,0,40',
     surface: { dust: 'rgba(190,220,255,0.6)' },
+    ballLight: [{ color: '150,120,255', angle: 0.2, alpha: 0.6 }, { color: '80,220,255', angle: 3.0, alpha: 0.4 }],
+    grade: [{ x: 0.3, y: 0.2, r: 0.8, color: '160,80,255', alpha: 0.14 }, { x: 0.85, y: 0.9, r: 0.6, color: '40,140,255', alpha: 0.12 }],
     music: 'space',
   },
 };

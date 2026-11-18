@@ -98,6 +98,14 @@ const look = { ball: wallet.equipped('ball'), bounce: wallet.equipped('bounce'),
 renderer.setBallSkin(look.ball);
 const fx = new Fx();
 const trail = { id: look.trail, pts: [] };
+const ghost = []; // dernières positions du ballon (images fantômes quand il file très vite)
+const tracks = []; // traces laissées dans la neige { x, y, t, w }
+let lastTrackX = -99;
+const NO_TRACK = new Set(['ice', 'wood', 'mover', 'plank', 'crate', 'log', 'branch']);
+function addTrack(x, y, w) {
+  tracks.push({ x, y, t: state.time, w });
+  if (tracks.length > 90) tracks.shift();
+}
 renderer.setLevel(game.level);
 const camera = new Camera(CONFIG.camera);
 const visual = new BallVisual(CONFIG.feel);
@@ -128,7 +136,38 @@ const state = {
   tutoMoved: false,
   tutoBounces: 0,
   ball: { x: 0, y: 0, angle: 0, r: R, scale: 1 },
+  goal: null,            // gerbe de lumière du panier { x, y, t0, swish }
 };
+
+/** Arrêt sur image très bref : donne du poids aux moments forts (éclatement, étoile). */
+let hitStopTimer = 0;
+function hitStop(ms, scale = 0.05) {
+  if (loop.timeScale < 1 && !hitStopTimer) return; // ralenti du panier en cours
+  clearTimeout(hitStopTimer);
+  loop.timeScale = scale;
+  hitStopTimer = setTimeout(() => {
+    hitStopTimer = 0;
+    loop.timeScale = 1;
+  }, ms);
+}
+
+/** Matière soulevée à l'impact, selon le monde (neige, braises, feuilles, étincelles). */
+function worldImpact(x, y, strength, tag) {
+  const th = renderer.themeId;
+  if (th === 'snow' || tag === 'snow' || tag === 'ice') {
+    particles.puff(x, y, Math.round(2 + strength * 5), '255,255,255', 0.22 + strength * 0.25, 1.6, 0.8);
+    if (tag === 'ice') particles.bits(x, y, Math.round(2 + strength * 5), ['#ffffff', '#d8f1ff'], { speed: 2.4, up: 2.2, gravity: 9, life: 0.45, size: 0.045, kind: 3 });
+  } else if (th === 'volcano') {
+    particles.bits(x, y, Math.round(2 + strength * 7), ['#ffb35c', '#ff7a2a', '#ffd38a'], { speed: 2.2, up: 3.2, gravity: 3.5, life: 0.9, size: 0.04 });
+    if (strength > 0.4) particles.puff(x, y, 2, '90,70,70', 0.35, 1, 0.9);
+  } else if (th === 'forest') {
+    if (tag === 'ground' || tag === 'block' || tag === 'wood' || tag === 'log' || tag === 'branch') particles.bits(x, y, Math.round(1 + strength * 4), ['#7fb24a', '#a8c75a', '#c99a4a'], { speed: 1.8, up: 2.6, gravity: 3, life: 1.1, size: 0.07, kind: 1, drag: 2.5 });
+  } else if (th === 'space') {
+    particles.bits(x, y, Math.round(2 + strength * 6), ['#9fe8ff', '#c8b6ff', '#ffffff'], { speed: 3, up: 1.6, gravity: 1, life: 0.5, size: 0.05, kind: 3 });
+  } else if (strength > 0.35) {
+    particles.bits(x, y, Math.round(strength * 5), ['#ffd38a', '#ffffff'], { speed: 3, up: 2, gravity: 14, life: 0.35, size: 0.035, kind: 3 });
+  }
+}
 
 /** Copie du niveau avec ses textes d'aide traduits. */
 function localizedLevel(i) {
@@ -216,7 +255,12 @@ game.events.on('impact', (e) => {
   sfx.impact(e.speed, e.tag);
   haptics.impact(strength);
   if (e.tag === 'rim' || e.tag === 'backboard') state.lastRimTime = game.time;
-  if (e.speed > 5 && DUST_TAGS.has(e.tag)) particles.dust(e.x, e.y, e.nx, e.ny, strength, e.tag === 'snow' || e.tag === 'ice' ? 'rgba(255,255,255,0.85)' : renderer.theme.surface.dust);
+  if (e.speed > 5 && DUST_TAGS.has(e.tag)) {
+    particles.dust(e.x, e.y, e.nx, e.ny, strength, e.tag === 'snow' || e.tag === 'ice' ? 'rgba(255,255,255,0.85)' : renderer.theme.surface.dust);
+    if (e.ny > 0.5) worldImpact(e.x, e.y, strength, e.tag);
+    if (renderer.themeId === 'snow' && e.ny > 0.7 && !NO_TRACK.has(e.tag)) addTrack(e.x, e.y, 0.3 + strength * 0.25);
+  }
+  if (e.speed > 9 && e.ny > 0.5) particles.flash(e.x, e.y + 0.05, 0.5 + strength * 0.9, '255,245,225', 0.14);
   if (e.tag === 'crate' && e.speed > 3) sfx.crateHit();
   if (e.speed > CONFIG.feel.impactShakeSpeed) camera.addTrauma((e.speed - CONFIG.feel.impactShakeSpeed) / 25);
 });
@@ -229,7 +273,17 @@ game.events.on('bounce', (e) => {
   const color = e.level >= MAX_LEVEL ? 'rgba(255,214,90,0.95)' : e.level >= 4 ? 'rgba(255,181,71,0.9)' : 'rgba(255,255,255,0.8)';
   if (!bounceEffect(fx, look.bounce, e.x, e.y - R * 0.95, e.level)) particles.ring(e.x, e.y - R * 0.95, 0.35 + e.level * 0.1, color, 0.3 + e.level * 0.03);
   particles.dust(e.x, e.y - R, 0, 1, 0.15 + e.level * 0.1);
-  if (e.level >= MAX_LEVEL) camera.addTrauma(0.16);
+  // Plus la puissance est haute, plus l'impact se voit : éclair, traits de vitesse, coup de zoom
+  if (e.level >= 3) {
+    const rgb = e.level >= MAX_LEVEL ? '255,214,90' : e.level >= 4 ? '255,181,71' : '255,255,255';
+    particles.flash(e.x, e.y - R * 0.9, 0.6 + e.level * 0.25, rgb, 0.16 + e.level * 0.02);
+    particles.streaks(e.x, e.y - R * 0.95, 0, 1, 2 + e.level * 2, 5 + e.level * 1.5, `rgba(${rgb},0.95)`);
+  }
+  if (e.level >= MAX_LEVEL) {
+    camera.addTrauma(0.16);
+    camera.kick(-0.05);
+    particles.ring(e.x, e.y - R * 0.95, 1.6, 'rgba(255,214,90,0.6)', 0.45);
+  }
   state.tutoBounces++;
   updateTutorial();
 });
@@ -342,6 +396,9 @@ game.events.on('star', (e) => {
   haptics.success();
   particles.sparkle(e.x, e.y, 18);
   particles.ring(e.x, e.y, 0.8, 'rgba(255,214,90,0.9)', 0.4);
+  particles.flash(e.x, e.y, 1.6, '255,214,90', 0.3);
+  camera.kick(0.025);
+  hitStop(45, 0.2);
   ui.stars[e.count - 1]?.classList.add('on');
 });
 
@@ -352,6 +409,11 @@ game.events.on('death', (e) => {
   sfx.death(e.cause);
   haptics.impact(1);
   camera.addTrauma(e.cause === 'fall' ? 0.3 : 0.7);
+  if (e.cause !== 'fall') {
+    particles.flash(e.x, e.y, 2.2, e.cause === 'lava' || e.cause === 'fire' ? '255,120,40' : '255,90,100', 0.3);
+    camera.kick(0.06);
+    hitStop(90);
+  }
   state.flash = 1;
   ui.stars.forEach((s) => s.classList.remove('on'));
 });
@@ -368,6 +430,11 @@ game.events.on('win', (e) => {
   const h = game.level.hoop;
   state.swish = swish;
   if (!goalEffect(fx, look.goal, e.x, e.y - 0.4)) particles.confetti(e.x, e.y - 0.4, 80);
+  state.goal = { x: h.centerX, y: h.rimY - 0.2, t0: state.time, swish };
+  particles.ring(h.centerX, h.rimY, 1.4, swish ? 'rgba(255,214,90,0.95)' : 'rgba(255,255,255,0.9)', 0.5);
+  particles.ring(h.centerX, h.rimY, 2.4, swish ? 'rgba(255,214,90,0.5)' : 'rgba(255,255,255,0.45)', 0.7);
+  particles.flash(h.centerX, h.rimY, 3, swish ? '255,214,90' : '255,240,220', 0.4);
+  state.goalFlash = 1;
   particles.text(e.x - 1.2, e.y + 2.2, gt(lang, swish ? 'popup.swish' : 'popup.score'), swish ? '#ffd65a' : '#ffffff', 1.15);
   sfx.win(swish);
   music.setDuck(0.45);
@@ -376,6 +443,9 @@ game.events.on('win', (e) => {
   camera.addTrauma(0.35);
   camera.focus = { x: h.centerX - 1, y: h.rimY - 0.5 };
   camera.zoomTarget = 1.14;
+  camera.kick(0.05);
+  clearTimeout(hitStopTimer);
+  hitStopTimer = 0;
   loop.timeScale = CONFIG.feel.winSlowMo;
   setTimeout(() => (loop.timeScale = 1), 900);
   setTimeout(() => showWin(e), 1500);
@@ -501,6 +571,11 @@ function startLevel(index) {
   particles.texts.forEach((t) => (t.alive = false));
   fx.clear();
   trail.pts.length = 0;
+  ghost.length = 0;
+  tracks.length = 0;
+  lastTrackX = -99;
+  state.goal = null;
+  state.goalFlash = 0;
   updateLevelLabels();
   const def = LEVELS[index];
   history.replaceState(null, '', `?world=${def.world}&level=${def.number}`);
@@ -700,6 +775,20 @@ function render(frameDt, alpha) {
     emitTrail(fx, trail.id, state.ball.x, state.ball.y, Math.hypot(b.vx, b.vy), frameDt);
   }
 
+  // Traces dans la neige quand le ballon roule
+  if (renderer.themeId === 'snow' && b.grounded && game.state === 'playing' && !b.groundVx && !b.groundVy && Math.abs(b.vx) > 0.5 && Math.abs(b.x - lastTrackX) > 0.34) {
+    const m = b.groundMaterial;
+    if (m !== CONFIG.materials.ice && m !== CONFIG.materials.wood && m !== CONFIG.materials.platform) {
+      addTrack(b.x, b.y - R, 0.2);
+      lastTrackX = b.x;
+    }
+  }
+  if (game.state === 'dying' || state.sinceTeleport < 0.05 || state.sinceRespawn < 0.05) ghost.length = 0;
+  else {
+    ghost.push({ x: state.ball.x, y: state.ball.y });
+    if (ghost.length > 6) ghost.shift();
+  }
+
   // Jauge : visible dès qu'elle a monté, discrète au repos ; le dernier cran clignote avant de baisser
   const warn = ctrl.level > 1 && ctrl.decayIn < 0.35;
   const showGauge = game.state === 'playing' && (ctrl.level > 1 || state.sinceBounce < 1.2);
@@ -707,6 +796,7 @@ function render(frameDt, alpha) {
   updateRing(ctrl.level, warn);
 
   state.flash = Math.max(0, state.flash - frameDt * 2.5);
+  state.goalFlash = Math.max(0, (state.goalFlash ?? 0) - frameDt * 4);
 
   renderer.draw({
     frameDt,
@@ -722,6 +812,10 @@ function render(frameDt, alpha) {
     particles,
     fx,
     trail: trail.id !== 'trail-none' ? trail : null,
+    ghost,
+    tracks,
+    goal: state.goal,
+    goalFlash: state.goalFlash,
     power: { level: ctrl.level, max: MAX_LEVEL, alpha: state.gaugeAlpha, warn },
     flash: state.flash,
     debug: state.debug,

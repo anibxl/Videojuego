@@ -1041,6 +1041,22 @@ export function drawLiquid(r, l, time, minY) {
       ctx.fill();
     }
     ctx.globalAlpha = 1;
+    // Chaleur visible : ondulations d'air chaud qui montent au-dessus de la lave
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = 'rgba(255,190,120,0.16)';
+    ctx.lineWidth = 0.09;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < Math.ceil(l.w / 0.9); i++) {
+      const period = 1.8 + hash(i * 5 + l.x) * 1.2;
+      const u = ((time + hash(i * 11 + l.x) * period) % period) / period;
+      const hx = x0 + 0.2 + hash(i * 13 + l.x) * (l.w - 0.4);
+      const hy = l.y + 0.2 + u * 1.8;
+      ctx.moveTo(hx + Math.sin(time * 4 + i) * 0.06, hy);
+      for (let k = 1; k <= 4; k++) ctx.lineTo(hx + Math.sin(time * 4 + i + k * 1.4) * 0.08, hy + k * 0.16);
+    }
+    ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
     ctx.strokeStyle = 'rgba(255,240,180,0.85)';
     ctx.lineWidth = 0.05;
     ctx.beginPath();

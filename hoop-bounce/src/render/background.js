@@ -77,6 +77,13 @@ export class Background {
     this.smoke = Array.from({ length: E.smoke ?? 0 }, () => ({ x: rng(), period: 14 + rng() * 10, phase: rng(), r: 0.12 + rng() * 0.1 }));
     this.birds = Array.from({ length: E.birds ?? 0 }, () => ({ y: 0.12 + rng() * 0.25, speed: 0.025 + rng() * 0.02, phase: rng(), size: 0.7 + rng() * 0.6, flap: 6 + rng() * 3 }));
     this.shooting = !!E.shootingStars;
+    // Effets d'identité des mondes (étape 10)
+    this.planes = E.planes ? Array.from({ length: E.planes }, (_, i) => ({ y: 0.08 + rng() * 0.12, period: 26 + rng() * 14, phase: i * 0.5 + rng() * 0.3, dir: rng() < 0.5 ? -1 : 1, size: 0.8 + rng() * 0.5 })) : [];
+    this.signs = E.neonSigns ? makeNeonSigns(rng, minX, span) : [];
+    this.mist = E.mist ? Array.from({ length: Math.round(E.mist * density) }, () => ({ u: rng(), v: 0.62 + rng() * 0.36, r: 0.08 + rng() * 0.1, speed: 0.004 + rng() * 0.008, par: 0.5 + rng() * 0.4, phase: rng() * TAU, a: 0.1 + rng() * 0.12 })) : [];
+    this.heat = !!E.heat;
+    this.butterflies = E.butterflies ? Array.from({ length: E.butterflies }, () => ({ u: rng(), v: 0.4 + rng() * 0.35, ax: 0.04 + rng() * 0.06, ay: 0.03 + rng() * 0.05, fx: 0.15 + rng() * 0.2, fy: 0.3 + rng() * 0.3, phase: rng() * TAU, flap: 14 + rng() * 6, size: 0.9 + rng() * 0.5, c: ['255,200,80', '120,200,255', '255,140,190', '255,255,255'][(rng() * 4) | 0], par: 0.55 + rng() * 0.3 })) : [];
+    this.floaters = E.floaters ? Array.from({ length: E.floaters }, () => makeFloater(rng)) : [];
     this._starSeed = (rng() * 1e6) | 0;
     this._sprites = new Map();
   }
@@ -302,6 +309,7 @@ export class Background {
       ctx.globalCompositeOperation = 'source-over';
     }
     if (this.birds.length) this._drawBirds(ctx, w, h, time, cam);
+    if (this.planes.length) this._drawPlanes(ctx, w, h, time);
 
     // Particules lointaines (derrière les plans)
     this._drawParticles(ctx, cam, w, h, time, 0);
@@ -315,6 +323,8 @@ export class Background {
       const fillTo = next ? Math.min(h, h / 2 + cam.y * next.parallax * s) : h;
       const ox = w / 2 - cam.x * p * s;
       drawLayer(ctx, layer, ox, baseY, s, w, h, time, this);
+      if (this.signs.length && li === 1) this._drawSigns(ctx, ox, baseY, s, w, time, layer.parallax);
+      if (this.floaters.length && li === 0) this._drawFloaters(ctx, cam, w, h, time);
       if (baseY < fillTo) {
         ctx.fillStyle = layer.color;
         ctx.fillRect(0, baseY, w, fillTo - baseY);
@@ -323,6 +333,9 @@ export class Background {
     }
 
     if (this.gusts.length) this._drawGusts(ctx, w, h, time);
+    if (this.mist.length) this._drawMist(ctx, cam, w, h, time);
+    if (this.heat) this._drawHeat(ctx, w, h, time);
+    if (this.butterflies.length) this._drawButterflies(ctx, cam, w, h, time);
 
     // Rayons de soleil entre les arbres (forêt)
     if (this.rays.length) {
@@ -357,6 +370,142 @@ export class Background {
   }
 
   // ─── Effets propres aux mondes ────────────────────────────────────────────
+
+  /** Ville : avion de ligne très loin, feux de navigation clignotants. */
+  _drawPlanes(ctx, w, h, time) {
+    for (const p of this.planes) {
+      const u = wrap(time / p.period + p.phase, 1);
+      const k = p.dir > 0 ? u : 1 - u;
+      const x = -0.1 * w + k * 1.2 * w;
+      const y = p.y * h + u * h * 0.02;
+      const sz = 7 * p.size;
+      ctx.fillStyle = 'rgba(20,24,50,0.9)';
+      ctx.beginPath();
+      ctx.ellipse(x, y, sz, sz * 0.18, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillRect(x - sz * 0.2, y - sz * 0.05, sz * 0.4 * 0.6, sz * 0.5);
+      ctx.globalCompositeOperation = 'lighter';
+      const blink = Math.sin(time * 6 + p.phase * 10) > 0.6;
+      ctx.drawImage(this._sprite('255,60,60', 0.3), x - sz * 0.25 - 4, y - 4, 8, 8);
+      if (blink) ctx.drawImage(this._sprite('255,255,255', 0.25), x + p.dir * sz - 5, y - 5, 10, 10);
+      ctx.drawImage(this._sprite('80,255,140', 0.3), x + sz * 0.25 - 3, y - 3, 6, 6);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+
+  /** Ville : grandes enseignes au néon sur les immeubles (précalculées), qui grésillent parfois. */
+  _drawSigns(ctx, ox, baseY, s, w, time, par) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (const sg of this.signs) {
+      const x = ox + sg.x * par * s;
+      const sw = sg.w * s;
+      if (x + sw < 0 || x - sw > w) continue;
+      const sh = sw * (sg.sprite.height / sg.sprite.width);
+      const y = baseY - sg.y * s;
+      // Grésillement : rares coupures très brèves, et un léger souffle de la lumière
+      const n = Math.floor(time * 12 + sg.phase * 50);
+      const cut = hash(n) > 0.985 || (hash(Math.floor(time * 0.5 + sg.phase * 9)) > 0.88 && hash(n + 3) > 0.5);
+      const a = cut ? 0.18 : 0.82 + 0.18 * Math.sin(time * 2.4 + sg.phase * 6);
+      ctx.globalAlpha = a;
+      ctx.drawImage(sg.sprite, x - sw / 2, y - sh / 2, sw, sh);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /** Neige : petits nuages de froid qui glissent au ras du sol. */
+  _drawMist(ctx, cam, w, h, time) {
+    const W = w * 1.4;
+    for (const m of this.mist) {
+      const x = wrap(m.u * W + time * m.speed * w - cam.x * m.par * cam.scale * 0.2, W) - w * 0.2;
+      const y = m.v * h + Math.sin(time * 0.4 + m.phase) * 6;
+      const r = m.r * h * (1 + 0.15 * Math.sin(time * 0.3 + m.phase));
+      ctx.globalAlpha = m.a * (0.7 + 0.3 * Math.sin(time * 0.25 + m.phase * 3));
+      ctx.drawImage(this._sprite('240,248,255', 0.5), x - r * 1.6, y - r, r * 3.2, r * 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Volcan : la chaleur se voit — ondulations qui montent et lueur qui respire au bas de l'écran. */
+  _drawHeat(ctx, w, h, time) {
+    if (!this._heatGrad || this._heatH !== h) {
+      this._heatGrad = ctx.createLinearGradient(0, h * 0.55, 0, h);
+      this._heatGrad.addColorStop(0, 'rgba(255,80,20,0)');
+      this._heatGrad.addColorStop(1, 'rgba(255,80,20,0.22)');
+      this._heatH = h;
+    }
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.65 + 0.35 * Math.sin(time * 0.8);
+    ctx.fillStyle = this._heatGrad;
+    ctx.fillRect(0, h * 0.55, w, h * 0.45);
+    // Ondulations : fines colonnes d'air chaud qui se tordent en montant
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(255,170,110,0.05)';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    for (let i = 0; i < 9; i++) {
+      const bx = ((i + 0.5) / 9) * w + Math.sin(time * 0.3 + i) * 20;
+      const u = wrap(time * 0.12 + i * 0.37, 1);
+      const y0 = h * (1 - u * 0.6);
+      ctx.moveTo(bx, y0);
+      for (let k = 1; k <= 6; k++) {
+        const yy = y0 - k * h * 0.05;
+        ctx.lineTo(bx + Math.sin(time * 3 + k * 1.3 + i) * 7, yy);
+      }
+    }
+    ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /** Forêt : papillons qui voltigent devant les arbres. */
+  _drawButterflies(ctx, cam, w, h, time) {
+    const W = w * 1.3;
+    for (const b of this.butterflies) {
+      const x = wrap(b.u * W + Math.sin(time * b.fx + b.phase) * b.ax * w + time * 8 - cam.x * b.par * cam.scale, W) - w * 0.15;
+      const y = b.v * h + Math.sin(time * b.fy * 2.1 + b.phase) * b.ay * h + Math.sin(time * 5 + b.phase) * 3;
+      const sz = 4.2 * b.size;
+      const f = Math.abs(Math.sin(time * b.flap + b.phase));
+      ctx.fillStyle = `rgba(${b.c},0.9)`;
+      ctx.beginPath();
+      ctx.ellipse(x - sz * 0.5 * f, y - sz * 0.2, sz * 0.6 * f + 0.4, sz * 0.75, -0.4, 0, TAU);
+      ctx.ellipse(x + sz * 0.5 * f, y - sz * 0.2, sz * 0.6 * f + 0.4, sz * 0.75, 0.4, 0, TAU);
+      ctx.ellipse(x - sz * 0.35 * f, y + sz * 0.35, sz * 0.4 * f + 0.3, sz * 0.45, 0.5, 0, TAU);
+      ctx.ellipse(x + sz * 0.35 * f, y + sz * 0.35, sz * 0.4 * f + 0.3, sz * 0.45, -0.5, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(40,30,20,0.9)';
+      ctx.fillRect(x - 0.6, y - sz * 0.5, 1.2, sz * 1.1);
+    }
+  }
+
+  /** Espace : débris qui flottent en apesanteur, tournent et dérivent lentement. */
+  _drawFloaters(ctx, cam, w, h, time) {
+    const W = w * 1.4;
+    for (const f of this.floaters) {
+      const x = wrap(f.u * W - cam.x * f.par * cam.scale + time * f.drift, W) - w * 0.2;
+      const y = f.v * h + Math.sin(time * f.bob + f.phase) * f.bobA + cam.y * f.par * cam.scale * 0.3;
+      const r = f.r;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(time * f.spin + f.phase);
+      ctx.fillStyle = f.c;
+      ctx.beginPath();
+      for (let i = 0; i < f.pts.length; i++) {
+        const a = (i / f.pts.length) * TAU;
+        ctx.lineTo(Math.cos(a) * r * f.pts[i], Math.sin(a) * r * f.pts[i]);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(200,185,255,0.55)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      // Face éclairée par la nébuleuse
+      ctx.fillStyle = 'rgba(190,160,255,0.22)';
+      ctx.beginPath();
+      ctx.arc(-r * 0.25, -r * 0.25, r * 0.45, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
 
   /** Ville : deux projecteurs qui balaient lentement le ciel. */
   _drawSearchlights(ctx, w, h, time) {
@@ -527,6 +676,76 @@ export class Background {
   }
 }
 
+// ─── Effets d'identité ──────────────────────────────────────────────────────
+
+/** Enseignes au néon de la ville, dessinées une fois avec leur halo. */
+function makeNeonSigns(rng, minX, span) {
+  const designs = [
+    { text: 'HOOPS', c: '255,70,190' },
+    { text: 'OPEN 24H', c: '80,220,255' },
+    { text: 'DINER', c: '255,180,60' },
+    { ring: true, c: '255,110,60' },
+    { text: 'ARCADE', c: '150,110,255' },
+  ];
+  const sprites = designs.map((d) => neonSprite(d));
+  const out = [];
+  const par = 0.26;
+  let x = minX * par - 6 + rng() * 4;
+  const end = minX * par + span * par + 20;
+  let i = (rng() * designs.length) | 0;
+  while (x < end) {
+    const sp = sprites[i % sprites.length];
+    out.push({ x: x / par, y: 1.9 + rng() * 1.5, w: designs[i % designs.length].ring ? 1.4 : 2.4, sprite: sp, phase: rng() });
+    x += 7 + rng() * 6;
+    i++;
+  }
+  return out;
+}
+
+function neonSprite(d) {
+  const W = d.ring ? 160 : 320;
+  const H = d.ring ? 160 : 110;
+  const c = makeCanvas(W, H);
+  const g = c.getContext('2d');
+  g.lineJoin = 'round';
+  g.lineCap = 'round';
+  const pass = (blur, width, alpha, color) => {
+    g.shadowColor = `rgba(${d.c},${alpha})`;
+    g.shadowBlur = blur;
+    g.strokeStyle = color;
+    g.lineWidth = width;
+    if (d.ring) {
+      g.beginPath();
+      g.arc(W / 2, H / 2, 46, 0, TAU);
+      g.moveTo(W / 2 - 46, H / 2);
+      g.lineTo(W / 2 + 46, H / 2);
+      g.moveTo(W / 2, H / 2 - 46);
+      g.lineTo(W / 2, H / 2 + 46);
+      g.stroke();
+    } else {
+      g.font = '800 64px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.strokeText(d.text, W / 2, H / 2 + 2);
+    }
+  };
+  pass(26, 9, 0.9, `rgba(${d.c},0.35)`);
+  pass(10, 5, 1, `rgba(${d.c},0.95)`);
+  pass(0, 2, 0, 'rgba(255,255,255,0.9)');
+  return c;
+}
+
+function makeFloater(rng) {
+  const n = 7 + ((rng() * 4) | 0);
+  return {
+    u: rng(), v: 0.12 + rng() * 0.4, r: 7 + rng() * 15,
+    pts: Array.from({ length: n }, () => 0.7 + rng() * 0.3),
+    par: 0.2 + rng() * 0.25, drift: (rng() - 0.5) * 6,
+    bob: 0.3 + rng() * 0.4, bobA: 4 + rng() * 8, spin: (rng() - 0.5) * 0.5, phase: rng() * TAU,
+    c: ['#4a3a8c', '#5a4a9e', '#3d3078'][(rng() * 3) | 0],
+  };
+}
+
 // ─── Particules ─────────────────────────────────────────────────────────────
 
 function makeParticle(kind, colors, rng) {
@@ -579,7 +798,7 @@ function makeParticle(kind, colors, rng) {
       break;
     case 'stardust': // poussières spatiales
       p.su = -0.02 - rng() * 0.04;
-      p.sv = (rng() - 0.5) * 0.01;
+      p.sv = -(0.006 + rng() * 0.02); // remontent lentement : on sent l'apesanteur
       p.r = 0.6 + rng() * 1;
       p.a = 0.5 + rng() * 0.4;
       break;

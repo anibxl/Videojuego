@@ -1,0 +1,159 @@
+/* Finitions communes à toutes les pages : retour visuel au toucher, boutons vivants,
+   transitions entre les pages. Uniquement transform et opacity (animés par le GPU). */
+
+:root {
+  --polish-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Onde lumineuse au point touché */
+.touch-ripple {
+  position: fixed;
+  z-index: 200;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.12) 45%, rgba(255, 255, 255, 0) 70%);
+  animation: touch-ripple 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes touch-ripple {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(10); opacity: 0; }
+}
+
+/* Boutons : enfoncement net puis rebond élastique au relâcher */
+.primary,
+.secondary,
+.btn,
+.icon-btn,
+.action,
+.shop-chip,
+[role='tab'] {
+  transition: transform 0.32s var(--polish-spring), background-color 0.15s ease, box-shadow 0.2s ease, filter 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.primary:active,
+.secondary:active,
+.action:active,
+.shop-chip:active {
+  transform: scale(0.93);
+  transition-duration: 0.08s;
+  filter: brightness(1.12);
+}
+
+.btn:active,
+.icon-btn:active {
+  transform: scale(0.86);
+  transition-duration: 0.08s;
+}
+
+@media (hover: hover) {
+  .primary:hover,
+  .action:hover,
+  .shop-chip:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+  }
+  .btn:hover,
+  .icon-btn:hover {
+    transform: scale(1.06);
+  }
+}
+
+/* Reflet qui balaie les boutons principaux */
+.primary,
+.action.buy {
+  position: relative;
+  overflow: hidden;
+}
+
+.primary::after,
+.action.buy::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.38) 50%, rgba(255, 255, 255, 0) 100%);
+  transform: translateX(0) skewX(-18deg);
+  animation: polish-shine 3.6s ease-in-out infinite 1.2s;
+  pointer-events: none;
+}
+
+@keyframes polish-shine {
+  0%, 62% { transform: translateX(0) skewX(-18deg); }
+  100% { transform: translateX(480%) skewX(-18deg); }
+}
+
+/* Transition entre les pages : le voile s'accompagne d'un petit ballon qui tourne
+   (visible seulement si le chargement dure) */
+.fade::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, transparent 46%, rgba(40, 14, 0, 0.75) 46% 54%, transparent 54%),
+    linear-gradient(0deg, transparent 46%, rgba(40, 14, 0, 0.75) 46% 54%, transparent 54%),
+    radial-gradient(circle at 35% 30%, #ffb070, #f47a2a 55%, #b84a12);
+  box-shadow: 0 0 24px rgba(255, 122, 47, 0.45);
+  opacity: 0;
+  animation: polish-spin 0.9s linear infinite;
+  transition: opacity 0.2s ease;
+}
+
+.fade:not(.out)::after {
+  opacity: 1;
+  transition-delay: 0.45s;
+}
+
+@keyframes polish-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .touch-ripple,
+  .primary::after,
+  .action.buy::after,
+  .fade::after {
+    animation: none !important;
+  }
+}
+
+/* Commandes de jeu : onde brève à chaque appui (le bouton REBOND « claque ») */
+.pad::before,
+.bounce::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pad {
+  position: relative;
+}
+
+.pad.pressed::before,
+.bounce.pressed::before {
+  animation: pad-pulse 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.bounce.pressed::before {
+  border-color: rgba(var(--accent-rgb, 255, 122, 47), 0.9);
+}
+
+@keyframes pad-pulse {
+  from { transform: scale(0.92); opacity: 1; }
+  to { transform: scale(1.35); opacity: 0; }
+}

@@ -58,6 +58,8 @@ export class Renderer {
     this.ctx = canvas.getContext('2d', { alpha: false });
     this.tex = createBallTextures();
     this.starSprite = makeStarSprite();
+    this.shadowSprite = makeShadowSprite();
+    this.rimSprites = [];
     this.glowSprites = new Map();
     /** Densité des particules d'ambiance (qualité graphique : 0,4 · 0,7 · 1). */
     this.particleDensity = 1;
@@ -82,6 +84,7 @@ export class Renderer {
     this.themeId = themeId;
     this.theme = themeOf(themeId);
     this.background = new Background(level, { particles: this.particleDensity });
+    if (changed) this.rimSprites = (this.theme.ballLight ?? []).map((l) => ({ ...l, sprite: makeRimSprite(l.color) }));
     if (changed && this.w > 1) this._bakeVignette();
   }
 
@@ -111,6 +114,15 @@ export class Renderer {
     grad.addColorStop(1, `rgba(${this.theme.light},0.5)`);
     vg.fillStyle = grad;
     vg.fillRect(0, 0, vw, vh);
+    // Étalonnage : halos de la lumière ambiante du monde (gratuits : cuits dans la même image)
+    for (const g of this.theme.grade ?? []) {
+      const gr = Math.max(vw, vh) * g.r;
+      const rg = vg.createRadialGradient(g.x * vw, g.y * vh, 0, g.x * vw, g.y * vh, gr);
+      rg.addColorStop(0, `rgba(${g.color},${g.alpha})`);
+      rg.addColorStop(1, `rgba(${g.color},0)`);
+      vg.fillStyle = rg;
+      vg.fillRect(0, 0, vw, vh);
+    }
     this._vignette = v;
   }
 
@@ -141,6 +153,7 @@ export class Renderer {
     for (const wz of L.winds) if (visible(wz.x, wz.x + wz.w)) drawWindZone(this, wz, t);
     for (const d of L.doors) this._drawDoor(d);
     for (const solid of L.solids) if (visible(solid.x0, solid.x1)) drawSolid(this, solid, theme, time);
+    if (s.tracks?.length) this._drawTracks(s.tracks, time, visible);
     for (const l of L.lavas) if (visible(l.x, l.x + l.w)) drawLiquid(this, l, time, L.bounds.minY - 2);
     for (const d of L.doors) this._drawDoorLight(d);
     for (const f of L.fans) if (visible(f.x, f.x + f.w)) this._drawFanGrate(f);
@@ -169,10 +182,12 @@ export class Renderer {
     for (const v of L.vines) if (visible(v.x - v.len, v.x + v.len)) drawVine(this, v, s.ball, time);
     for (const c of L.checkpoints) if (visible(c.x - 1, c.x + 1)) this._drawCheckpoint(c, t);
     for (const st of L.stars) if (!st.collected && visible(st.x - 1, st.x + 1)) this._drawStar(st, s.time);
-    if (visible(L.hoop.leftX - 1, L.hoop.board.x + 2)) this._drawHoopBack(L.hoop);
+    if (s.goal) this._drawGoalBurst(s.goal, s.time);
+    if (visible(L.hoop.leftX - 1, L.hoop.board.x + 2)) this._drawHoopBack(L.hoop, s.goal, s.time);
 
     if (s.ballVisible) {
       if (s.trail) drawTrail(ctx, s.trail.id, s.trail.pts, s.time, s.ball.r);
+      else if (s.ghost) this._drawGhosts(s);
       this._drawShadow(s);
       this._drawBall(s);
     }
@@ -190,6 +205,10 @@ export class Renderer {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (s.flash > 0) {
       ctx.fillStyle = `rgba(255,70,90,${0.25 * s.flash})`;
+      ctx.fillRect(0, 0, this.w, this.h);
+    }
+    if (s.goalFlash > 0) {
+      ctx.fillStyle = `rgba(255,248,230,${0.22 * s.goalFlash * s.goalFlash})`;
       ctx.fillRect(0, 0, this.w, this.h);
     }
     this._drawTexts(s);
@@ -525,8 +544,10 @@ export class Renderer {
 
   // ─── Panier ─────────────────────────────────────────────────────────────
 
-  _drawHoopBack(h) {
+  _drawHoopBack(h, goal, time) {
     const ctx = this.ctx;
+    // Le cercle s'illumine au moment du panier
+    if (goal && time - goal.t0 < 0.9) this._drawGlow('255,140,70', h.centerX, h.rimY, 1.8, 1 - (time - goal.t0) / 0.9);
     if (h.pole) {
       const g = ctx.createLinearGradient(h.pole.x, 0, h.pole.x + h.pole.w, 0);
       g.addColorStop(0, '#3b5680');
@@ -587,13 +608,89 @@ export class Renderer {
     const surface = s.level.world.surfaceBelow(ball.x, ball.y);
     if (surface === -Infinity) return;
     const height = ball.y - ball.r - surface;
-    if (height > 7) return;
-    const t = Math.max(0, height) / 7;
+    if (height > 8) return;
+    const t = Math.max(0, height) / 8;
     const ctx = this.ctx;
-    ctx.fillStyle = `rgba(2,6,16,${0.4 * (1 - t) * ball.scale})`;
+    // Ombre douce : nette et sombre au contact, plus large et diffuse quand le ballon s'élève
+    const w = ball.r * (1.25 + 0.9 * t) * ball.scale;
+    const h = ball.r * (0.32 + 0.25 * t) * ball.scale;
+    ctx.globalAlpha = 0.62 * (1 - t) * (1 - t);
+    ctx.drawImage(this.shadowSprite, ball.x - w, surface - h * 0.55, w * 2, h * 2);
+    // Occlusion de contact : petit noyau sombre quand le ballon touche presque
+    if (height < 0.5) {
+      const k = 1 - height / 0.5;
+      ctx.globalAlpha = 0.5 * k;
+      ctx.drawImage(this.shadowSprite, ball.x - ball.r * 0.6, surface - 0.07, ball.r * 1.2, 0.16);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Traces du ballon dans la neige : petits creux bleutés qui s'effacent lentement. */
+  _drawTracks(tracks, time, visible) {
+    const ctx = this.ctx;
+    for (const t of tracks) {
+      if (!visible(t.x - 0.5, t.x + 0.5)) continue;
+      const age = time - t.t;
+      const a = age < 12 ? 1 - age / 12 : 0;
+      if (a <= 0) continue;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = 'rgba(120,150,200,0.38)';
+      ctx.beginPath();
+      ctx.ellipse(t.x, t.y - 0.02, t.w, 0.045, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillRect(t.x - t.w * 0.9, t.y + 0.015, t.w * 1.8, 0.022);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Images fantômes derrière un ballon très rapide (sans traînée équipée). */
+  _drawGhosts(s) {
+    const g = s.ghost;
+    const sp = Math.hypot(s.body.vx, s.body.vy);
+    if (sp < 10 || g.length < 4) return;
+    const ctx = this.ctx;
+    const r = s.ball.r * s.ball.scale;
+    const k = clamp((sp - 10) / 10, 0, 1);
+    for (let i = 0; i < 3; i++) {
+      const p = g[g.length - 2 - i * 1];
+      if (!p) break;
+      ctx.globalAlpha = (0.2 - i * 0.06) * k;
+      ctx.drawImage(this.tex.surface, p.x - r, p.y - r, r * 2, r * 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Gerbe de lumière derrière le panier au moment du panier. */
+  _drawGoalBurst(g, time) {
+    const age = time - g.t0;
+    if (age > 1.8) return;
+    const ctx = this.ctx;
+    const k = age < 0.12 ? age / 0.12 : Math.max(0, 1 - (age - 0.12) / 1.68);
+    const rgb = g.swish ? '255,214,90' : '255,255,255';
+    ctx.save();
+    ctx.translate(g.x, g.y);
+    ctx.rotate(age * 0.6);
+    ctx.globalCompositeOperation = 'lighter';
+    const n = 14;
+    const len = 4.2 + age * 2.2;
+    const grad = ctx.createRadialGradient(0, 0, 0.2, 0, 0, len);
+    grad.addColorStop(0, `rgba(${rgb},${0.5 * k})`);
+    grad.addColorStop(1, `rgba(${rgb},0)`);
+    ctx.fillStyle = grad;
     ctx.beginPath();
-    ctx.ellipse(ball.x, surface + 0.01, ball.r * (1.05 - 0.45 * t) * ball.scale, ball.r * 0.15 * (1 - 0.5 * t), 0, 0, Math.PI * 2);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      const wa = i % 2 ? 0.07 : 0.12;
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a - wa) * len, Math.sin(a - wa) * len);
+      ctx.lineTo(Math.cos(a + wa) * len, Math.sin(a + wa) * len);
+      ctx.closePath();
+    }
     ctx.fill();
+    ctx.restore();
+    ctx.globalCompositeOperation = 'source-over';
+    this._drawGlow(rgb, g.x, g.y, 2.6 + age, 0.9 * k);
   }
 
   _drawBall(s) {
@@ -612,6 +709,16 @@ export class Renderer {
     ctx.restore();
     ctx.scale(1, -1);
     ctx.drawImage(this.tex.shading, -r, -r, r * 2, r * 2);
+    ctx.scale(1, -1);
+    // Lumières du monde qui bordent le ballon (néons, lave, soleil…)
+    for (const l of this.rimSprites) {
+      ctx.save();
+      ctx.rotate(l.angle);
+      ctx.globalAlpha = l.alpha;
+      ctx.drawImage(l.sprite, -r, -r, r * 2, r * 2);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 
@@ -661,6 +768,38 @@ export class Renderer {
         ctx.beginPath();
         ctx.ellipse(p.x, p.y, p.size * (0.4 + 1.1 * k), p.size * 0.35 * (0.4 + 1.1 * k), 0, 0, Math.PI * 2);
         ctx.stroke();
+        continue;
+      }
+      if (p.kind === 4) {
+        // Trait de vitesse : segment orienté le long de la vitesse, qui s'amincit
+        const sp = Math.hypot(p.vx, p.vy);
+        if (sp < 0.2) continue;
+        const len = Math.min(0.9, sp * 0.06);
+        ctx.globalAlpha = t;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = p.size * (0.4 + t);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - (p.vx / sp) * len, p.y - (p.vy / sp) * len);
+        ctx.stroke();
+        continue;
+      }
+      if (p.kind === 5) {
+        const g = this._glow(p.color);
+        if (p.rot === 1) {
+          // Nuage doux qui gonfle et s'efface
+          const sz = p.size * (1 + (1 - t) * 1.4);
+          ctx.globalAlpha = Math.min(1, t * 1.6) * 0.9;
+          ctx.drawImage(g, p.x - sz, p.y - sz, sz * 2, sz * 2);
+        } else {
+          // Éclair lumineux additif
+          const sz = p.size * (0.7 + 0.5 * (1 - t));
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = t;
+          ctx.drawImage(g, p.x - sz, p.y - sz, sz * 2, sz * 2);
+          ctx.globalCompositeOperation = 'source-over';
+        }
         continue;
       }
       ctx.globalAlpha = Math.min(1, t * 2);
@@ -793,6 +932,47 @@ function makeStarSprite() {
   g.lineWidth = size * 0.025;
   g.strokeStyle = 'rgba(255,255,255,0.7)';
   g.stroke();
+  return c;
+}
+
+/** Ombre douce (dégradé radial), étirée en ellipse au dessin. */
+function makeShadowSprite() {
+  const size = 64;
+  const c = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(size, size) : document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  grad.addColorStop(0, 'rgba(2,5,14,1)');
+  grad.addColorStop(0.45, 'rgba(2,5,14,0.75)');
+  grad.addColorStop(1, 'rgba(2,5,14,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, size, size);
+  return c;
+}
+
+/** Liseré de lumière colorée sur le bord droit d'un disque (tourné vers la source au dessin). */
+function makeRimSprite(rgb) {
+  const size = 128;
+  const c = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(size, size) : document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  const r = size / 2 - 1;
+  const lin = g.createLinearGradient(size / 2 - r, 0, size / 2 + r, 0);
+  lin.addColorStop(0, `rgba(${rgb},0)`);
+  lin.addColorStop(0.55, `rgba(${rgb},0.15)`);
+  lin.addColorStop(1, `rgba(${rgb},1)`);
+  g.fillStyle = lin;
+  g.beginPath();
+  g.arc(size / 2, size / 2, r, 0, Math.PI * 2);
+  g.fill();
+  // On creuse l'intérieur : il ne reste qu'un croissant doux du côté de la lumière
+  g.globalCompositeOperation = 'destination-out';
+  const cut = g.createRadialGradient(size / 2 - r * 0.2, size / 2, 0, size / 2 - r * 0.2, size / 2, r * 1.02);
+  cut.addColorStop(0, 'rgba(0,0,0,1)');
+  cut.addColorStop(0.78, 'rgba(0,0,0,1)');
+  cut.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = cut;
+  g.fillRect(0, 0, size, size);
   return c;
 }
 

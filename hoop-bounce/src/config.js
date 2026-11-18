@@ -47,8 +47,8 @@ export const CONFIG = Object.freeze({
   controls: Object.freeze({
     // Déplacement : de l'inertie, mais une réponse vive (aucune lourdeur)
     maxSpeed: 7.5,             // u/s
-    groundAccel: 26,           // u/s² en appuyant sur ◀ / ▶ au sol (pleine vitesse en ~0,3 s)
-    airAccel: 13,              // contrôle en l'air, plus faible
+    groundAccel: 28,           // u/s² en appuyant sur ◀ / ▶ au sol (pleine vitesse en ~0,27 s)
+    airAccel: 15,              // contrôle en l'air, plus faible (mais assez pour corriger une trajectoire)
     turnBoost: 1.9,            // freinage plus franc quand on appuie dans l'autre sens
     groundBrake: 3.5,          // sans appui au sol, la balle roule encore un peu
     airBrake: 0,               // en l'air, l'élan est conservé

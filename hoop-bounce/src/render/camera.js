@@ -4,6 +4,8 @@
 //  - zone morte verticale : les rebonds ne secouent pas l'image
 //  - reste dans les limites du niveau
 //  - secousses sur les gros impacts
+//  - petits zooms : recul quand la balle monte haut (on voit où elle va retomber), « coup de zoom »
+//    bref sur les moments forts (rebond à pleine puissance, étoile, panier, éclatement)
 
 import { clamp, damp, smoothDamp } from '../core/math.js';
 
@@ -23,6 +25,9 @@ export class Camera {
     this.baseScale = 40;
     this.zoom = 1;
     this.zoomTarget = 1;
+    this.heightZoom = 1;
+    this.kickZoom = 0;
+    this.kickVel = 0;
     this.focus = null; // point à cadrer à la place du ballon (ex. : le panier au moment du panier)
     this.width = 1;
     this.height = 1;
@@ -46,6 +51,8 @@ export class Camera {
   /** Revient au cadrage normal (nouvelle partie). */
   resetEffects() {
     this.zoom = this.zoomTarget = 1;
+    this.heightZoom = 1;
+    this.kickZoom = this.kickVel = 0;
     this.focus = null;
     this.trauma = 0;
     this.scale = this.baseScale;
@@ -58,6 +65,11 @@ export class Camera {
     this.sx.value = this.x = t.x;
     this.sy.value = this.y = t.y;
     this.sx.velocity = this.sy.velocity = 0;
+  }
+
+  /** Coup de zoom bref (positif : on s'approche), amorti comme un ressort. */
+  kick(amount) {
+    this.kickVel += amount * 9;
   }
 
   addTrauma(amount) {
@@ -74,7 +86,18 @@ export class Camera {
     const c = this.cfg;
     this.time += dt;
     this.zoom = damp(this.zoom, this.zoomTarget, 3.2, dt);
-    this.scale = this.baseScale * this.zoom;
+    // Recul doux quand la balle s'élève loin de sa dernière surface (jusqu'à −9 %)
+    const lift = this.focus ? 0 : target.y - target.groundY;
+    const hz = 1 - clamp((lift - 2.6) / 5.5, 0, 1) * 0.09;
+    this.heightZoom = damp(this.heightZoom, hz, hz < this.heightZoom ? 2.2 : 1.4, dt);
+    // Coup de zoom : ressort amorti (pas de saut d'image)
+    const steps = Math.max(1, Math.ceil(dt * 240));
+    const h = dt / steps;
+    for (let i = 0; i < steps; i++) {
+      this.kickVel += (-160 * this.kickZoom - 16 * this.kickVel) * h;
+      this.kickZoom += this.kickVel * h;
+    }
+    this.scale = this.baseScale * this.zoom * this.heightZoom * (1 + clamp(this.kickZoom, -0.08, 0.1));
 
     const lookTarget = clamp(target.vx * c.lookAhead, -c.maxLookAhead, c.maxLookAhead);
     this.look = damp(this.look, lookTarget, 1 / c.lookAheadSmooth, dt);
