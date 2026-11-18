@@ -6,6 +6,7 @@ const water = (x0, x1) => ({ x: x0, y: -0.5, w: x1 - x0 });
 
 const F1 = {
   id: 'forest-1',
+  difficulty: 'easy',
   number: 1,
   nameKey: 'level.forest.1',
   bounds: bounds(50, 14),
@@ -24,6 +25,7 @@ const F1 = {
 
 const F2 = {
   id: 'forest-2',
+  difficulty: 'medium',
   number: 2,
   nameKey: 'level.forest.2',
   bounds: bounds(54),
@@ -46,6 +48,7 @@ const F2 = {
 
 const F3 = {
   id: 'forest-3',
+  difficulty: 'easy',
   number: 3,
   nameKey: 'level.forest.3',
   bounds: bounds(44, 12),
@@ -64,6 +67,7 @@ const F3 = {
 
 const F4 = {
   id: 'forest-4',
+  difficulty: 'medium',
   number: 4,
   nameKey: 'level.forest.4',
   bounds: bounds(38, 16),
@@ -85,6 +89,7 @@ const F4 = {
 
 const F5 = {
   id: 'forest-5',
+  difficulty: 'hard',
   number: 5,
   nameKey: 'level.forest.5',
   bounds: bounds(54, 12),
@@ -92,16 +97,18 @@ const F5 = {
   solids: [...walls(54), floor(-4, 11, 'ground'), basin(11, 30, 'ground'), floor(30, 58, 'ground')],
   water: [water(11, 30)],
   vines: [{ x: 13.4, y: 9.6, len: 6.4 }, { x: 19.2, y: 9.6, len: 6.4 }, { x: 25, y: 9.6, len: 6.4 }],
-  stars: [{ x: 16.3, y: 5.4 }, { x: 22.1, y: 5.4 }, { x: 28, y: 5.4 }],
+  maces: [{ x: 22.1, y: 12.5, len: 4.2, r: 0.5, amp: 0.7, period: 3.2, phase: 0 }],
+  stars: [{ x: 16.3, y: 5.4 }, { x: 22.1, y: 7.4 }, { x: 28, y: 5.4 }],
   hoop: hoopAt(46),
   passages: [
-    { name: 'Trois lianes', start: [3, 0], goal: ['on', 30, 40, 0], plan: [['goTo', 10.2], ['charge', 4], ['vines', 30]] },
+    { name: 'Trois lianes et un tronc à pointes', start: [3, 0], goal: ['on', 30, 40, 0], plan: [['goTo', 10.2], ['charge', 4], ['waitCycle', 3.2, 0.88, 0.98], ['vines', 30]] },
     { name: 'Rive → panier', start: [36, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 
 const F6 = {
   id: 'forest-6',
+  difficulty: 'medium',
   number: 6,
   nameKey: 'level.forest.6',
   bounds: bounds(54, 14),
@@ -140,6 +147,7 @@ const F6 = {
 
 const F7 = {
   id: 'forest-7',
+  difficulty: 'hard',
   number: 7,
   nameKey: 'level.forest.7',
   bounds: bounds(54, 16),
@@ -148,17 +156,20 @@ const F7 = {
   spikes: [{ x: 14, y: 0, w: 9, dir: 'up' }],
   mushrooms: [{ x: 10, y: 1.0, w: 1.8, height: 5.4 }],
   vines: [{ x: 15.6, y: 12, len: 7 }],
-  stars: [{ x: 10.9, y: 6 }, { x: 18.2, y: 5.4 }, { x: 27.5, y: 5.2 }],
+  maces: [{ x: 35.2, y: 6.6, len: 5.4, r: 0.55, amp: 0.8, period: 2.8, phase: 0 }],
+  checkpoints: [{ x: 27.5, y: 3 }],
+  stars: [{ x: 10.9, y: 6 }, { x: 18.2, y: 5.4 }, { x: 35.2, y: 2.4 }],
   hoop: hoopAt(45),
   passages: [
     { name: 'Champignon → liane → souche', start: [3, 0], goal: ['on', 23, 32, 3], plan: [['goTo', 8.2], ['hop', 2, 10.9], ['vines', 23, false]] },
-    { name: 'Souche → sol', start: [26, 3], goal: ['on', 32.2, 40, 0], plan: [['run', 1, 32.4, 40, 0]] },
-    { name: 'Sol → panier', start: [36, 0], goal: ['win'], plan: 'shot' },
+    { name: 'Souche → tronc balancier → sol', start: [28.5, 3], goal: ['on', 38.4, 44, 0], plan: [['goTo', 30.5], ['waitCycle', 2.8, 1.2, 1.3], ['run', 1, 38.6, 44, 0]] },
+    { name: 'Sol → panier', start: [39.5, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 
 const F8 = {
   id: 'forest-8',
+  difficulty: 'medium',
   number: 8,
   nameKey: 'level.forest.8',
   bounds: bounds(48, 15),
@@ -181,6 +192,7 @@ const F8 = {
 
 const F9 = {
   id: 'forest-9',
+  difficulty: 'hard',
   number: 9,
   nameKey: 'level.forest.9',
   bounds: bounds(60, 12),
@@ -189,7 +201,8 @@ const F9 = {
   water: [water(11, 36)],
   vines: [{ x: 13.4, y: 9.6, len: 6.4 }, { x: 19.2, y: 9.6, len: 6.4 }, { x: 25, y: 9.6, len: 6.4 }, { x: 30.8, y: 9.6, len: 6.4 }],
   logs: [{ x: 41, y: 0.6, r: 0.6, path: { dx: 4.4, dy: 0, period: 5, phase: 0 } }],
-  stars: [{ x: 16.3, y: 5.4 }, { x: 27.9, y: 5.4 }, { x: 43.2, y: 3.2 }],
+  checkpoints: [{ x: 37.6, y: 0 }],
+  stars: [{ x: 16.3, y: 5.4 }, { x: 27.9, y: 4.2 }, { x: 43.2, y: 2.4 }],
   hoop: hoopAt(54),
   passages: [
     { name: 'Quatre lianes', start: [3, 0], goal: ['on', 36, 39.6, 0], plan: [['goTo', 10.2], ['charge', 4], ['vines', 36], ['goTo', 38]] },
@@ -200,6 +213,7 @@ const F9 = {
 
 const F10 = {
   id: 'forest-10',
+  difficulty: 'hard',
   number: 10,
   nameKey: 'level.forest.10',
   bounds: bounds(76, 17),
@@ -214,18 +228,20 @@ const F10 = {
   ],
   water: [water(14, 34)],
   mushrooms: [{ x: 6, y: 1.0, w: 1.8, height: 6 }],
-  vines: [{ x: 16.4, y: 12, len: 6.4 }, { x: 22.2, y: 12, len: 6.4 }, { x: 28, y: 12, len: 6.4 }],
+  vines: [{ x: 16.4, y: 12, len: 7.4 }, { x: 22.2, y: 12, len: 6.8 }, { x: 28, y: 12, len: 6.4 }],
   logs: [{ x: 38, y: 0.6, r: 0.6, path: { dx: 5, dy: 0, period: 5, phase: 0 } }],
   branches: [
     { x1: 46, x2: 48.5, y: 2.6, path: { dx: 0, dy: 1.2, period: 4, phase: 0 } },
     { x1: 50, x2: 52.5, y: 4.8, path: { dx: 0.8, dy: 0, period: 3.6, phase: 0.25 } },
     { x1: 54, x2: 56.5, y: 7, path: { dx: 0, dy: 1, period: 4.4, phase: 0.5 } },
   ],
-  stars: [{ x: 6.9, y: 7.2 }, { x: 26.3, y: 8 }, { x: 52, y: 8 }],
+  maces: [{ x: 26.4, y: 15, len: 5.2, r: 0.5, amp: 0.55, period: 3.4, phase: 0 }],
+  checkpoints: [{ x: 35.6, y: 0 }],
+  stars: [{ x: 6.9, y: 7.2 }, { x: 26.3, y: 7.4 }, { x: 52, y: 8 }],
   hoop: hoopAt(70, 3.4, 8),
   passages: [
     { name: 'Champignon → souche', start: [3, 0], goal: ['on', 10, 14, 4.2], plan: [['goTo', 4.2], ['hop', 2, 6.9], ['fly', 12]] },
-    { name: 'Trois lianes', start: [12, 4.2], goal: ['on', 34, 37, 0], plan: [['goTo', 13.2], ['charge', 2], ['vines', 34], ['goTo', 35.4]] },
+    { name: 'Trois lianes', start: [12, 4.2], goal: ['on', 34, 37, 0], plan: [['goTo', 13.2], ['waitCycle', 3.4, 0.25, 0.35], ['charge', 2], ['vines', 34], ['goTo', 35.4]] },
     { name: 'Par-dessus le tronc', start: [35.4, 0], goal: ['on', 44, 45.6, 0], plan: [['waitMover', 'rollers', 0, 'x', '<', 0.3], ['jumpOver', 'rollers', 0], ['goTo', 44.8]] },
     { name: 'Branches → cabane', start: [44.8, 0], goal: ['on', 58, 76, 8], plan: [['hopTo', 4, 'branches', 0, 1.25], ['hopTo', 3, 'branches', 1, 1.25], ['hopTo', 3, 'branches', 2, 1.25], ['hop', 2, 60]] },
     { name: 'Cabane → panier', start: [61, 8], goal: ['win'], plan: 'shot' },

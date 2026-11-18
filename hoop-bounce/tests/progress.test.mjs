@@ -111,6 +111,7 @@ test('chaque texte de jeu existe dans les trois langues, y compris noms et aides
     assert.ok(GAME_STRINGS.fr[l.nameKey], `nom manquant : ${l.nameKey}`);
     for (const h of l.hints ?? []) assert.ok(GAME_STRINGS.fr[h.key], `aide manquante : ${h.key}`);
     assert.equal(l.stars.length, 3, `${l.id} : 3 étoiles par niveau`);
+    assert.ok(['easy', 'medium', 'hard'].includes(l.difficulty), `${l.id} : difficulté`);
   }
   for (const w of WORLDS) {
     for (const k of [w.nameKey, w.taglineKey, ...w.mechanics.map((m) => `mech.${m}`)]) assert.ok(GAME_STRINGS.fr[k], `texte manquant : ${k}`);

@@ -6,6 +6,7 @@ const lava = (x0, x1) => ({ x: x0, y: -0.4, w: x1 - x0 });
 
 const V1 = {
   id: 'volcano-1',
+  difficulty: 'easy',
   number: 1,
   nameKey: 'level.volcano.1',
   bounds: bounds(50),
@@ -24,6 +25,7 @@ const V1 = {
 
 const V2 = {
   id: 'volcano-2',
+  difficulty: 'medium',
   number: 2,
   nameKey: 'level.volcano.2',
   bounds: bounds(50),
@@ -47,6 +49,7 @@ const V2 = {
 
 const V3 = {
   id: 'volcano-3',
+  difficulty: 'easy',
   number: 3,
   nameKey: 'level.volcano.3',
   bounds: bounds(50),
@@ -68,6 +71,7 @@ const V3 = {
 
 const V4 = {
   id: 'volcano-4',
+  difficulty: 'medium',
   number: 4,
   nameKey: 'level.volcano.4',
   bounds: bounds(44, 15),
@@ -90,6 +94,7 @@ const V4 = {
 
 const V5 = {
   id: 'volcano-5',
+  difficulty: 'hard',
   number: 5,
   nameKey: 'level.volcano.5',
   bounds: bounds(52, 13),
@@ -103,18 +108,20 @@ const V5 = {
     { x: 22, y: 12, phase: 0.6 },
     { x: 26, y: 12, phase: 0.8 },
   ],
-  stars: [{ x: 12, y: 1.4 }, { x: 20, y: 1.4 }, { x: 31.5, y: 3.6 }],
+  maces: [{ x: 31.5, y: 8.4, len: 5.6, r: 0.6, amp: 0.8, period: 2.8, phase: 0 }],
+  stars: [{ x: 12, y: 1.4 }, { x: 22, y: 0.7 }, { x: 31.5, y: 2.2 }],
   hoop: hoopAt(45),
   hints: [{ x: 4.6, y: 4.3, key: 'hint.rocks' }],
   passages: [
     { name: 'Sous la pluie de pierres', start: [3, 0], goal: ['on', 27, 29.6, 0], plan: [['goTo', 6], ['waitCycle', 2.8, 0.25, 0.35], ['run', 1, 27, 29.4, 0], ['goTo', 28.6]] },
-    { name: 'Bassin', start: [28.6, 0], goal: ['on', 33, 40, 0], plan: [['goTo', 29.3], ['hop', 3, 35]] },
+    { name: 'Bassin sous le boulet', start: [28.6, 0], goal: ['on', 33, 40, 0], plan: [['goTo', 29.3], ['charge', 3], ['waitCycle', 2.8, 1.73, 1.83], ['jump', 1, 35]] },
     { name: 'Roche → panier', start: [37, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 
 const V6 = {
   id: 'volcano-6',
+  difficulty: 'medium',
   number: 6,
   nameKey: 'level.volcano.6',
   bounds: bounds(50, 13.5),
@@ -154,6 +161,7 @@ const V6 = {
 
 const V7 = {
   id: 'volcano-7',
+  difficulty: 'hard',
   number: 7,
   nameKey: 'level.volcano.7',
   bounds: bounds(54),
@@ -169,18 +177,20 @@ const V7 = {
     { x: 24, y: 0, phase: 0 },
     { x: 27, y: 0, phase: 0.45 },
   ],
-  stars: [{ x: 12.3, y: 4.2 }, { x: 25.5, y: 3.2 }, { x: 31.5, y: 3.6 }],
+  cannons: [{ x: 31.5, y: -0.9, angle: Math.PI / 2, speed: 7, period: 2.6, phase: 0, size: 0.32 }],
+  stars: [{ x: 12.3, y: 4.2 }, { x: 25.5, y: 3.2 }, { x: 31.5, y: 4.2 }],
   hoop: hoopAt(46),
   passages: [
     { name: 'Gué de pierres fragiles', start: [3, 0], goal: ['on', 22, 23.4, 0], plan: [['goTo', 7.3], ['hop', 2, 10.5], ['jump', 1, 14.3], ['jump', 1, 18.1], ['jump', 1, 22.7], ['goTo', 22.6]] },
     { name: 'Deux geysers', start: [22.6, 0], goal: ['on', 28, 29.6, 0], plan: [['waitCycle', 3.2, 1.38, 1.48], ['run', 1, 28.2, 29.6, 0], ['goTo', 28.8]] },
-    { name: 'Dernier bassin', start: [28.8, 0], goal: ['on', 33, 42, 0], plan: [['hop', 3, 34.8]] },
+    { name: 'Bassin et boules de feu', start: [28.8, 0], goal: ['on', 33, 42, 0], plan: [['charge', 3], ['waitCycle', 2.6, 1.65, 1.75], ['jump', 1, 34.8]] },
     { name: 'Roche → panier', start: [38, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 
 const V8 = {
   id: 'volcano-8',
+  difficulty: 'medium',
   number: 8,
   nameKey: 'level.volcano.8',
   bounds: bounds(58, 13.5),
@@ -207,6 +217,7 @@ const V8 = {
 
 const V9 = {
   id: 'volcano-9',
+  difficulty: 'hard',
   number: 9,
   nameKey: 'level.volcano.9',
   bounds: bounds(52, 12),
@@ -215,17 +226,21 @@ const V9 = {
   lava: [lava(9, 14.6), lava(23, 29.4)],
   trampolines: [{ x: 6.4, y: 0, w: 1.6 }, { x: 21.4, y: 0, w: 1.6 }],
   geysers: [{ x: 19.6, y: 0, phase: 0 }],
-  stars: [{ x: 11, y: 6.4 }, { x: 19.6, y: 4.8 }, { x: 26.6, y: 6.6 }],
+  cannons: [{ x: 33.5, y: -0.3, angle: Math.PI / 2, speed: 8, period: 3.2, phase: 0.5, size: 0.32 }],
+  checkpoints: [{ x: 16.4, y: 0 }],
+  stars: [{ x: 11, y: 6.4 }, { x: 19.6, y: 3.6 }, { x: 26.6, y: 6.6 }],
   hoop: hoopAt(44),
   passages: [
     { name: 'Trampoline au-dessus de la lave', start: [3, 0], goal: ['on', 14.6, 18.6, 0], plan: [['run', 1, 14.8, 18.6, 0], ['goTo', 16.4]] },
     { name: 'Geyser → trampoline → lave', start: [16.4, 0], goal: ['on', 29.4, 38, 0], plan: [['waitCycle', 3.2, 0.70, 0.80], ['run', 1, 29.6, 38, 0]] },
-    { name: 'Roche → panier', start: [35, 0], goal: ['win'], plan: 'shot' },
+    { name: 'Colonne de feu', start: [31, 0], goal: ['on', 34.4, 40, 0], plan: [['goTo', 31.6], ['waitCycle', 3.2, 2.2, 2.3], ['run', 1, 34.6, 40, 0]] },
+    { name: 'Roche → panier', start: [36, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 
 const V10 = {
   id: 'volcano-10',
+  difficulty: 'hard',
   number: 10,
   nameKey: 'level.volcano.10',
   bounds: bounds(90, 13),
@@ -251,7 +266,9 @@ const V10 = {
     { x: 35.4, y: 12, phase: 0.5 },
   ],
   movers: [{ x: 38.2, y: -0.1, w: 2.4, h: 0.35, style: 'stone', path: { dx: 0, dy: 4.2, period: 5, phase: 0 } }],
-  stars: [{ x: 9.5, y: 3.4 }, { x: 25.6, y: 4.6 }, { x: 49, y: 6.2 }],
+  maces: [{ x: 49, y: 10.4, len: 5, r: 0.55, amp: 0.6, period: 3.2, phase: 0.25 }],
+  checkpoints: [{ x: 31.4, y: 0 }, { x: 42, y: 4.2 }],
+  stars: [{ x: 9.5, y: 3.4 }, { x: 25.6, y: 4.6 }, { x: 49, y: 6.0 }],
   hoop: hoopAt(82),
   passages: [
     { name: 'Premier bassin', start: [3, 0], goal: ['on', 11, 13, 0], plan: [['goTo', 7.3], ['hop', 3, 12.2], ['goTo', 12.2]] },

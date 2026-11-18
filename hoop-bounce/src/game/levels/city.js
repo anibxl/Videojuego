@@ -23,6 +23,7 @@ import { court, walls, bounds } from './common.js';
 // 1 — Rouler, rebondir, enchaîner. Les étoiles dessinent la montée vers le panier.
 const L1 = {
   id: 'first-shot',
+  difficulty: 'easy',
   number: 1,
   nameKey: 'level.1',
   bounds: bounds(28),
@@ -44,27 +45,31 @@ const L1 = {
 // 2 — Un mur : il faut charger la puissance.
 const L2 = {
   id: 'the-wall',
+  difficulty: 'medium',
   number: 2,
   nameKey: 'level.2',
   bounds: bounds(34),
   spawn: { x: 3, y: 0 },
-  solids: [...court(34), { x: 10, y: 0, w: 2, h: 2.0, style: 'block' }],
+  solids: [...court(34), { x: 10, y: 0, w: 2, h: 2.0, style: 'block', skin: 'brick' }],
+  saws: [{ x: 16.8, y: 0.7, r: 0.6, path: { dx: 0, dy: 2.8, period: 2.6, phase: 0 } }],
   stars: [
     { x: 11, y: 3.4 },
-    { x: 17.5, y: 5.2 },
+    { x: 16.8, y: 4.6 },
     { x: 21.3, y: 4.5 },
   ],
   hoop: { x: 24, y: 3.4, facing: -1, mount: 'pole' },
   hints: [{ x: 5.2, y: 4.3, key: 'hint.charge' }],
   passages: [
     { name: 'Départ → au-delà du mur', start: [3, 0], goal: ['on', 12.3, 22, 0], plan: [['goTo', 8.2], ['hop', 3, 13.5]] },
-    { name: 'Après le mur → panier', start: [15, 0], goal: ['win'], plan: 'shot' },
+    { name: 'Sous la scie', start: [14, 0], goal: ['on', 18.2, 22, 0], plan: [['goTo', 14.6], ['waitCycle', 2.6, 0.82, 0.93], ['run', 1, 18.4, 22, 0]] },
+    { name: 'Après la scie → panier', start: [19.5, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 
 // 3 — Trampoline au-dessus des pics, panier sur une estrade.
 const L3 = {
   id: 'trampoline',
+  difficulty: 'easy',
   number: 3,
   nameKey: 'level.3',
   bounds: bounds(38),
@@ -89,6 +94,7 @@ const L3 = {
 // 4 — Plateforme mobile au-dessus du vide.
 const L4 = {
   id: 'moving',
+  difficulty: 'medium',
   number: 4,
   nameKey: 'level.4',
   bounds: bounds(38),
@@ -100,9 +106,10 @@ const L4 = {
     { x: 38, y: 0, w: 4, h: 16, style: 'wall' },
   ],
   movers: [{ x: 10.2, y: -0.5, w: 3.6, h: 0.5, path: { dx: 8.2, dy: 0, period: 4.8, phase: 0 } }],
+  saws: [{ x: 11, y: 3.1, r: 0.55, path: { dx: 9, dy: 0, period: 3.2, phase: 0.25 } }],
   stars: [
-    { x: 13.4, y: 2.6 },
-    { x: 18.6, y: 2.6 },
+    { x: 13.4, y: 2.0 },
+    { x: 18.6, y: 2.0 },
     { x: 27, y: 4.8 },
   ],
   hoop: { x: 31, y: 3.3, facing: -1, mount: 'pole' },
@@ -116,28 +123,32 @@ const L4 = {
 // 5 — Le ventilateur mène à une terrasse où se trouve le panier.
 const L5 = {
   id: 'updraft',
+  difficulty: 'hard',
   number: 5,
   nameKey: 'level.5',
   bounds: bounds(38, 13),
   spawn: { x: 3, y: 0 },
   solids: [...court(38), { x: 12.4, y: 0, w: 25.6, h: 5.2, style: 'block' }],
   fans: [{ x: 9, y: 0, w: 2.2, h: 9, strength: 95 }],
+  blinkers: [{ x: 18.6, y: 5.2, w: 0.8, h: 2.8, period: 3, on: 1.8, phase: 0 }],
   stars: [
     { x: 10.1, y: 7.8 },
-    { x: 17, y: 6.8 },
+    { x: 19, y: 6.2 },
     { x: 31.5, y: 9.4 },
   ],
   hoop: { x: 25, y: 7.8, facing: -1, mount: 'pole', floorY: 5.2 },
   hints: [{ x: 4.6, y: 4.3, key: 'hint.fan' }],
   passages: [
     { name: 'Ventilateur → terrasse', start: [6, 0], goal: ['on', 12.4, 38, 5.2], plan: [['hold', 1, 9.6], ['wait', 1.6], ['run', 1, 12.6, 38, 5.2]] },
-    { name: 'Terrasse → panier', start: [14, 5.2], goal: ['win'], plan: 'shot' },
+    { name: 'Mur qui disparaît', start: [14, 5.2], goal: ['on', 19.8, 38, 5.2], plan: [['goTo', 16.6], ['waitCycle', 3, 1.45, 1.55], ['run', 1, 20, 38, 5.2]] },
+    { name: 'Terrasse → panier', start: [20.6, 5.2], goal: ['win'], plan: 'shot' },
   ],
 };
 
 // 6 — Interrupteur, porte, téléporteur : tout ce qu'on a appris.
 const L6 = {
   id: 'final',
+  difficulty: 'medium',
   number: 6,
   nameKey: 'level.6',
   bounds: bounds(52),
@@ -149,17 +160,18 @@ const L6 = {
     { x: 25, y: 0, w: 2, h: 16, style: 'wall' },
   ],
   switches: [{ x: 7.9, y: 2.4, w: 1.2, target: 'gate' }],
+  saws: [{ x: 7.2, y: 3.1, r: 0.45, path: { dx: 2.6, dy: 0, period: 2.4, phase: 0 } }],
   doors: [{ id: 'gate', x: 16.2, y: 0, w: 0.8, h: 2.7, open: { dx: 0, dy: 2.7 }, duration: 0.8 }],
   teleporters: [{ a: { x: 22.5, y: 0.9 }, b: { x: 30, y: 1.3 }, r: 0.8 }],
   stars: [
-    { x: 8.5, y: 4.6 },
+    { x: 8.5, y: 4.2 },
     { x: 20, y: 3.0 },
     { x: 35.5, y: 4.6 },
   ],
   hoop: { x: 41, y: 3.4, facing: -1, mount: 'pole' },
   hints: [{ x: 3.8, y: 3.7, key: 'hint.switch', size: 0.8 }],
   passages: [
-    { name: 'Départ → interrupteur', start: [3, 0], goal: ['switch', 0], plan: [['goTo', 5.4], ['hop', 4, 8.5]] },
+    { name: 'Départ → interrupteur', start: [3, 0], goal: ['switch', 0], plan: [['goTo', 5.4], ['charge', 4], ['waitCycle', 2.4, 0.48, 0.58], ['jump', 1, 8.5]] },
     { name: 'Porte ouverte → téléporteur', start: [12, 0], goal: ['x', 27.5], prep: ['openDoors'], plan: [['hold', 1, 27.6]] },
     { name: 'Après le mur → panier', start: [31, 0], goal: ['win'], plan: 'shot' },
   ],
@@ -169,29 +181,33 @@ const L6 = {
 // servir de marche (du dessus de la caisse, un rebond de puissance 5 suffit).
 const L7 = {
   id: 'city-crate',
+  difficulty: 'hard',
   number: 7,
   nameKey: 'level.city.7',
-  bounds: bounds(46, 14),
+  bounds: bounds(52, 14),
   spawn: { x: 3, y: 0 },
-  solids: [...court(46), { x: 17, y: 0, w: 29, h: 5.6, style: 'block' }],
+  solids: [...court(52), { x: 17, y: 0, w: 35, h: 5.6, style: 'block', skin: 'brick' }],
   crates: [{ x: 8, y: 0, w: 1.6, h: 1.6 }],
+  saws: [{ x: 24.5, y: 6.25, r: 0.6, path: { dx: 0, dy: 2.8, period: 2.6, phase: 0 } }],
   stars: [
     { x: 8.8, y: 3.2 },
     { x: 15.6, y: 6.6 },
-    { x: 38, y: 8.2 },
+    { x: 24.5, y: 7.6 },
   ],
-  hoop: { x: 29, y: 9.0, facing: -1, mount: 'pole', floorY: 5.6 },
+  hoop: { x: 41, y: 9.0, facing: -1, mount: 'pole', floorY: 5.6 },
   hints: [{ x: 4.6, y: 4.3, key: 'hint.crate' }],
   passages: [
     { name: 'Pousser la caisse contre la terrasse', start: [3, 0], goal: ['crate', 0, 15.2], plan: [['hold', 1, 14.85]] },
     { name: 'Caisse → terrasse', start: [16.2, 1.6], goal: ['on', 17, 46, 5.6], prep: ['crateAt', 0, 15.4], plan: [['wait', 0.3], ['charge', 5], ['jump', 1]] },
-    { name: 'Terrasse → panier', start: [19, 5.6], goal: ['win'], plan: 'shot' },
+    { name: 'La scie de la terrasse', start: [18.6, 5.6], goal: ['on', 28.8, 52, 5.6], plan: [['goTo', 19.2], ['waitCycle', 2.6, 0.6, 0.7], ['run', 1, 29, 52, 5.6]] },
+    { name: 'Terrasse → panier', start: [31, 5.6], goal: ['win'], plan: 'shot' },
   ],
 };
 
 // 8 — Les toits : d'immeuble en immeuble au-dessus du vide, antennes à éviter, nacelle mobile.
 const L8 = {
   id: 'city-roofs',
+  difficulty: 'easy',
   number: 8,
   nameKey: 'level.city.8',
   bounds: bounds(60, 11),
@@ -207,7 +223,7 @@ const L8 = {
   movers: [{ x: 34.2, y: -0.1, w: 3.2, h: 0.5, path: { dx: 6.6, dy: 0, period: 4.6, phase: 0 } }],
   stars: [
     { x: 13.8, y: 3.4 },
-    { x: 19.8, y: 3.8 },
+    { x: 19.8, y: 2.5 },
     { x: 39, y: 2.6 },
   ],
   hoop: { x: 54, y: 3.4, facing: -1, mount: 'pole' },
@@ -223,6 +239,7 @@ const L8 = {
 // 9 — Le chantier : trampoline au-dessus des pics, échafaudage, monte-charge, saut final.
 const L9 = {
   id: 'city-site',
+  difficulty: 'hard',
   number: 9,
   nameKey: 'level.city.9',
   bounds: bounds(62, 12),
@@ -238,6 +255,8 @@ const L9 = {
     { x: 43, y: 0, w: 2.4, dir: 'up' },
   ],
   movers: [{ x: 20.6, y: 1.9, w: 2.6, h: 0.5, path: { dx: 0, dy: 3.2, period: 5, phase: 0 } }],
+  saws: [{ x: 36.8, y: 0.6, r: 0.6, path: { dx: 3.6, dy: 0, period: 3, phase: 0 } }],
+  checkpoints: [{ x: 26, y: 5.6 }],
   stars: [
     { x: 11.6, y: 6.4 },
     { x: 21.9, y: 7.8 },
@@ -248,8 +267,8 @@ const L9 = {
   passages: [
     { name: 'Trampoline → échafaudage', start: [3, 0], goal: ['on', 14.4, 20.4, 2.4], plan: [['run', 1, 14.6, 20.4, 2.4], ['goTo', 17]] },
     { name: 'Monte-charge → étage', start: [17, 2.4], goal: ['on', 23.4, 34.4, 5.6], plan: [['goTo', 19.2], ['waitMover', 'movers', 0, 'y', '<', 0.05], ['goTo', 21.9], ['waitMover', 'movers', 0, 'y', '>', 3.15], ['run', 1, 23.6, 34.4, 5.6]] },
-    { name: 'Descente', start: [27, 5.6], goal: ['on', 34.6, 41, 0], plan: [['run', 1, 34.8, 41, 0], ['goTo', 39]] },
-    { name: 'Au-dessus des pics', start: [39, 0], goal: ['on', 45.4, 62, 0], plan: [['goTo', 42], ['hop', 4, 47.5]] },
+    { name: 'Descente au-dessus de la scie', start: [27, 5.6], goal: ['on', 41, 42.8, 0], plan: [['goTo', 32.5], ['waitCycle', 3, 1.65, 1.75], ['jumpAt', 1, 34.2, 41.8], ['goTo', 41.8]] },
+    { name: 'Au-dessus des pics', start: [41.8, 0], goal: ['on', 45.4, 62, 0], plan: [['goTo', 42], ['hop', 4, 47.5]] },
     { name: 'Sol → panier', start: [47, 0], goal: ['win'], plan: 'shot' },
   ],
 };
@@ -257,6 +276,7 @@ const L9 = {
 // 10 — Grand final de la ville : mur, nacelle, ventilateur, interrupteur, porte et téléporteur.
 const L10 = {
   id: 'city-finale',
+  difficulty: 'hard',
   number: 10,
   nameKey: 'level.city.10',
   bounds: bounds(82, 13.5),
@@ -275,17 +295,21 @@ const L10 = {
   switches: [{ x: 41.6, y: 5.2, w: 1.2, target: 'gate' }],
   doors: [{ id: 'gate', x: 49.8, y: 5.2, w: 0.8, h: 2.8, open: { dx: 0, dy: 2.8 }, duration: 0.8 }],
   teleporters: [{ a: { x: 53.6, y: 6.1 }, b: { x: 60.5, y: 0.9 }, r: 0.8 }],
+  lasers: [{ x1: 45.4, y1: 5.2, x2: 45.4, y2: 8.6, period: 3, on: 1.2, phase: 0 }],
+  saws: [{ x: 19, y: 3, r: 0.5, path: { dx: 8, dy: 0, period: 3.4, phase: 0 } }],
+  checkpoints: [{ x: 29.6, y: 0 }, { x: 40.6, y: 5.2 }],
   stars: [
     { x: 11, y: 5.2 },
-    { x: 23.2, y: 2.6 },
-    { x: 37.1, y: 8.6 },
+    { x: 23.2, y: 1.9 },
+    { x: 45.4, y: 7.6 },
   ],
   hoop: { x: 73, y: 3.6, facing: -1, mount: 'pole' },
   passages: [
     { name: 'Départ → au-delà du mur', start: [3, 0], goal: ['on', 12.3, 18, 0], plan: [['goTo', 8.2], ['hop', 4, 14.6]] },
     { name: 'Nacelle', start: [14, 0], goal: ['on', 28.2, 32.6, 0], plan: [['ride', 0, 25], ['goTo', 30.5]] },
     { name: 'Pics → ventilateur → terrasse', start: [30, 0], goal: ['on', 39.6, 49.5, 5.2], plan: [['goTo', 31.4], ['hop', 3, 35.6], ['hold', 1, 36.9], ['wait', 1.6], ['run', 1, 39.8, 49.5, 5.2]] },
-    { name: 'Interrupteur → porte → téléporteur', start: [40, 5.2], goal: ['x', 59.5], plan: [['hold', 1, 59.6]] },
+    { name: 'Interrupteur → laser', start: [40, 5.2], goal: ['on', 46, 49.4, 5.2], plan: [['goTo', 43.6], ['waitCycle', 3, 0.63, 0.73], ['run', 1, 46.2, 49.4, 5.2], ['goTo', 47.4]] },
+    { name: 'Porte → téléporteur', start: [47.4, 5.2], goal: ['x', 59.5], prep: ['openDoors'], plan: [['hold', 1, 59.6]] },
     { name: 'Rue → panier', start: [62, 0], goal: ['win'], plan: 'shot' },
   ],
 };

@@ -161,6 +161,9 @@ export const GAME_STRINGS = {
     'hint.portal': 'Les portails marchent dans les deux sens',
     'hint.asteroids': 'Saute quand l’astéroïde est en haut',
     'hint.inverted': 'Dans la zone, la gravité s’inverse',
+    'diff.easy': 'Facile',
+    'diff.medium': 'Moyen',
+    'diff.hard': 'Difficile',
   },
   en: {
     'level.1': 'First Shot',
@@ -321,6 +324,9 @@ export const GAME_STRINGS = {
     'hint.portal': 'Portals work both ways',
     'hint.asteroids': 'Jump when the asteroid is up',
     'hint.inverted': 'In the zone, gravity flips',
+    'diff.easy': 'Easy',
+    'diff.medium': 'Medium',
+    'diff.hard': 'Hard',
   },
   es: {
     'level.1': 'Primera canasta',
@@ -481,6 +487,9 @@ export const GAME_STRINGS = {
     'hint.portal': 'Los portales funcionan en ambos sentidos',
     'hint.asteroids': 'Salta cuando el asteroide está arriba',
     'hint.inverted': 'En la zona, la gravedad se invierte',
+    'diff.easy': 'Fácil',
+    'diff.medium': 'Medio',
+    'diff.hard': 'Difícil',
   },
 };
 

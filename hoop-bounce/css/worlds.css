@@ -886,3 +886,46 @@ svg {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Difficulté du niveau (facile · moyen · difficile) */
+.lv-diff {
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.lv-diff.easy { background: #4fd68a; box-shadow: 0 0 8px rgba(79, 214, 138, 0.8); }
+.lv-diff.medium { background: #ffb547; box-shadow: 0 0 8px rgba(255, 181, 71, 0.8); }
+.lv-diff.hard { background: #ff5f6d; box-shadow: 0 0 8px rgba(255, 95, 109, 0.8); }
+
+/* Accès à la boutique (pièces) */
+.shop-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px 0 9px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(60, 44, 10, 0.75), rgba(30, 22, 6, 0.75));
+  border: 1px solid rgba(255, 194, 61, 0.45);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  color: #ffc23d;
+  font-variant-numeric: tabular-nums;
+}
+
+.shop-chip .coin-ico {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff1b0, #ffc23d 55%, #c98a14);
+  box-shadow: inset 0 0 0 2px rgba(150, 90, 0, 0.45);
+}
+
+@media (max-width: 760px) {
+  .total-progress { display: none; }
+}

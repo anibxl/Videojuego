@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#04070f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Hoop Bounce — Boutique</title>
+  <link rel="preload" href="assets/fonts/unbounded.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/outfit.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/shop.css">
+</head>
+<body>
+  <div class="backdrop" id="backdrop" aria-hidden="true"></div>
+
+  <header class="top">
+    <a class="icon-btn" id="btn-back" href="index.html" data-label="back">
+      <svg viewBox="0 0 24 24"><path d="M15.4 5.4 14 4l-8 8 8 8 1.4-1.4L8.8 12z"/></svg>
+    </a>
+    <h1 class="title" data-t="title"></h1>
+    <nav class="tabs" id="tabs" role="tablist"></nav>
+    <div class="right">
+      <div class="collection" title="">
+        <span class="col-label" data-t="collection"></span>
+        <div class="bar"><i id="col-bar"></i></div>
+        <b id="col-count">0/0</b>
+      </div>
+      <div class="coins" id="coins"><span class="coin-ico" aria-hidden="true"></span><b id="coin-n">0</b></div>
+    </div>
+  </header>
+
+  <main class="body">
+    <section class="stage">
+      <div class="preview-box" id="preview-box">
+        <canvas id="preview"></canvas>
+        <span class="rarity-tag" id="d-rarity"></span>
+        <div class="unlock-burst" id="burst" aria-hidden="true"><span></span><span></span><b id="burst-text"></b></div>
+      </div>
+      <div class="detail">
+        <h2 id="d-name"></h2>
+        <p id="d-desc"></p>
+        <button class="action" id="d-action"></button>
+      </div>
+    </section>
+
+    <section class="grid-wrap">
+      <div class="grid" id="grid" role="tabpanel"></div>
+      <div class="earn">
+        <p class="earn-title" data-t="earn"></p>
+        <ul>
+          <li data-t="earn.first"></li>
+          <li data-t="earn.star"></li>
+          <li data-t="earn.perfect"></li>
+          <li data-t="earn.replay"></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <div class="rotate">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 2h-9A1.5 1.5 0 0 0 6 3.5v17A1.5 1.5 0 0 0 7.5 22h9a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 16.5 2zM12 20.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM16 17H8V4h8z"/></svg>
+    <p data-t-html="rotate"></p>
+  </div>
+  <div class="fade" id="fade" aria-hidden="true"></div>
+
+  <script type="module" src="src/shop/main.js"></script>
+</body>
+</html>

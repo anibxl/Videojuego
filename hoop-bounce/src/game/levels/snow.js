@@ -5,6 +5,7 @@ import { walls, bounds, floor, hoopAt } from './common.js';
 
 const S1 = {
   id: 'snow-1',
+  difficulty: 'easy',
   number: 1,
   nameKey: 'level.snow.1',
   bounds: bounds(48),
@@ -21,6 +22,7 @@ const S1 = {
 
 const S2 = {
   id: 'snow-2',
+  difficulty: 'medium',
   number: 2,
   nameKey: 'level.snow.2',
   bounds: bounds(50),
@@ -45,6 +47,7 @@ const S2 = {
 
 const S3 = {
   id: 'snow-3',
+  difficulty: 'easy',
   number: 3,
   nameKey: 'level.snow.3',
   bounds: bounds(52),
@@ -69,6 +72,7 @@ const S3 = {
 
 const S4 = {
   id: 'snow-4',
+  difficulty: 'medium',
   number: 4,
   nameKey: 'level.snow.4',
   bounds: bounds(54),
@@ -90,6 +94,7 @@ const S4 = {
 
 const S5 = {
   id: 'snow-5',
+  difficulty: 'hard',
   number: 5,
   nameKey: 'level.snow.5',
   bounds: bounds(50),
@@ -99,9 +104,9 @@ const S5 = {
     floor(-4, 54, 'snow'),
     { x: 9, y: 1.1, w: 2.5, h: 0.5, style: 'ice' },
     { x: 13.8, y: 2.1, w: 2.2, h: 0.5, style: 'ice' },
-    { x: 18.6, y: 1.3, w: 2, h: 0.5, style: 'ice' },
     { x: 23, y: 2.5, w: 2, h: 0.5, style: 'ice' },
   ],
+  fallers: [{ x: 18.6, y: 1.4, w: 2, h: 0.4 }],
   spikes: [{ x: 8, y: 0, w: 19, dir: 'up' }],
   stars: [{ x: 12.6, y: 4.0 }, { x: 17.3, y: 4.4 }, { x: 24, y: 4.8 }],
   hoop: hoopAt(42),
@@ -109,8 +114,7 @@ const S5 = {
   passages: [
     { name: 'Glace 1', start: [4, 0], goal: ['on', 9, 11.5, 1.6], plan: [['goTo', 7.2], ['hop', 3, 10.25]] },
     { name: 'Glace 2', start: [10.25, 1.6], goal: ['on', 13.8, 16, 2.6], plan: [['hop', 3, 14.9]] },
-    { name: 'Glace 3', start: [14.9, 2.6], goal: ['on', 18.6, 20.6, 1.8], plan: [['hop', 3, 19.6], ['settle']] },
-    { name: 'Glace 4', start: [19.6, 1.8], goal: ['on', 23, 25, 3.0], plan: [['hop', 3, 24]] },
+    { name: 'Plaque qui tombe → glace 4', start: [14.9, 2.6], goal: ['on', 23, 25, 3.0], plan: [['hop', 3, 19.6], ['jump', 1, 24]] },
     { name: 'Glace 4 → neige', start: [24, 3.0], goal: ['on', 27, 38, 0], plan: [['hop', 2, 29.5]] },
     { name: 'Neige → panier', start: [33, 0], goal: ['win'], plan: 'shot' },
   ],
@@ -119,6 +123,7 @@ const S5 = {
 // 6 — Le grand lac : toutes les mécaniques de la neige réunies (ancien niveau de démonstration).
 const S6 = {
   id: 'snow-6',
+  difficulty: 'medium',
   number: 6,
   nameKey: 'level.snow.6',
   bounds: bounds(62, 11.5),
@@ -147,6 +152,7 @@ const S6 = {
 
 const S7 = {
   id: 'snow-7',
+  difficulty: 'hard',
   number: 7,
   nameKey: 'level.snow.7',
   bounds: bounds(54),
@@ -161,12 +167,13 @@ const S7 = {
   ],
   spikes: [{ x: 8, y: 0, w: 22, dir: 'up' }],
   winds: [{ x: 13, y: 0, w: 16, h: 9, force: -5, gust: 2.2 }],
-  stars: [{ x: 13.4, y: 4.6 }, { x: 19, y: 5.0 }, { x: 28.5, y: 5.2 }],
+  maces: [{ x: 18, y: 10, len: 5, r: 0.5, amp: 0.55, period: 3.4, phase: 0 }],
+  stars: [{ x: 13.4, y: 4.6 }, { x: 18.9, y: 3.6 }, { x: 28.5, y: 5.2 }],
   hoop: hoopAt(46),
   passages: [
     { name: 'Glace 1', start: [4, 0], goal: ['on', 9.5, 11.9, 2.0], plan: [['goTo', 7.3], ['hop', 3, 10.7]] },
     { name: 'Glace 2 (vent)', start: [10.7, 2.0], goal: ['on', 15, 17.4, 3.2], plan: [['hop', 4, 16.2]] },
-    { name: 'Glace 3', start: [16.2, 3.2], goal: ['on', 20.5, 22.7, 2.2], plan: [['hop', 4, 21.7]] },
+    { name: 'Glace 3 (boulet de glace)', start: [16.2, 3.2], goal: ['on', 20.5, 22.7, 2.2], plan: [['charge', 4], ['waitCycle', 3.4, 1.57, 1.68], ['jump', 1, 21.7]] },
     { name: 'Glace 4', start: [21.6, 2.2], goal: ['on', 25.5, 27.7, 3.4], plan: [['hop', 4, 26.6]] },
     { name: 'Glace 4 → neige', start: [26.6, 3.4], goal: ['on', 30, 40, 0], plan: [['hop', 3, 32.5]] },
     { name: 'Neige → panier', start: [36, 0], goal: ['win'], plan: 'shot' },
@@ -175,6 +182,7 @@ const S7 = {
 
 const S8 = {
   id: 'snow-8',
+  difficulty: 'easy',
   number: 8,
   nameKey: 'level.snow.8',
   bounds: bounds(60),
@@ -201,6 +209,7 @@ const S8 = {
 
 const S9 = {
   id: 'snow-9',
+  difficulty: 'hard',
   number: 9,
   nameKey: 'level.snow.9',
   bounds: bounds(62),
@@ -216,12 +225,14 @@ const S9 = {
     { x: 33.5, y: 0, w: 1.5, h: 0.8, style: 'ice' },
     floor(44, 66, 'snow'),
   ],
-  stars: [{ x: 9.5, y: 5.2 }, { x: 26.2, y: 2.8 }, { x: 42, y: 2.4 }],
+  maces: [{ x: 26.2, y: 8.5, len: 6, r: 0.55, amp: 0.8, period: 2.6, phase: 0 }],
+  checkpoints: [{ x: 30.4, y: 0 }],
+  stars: [{ x: 9.5, y: 5.2 }, { x: 26.2, y: 2.4 }, { x: 42, y: 2.4 }],
   hoop: hoopAt(56),
   passages: [
     { name: 'Marche 1', start: [3, 0], goal: ['on', 5, 8, 1.6], plan: [['goTo', 3.2], ['hop', 3, 6.5]] },
     { name: 'Marche 2', start: [6.5, 1.6], goal: ['on', 8, 11, 3.2], plan: [['hop', 3, 9.5]] },
-    { name: 'Grande descente → crevasse', start: [9.5, 3.2], goal: ['on', 28.5, 33, 0], plan: [['jumpAt', 1, 23.2], ['run', 1, 28.6, 33.2, 0]] },
+    { name: 'Grande descente → crevasse', start: [9.5, 3.2], goal: ['on', 28.5, 33, 0], plan: [['waitCycle', 2.6, 1.45, 1.55], ['jumpAt', 1, 23.2], ['run', 1, 28.6, 33.2, 0]] },
     { name: 'Bosse → deuxième crevasse', start: [29.5, 0], goal: ['on', 44, 52, 0], plan: [['jumpAt', 1, 32.4], ['jumpAt', 1, 39.2]] },
     { name: 'Neige → panier', start: [47, 0], goal: ['win'], plan: 'shot' },
   ],
@@ -229,6 +240,7 @@ const S9 = {
 
 const S10 = {
   id: 'snow-10',
+  difficulty: 'hard',
   number: 10,
   nameKey: 'level.snow.10',
   bounds: bounds(80, 12),
@@ -243,9 +255,10 @@ const S10 = {
     { x: 17, y: 5, w: 8, h: 1, style: 'block' },
     floor(30, 84, 'snow'),
     { x: 38.8, y: 1.5, w: 2.2, h: 0.5, style: 'ice' },
-    { x: 43.5, y: 2.7, w: 2, h: 0.5, style: 'ice' },
     { x: 48, y: 1.9, w: 2, h: 0.5, style: 'ice' },
   ],
+  fallers: [{ x: 43.5, y: 2.8, w: 2, h: 0.4 }],
+  checkpoints: [{ x: 33, y: 0 }],
   icicles: [{ x: 20, y: 5, len: 1.2 }, { x: 23.5, y: 5, len: 1.2 }],
   spikes: [{ x: 38, y: 0, w: 14.4, dir: 'up' }],
   winds: [{ x: 38, y: 0, w: 14, h: 9, force: -5, gust: 2.4 }],
@@ -256,8 +269,7 @@ const S10 = {
     { name: 'Marche 2', start: [5.5, 1.8], goal: ['on', 7, 10, 3.4], plan: [['hop', 3, 8.5]] },
     { name: 'Rampe, stalactites, crevasse', start: [8.5, 3.4], goal: ['on', 30, 37.6, 0], plan: [['jumpAt', 1, 25.2], ['run', 1, 30.2, 37.4, 0], ['goTo', 35.5]] },
     { name: 'Glace 1 (vent)', start: [35.5, 0], goal: ['on', 38.8, 41, 2.0], plan: [['goTo', 36.4], ['hop', 3, 39.9]] },
-    { name: 'Glace 2', start: [39.9, 2.0], goal: ['on', 43.5, 45.5, 3.2], plan: [['hop', 4, 44.5]] },
-    { name: 'Glace 3', start: [44.5, 3.2], goal: ['on', 48, 50, 2.4], plan: [['hop', 4, 49]] },
+    { name: 'Plaque qui tombe → glace 3', start: [39.9, 2.0], goal: ['on', 48, 50, 2.4], plan: [['hop', 4, 44.5], ['jump', 1, 49]] },
     { name: 'Glace 3 → neige', start: [49, 2.4], goal: ['on', 52.6, 66, 0], plan: [['hop', 3, 56]] },
     { name: 'Neige → panier', start: [60, 0], goal: ['win'], plan: 'shot' },
   ],

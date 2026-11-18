@@ -12,6 +12,7 @@
 import { clamp, lerp } from '../core/math.js';
 import { pathState } from '../physics/mover.js';
 import { createBallTextures } from './ball-sprite.js';
+import { drawTrail } from './cosmetics.js';
 import { Background } from './background.js';
 import { themeOf } from './themes.js';
 import {
@@ -65,6 +66,13 @@ export class Renderer {
     this.h = 1;
     this.fps = 60;
     this.setLevel(level);
+  }
+
+  /** Ballon équipé (boutique). */
+  setBallSkin(id) {
+    if (id === this.ballSkin) return;
+    this.ballSkin = id;
+    this.tex = createBallTextures(id);
   }
 
   /** Nouveau niveau : décor et lumière de son monde, adaptés à sa longueur. */
@@ -164,11 +172,13 @@ export class Renderer {
     if (visible(L.hoop.leftX - 1, L.hoop.board.x + 2)) this._drawHoopBack(L.hoop);
 
     if (s.ballVisible) {
+      if (s.trail) drawTrail(ctx, s.trail.id, s.trail.pts, s.time, s.ball.r);
       this._drawShadow(s);
       this._drawBall(s);
     }
     if (visible(L.hoop.leftX - 1, L.hoop.board.x + 2)) this._drawHoopFront(L.hoop);
     this._drawParticles(s.particles);
+    s.fx?.draw(ctx);
     if (s.ballVisible) this._drawPowerGauge(s);
     if (s.debug) this._drawDebugWorld(s, px);
 

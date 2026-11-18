@@ -13,11 +13,23 @@ function makeCanvas(size) {
   return c;
 }
 
-export function createBallTextures() {
-  return { surface: createSurface(), shading: createShading() };
+/** Apparence de chaque ballon de la boutique (le premier est le ballon d'origine). */
+const SKINS = {
+  'ball-classic': { base: ['#f47a2a', '#de5f17'], grain: ['rgba(90,30,0,0.13)', 'rgba(255,190,140,0.10)'], seam: '#2b1206' },
+  'ball-street': { base: ['#c96a33', '#94451c'], grain: ['rgba(60,20,0,0.2)', 'rgba(255,210,170,0.14)'], seam: '#1c0c05', scuffs: true },
+  'ball-retro': { base: ['#f2f2f2', '#d8d8d8'], grain: ['rgba(0,0,0,0.05)', 'rgba(255,255,255,0.1)'], seam: '#14213d', bands: ['#d62839', '#f4f4f4', '#1d4ed8'] },
+  'ball-frost': { base: ['#e6f6ff', '#8cc7ee'], grain: ['rgba(60,120,170,0.12)', 'rgba(255,255,255,0.3)'], seam: '#3f7fb5', frost: true },
+  'ball-neon': { base: ['#1a1d3a', '#07081a'], grain: ['rgba(0,0,0,0.2)', 'rgba(120,140,255,0.06)'], seam: '#5ff4ff', glow: '#5ff4ff' },
+  'ball-lava': { base: ['#2a1410', '#0d0605'], grain: ['rgba(0,0,0,0.25)', 'rgba(255,120,60,0.08)'], seam: '#ff7a2a', glow: '#ff5a1a', cracks: true },
+  'ball-galaxy': { base: ['#4b2a9b', '#120a3a'], grain: ['rgba(0,0,0,0.15)', 'rgba(200,170,255,0.08)'], seam: '#d9c8ff', stars: true },
+  'ball-gold': { base: ['#ffe9a3', '#c98f1b'], grain: ['rgba(120,70,0,0.12)', 'rgba(255,250,220,0.22)'], seam: '#7a5208', shine: true },
+};
+
+export function createBallTextures(skin = 'ball-classic') {
+  return { surface: createSurface(SKINS[skin] ?? SKINS['ball-classic']), shading: createShading() };
 }
 
-function createSurface() {
+function createSurface(S) {
   const c = makeCanvas(SIZE);
   const g = c.getContext('2d');
   const r = SIZE / 2;
@@ -28,26 +40,112 @@ function createSurface() {
   g.arc(0, 0, r - 1, 0, Math.PI * 2);
   g.clip();
 
-  // Cuir
+  // Cuir (ou matière)
   const base = g.createRadialGradient(0, 0, r * 0.2, 0, 0, r);
-  base.addColorStop(0, '#f47a2a');
-  base.addColorStop(1, '#de5f17');
+  base.addColorStop(0, S.base[0]);
+  base.addColorStop(1, S.base[1]);
   g.fillStyle = base;
   g.fillRect(-r, -r, SIZE, SIZE);
-
-  // Grain du cuir
   const rng = createRng(7);
+  if (S.bands) {
+    // Panneaux rétro de trois couleurs
+    const w = SIZE / 3;
+    S.bands.forEach((col, i) => {
+      g.fillStyle = col;
+      g.fillRect(-r + i * w, -r, w, SIZE);
+    });
+  }
+  if (S.stars) {
+    const neb = g.createRadialGradient(-r * 0.3, r * 0.2, 0, -r * 0.3, r * 0.2, r * 0.9);
+    neb.addColorStop(0, 'rgba(255,110,200,0.55)');
+    neb.addColorStop(1, 'rgba(255,110,200,0)');
+    g.fillStyle = neb;
+    g.fillRect(-r, -r, SIZE, SIZE);
+    const neb2 = g.createRadialGradient(r * 0.4, -r * 0.3, 0, r * 0.4, -r * 0.3, r * 0.7);
+    neb2.addColorStop(0, 'rgba(90,180,255,0.5)');
+    neb2.addColorStop(1, 'rgba(90,180,255,0)');
+    g.fillStyle = neb2;
+    g.fillRect(-r, -r, SIZE, SIZE);
+  }
+  if (S.shine) {
+    const sh = g.createLinearGradient(-r, -r, r, r);
+    sh.addColorStop(0.3, 'rgba(255,255,255,0)');
+    sh.addColorStop(0.45, 'rgba(255,255,255,0.45)');
+    sh.addColorStop(0.55, 'rgba(255,255,255,0)');
+    g.fillStyle = sh;
+    g.fillRect(-r, -r, SIZE, SIZE);
+  }
+
+  // Grain
   for (let i = 0; i < 1400; i++) {
     const a = rng() * Math.PI * 2;
     const d = Math.sqrt(rng()) * r;
-    g.fillStyle = rng() < 0.5 ? 'rgba(90,30,0,0.13)' : 'rgba(255,190,140,0.10)';
+    g.fillStyle = rng() < 0.5 ? S.grain[0] : S.grain[1];
     g.beginPath();
     g.arc(Math.cos(a) * d, Math.sin(a) * d, 1.1 + rng() * 1.3, 0, Math.PI * 2);
     g.fill();
   }
+  if (S.scuffs) {
+    g.fillStyle = 'rgba(255,220,190,0.18)';
+    for (let i = 0; i < 9; i++) {
+      g.beginPath();
+      g.ellipse((rng() - 0.5) * r * 1.4, (rng() - 0.5) * r * 1.4, 6 + rng() * 14, 3 + rng() * 6, rng() * 3, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
+  if (S.stars) {
+    for (let i = 0; i < 70; i++) {
+      g.fillStyle = `rgba(255,255,255,${0.4 + rng() * 0.6})`;
+      g.beginPath();
+      g.arc((rng() - 0.5) * SIZE, (rng() - 0.5) * SIZE, 0.6 + rng() * 1.6, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
+  if (S.frost) {
+    g.strokeStyle = 'rgba(255,255,255,0.65)';
+    g.lineWidth = 1.5;
+    for (let i = 0; i < 14; i++) {
+      const x = (rng() - 0.5) * SIZE * 0.9;
+      const y = (rng() - 0.5) * SIZE * 0.9;
+      const l = 6 + rng() * 10;
+      g.beginPath();
+      for (let k = 0; k < 3; k++) {
+        const a = (k * Math.PI) / 3;
+        g.moveTo(x - Math.cos(a) * l, y - Math.sin(a) * l);
+        g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l);
+      }
+      g.stroke();
+    }
+  }
+  if (S.cracks) {
+    g.save();
+    g.shadowColor = S.glow;
+    g.shadowBlur = 10;
+    g.strokeStyle = '#ffb04a';
+    g.lineWidth = 2.5;
+    g.lineJoin = 'round';
+    for (let i = 0; i < 9; i++) {
+      let x = (rng() - 0.5) * SIZE * 0.8;
+      let y = (rng() - 0.5) * SIZE * 0.8;
+      g.beginPath();
+      g.moveTo(x, y);
+      for (let k = 0; k < 4; k++) {
+        x += (rng() - 0.5) * 34;
+        y += (rng() - 0.5) * 34;
+        g.lineTo(x, y);
+      }
+      g.stroke();
+    }
+    g.restore();
+  }
 
-  // Coutures
-  g.strokeStyle = '#2b1206';
+  // Coutures (lumineuses pour certains ballons)
+  g.save();
+  if (S.glow) {
+    g.shadowColor = S.glow;
+    g.shadowBlur = 14;
+  }
+  g.strokeStyle = S.seam;
   g.lineWidth = SIZE * 0.03;
   g.lineCap = 'round';
   g.beginPath();
@@ -61,6 +159,7 @@ function createSurface() {
     g.arc(side * r * 1.32, 0, r * 0.98, 0, Math.PI * 2);
     g.stroke();
   }
+  g.restore();
   g.restore();
   return c;
 }

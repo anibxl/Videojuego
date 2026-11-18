@@ -764,3 +764,36 @@ body.intro-open .controls {
   .actions { gap: 8px; }
   .actions-row { gap: 8px; }
 }
+
+/* Pièces gagnées (écran de victoire) */
+.win-coins {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: -8px 0 14px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--gold);
+  animation: coins-in 0.5s var(--ease-spring) both;
+}
+
+.win-coins[hidden] { display: none; }
+
+.coin-ico {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff1b0, #ffc23d 55%, #c98a14);
+  box-shadow: inset 0 0 0 2px rgba(150, 90, 0, 0.45), 0 0 12px rgba(255, 194, 61, 0.5);
+}
+
+@keyframes coins-in {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: none; opacity: 1; }
+}
+
+@media (max-height: 430px) {
+  .win-coins { margin: -4px 0 8px; font-size: 16px; }
+}

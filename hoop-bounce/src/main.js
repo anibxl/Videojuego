@@ -21,6 +21,8 @@ import { Sfx } from './audio/sfx.js';
 import { Music } from './audio/music.js';
 import { Haptics } from './platform/haptics.js';
 import { Settings } from './shared/settings.js';
+import { Wallet } from './shared/wallet.js';
+import { Fx, bounceEffect, goalEffect, emitTrail } from './render/cosmetics.js';
 
 const R = CONFIG.ball.radius;
 const DT = CONFIG.physics.fixedDt;
@@ -53,6 +55,8 @@ const ui = {
   winRecord: $('win-record'),
   next: $('btn-next'),
   replay: $('btn-replay'),
+  winCoins: $('win-coins'),
+  winCoinsN: $('win-coins-n'),
   fade: $('fade'),
   intro: $('intro'),
   introWorld: $('intro-world'),
@@ -88,6 +92,12 @@ const QUALITY_PARTICLES = { low: 0.4, medium: 0.7, high: 1 };
 const game = new Game(CONFIG, localizedLevel(levelIndex));
 const renderer = new Renderer(canvas, game.level);
 renderer.particleDensity = QUALITY_PARTICLES[settings.get('quality')] ?? 1;
+// Boutique : articles équipés (ballon, effet de rebond, traînée, animation de panier)
+const wallet = new Wallet();
+const look = { ball: wallet.equipped('ball'), bounce: wallet.equipped('bounce'), trail: wallet.equipped('trail'), goal: wallet.equipped('goal') };
+renderer.setBallSkin(look.ball);
+const fx = new Fx();
+const trail = { id: look.trail, pts: [] };
 renderer.setLevel(game.level);
 const camera = new Camera(CONFIG.camera);
 const visual = new BallVisual(CONFIG.feel);
@@ -217,7 +227,7 @@ game.events.on('bounce', (e) => {
   haptics.light();
   state.sinceBounce = 0;
   const color = e.level >= MAX_LEVEL ? 'rgba(255,214,90,0.95)' : e.level >= 4 ? 'rgba(255,181,71,0.9)' : 'rgba(255,255,255,0.8)';
-  particles.ring(e.x, e.y - R * 0.95, 0.35 + e.level * 0.1, color, 0.3 + e.level * 0.03);
+  if (!bounceEffect(fx, look.bounce, e.x, e.y - R * 0.95, e.level)) particles.ring(e.x, e.y - R * 0.95, 0.35 + e.level * 0.1, color, 0.3 + e.level * 0.03);
   particles.dust(e.x, e.y - R, 0, 1, 0.15 + e.level * 0.1);
   if (e.level >= MAX_LEVEL) camera.addTrauma(0.16);
   state.tutoBounces++;
@@ -356,7 +366,8 @@ game.events.on('respawn', (e) => {
 game.events.on('win', (e) => {
   const swish = game.time - state.lastRimTime > 0.8;
   const h = game.level.hoop;
-  particles.confetti(e.x, e.y - 0.4, 80);
+  state.swish = swish;
+  if (!goalEffect(fx, look.goal, e.x, e.y - 0.4)) particles.confetti(e.x, e.y - 0.4, 80);
   particles.text(e.x - 1.2, e.y + 2.2, gt(lang, swish ? 'popup.swish' : 'popup.score'), swish ? '#ffd65a' : '#ffffff', 1.15);
   sfx.win(swish);
   music.setDuck(0.45);
@@ -382,6 +393,11 @@ function showWin(r) {
   const def = LEVELS[levelIndex];
   const world = WORLDS[def.worldIndex];
   const res = progress.complete(def.id, r.stars, r.time);
+  const earned = wallet.reward(def.id, def.worldIndex, r.stars, !!state.swish);
+  ui.winCoins.hidden = earned.total <= 0;
+  ui.winCoinsN.textContent = '+0';
+  ui.winCoins.setAttribute('aria-label', `+${earned.total}`);
+  countUp(ui.winCoinsN, earned.total, 900 + r.stars * 260);
   const lastOverall = levelIndex >= LEVELS.length - 1;
   const lastInWorld = def.indexInWorld === world.levels.length - 1;
   ui.winLevel.textContent = `${levelLabel(def)} · ${gt(lang, def.nameKey)}`;
@@ -414,6 +430,26 @@ function showWin(r) {
   });
   openOverlay('win');
   (lastOverall ? ui.replay : ui.next).focus({ preventScroll: true });
+}
+
+/** Compteur de pièces qui défile, avec un petit tintement. */
+function countUp(el, total, delay) {
+  setTimeout(() => {
+    const t0 = performance.now();
+    const dur = 700;
+    let lastTick = 0;
+    const tick = (now) => {
+      const k = Math.min(1, (now - t0) / dur);
+      const v = Math.round(total * (1 - Math.pow(1 - k, 3)));
+      el.textContent = `+${v}`;
+      if (now - lastTick > 70 && k < 1) {
+        sfx.star(1);
+        lastTick = now;
+      }
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, delay);
 }
 
 // ─── Pause, overlays, enchaînement des niveaux ─────────────────────────────
@@ -463,6 +499,8 @@ function startLevel(index) {
   loop.timeScale = 1;
   particles.items.forEach((p) => (p.alive = false));
   particles.texts.forEach((t) => (t.alive = false));
+  fx.clear();
+  trail.pts.length = 0;
   updateLevelLabels();
   const def = LEVELS[index];
   history.replaceState(null, '', `?world=${def.world}&level=${def.number}`);
@@ -522,7 +560,7 @@ function showIntro() {
     li.style.animationDelay = `${0.75 + i * 0.08}s`;
     ui.introMechs.appendChild(li);
   });
-  ui.introLevel.textContent = `${levelLabel(def)} · ${gt(lang, def.nameKey)}`;
+  ui.introLevel.textContent = `${levelLabel(def)} · ${gt(lang, def.nameKey)} · ${gt(lang, `diff.${def.difficulty ?? 'medium'}`)}`;
   state.intro = true;
   state.introTimer = 0;
   document.body.classList.add('intro-open');
@@ -653,6 +691,14 @@ function render(frameDt, alpha) {
   camera.update(frameDt, { x: state.ball.x, y: state.ball.y, vx: b.vx, groundY: state.groundY }, game.level.bounds, fastFollow ? 0.35 : 1);
   visual.update(frameDt, b);
   particles.update(frameDt * loop.timeScale);
+  fx.update(frameDt * loop.timeScale);
+  // Traînée : positions récentes du ballon (effacée quand il disparaît ou se téléporte)
+  if (game.state === 'dying' || state.sinceTeleport < 0.05 || state.sinceRespawn < 0.05) trail.pts.length = 0;
+  else if (trail.id !== 'trail-none') {
+    trail.pts.push({ x: state.ball.x, y: state.ball.y });
+    if (trail.pts.length > 16) trail.pts.shift();
+    emitTrail(fx, trail.id, state.ball.x, state.ball.y, Math.hypot(b.vx, b.vy), frameDt);
+  }
 
   // Jauge : visible dès qu'elle a monté, discrète au repos ; le dernier cran clignote avant de baisser
   const warn = ctrl.level > 1 && ctrl.decayIn < 0.35;
@@ -674,6 +720,8 @@ function render(frameDt, alpha) {
     ballVisible: game.state !== 'dying',
     visual,
     particles,
+    fx,
+    trail: trail.id !== 'trail-none' ? trail : null,
     power: { level: ctrl.level, max: MAX_LEVEL, alpha: state.gaugeAlpha, warn },
     flash: state.flash,
     debug: state.debug,

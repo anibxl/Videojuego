@@ -219,6 +219,8 @@ document.addEventListener('pointercancel', release);
 
 document.addEventListener('click', (e) => {
   const nav = e.target.closest('[data-nav]');
+  // Magasin : la boutique est une page à part (étape 9)
+  if (nav?.dataset.nav === 'magasin') return launchGame(e, 'shop.html');
   if (nav) {
     sound.open();
     showPage(nav.dataset.nav);
@@ -317,7 +319,7 @@ settings.onChange((key) => {
 // ─── JOUER ──────────────────────────────────────────────────────────────────
 
 let launching = false;
-function launchGame(e) {
+function launchGame(e, url = 'play.html') {
   if (launching) return;
   launching = true;
   sound.play();
@@ -329,7 +331,7 @@ function launchGame(e) {
   curtain.style.setProperty('--cy', `${e.clientY}px`);
   setTimeout(() => curtain.classList.add('on'), 220);
   setTimeout(() => {
-    location.href = 'play.html';
+    location.href = url;
   }, 820);
 }
 

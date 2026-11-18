@@ -9,6 +9,7 @@ const pad = (x, top, w) => ({ x, y: top - 0.5, w, h: 0.5, style: 'block', skin: 
 
 const P1 = {
   id: 'space-1',
+  difficulty: 'easy',
   number: 1,
   nameKey: 'level.space.1',
   bounds: bounds(60, 12),
@@ -26,23 +27,27 @@ const P1 = {
 
 const P2 = {
   id: 'space-2',
+  difficulty: 'medium',
   number: 2,
   nameKey: 'level.space.2',
   bounds: bounds(58, 12),
   spawn: { x: 3, y: 0 },
   solids: [...walls(58), floor(-4, 10), floor(32, 62)],
   movers: [float(12, 1.5, 2.6, 0.6, 3.4), float(17, 3.0, 2.6, 0.6, 3.8, 0.3), float(22, 2.0, 2.6, 0.6, 3.2, 0.6), float(27, 3.4, 2.6, 0.6, 3.6, 0.1)],
-  stars: [{ x: 15.6, y: 5.6 }, { x: 24.6, y: 5.8 }, { x: 30.6, y: 6.6 }],
+  lasers: [{ x1: 36.6, y1: 0, x2: 36.6, y2: 7, period: 3, on: 1.2, phase: 0 }],
+  stars: [{ x: 15.6, y: 5.6 }, { x: 24.6, y: 5.8 }, { x: 36.6, y: 2.4 }],
   hoop: hoopAt(48),
   hints: [{ x: 4.4, y: 4.3, key: 'hint.floating' }],
   passages: [
-    { name: 'Quatre plateformes flottantes', start: [3, 0], goal: ['on', 32, 40, 0], plan: [['goTo', 9.4], ['hopTo', 2, 'movers', 0, 1.3], ['hopTo', 2, 'movers', 1, 1.3], ['hopTo', 1, 'movers', 2, 1.3], ['hopTo', 2, 'movers', 3, 1.3], ['hop', 2, 34]] },
-    { name: 'Sol → panier', start: [38, 0], goal: ['win'], plan: 'shot' },
+    { name: 'Quatre plateformes flottantes', start: [3, 0], goal: ['on', 32, 35.8, 0], plan: [['goTo', 9.4], ['hopTo', 2, 'movers', 0, 1.3], ['hopTo', 2, 'movers', 1, 1.3], ['hopTo', 1, 'movers', 2, 1.3], ['hopTo', 2, 'movers', 3, 1.3], ['hop', 2, 33.8], ['goTo', 34]] },
+    { name: 'Le premier laser', start: [34, 0], goal: ['on', 37.4, 46, 0], plan: [['goTo', 34.6], ['waitCycle', 3, 0.63, 0.73], ['run', 1, 37.6, 46, 0]] },
+    { name: 'Sol → panier', start: [40, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 
 const P3 = {
   id: 'space-3',
+  difficulty: 'easy',
   number: 3,
   nameKey: 'level.space.3',
   bounds: bounds(60, 12),
@@ -72,6 +77,7 @@ const P3 = {
 
 const P4 = {
   id: 'space-4',
+  difficulty: 'medium',
   number: 4,
   nameKey: 'level.space.4',
   bounds: bounds(54, 12),
@@ -81,7 +87,8 @@ const P4 = {
     { x: 17.2, y: 5.5, r: 0.7, path: { dx: 0, dy: -4, period: 3.6, phase: 0 } },
     { x: 23.2, y: 6, r: 0.7, path: { dx: 0, dy: -4.4, period: 4, phase: 0.5 } },
   ],
-  stars: [{ x: 14.25, y: 4.4 }, { x: 20.25, y: 6 }, { x: 28.4, y: 5 }],
+  magnets: [{ x: 23.2, y: -0.6, radius: 2.8, strength: 16 }],
+  stars: [{ x: 14.25, y: 4.4 }, { x: 20.25, y: 6 }, { x: 23.2, y: 1.8 }],
   hoop: hoopAt(46),
   hints: [{ x: 4.4, y: 4.3, key: 'hint.asteroids' }],
   passages: [
@@ -95,6 +102,7 @@ const P4 = {
 
 const P5 = {
   id: 'space-5',
+  difficulty: 'hard',
   number: 5,
   nameKey: 'level.space.5',
   bounds: bounds(44, 12),
@@ -102,17 +110,19 @@ const P5 = {
   solids: [...walls(44), floor(-4, 48), { x: 12, y: 6.4, w: 12, h: 1, style: 'block', skin: 'glow' }],
   gravityZones: [{ x: 12, y: 0, w: 12, h: 6.4 }],
   spikes: [{ x: 14.4, y: 0, w: 9.6, dir: 'up' }],
-  stars: [{ x: 16, y: 5.6 }, { x: 20, y: 5.6 }, { x: 27, y: 2.6 }],
+  lasers: [{ x1: 19, y1: 3.4, x2: 19, y2: 6.4, period: 3, on: 1.2, phase: 0 }],
+  stars: [{ x: 16, y: 5.6 }, { x: 19, y: 5.6 }, { x: 27, y: 2.6 }],
   hoop: hoopAt(37),
   hints: [{ x: 4.6, y: 4.3, key: 'hint.inverted' }],
   passages: [
-    { name: 'Au plafond', start: [3, 0], goal: ['on', 24.6, 31, 0], plan: [['run', 1, 24.6, 31, 0], ['goTo', 28]] },
+    { name: 'Au plafond, sous le laser', start: [3, 0], goal: ['on', 24.6, 31, 0], plan: [['waitCycle', 3, 1.48, 1.58], ['run', 1, 24.6, 31, 0], ['goTo', 28]] },
     { name: 'Sol → panier', start: [28, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 
 const P6 = {
   id: 'space-6',
+  difficulty: 'medium',
   number: 6,
   nameKey: 'level.space.6',
   bounds: bounds(62, 12),
@@ -150,11 +160,13 @@ const P6 = {
 
 const P7 = {
   id: 'space-7',
+  difficulty: 'hard',
   number: 7,
   nameKey: 'level.space.7',
   bounds: bounds(62, 12),
   spawn: { x: 3, y: 0 },
-  solids: [...walls(62), floor(-4, 10), pad(19, 4.0, 2.5), pad(25.5, 3.0, 2.5), pad(31.5, 4.2, 2.5), floor(40, 66)],
+  solids: [...walls(62), floor(-4, 10), pad(19, 4.0, 2.5), pad(31.5, 4.2, 2.5), floor(40, 66)],
+  blinkers: [{ x: 25.5, y: 2.5, w: 2.5, h: 0.5, period: 3.2, on: 2.2, phase: 0 }],
   teleporters: [
     { a: { x: 8, y: 0.9 }, b: { x: 20.25, y: 4.9 }, r: 0.8 },
     { a: { x: 33.4, y: 5.1 }, b: { x: 44, y: 0.9 }, r: 0.8 },
@@ -164,8 +176,8 @@ const P7 = {
   hoop: hoopAt(54),
   passages: [
     { name: 'Portail vers la plateforme', start: [3, 0], goal: ['on', 19, 21.5, 4], plan: [['hold', 1, 19.9], ['goTo', 20.3]] },
-    { name: 'Sous l\'astéroïde', start: [20.3, 4], goal: ['on', 25.5, 28, 3], plan: [['waitCycle', 4, 0.9, 1.0], ['hop', 2, 26.75]] },
-    { name: 'Plateforme du portail', start: [26.75, 3], goal: ['on', 31.5, 34, 4.2], plan: [['hop', 2, 32.4]] },
+    { name: 'Sous l\'astéroïde', start: [20.3, 4], goal: ['on', 25.5, 28, 3], plan: [['waitCycle', 4, 1.5, 1.6], ['hop', 2, 26.75]] },
+    { name: 'Plateforme du portail', start: [26.75, 3], goal: ['on', 31.5, 34, 4.2], plan: [['waitCycle', 3.2, 0.78, 0.88], ['hop', 2, 32.4]] },
     { name: 'Portail vers le sol', start: [32.4, 4.2], goal: ['x', 43], plan: [['hold', 1, 43.5]] },
     { name: 'Sol → panier', start: [46, 0], goal: ['win'], plan: 'shot' },
   ],
@@ -173,6 +185,7 @@ const P7 = {
 
 const P8 = {
   id: 'space-8',
+  difficulty: 'medium',
   number: 8,
   nameKey: 'level.space.8',
   bounds: bounds(66, 12),
@@ -200,6 +213,7 @@ const P8 = {
 
 const P9 = {
   id: 'space-9',
+  difficulty: 'hard',
   number: 9,
   nameKey: 'level.space.9',
   bounds: bounds(58, 12),
@@ -211,7 +225,8 @@ const P9 = {
     { x: 24.7, y: 8.8, r: 0.6, path: { dx: 0, dy: -5.6, period: 4.6, phase: 0.5 } },
   ],
   spikes: [{ x: 38.5, y: 0, w: 2.5, dir: 'up' }],
-  stars: [{ x: 17.2, y: 6 }, { x: 27.2, y: 6.6 }, { x: 39.7, y: 3.6 }],
+  checkpoints: [{ x: 37, y: 0 }],
+  stars: [{ x: 17.2, y: 6 }, { x: 24.7, y: 5.4 }, { x: 39.7, y: 3.6 }],
   hoop: hoopAt(51),
   passages: [
     { name: 'Plateforme 1', start: [3, 0], goal: ['onMover', 0], plan: [['goTo', 8.4], ['hopTo', 2, 'movers', 0, 1.2]] },
@@ -227,6 +242,7 @@ const P9 = {
 
 const P10 = {
   id: 'space-10',
+  difficulty: 'hard',
   number: 10,
   nameKey: 'level.space.10',
   bounds: bounds(104, 12),
@@ -248,12 +264,14 @@ const P10 = {
   teleporters: [{ a: { x: 32.6, y: 0.9 }, b: { x: 37, y: 0.9 }, r: 0.8, twoWay: true }],
   gravityZones: [{ x: 42, y: 0, w: 12, h: 6.4 }],
   asteroids: [{ x: 70.2, y: 6, r: 0.7, path: { dx: 0, dy: -4, period: 4, phase: 0 } }],
-  stars: [{ x: 15.6, y: 5.4 }, { x: 51.1, y: 4.2 }, { x: 75, y: 6 }],
+  lasers: [{ x1: 30.8, y1: 0, x2: 30.8, y2: 6, period: 3, on: 1.1, phase: 0 }],
+  checkpoints: [{ x: 39.6, y: 0 }, { x: 61, y: 0 }],
+  stars: [{ x: 15.6, y: 5.4 }, { x: 51.1, y: 4.2 }, { x: 70.2, y: 3.4 }],
   hoop: hoopAt(96),
   passages: [
     { name: 'Deux plateformes flottantes', start: [3, 0], goal: ['on', 22, 24.6, 0], plan: [['goTo', 9.4], ['hopTo', 2, 'movers', 0, 1.2], ['hopTo', 2, 'movers', 1, 1.2], ['hop', 2, 23.4]] },
     { name: 'Pics', start: [23.4, 0], goal: ['on', 27.5, 32, 0], plan: [['goTo', 23.8], ['hop', 3, 29]] },
-    { name: 'Portail', start: [29, 0], goal: ['on', 37, 41.6, 0], plan: [['hold', 1, 36.9], ['goTo', 39]] },
+    { name: 'Laser → portail', start: [29, 0], goal: ['on', 37, 41.6, 0], plan: [['goTo', 29.4], ['waitCycle', 3, 0.7, 0.8], ['hold', 1, 36.9], ['goTo', 39]] },
     { name: 'Zone inversée et pics suspendus', start: [39, 0], goal: ['on', 55, 63.4, 0], plan: [['jumpAt', 1, 49], ['run', 1, 55, 63.4, 0], ['goTo', 60]] },
     { name: 'Dernières plateformes', start: [60, 0], goal: ['on', 82, 90, 0], plan: [['goTo', 63.4], ['hopTo', 2, 'movers', 2, 1.2], ['hopTo', 2, 'movers', 3, 1.2], ['hopTo', 1, 'movers', 4, 1.2], ['hop', 2, 84]] },
     { name: 'Sol → panier', start: [86, 0], goal: ['win'], plan: 'shot' },

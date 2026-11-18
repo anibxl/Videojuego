@@ -247,8 +247,8 @@ function openSheet(i) {
       const open = progress.isLevelUnlocked(i, k);
       const done = progress.isDone(def.id);
       const stars = progress.starsFor(def.id);
-      el.innerHTML = `<b>${def.number}</b><span class="lv-stars">${[0, 1, 2].map((n) => `<span class="${n < stars ? 'on' : ''}"></span>`).join('')}</span>`;
-      el.title = gt(lang, def.nameKey);
+      el.innerHTML = `<i class="lv-diff ${def.difficulty ?? 'medium'}"></i><b>${def.number}</b><span class="lv-stars">${[0, 1, 2].map((n) => `<span class="${n < stars ? 'on' : ''}"></span>`).join('')}</span>`;
+      el.title = `${gt(lang, def.nameKey)} · ${gt(lang, `diff.${def.difficulty ?? 'medium'}`)}`;
       el.setAttribute('aria-label', `${w.number}-${def.number} ${gt(lang, def.nameKey)}`);
       if (!open) {
         el.classList.add('locked');
@@ -328,6 +328,16 @@ function go(url, accent = null) {
   setTimeout(() => $('fade').classList.remove('out'), accent ? 380 : 0);
   setTimeout(() => (location.href = url), accent ? 700 : 320);
 }
+
+try {
+  $('coin-n').textContent = String(Math.max(0, parseInt(localStorage.getItem('hoopbounce.coins') ?? '0', 10) || 0));
+} catch {
+  /* stockage indisponible */
+}
+$('btn-shop').addEventListener('click', (e) => {
+  e.preventDefault();
+  go('shop.html?from=worlds');
+});
 
 $('btn-back').addEventListener('click', (e) => {
   e.preventDefault();
