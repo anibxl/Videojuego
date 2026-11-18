@@ -482,3 +482,45 @@ test('point de contrôle : après une chute, on réapparaît au drapeau en garda
   assert.ok(Math.abs(g.body.x - 8) < 0.5, `réapparu au drapeau (${g.body.x.toFixed(2)})`);
   assert.equal(g.starsCollected, 1, 'étoile conservée');
 });
+
+test('pilon : attend en haut, tremble, s\'écrase au sol puis remonte ; mortel seulement en bas', () => {
+  const g = yard({ crushers: [{ x: 10, w: 2, top: 3, bottom: 0, period: 3, phase: 0 }] });
+  const c = g.level.crushers[0];
+  // Cycle de 3 s : attente 1,61 s (tremblement les 0,5 dernières), chute 0,14 s, au sol 0,35 s, remontée 0,9 s
+  assert.equal(c.state(0.5).y, 3);
+  assert.equal(c.state(0.5).shake, 0);
+  assert.ok(c.state(1.4).shake > 0, 'tremble avant de tomber');
+  assert.equal(c.state(1.9).y, 0);
+  assert.ok(c.state(1.9).down);
+  assert.equal(c.touches(11, 0.4, 0.4, 0.5, 0.12), false, 'en haut : on passe dessous');
+  assert.equal(c.touches(11, 0.4, 0.4, 1.9, 0.12), true, 'écrasé');
+  const slams = [];
+  g.events.on('crusherSlam', () => slams.push(g.time));
+  let cause = null;
+  const g2 = yard({ crushers: [{ x: 8, w: 2, top: 3, bottom: 0, period: 3, phase: 0 }] }, 9);
+  g2.events.on('death', (e) => (cause = e.cause));
+  run(g2, 2.2);
+  assert.equal(cause, 'crusher');
+  run(g, 2);
+  assert.equal(slams.length, 1);
+});
+
+test('rocher qui dévale : annoncé, roule à vitesse constante, se saute', () => {
+  const g = yard({ boulders: [{ x1: 6, x2: 18, y: 0, r: 0.6, dir: -1, speed: 6, period: 3, phase: 0 }] });
+  const b = g.level.boulders[0];
+  const s = b.state(1);
+  assert.ok(s.active);
+  assert.ok(Math.abs(s.x - 12) < 1e-9, 'parti de x2 vers la gauche à 6 u/s');
+  assert.equal(b.state(2.5).active, false, 'arrivé au bout : disparu');
+  assert.ok(b.state(2.6).warn > 0, 'grondement avant le départ suivant');
+  assert.equal(b.touches(12, 0.4, 0.4, 1, 0.12), true);
+  assert.equal(b.touches(12, 3.4, 0.4, 1, 0.12), false, 'au-dessus : sauté');
+});
+
+test('trou noir : attire comme un aimant, son cœur est mortel', () => {
+  let cause = null;
+  const g = yard({ magnets: [{ x: 9, y: 0.6, radius: 4, strength: 30, core: 0.6 }] }, 7);
+  g.events.on('death', (e) => (cause = e.cause));
+  run(g, 2);
+  assert.equal(cause, 'void');
+});

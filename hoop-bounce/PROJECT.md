@@ -3,8 +3,8 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 18/11/2026 · **Version :** 0.8.0 · **Étape en cours :** validation des niveaux
-> enrichis (nouveaux pièges) et de la boutique par le porteur du projet.
+> **Dernière mise à jour :** 18/11/2026 · **Version :** 0.9.0 · **Étape en cours :** validation de la grande
+> passe de finition (mondes, difficulté, sensations, animations) par le porteur du projet.
 
 ## Sommaire
 
@@ -80,10 +80,11 @@ compte **au moment du toucher** (aucune latence liée au relâcher).
 ### Mécaniques
 
 #### Déplacement (inertie)
-- ◀ / ▶ accélèrent le ballon : pleine vitesse (7,5 u/s) en ~0,3 s au sol.
+- ◀ / ▶ accélèrent le ballon : pleine vitesse (7,5 u/s) en ~0,27 s au sol (accélération 28 u/s²).
 - Appuyer dans l'autre sens freine franchement (×1,9).
 - Relâché, le ballon continue de rouler et ralentit doucement (inertie).
-- En l'air, le contrôle est réduit (accélération deux fois plus faible) et l'élan est conservé.
+- En l'air, le contrôle est réduit (15 u/s², un peu plus de la moitié du sol : assez pour corriger une
+  trajectoire) et l'élan est conservé.
 - Au sol, le ballon **roule sans glisser** : sa rotation suit exactement sa vitesse.
 - Sur une plateforme mobile, le déplacement est calculé par rapport à la plateforme (on est transporté).
 
@@ -125,8 +126,8 @@ compte **au moment du toucher** (aucune latence liée au relâcher).
 - Un ballon qui entre puis **ressort par le haut** (rebond sur le cercle) ne compte pas.
 - Un ballon qui passe **par en dessous** du cercle ne compte pas.
 - **Pics**, **chute dans le vide**, **lave**, **feu**, **pierres**, **stalactites**, **eau**, **scies**,
-  **boulets**, **lasers**, **projectiles de canon** : le ballon éclate et le niveau recommence (étoiles
-  comprises)…
+  **boulets**, **lasers**, **jets de flammes**, **projectiles de canon**, **pilons**, **rochers qui dévalent**,
+  **cœur d'un trou noir** : le ballon éclate et le niveau recommence (étoiles comprises)…
 - … **sauf si un point de contrôle (drapeau) a été atteint** : on réapparaît au drapeau, en gardant les étoiles
   déjà ramassées (les plateformes fragiles, plaques qui tombent, caisses, stalactites et lianes reprennent leur
   état de départ). Les niveaux longs et difficiles en ont un ou deux.
@@ -188,6 +189,19 @@ paraisse mérité :
 | **Canon** | tire des projectiles en ligne droite (boulets, boules de neige, boules de feu, plasma), à vitesse constante, jusqu'au premier obstacle ; peut aussi tirer vers le haut (colonne de feu) | la bouche rougeoit 0,5 s avant le tir |
 | **Point de contrôle** | drapeau : réapparition sur place après une chute, étoiles conservées | drapeau qui se déploie |
 
+**Pièges de l'étape 10 (propres à chaque monde)** — même règle : toujours annoncés, toujours prévisibles
+(fonctions pures du temps), mortels au contact :
+
+| Piège | Où | Comportement | Avertissement |
+|---|---|---|---|
+| **Pilon** (`crushers`) | Ville : presse hydraulique · Neige : bloc de glace · Volcan : broyeur de pierre · Forêt : tronc-marteau · Espace : piston | bloc lourd sur une tige qui attend en haut, s'écrase d'un coup jusqu'au sol (0,14 s), y reste 0,35 s puis remonte lentement (0,9 s) ; on passe dessous juste après sa remontée | tremblement 0,5 s, bande rouge au sol, choc et poussière à l'impact |
+| **Rocher qui dévale** (`boulders`) | Neige : boule de neige · Volcan : rocher de lave · Forêt : rondin · Espace : boule de plasma | part d'un bout de sa piste à chaque cycle et roule à vitesse constante jusqu'à l'autre, puis disparaît (crevasse, bassin, rebord) ; on le saute ou on passe au-dessus | grondement, poussière et flèche rouge au point de départ 0,7 s avant |
+| **Jet de flammes** (laser au style « flamme ») | Volcan | souffle de feu qui sort d'une bouche de pierre, horizontal ou vertical (colonne de feu dans la lave) | la bouche rougeoie et crache des étincelles |
+| **Trou noir** (aimant avec un cœur) | Espace | attire le ballon comme un aimant ; son cœur (horizon noir) est mortel | spirales de matière aspirée, disque d'accrétion, cercle de portée |
+
+Règle de placement : un rocher ne part jamais sous le ballon sans prévenir (son point de départ est une marche,
+une souche ou un rebord visible, et le grondement le précède), un pilon laisse toujours au moins ~1 s pour passer.
+
 Le moteur gère aussi, sans qu'il soit utilisé dans les niveaux actuels : le **panier fixé au mur**.
 
 ### Objets
@@ -241,6 +255,7 @@ hoop-bounce/
 │   ├── menu.css            Styles du menu (accueil, pages, fenêtres, animations)
 │   ├── worlds.css          Styles de la carte des mondes
 │   ├── shop.css            Styles de la boutique
+│   ├── polish.css          Finitions communes à toutes les pages (onde au toucher, boutons, transitions)
 │   └── style.css           Styles de l'écran de jeu (HUD, commandes, pause, victoire, tutoriel, intro de monde)
 ├── src/
 │   ├── config.js           ★ TOUS les réglages : physique, matériaux, commandes, caméra, sensations
@@ -321,7 +336,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `worlds.js` | Les 5 mondes : identité (nom, accroche, couleur), mécaniques présentées, réglages physiques, niveaux ; liste à plat `LEVELS`. |
 | `levels/city.js` … `space.js` | Les niveaux de chaque monde (données). `common.js` : briques communes ; `index.js` : compatibilité ; `README.md` : format. |
 | `elements.js` | Porte coulissante, ventilateur, téléporteur (sens unique ou double sens). |
-| `world-elements.js` | Éléments des mondes : caisse, vent, stalactite, lave/eau, plateforme fragile, geyser, chute de pierres, liane, zone de gravité ; pièges de l'étape 9 : plaque qui tombe, bloc temporisé, boulet, laser, aimant, canon. |
+| `world-elements.js` | Éléments des mondes : caisse, vent, stalactite, lave/eau, plateforme fragile, geyser, chute de pierres, liane, zone de gravité ; pièges de l'étape 9 : plaque qui tombe, bloc temporisé, boulet, laser, aimant (et trou noir), canon ; pièges de l'étape 10 : pilon, rocher qui dévale. |
 | `hazards.js` | Tests de contact avec les pics et les scies (avec marge de tolérance). |
 | `hoop.js` | Le panier : formes de collision, détection d'un panier valide (en deux temps), filet. |
 | `net.js` | Filet simulé (Verlet + contraintes de cordes), qui réagit au ballon. |
@@ -334,14 +349,14 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 |---|---|
 | `renderer.js` | Dessine une image : décor du monde, éléments, panier (arrière puis avant pour que le ballon passe « dedans »), ballon, effets, particules d'ambiance de premier plan, vignette teintée, jauge, débogage. |
 | `themes.js` | Identité visuelle des 5 mondes : ciel, astres, plans de décor, particules, lumière, couleurs des surfaces. |
-| `background.js` | Décor d'un monde : ciel précalculé (dégradés, nébuleuses, étoiles, soleil, lune, Terre, planète), plans en parallaxe (immeubles avec fenêtres, graffitis et lampadaires ; montagnes enneigées et sapins ; volcans en éruption et roches ; arbres, champignons et rivière ; astéroïdes et cratères), brume, rayons de lumière, particules d'ambiance. |
+| `background.js` | Décor d'un monde : ciel précalculé (dégradés, nébuleuses, étoiles, soleil, lune, Terre, planète), plans en parallaxe (immeubles avec fenêtres, graffitis et lampadaires ; montagnes enneigées et sapins ; volcans en éruption et roches ; arbres, champignons et rivière ; astéroïdes et cratères), brume, rayons de lumière, particules d'ambiance ; effets d'identité (enseignes au néon, avions, nuages de froid, chaleur, papillons, débris en apesanteur). |
 | `world-draw.js` | Dessin des surfaces selon le monde (matériaux), des pics et plateformes thématiques, des éléments des mondes et des pièges (plaques, blocs temporisés, scies, boulets, lasers, aimants, canons). |
 | `cosmetics.js` | Cosmétiques de la boutique : petit système de particules préalloué (`Fx`), effets de rebond, traînées, animations de panier. |
 | `ball-sprite.js` | Textures des 8 ballons (cuir, coutures, motifs, matières), générées au démarrage. |
-| `camera.js` | Caméra : lissage, anticipation dans le sens de la course, cadrage qui garde le sol au-dessus des commandes, secousses, zoom et cadrage sur le panier à la victoire. |
+| `camera.js` | Caméra : lissage, anticipation dans le sens de la course, cadrage qui garde le sol au-dessus des commandes, secousses, zoom et cadrage sur le panier à la victoire, recul quand le ballon monte haut, coups de zoom amortis. |
 | `ball-sprite.js` | Textures du ballon générées au démarrage (cuir et coutures qui tournent, reflet fixe). |
 | `ball-visual.js` | Déformations du ballon (écrasement à l'impact, étirement en vol, détente au rebond, étirement au dribble). |
-| `particles.js` | Particules (poussière, confettis, scintillements, ondes, éclats) et textes flottants, avec réservoirs préalloués. |
+| `particles.js` | Particules (poussière, confettis, scintillements, ondes, éclats, traits de vitesse, éclairs, nuages, braises et feuilles) et textes flottants, avec réservoirs préalloués. |
 
 **`src/audio/`, `src/input/`, `src/platform/`**
 
@@ -372,6 +387,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 |---|---|
 | `catalog.js` | Catalogue de la boutique (articles, raretés, prix, textes) et barème des pièces. |
 | `wallet.js` | Porte-monnaie et inventaire : pièces gagnées, articles possédés et équipés, étoiles déjà récompensées. |
+| `ui-polish.js` | Onde lumineuse au point touché sur les éléments interactifs de toutes les pages (sauf commandes de jeu). |
 | `settings.js` | Réglages du joueur (musique, effets, vibrations, langue, qualité), enregistrés et corrigés s'ils sont abîmés. |
 | `version.js` | Numéro de version affiché dans les paramètres. |
 
@@ -493,8 +509,9 @@ et recule légèrement quand une page est ouverte.
 | JOUER | Accord montant + souffle, éclair dans le décor, l'accueil s'efface, fondu au noir vers la partie. |
 | Tuiles du dock | Icône qui prend sa couleur d'accent et halo coloré à la pression ; son d'ouverture. |
 | Retour (pages) | Son descendant ; la page glisse, l'accueil revient. |
-| Boutons du jeu (HUD, pause, victoire) | Enfoncement à ressort. |
-| Commandes tactiles | Assombrissement et léger rétrécissement tant qu'on appuie. |
+| Boutons du jeu (HUD, pause, victoire) | Enfoncement net (×0,86) puis **rebond élastique** au relâcher. |
+| Commandes tactiles | Assombrissement et léger rétrécissement tant qu'on appuie ; **onde lumineuse** à chaque appui (couleur du monde sur REBOND). |
+| Toutes les pages (étape 10) | **Onde lumineuse au point touché** (`shared/ui-polish.js`, sauf commandes de jeu) ; boutons principaux traversés par un **reflet** qui balaie ; légère élévation au survol (souris). |
 
 ### Animations et transitions
 
@@ -511,12 +528,25 @@ et recule légèrement quand une page est ouverte.
 - **Victoire** : ralenti (×0,3 pendant 0,9 s), zoom de caméra vers le panier, secousse, carte qui monte, étoiles
   qui tombent une à une (son ascendant).
 - **Étoiles du HUD** : apparition avec rebond.
+- **Entre toutes les pages** (étape 10) : si le chargement dure, un petit ballon tourne au centre du voile
+  (`css/polish.css`).
+- **Caméra** (étape 10) : recul doux (jusqu'à −9 %) quand le ballon s'élève loin du sol (on voit où il va
+  retomber) ; **coups de zoom** amortis (ressort) au rebond à pleine puissance, à l'étoile, à l'éclatement et
+  au panier ; **arrêt sur image** très bref à l'éclatement (90 ms) et à l'étoile (45 ms).
 
 ### Effets visuels (jeu)
 
 - Ballon : écrasement à l'impact, étirement en vol, détente au rebond, étirement vers le bas au dribble,
-  rotation réelle, ombre portée, « pop » à l'apparition.
-- Rebond : onde de choc (blanche → ambre → or selon la puissance), poussière ; petite secousse au niveau 5.
+  rotation réelle, « pop » à l'apparition ; **ombre douce** (nette et sombre au contact, large et diffuse en
+  hauteur) avec **occlusion de contact** ; **liseré de lumière du monde** sur le bord du ballon (néons magenta
+  et cyan, reflet de la neige, lave par en dessous, soleil filtré, nébuleuse) ; **images fantômes** quand il
+  file très vite (sans traînée équipée).
+- Rebond : onde de choc (blanche → ambre → or selon la puissance), poussière ; à partir de la puissance 3,
+  **éclair lumineux et traits de vitesse** ; à la puissance 5, onde dorée, secousse et coup de zoom.
+- Atterrissages : **matière du monde soulevée** (petits nuages de neige et éclats de glace, braises et fumée,
+  feuilles et brins d'herbe, étincelles spatiales) et éclair au sol sur les gros impacts.
+- **Éclairage** : chaque monde a son étalonnage (halos colorés cuits dans la vignette : néons de la ville,
+  lumière blanche de la neige, lueur rouge du volcan, soleil de la forêt, nébuleuse de l'espace).
 - Impacts forts : poussière et secousse de caméra.
 - Trampoline : toile qui se creuse puis vibre, onde menthe.
 - Ventilateur : colonne de vent lumineuse, filets d'air qui montent.
@@ -524,7 +554,8 @@ et recule légèrement quand une page est ouverte.
 - Interrupteur / porte : lueur ambre, voyant rouge → vert, message « La porte s'ouvre ! ».
 - Étoile ramassée : scintillements, onde dorée.
 - Chute : le ballon éclate en morceaux, flash rouge, secousse.
-- Panier : filet animé, confettis, « SWISH ! » ou « PANIER ! ».
+- Panier : filet animé, confettis, « SWISH ! » ou « PANIER ! » ; **gerbe de rayons** qui tourne derrière le panier
+  (dorée pour un swish), cercle qui s'illumine, double onde de choc, éclair blanc de l'écran.
 - **Mondes** : chaque monde a son ciel, sa lumière (vignette teintée), ses plans de décor animés, ses particules
   d'ambiance (poussières lumineuses du soir, flocons, braises et cendres, lucioles et feuilles, poussière
   d'étoiles), dont une partie passe devant le niveau ; poussière d'impact à la couleur du sol (neige blanche).
@@ -534,6 +565,11 @@ et recule légèrement quand une page est ouverte.
   tourne, débris), ascenseurs de pierre (runes), lianes (feuilles, boucle lumineuse), champignons (écrasement,
   onde), troncs (cernes qui tournent), branches feuillues, rivière, plateformes flottantes (réacteurs),
   astéroïdes, zones de gravité (chevrons qui montent), portails.
+- **Identité des mondes (étape 10)** : Ville — grandes **enseignes au néon** qui grésillent (HOOPS, OPEN 24H,
+  DINER, ARCADE, anneau), **avions** très loin aux feux clignotants ; Neige — **petits nuages de froid** au ras du
+  sol, **traces du ballon dans la neige** qui s'effacent lentement ; Volcan — **chaleur visible** (colonnes d'air
+  chaud qui ondulent au-dessus de l'écran et de chaque bassin de lave) ; Forêt — **papillons** qui voltigent ;
+  Espace — **débris qui flottent** en apesanteur et poussières qui remontent lentement.
 
 ---
 
@@ -543,16 +579,23 @@ et recule légèrement quand une page est ouverte.
 
 | # | Monde | Accroche | Couleur | Ambiance | Mécaniques | Niveaux |
 |---|---|---|---|---|---|---|
-| 1 | **Ville** (tutoriel) | Le terrain du coucher de soleil | orange | ville moderne la nuit : gratte-ciel et immeubles détaillés (fenêtres qui s'allument et s'éteignent, néons qui pulsent, châteaux d'eau, balises rouges), voie rapide où passent des voitures (phares et feux arrière), lampadaires, projecteurs qui balaient le ciel, lune, vitrines, graffitis ; lo-fi hip-hop | plateformes, plateformes mobiles, trampolines, ventilateurs, caisse à pousser | 10 / 10 |
-| 2 | **Neige** | Les sommets gelés | bleu glacier | montagnes enneigées ombrées (face éclairée / face à l'ombre), sapins enneigés, brume, soleil d'hiver pâle, petits flocons qui tombent doucement, rafales discrètes, glace qui brille ; boîte à musique | sol glissant, plateformes de glace, vent de neige, stalactites, rampes de glace, planches de bois | 10 / 10 |
-| 3 | **Volcan** | Au cœur de la lave | orange feu | volcans qui fument et rougeoient (coulées incandescentes, éruptions), nuages de fumée, roches éclairées de rouge par la lave, rivière de lave animée, braises qui volent lentement, cendres ; tambours graves | lave mortelle, plateformes fragiles, geysers de feu, chutes de pierres, ascenseurs de pierre | 10 / 10 |
-| 4 | **Forêt** | Les bois enchantés | vert | collines, arbres détaillés (tronc, feuillage éclairé), herbe vivante, rayons de soleil, oiseaux au loin, feuilles qui tombent, champignons, quelques lucioles ; marimba et flûte | lianes, plateformes en bois, champignons rebondissants, troncs qui roulent, branches mobiles, rivière | 10 / 10 |
-| 5 | **Espace** (monde final) | Au-delà des étoiles | violet | nébuleuses colorées, étoiles qui scintillent, étoiles filantes, planète à anneaux, la Terre, station spatiale (anneau qui tourne, feux), astéroïdes, cratères éclairés, poussières spatiales ; nappes de synthé | gravité réduite, astéroïdes mobiles, portails, plateformes flottantes, gravité inversée | 10 / 10 |
+| 1 | **Ville** (tutoriel) | Le terrain du coucher de soleil | orange | ville moderne la nuit : gratte-ciel et immeubles détaillés (fenêtres qui s'allument et s'éteignent, néons qui pulsent, grandes enseignes au néon qui grésillent, châteaux d'eau, balises rouges), voie rapide où passent des voitures, avions au loin, projecteurs qui balaient le ciel, lune, vitrines, graffitis, lumière magenta et cyan ; lo-fi hip-hop | plateformes mobiles, trampolines, ventilateurs, caisse, scies, lasers, presses hydrauliques | 10 / 10 |
+| 2 | **Neige** | Les sommets gelés | bleu glacier | montagnes enneigées ombrées, sapins enneigés, brume, petits nuages de froid, soleil d'hiver pâle, petits flocons, rafales, glace qui brille, traces dans la neige, couleurs froides ; boîte à musique | sol glissant, vent, stalactites, plaques qui tombent, boules de neige, blocs de glace, canon à boules de neige | 10 / 10 |
+| 3 | **Volcan** | Au cœur de la lave | orange feu | volcans qui fument et rougeoient, nuages de fumée, roches fissurées éclairées de rouge, rivière de lave animée, braises, cendres, chaleur visible ; tambours graves | lave, plateformes fragiles, geysers, chutes de pierres, ascenseurs, jets de flammes, rochers de lave, broyeurs | 10 / 10 |
+| 4 | **Forêt** | Les bois enchantés | vert | collines, arbres détaillés, herbe vivante, rayons de soleil, oiseaux, papillons, feuilles qui tombent, champignons, lucioles ; marimba et flûte | lianes, champignons, branches mobiles, troncs, rivière, troncs-marteaux, rondins qui dévalent, branches qui cassent, planche magique | 10 / 10 |
+| 5 | **Espace** (monde final) | Au-delà des étoiles | violet | nébuleuses, étoiles qui scintillent, étoiles filantes, planètes, la Terre, station spatiale, débris qui flottent en apesanteur, poussières qui remontent ; nappes de synthé | gravité réduite, astéroïdes, portails, plateformes flottantes, gravité inversée, lasers, trous noirs, pistons, boules de plasma | 10 / 10 |
 
-- **50 niveaux** (10 par monde). **La difficulté augmente dans chaque monde** (niveau 1 très simple, niveau 10
-  difficile) **et d'un monde à l'autre** : la Neige est plus exigeante que la Ville, puis le Volcan, la Forêt, et
-  l'Espace est le monde final. Chaque monde présente ses mécaniques une à une (niveaux 1 à 5), les réunit au
-  niveau 6, les combine aux niveaux 7 à 9, et se termine par un grand final (niveau 10).
+**Ambiance sonore de chaque monde** (étape 10, `audio/music.js`) — en plus de la musique, un fond continu et des
+petits sons ponctuels, chacun à son propre rythme aléatoire, pour reconnaître le monde les yeux fermés :
+Ville — rumeur de la circulation, bourdonnement des néons, **voitures qui passent d'un côté à l'autre** (effet
+Doppler et stéréo), klaxons, **sirène** lointaine, grésillement de néon ; Neige — vent en deux couches,
+**rafales qui sifflent**, carillons cristallins, **craquements de la glace** ; Volcan — grondement profond, souffle
+de chaleur, crépitements, **bulles de lave**, **éruptions lointaines** ; Forêt — feuillage, **ruisseau**, oiseaux,
+**coucou**, **pic-vert**, brise ; Espace — bourdon qui respire, harmoniques qui scintillent, bips, **messages
+radio**, souffles.
+
+- **50 niveaux** (10 par monde). La difficulté monte vite (voir [La difficulté](#la-difficulté)) : chaque niveau
+  ajoute une difficulté nouvelle, et l'Espace est le monde final.
 - **Matériaux par monde** (seule l'apparence change, la physique reste celle du rôle de la surface) : Ville :
   trottoir et asphalte, béton, briques, métal à rivets et bandes de chantier ; Neige : neige, glace brillante,
   bois enneigé (petites stalactites), roche gelée ; Volcan : basalte poreux aux fissures incandescentes, pierre
@@ -571,16 +614,20 @@ et recule légèrement quand une page est ouverte.
 
 | # | Ville | Neige | Volcan | Forêt | Espace |
 |---|---|---|---|---|---|
-| 1 | Premier panier — rouler, rebondir | Premières glissades — la glace | Premières braises — deux bassins de lave | La clairière — champignons | Premiers pas lunaires — gravité réduite |
-| 2 | Le mur — charger la puissance | La rampe — rampe de glace et crevasse | Pierres fragiles — gué de pierres qui s'effondrent | Le sentier de bois — tronc et planches | Plateformes flottantes |
-| 3 | Trampoline | Stalactites — couloir sous la glace | Les geysers — trois geysers en vague | La première liane | Portails — dont un portail perché |
-| 4 | Plateforme mobile | Vent glacial — vent de face puis dans le dos | Ascenseurs — deux ascenseurs de pierre | Branches mouvantes | Champ d'astéroïdes |
-| 5 | Le souffle — ventilateur | Glace vive — plateformes de glace sur des pics | Pluie de pierres — cinq chutes de pierres | Liane après liane | Gravité inversée |
-| 6 | L'interrupteur — porte et téléporteur | Le grand lac — tout réuni | Terre de feu — tout réuni | Sous les feuillages — tout réuni | Apesanteur — tout réuni |
-| 7 | La caisse | Bourrasques — glace et vent | Le gué de feu — pierres fragiles et geysers | Rebonds sauvages — champignon vers liane | Portails et astéroïdes |
-| 8 | Les toits — d'immeuble en immeuble | Le pont de bois — planche mobile, stalactites | La forge — radeau de pierre, pierres, ascenseur | Rivière aux troncs — tronc flottant, branches | Monde à l'envers — pics suspendus |
-| 9 | Le chantier — trampoline, monte-charge | Descente glacée — deux crevasses à pleine vitesse | Trampolines de lave | Canopée — quatre lianes et un tronc | Ceinture d'astéroïdes |
-| 10 | Grand final de la ville | Sommet du monde | Cœur du volcan | Cœur de la forêt | Au-delà des étoiles |
+Ce que chaque niveau ajoute (en **gras** : la difficulté apportée par l'étape 10) :
+
+| # | Ville | Neige | Volcan | Forêt | Espace |
+|---|---|---|---|---|---|
+| 1 | Premier panier — rouler, rebondir | Premières glissades — glace, **boule de neige qu'on saute sur place** | Premières braises — bassins, **jet de flammes au-dessus du bassin** | La clairière — champignons, **tronc-marteau** | Premiers pas lunaires — **trou noir au fond du vide** |
+| 2 | Le mur — charger, scie | La rampe — crevasse, **bloc de glace sur la réception** | Pierres fragiles — **colonne de feu au milieu du gué** | Le sentier de bois — tronc, **planche qui clignote** | Plateformes flottantes, laser, **piston** |
+| 3 | Trampoline au-dessus des pics | Stalactites — **boule de neige dans le couloir** | Les geysers — **rochers de lave qui dévalent** | La première liane — **rondins sur l'autre rive** | Portails — **boules de plasma** |
+| 4 | Plateforme mobile, scie | Vent glacial — **bloc de glace dans le vent de face** | Ascenseurs — **broyeur au sommet** | Branches mouvantes — **la dernière branche casse** | Astéroïdes — **trou noir sous les plateformes** |
+| 5 | Le souffle — ventilateur, mur temporisé, **premier pilon** | Glace vive — plaque qui tombe, **canon à boules de neige** | Pluie de pierres, boulet, **broyeur** | Liane après liane, tronc à pointes | Gravité inversée, **deux lasers décalés** |
+| 6 | L'interrupteur — porte, téléporteur, **premier laser** | Le grand lac — **avalanche à franchir par les plateformes** | Terre de feu — **colonne de feu sur la falaise** | Sous les feuillages — **tronc-marteau sur la cabane** | Apesanteur — **piston** |
+| 7 | La caisse, scie, **deux pilons décalés** | Bourrasques — boulet, **second boulet** | Le gué de feu — canon, **rochers de lave vers le bassin** | Rebonds sauvages — boulet, **rondins jusqu'à la souche** | Portails, bloc temporisé, **boules de plasma** |
+| 8 | Les toits — **scie au milieu du vide** | Le pont de bois — **avalanche de deux boules** | La forge — **jet de flammes au ras du plateau** | Rivière aux troncs — **rondins sur le toit de la cabane** | Monde à l'envers — **piston** |
+| 9 | Le chantier — **plaque fragile au milieu des pics** | Descente glacée — boulet, **bloc de glace sur la bosse** | Trampolines de lave, canon, **rochers de lave** | Canopée — **tronc-marteau** | Ceinture d'astéroïdes — **laser avant le sol** |
+| 10 | Grand final — **pilon rapide devant le panier** | Sommet — **avalanche puis bloc de glace** | Cœur du volcan — **broyeur puis jet de flammes** | Cœur de la forêt — **tronc-marteau de la cabane** | Au-delà des étoiles — **trou noir, piston final** |
 
 - Identifiants : `first-shot`, `the-wall`, `trampoline`, `moving`, `updraft`, `final`, `city-crate`,
   `city-roofs`, `city-site`, `city-finale`, puis `snow-1` … `snow-10`, `volcano-1` … `volcano-10`,
@@ -605,16 +652,24 @@ et recule légèrement quand une page est ouverte.
 
 ### La difficulté
 
-- Chaque niveau a une difficulté affichée (pastille verte, orange ou rouge sur la carte, et dans l'intro) :
-  **facile**, **moyen** ou **difficile**.
-- Dans chaque monde, les niveaux **alternent** pour éviter la frustration : 1 facile, 2 moyen, 3 facile,
-  4 moyen, 5 difficile, 6 moyen, 7 difficile, 8 facile ou moyen, 9 difficile, 10 difficile (grand final).
-- Les pièges arrivent progressivement : Ville (scies, mur temporisé, laser au final), Neige (plaques de glace
-  qui tombent, boulets de glace), Volcan (boulets de roche, canons à boules de feu), Forêt (troncs à pointes
-  qui se balancent), Espace (lasers, aimant, plateforme temporisée).
-- Les fenêtres de passage des pièges périodiques sont calculées par balayage (outil `scan`) et laissées
-  suffisamment larges (au moins ~0,35 s, souvent plus d'1 s) : on peut mourir plusieurs fois, mais on comprend
-  toujours pourquoi.
+- **5 paliers** affichés (pastille sur la carte, et dans l'intro) : **facile** (vert), **moyen** (ambre),
+  **difficile** (orange), **expert** (rouge), **extrême** (violet, pastille qui pulse).
+- **Courbe voulue (étape 10)** — le jeu devient difficile beaucoup plus vite :
+
+  | Niveaux | Paliers | Ce que vit le joueur |
+  |---|---|---|
+  | 1–4 | facile, moyen | apprendre les commandes et les premiers éléments |
+  | 5–14 | difficile (un moyen pour souffler) | **on commence à échouer** (premier pilon au niveau 5) |
+  | 15–29 | difficile, expert | **plusieurs essais** par niveau |
+  | 30–44 | expert, extrême | **vraiment difficile** |
+  | 45–50 | extrême | **très exigeant, mais toujours faisable** |
+
+  Paliers par monde — Ville : F F M M D M D D D E · Neige : D D D D E D E D E E · Volcan : D E D E E E E D E X ·
+  Forêt : E E E E X E X E X X · Espace : E E E E X X X X X X (F facile, M moyen, D difficile, E expert, X extrême).
+- **Chaque niveau introduit une difficulté nouvelle** (tableau ci-dessus) : aucun niveau ne répète le précédent.
+- **Jamais injuste** : chaque piège est annoncé, prévisible et vérifié. Les fenêtres de passage sont calculées
+  par balayage (outil `scan`) : en général 0,5 à 1,5 s, jusqu'à ~0,25–0,45 s dans les derniers niveaux
+  (Forêt 5, Espace 5). Les niveaux longs ont des drapeaux.
 
 ### Le déblocage des modes
 
@@ -699,7 +754,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Déblocage automatique du monde suivant
 - ✅ Les 50 niveaux, difficulté progressive dans chaque monde et d'un monde à l'autre, tous vérifiés
 - ✅ Décors de qualité « jeu mobile » refaits pour chaque monde ; matériaux, pics et plateformes par monde
-- 🟡 Validation des 50 niveaux et des décors par le porteur du projet
+- ✅ Retours du porteur du projet sur les 50 niveaux et les décors (→ passe de finition de l'étape 10)
+- ✅ Mondes beaucoup plus reconnaissables : enseignes au néon, avions, nuages de froid, traces dans la neige,
+  chaleur visible, papillons, débris en apesanteur, éclairage et étalonnage par monde
+- ✅ Ambiance sonore propre à chaque monde (fond continu et sons ponctuels)
+- ✅ Difficulté refaite : 5 paliers, courbe beaucoup plus raide, une difficulté nouvelle par niveau
+- ✅ Pièges propres aux mondes : pilons, rochers qui dévalent, jets de flammes, trous noirs
+- 🟡 Validation de la passe de finition par le porteur du projet
 - 🔴 Relier la tuile « Mondes » du menu à la carte (en attente d'accord : modification du menu)
 
 ### Phase 6 — Économie, magasin et skins 🟡
@@ -709,6 +770,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Articles équipés visibles en jeu
 - 🔴 Page Collection du menu (encore vide : la collection est visible dans la boutique)
 - 🔴 Récompenses supplémentaires (coffres de fin de monde, défis)
+
+### Phase 6 bis — Finition « vrai jeu mobile » 🟡
+- ✅ Sensations : caméra (recul en hauteur, coups de zoom, arrêt sur image), contrôle en l'air plus vif
+- ✅ Ombres douces, lumière du monde sur le ballon, étalonnage des couleurs
+- ✅ Effets de rebond (éclair, traits de vitesse, matière du monde) et de panier (gerbe de rayons, ondes)
+- ✅ Animations d'interface : onde au toucher, boutons élastiques, reflets, transitions entre pages
+- ✅ Performances revérifiées (60 images/s, décors du volcan allégés)
+- 🟡 Validation par le porteur du projet ; réglages fins sur un vrai téléphone
 
 ### Phase 7 — Modes de jeu 🔴
 - 🔴 Trickshot
@@ -747,11 +816,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Pièges : plaques qui tombent, blocs temporisés, scies, boulets, lasers, aimants, canons, points de contrôle
 - ✅ Niveaux enrichis : rythme facile / moyen / difficile, étoiles risquées, drapeaux dans les niveaux longs
 - ✅ Boutique, pièces et cosmétiques
-- ✅ 267 tests automatiques + outil de vérification des niveaux (avec pilote pour les solutions expertes)
+- ✅ Passe de finition : identité visuelle et sonore des mondes, difficulté à 5 paliers, 4 pièges propres aux
+  mondes, sensations de jeu, éclairage, ombres, effets, animations d'interface
+- ✅ Tests automatiques + outil de vérification des niveaux (avec pilote pour les solutions expertes, dont
+  `jumpBoulder` et `dodgeBoulders` pour les rochers)
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur les niveaux enrichis et la boutique
+- 🟡 Attente des retours du porteur du projet sur la passe de finition (mondes, difficulté, sensations)
 
 ### À faire — court terme 🔴
 - 🔴 Ajuster le ressenti (gravité, hauteurs, dribble, inertie) selon les retours
@@ -760,7 +832,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   modification du menu, en attente d'accord
 - 🔴 Faire apparaître le panier du niveau 5 dès le départ (il est hors de l'écran au début)
 - 🔴 Éviter que l'étiquette « Rebondir » du tutoriel recouvre le panier du niveau 1
-- 🔴 Équilibrer la difficulté des 50 niveaux après les retours (et sur un vrai téléphone)
+- 🔴 Éprouver la nouvelle courbe de difficulté avec de vrais joueurs (et sur un vrai téléphone) : surtout
+  Forêt 5 et Espace 5 (fenêtres les plus serrées)
 - 🔴 Relier la tuile « Mondes » du menu à `worlds.html` (petite modification du menu, en attente d'accord)
 
 ### À faire — moyen terme 🔴
@@ -858,6 +931,17 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - Polices réduites au sous-ensemble latin (~83 Ko au total).
 - Résultat : **60 images/s stables** dans tous les écrans, mesurées dans Chromium sans carte graphique.
 
+**Étape 10 (finition)**
+- Nouveaux effets choisis pour leur faible coût : ombre et liseré de lumière du ballon = petites images
+  précalculées ; étalonnage des mondes **cuit dans la vignette** déjà copiée à chaque image (coût nul) ;
+  enseignes au néon précalculées avec leur halo ; nouveaux pièges = fonctions pures du temps.
+- Particules d'impact dans le même réservoir préalloué (traits de vitesse, éclairs, nuages, éclats).
+- Chaleur du volcan allégée après mesure : le grand dégradé plein écran animé (≈ 6 ms en rendu logiciel) est
+  remplacé par la lueur cuite dans la vignette ; il ne reste que de fines ondulations (0,2 ms).
+- Onde au toucher des pages : un élément créé puis retiré, jamais sur les commandes de jeu.
+- Mesure (Chromium sans carte graphique, 844×390 en ×2) : **médiane 16,7 ms (60 images/s)** sur les 5 grands
+  finals, 0 à 9 images lentes sur 240 ; rendu d'une image ≈ 8–10 ms en logiciel (bien moins sur un GPU mobile).
+
 ---
 
 ## 10. Bugs connus
@@ -869,7 +953,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | Faible | Niveau 1 : l'étiquette « Rebondir » du tutoriel recouvre en partie le panier (elle disparaît après 3 rebonds). | 🔴 À corriger |
 | Faible | La page « Magasin » d'origine du menu (`pages.js`, `shop-data.js`) n'est plus affichée : la tuile ouvre la nouvelle boutique (`shop.html`). Code conservé, à retirer lors d'un prochain nettoyage du menu. | 🟡 Nettoyage à prévoir |
 | Faible | La page « Collection » du menu reste vide (la collection se voit dans la boutique). | 🔴 À faire |
-| Info | Pièges et timings vérifiés par simulation (chaque passage a une solution), pas encore par des joueurs. | 🟡 À équilibrer après retours |
+| Info | Pièges et timings vérifiés par simulation (chaque passage a une solution), pas encore par des joueurs. La nouvelle courbe (étape 10) est volontairement raide : à éprouver avec de vrais joueurs. | 🟡 À équilibrer après retours |
+| Info | Contrôle légèrement plus vif (étape 10) : les anciennes solutions enregistrées ont été régénérées. | ✅ Fait |
 | Moyenne | La tuile « Mondes » du menu ouvre encore la page d'attente : la carte des mondes n'est accessible que depuis la partie (pause, victoire) ou par `worlds.html`. | 🔴 En attente d'accord (modification du menu) |
 | ✅ | Carte : « Terminé » affiché alors que des niveaux prévus manquaient. | ✅ Résolu (v0.7.0 : les 50 niveaux existent) |
 | Info | Difficulté des 50 niveaux vérifiée par simulation (chaque passage a une solution), mais pas encore éprouvée par des joueurs : certains timings (geysers, astéroïdes) peuvent sembler serrés. | 🟡 À équilibrer après retours |
@@ -885,6 +970,33 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 18/11/2026 — Étape 10 : grande passe de finition (v0.9.0)
+- **Ajouté** :
+  - **identité des mondes** : enseignes au néon et avions (Ville), nuages de froid et traces du ballon dans la
+    neige (Neige), chaleur visible au-dessus des bassins et de l'écran (Volcan), papillons (Forêt), débris
+    en apesanteur et poussières qui remontent (Espace) ; éclairage propre à chaque monde (liseré coloré sur le
+    ballon, étalonnage) ;
+  - **ambiance sonore** de chaque monde : fonds continus enrichis et sons ponctuels (voitures en stéréo,
+    sirène, néons ; rafales, craquements de glace ; bulles de lave, éruptions ; ruisseau, coucou, pic-vert ;
+    messages radio, souffles) ;
+  - **4 pièges propres aux mondes** (`game/world-elements.js`, `render/world-draw.js`) : pilons (presse, bloc de
+    glace, broyeur, tronc-marteau, piston), rochers qui dévalent (boules de neige, rochers de lave, rondins,
+    plasma), jets de flammes, trous noirs ; sons, effets, 3 nouveaux tests (297 au total) ;
+  - **difficulté à 5 paliers** (facile → extrême) et nouvelle courbe : chaque niveau ajoute une difficulté,
+    échecs dès le niveau 5, plusieurs essais dès le 15, vraiment difficile dès le 30, très exigeant dès le 45 ;
+    les 50 niveaux sont retouchés et revérifiés (nouvelles manœuvres du pilote : `jumpBoulder`, `dodgeBoulders`) ;
+  - **sensations** : recul de caméra en hauteur, coups de zoom, arrêt sur image, ombres douces avec occlusion de
+    contact, images fantômes, effets de rebond selon la puissance, matière du monde aux impacts, gerbe de
+    rayons et ondes au panier ;
+  - **interface** : onde lumineuse au toucher sur toutes les pages, boutons élastiques, reflets sur les boutons
+    principaux, petit ballon de chargement entre les pages, onde sur les commandes de jeu
+    (`css/polish.css`, `shared/ui-polish.js`).
+- **Modifié** : contrôle un peu plus vif (accélération au sol 26 → 28 u/s², en l'air 13 → 15 u/s²) ;
+  mécaniques présentées dans l'introduction de chaque monde ; chaleur du volcan allégée (performances) ;
+  solutions enregistrées des niveaux régénérées.
+- **Reste à faire** : retours du porteur du projet ; éprouver la difficulté avec de vrais joueurs et sur un
+  téléphone ; tuile « Mondes » du menu (accord en attente) ; page Collection.
 
 ### 18/11/2026 — Étape 9 : niveaux enrichis et boutique (v0.8.0)
 - **Ajouté** :

@@ -426,35 +426,23 @@ export class Background {
     ctx.globalAlpha = 1;
   }
 
-  /** Volcan : la chaleur se voit — ondulations qui montent et lueur qui respire au bas de l'écran. */
+  /**
+   * Volcan : la chaleur se voit — fines colonnes d'air chaud qui ondulent en montant. (La lueur
+   * rouge du bas de l'écran est cuite dans l'étalonnage de la vignette : elle ne coûte rien.)
+   */
   _drawHeat(ctx, w, h, time) {
-    if (!this._heatGrad || this._heatH !== h) {
-      this._heatGrad = ctx.createLinearGradient(0, h * 0.55, 0, h);
-      this._heatGrad.addColorStop(0, 'rgba(255,80,20,0)');
-      this._heatGrad.addColorStop(1, 'rgba(255,80,20,0.22)');
-      this._heatH = h;
-    }
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.65 + 0.35 * Math.sin(time * 0.8);
-    ctx.fillStyle = this._heatGrad;
-    ctx.fillRect(0, h * 0.55, w, h * 0.45);
-    // Ondulations : fines colonnes d'air chaud qui se tordent en montant
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = 'rgba(255,170,110,0.05)';
-    ctx.lineWidth = 10;
+    ctx.strokeStyle = 'rgba(255,170,110,0.07)';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    for (let i = 0; i < 9; i++) {
-      const bx = ((i + 0.5) / 9) * w + Math.sin(time * 0.3 + i) * 20;
+    for (let i = 0; i < 6; i++) {
+      const bx = ((i + 0.5) / 6) * w + Math.sin(time * 0.3 + i) * 20;
       const u = wrap(time * 0.12 + i * 0.37, 1);
       const y0 = h * (1 - u * 0.6);
       ctx.moveTo(bx, y0);
-      for (let k = 1; k <= 6; k++) {
-        const yy = y0 - k * h * 0.05;
-        ctx.lineTo(bx + Math.sin(time * 3 + k * 1.3 + i) * 7, yy);
-      }
+      for (let k = 1; k <= 5; k++) ctx.lineTo(bx + Math.sin(time * 3 + k * 1.3 + i) * 7, y0 - k * h * 0.05);
     }
     ctx.stroke();
-    ctx.globalCompositeOperation = 'source-over';
   }
 
   /** Forêt : papillons qui voltigent devant les arbres. */

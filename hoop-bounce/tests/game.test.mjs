@@ -221,7 +221,7 @@ test('le ventilateur fait flotter le ballon jusqu\'à la corniche', () => {
   run(g, 2.5, (gg) => (maxY = Math.max(maxY, gg.body.y)));
   assert.ok(maxY > 4.5, `hauteur ${maxY.toFixed(2)}`);
   g.controller.right = true;
-  run(g, 0.7);
+  run(g, 0.55); // contrôle en l'air plus vif (étape 10) : un appui plus court suffit
   g.controller.right = false;
   run(g, 1.3);
   assert.ok(g.body.grounded && Math.abs(g.body.y - (3.8 + R)) < 0.1, `sur la corniche : y=${g.body.y.toFixed(2)}`);

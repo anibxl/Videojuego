@@ -5,7 +5,7 @@ import { walls, bounds, floor, hoopAt } from './common.js';
 
 const S1 = {
   id: 'snow-1',
-  difficulty: 'easy',
+  difficulty: 'hard',
   number: 1,
   nameKey: 'level.snow.1',
   bounds: bounds(48),
@@ -25,7 +25,7 @@ const S1 = {
 
 const S2 = {
   id: 'snow-2',
-  difficulty: 'medium',
+  difficulty: 'hard',
   number: 2,
   nameKey: 'level.snow.2',
   bounds: bounds(50),
@@ -52,7 +52,7 @@ const S2 = {
 
 const S3 = {
   id: 'snow-3',
-  difficulty: 'easy',
+  difficulty: 'hard',
   number: 3,
   nameKey: 'level.snow.3',
   bounds: bounds(52),
@@ -79,7 +79,7 @@ const S3 = {
 
 const S4 = {
   id: 'snow-4',
-  difficulty: 'medium',
+  difficulty: 'hard',
   number: 4,
   nameKey: 'level.snow.4',
   bounds: bounds(54),
@@ -102,7 +102,7 @@ const S4 = {
 
 const S5 = {
   id: 'snow-5',
-  difficulty: 'hard',
+  difficulty: 'expert',
   number: 5,
   nameKey: 'level.snow.5',
   bounds: bounds(50),
@@ -133,7 +133,7 @@ const S5 = {
 // 6 — Le grand lac : toutes les mécaniques de la neige réunies (ancien niveau de démonstration).
 const S6 = {
   id: 'snow-6',
-  difficulty: 'medium',
+  difficulty: 'hard',
   number: 6,
   nameKey: 'level.snow.6',
   bounds: bounds(62, 11.5),
@@ -166,7 +166,7 @@ const S6 = {
 
 const S7 = {
   id: 'snow-7',
-  difficulty: 'hard',
+  difficulty: 'expert',
   number: 7,
   nameKey: 'level.snow.7',
   bounds: bounds(54),
@@ -231,7 +231,7 @@ const S8 = {
 
 const S9 = {
   id: 'snow-9',
-  difficulty: 'hard',
+  difficulty: 'expert',
   number: 9,
   nameKey: 'level.snow.9',
   bounds: bounds(62),
@@ -264,7 +264,7 @@ const S9 = {
 
 const S10 = {
   id: 'snow-10',
-  difficulty: 'hard',
+  difficulty: 'expert',
   number: 10,
   nameKey: 'level.snow.10',
   bounds: bounds(80, 12),

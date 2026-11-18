@@ -45,7 +45,7 @@ const L1 = {
 // 2 — Un mur : il faut charger la puissance.
 const L2 = {
   id: 'the-wall',
-  difficulty: 'medium',
+  difficulty: 'easy',
   number: 2,
   nameKey: 'level.2',
   bounds: bounds(34),
@@ -69,7 +69,7 @@ const L2 = {
 // 3 — Trampoline au-dessus des pics, panier sur une estrade.
 const L3 = {
   id: 'trampoline',
-  difficulty: 'easy',
+  difficulty: 'medium',
   number: 3,
   nameKey: 'level.3',
   bounds: bounds(38),
@@ -220,7 +220,7 @@ const L7 = {
 // 8 — Les toits : d'immeuble en immeuble au-dessus du vide, antennes à éviter, nacelle mobile.
 const L8 = {
   id: 'city-roofs',
-  difficulty: 'medium',
+  difficulty: 'hard',
   number: 8,
   nameKey: 'level.city.8',
   bounds: bounds(60, 11),
@@ -293,7 +293,7 @@ const L9 = {
 // 10 — Grand final de la ville : mur, nacelle, ventilateur, interrupteur, porte et téléporteur.
 const L10 = {
   id: 'city-finale',
-  difficulty: 'hard',
+  difficulty: 'expert',
   number: 10,
   nameKey: 'level.city.10',
   bounds: bounds(82, 13.5),

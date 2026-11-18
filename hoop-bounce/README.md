@@ -3,10 +3,12 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 9 (actuelle) :** des niveaux plus riches et une **boutique**. Nouveaux pièges (plaques qui tombent,
-blocs qui apparaissent et disparaissent, scies, boulets qui se balancent, lasers, aimants, canons), points de
-contrôle, difficulté facile / moyen / difficile alternée, étoiles risquées ; pièces gagnées en jouant et
-boutique premium (ballons, effets de rebond, traînées, animations de panier, 4 raretés). Aucun achat réel.
+**Étape 10 (actuelle) :** grande passe de **finition**. Mondes reconnaissables au premier coup d'œil (néons,
+avions, nuages de froid, traces dans la neige, chaleur visible, papillons, débris en apesanteur, lumière propre
+à chaque monde) et à l'oreille (ambiance sonore par monde) ; difficulté à **5 paliers** qui monte vite, une
+difficulté nouvelle par niveau, et 4 pièges propres aux mondes (pilons, rochers qui dévalent, jets de flammes,
+trous noirs) ; caméra, ombres, effets de rebond et de panier, animations d'interface. Étape 9 : boutique
+(ballons, effets, traînées, animations de panier, 4 raretés, pièces gagnées en jouant, aucun achat réel).
 
 📘 **Documentation complète du projet (concept, mécaniques, architecture, roadmap, tâches, bugs, journal) :
 [PROJECT.md](PROJECT.md).** Ce README n'est qu'un guide rapide.
@@ -108,7 +110,7 @@ pause et la victoire. L'application mise en arrière-plan se met en pause d'elle
   étoiles, pourcentage, choix du niveau (10 emplacements par monde, « Bientôt » pour ceux à venir).
 - **Introduction** de chaque monde et **transition** colorée entre deux mondes.
 - **Déblocage** : un monde s'ouvre quand tous les niveaux disponibles du précédent sont terminés.
-- 50 niveaux : 10 par monde, du plus simple au plus difficile ; l'Espace est le monde final.
+- 50 niveaux : 10 par monde, 5 paliers de difficulté (facile → extrême) ; l'Espace est le monde final.
 - La carte s'ouvre depuis la partie (pause → Carte des mondes, victoire → Carte) ou directement :
   `worlds.html` (`worlds.html?unlock=all` ouvre tout, pour tester). La tuile « Mondes » du menu n'y mène pas
   encore (le menu n'a pas été modifié).
@@ -181,7 +183,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 267 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+npm test                               # 297 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)

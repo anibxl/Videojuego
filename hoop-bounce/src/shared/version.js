@@ -1,2 +1,2 @@
 // Version affichée dans les paramètres (garder en phase avec package.json).
-export const APP_VERSION = '0.8.0';
+export const APP_VERSION = '0.9.0';

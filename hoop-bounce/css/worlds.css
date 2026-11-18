@@ -899,7 +899,10 @@ svg {
 
 .lv-diff.easy { background: #4fd68a; box-shadow: 0 0 8px rgba(79, 214, 138, 0.8); }
 .lv-diff.medium { background: #ffb547; box-shadow: 0 0 8px rgba(255, 181, 71, 0.8); }
-.lv-diff.hard { background: #ff5f6d; box-shadow: 0 0 8px rgba(255, 95, 109, 0.8); }
+.lv-diff.hard { background: #ff8a3d; box-shadow: 0 0 8px rgba(255, 138, 61, 0.8); }
+.lv-diff.expert { background: #ff4f63; box-shadow: 0 0 8px rgba(255, 79, 99, 0.85); }
+.lv-diff.extreme { background: #b46bff; box-shadow: 0 0 10px rgba(180, 107, 255, 0.95); animation: diff-pulse 1.4s ease-in-out infinite; }
+@keyframes diff-pulse { 50% { box-shadow: 0 0 16px rgba(180, 107, 255, 1); transform: scale(1.25); } }
 
 /* Accès à la boutique (pièces) */
 .shop-chip {

@@ -6,7 +6,7 @@ const water = (x0, x1) => ({ x: x0, y: -0.5, w: x1 - x0 });
 
 const F1 = {
   id: 'forest-1',
-  difficulty: 'easy',
+  difficulty: 'expert',
   number: 1,
   nameKey: 'level.forest.1',
   bounds: bounds(50, 14),
@@ -28,7 +28,7 @@ const F1 = {
 
 const F2 = {
   id: 'forest-2',
-  difficulty: 'medium',
+  difficulty: 'expert',
   number: 2,
   nameKey: 'level.forest.2',
   bounds: bounds(54),
@@ -52,7 +52,7 @@ const F2 = {
 
 const F3 = {
   id: 'forest-3',
-  difficulty: 'easy',
+  difficulty: 'expert',
   number: 3,
   nameKey: 'level.forest.3',
   bounds: bounds(44, 12),
@@ -74,7 +74,7 @@ const F3 = {
 
 const F4 = {
   id: 'forest-4',
-  difficulty: 'medium',
+  difficulty: 'expert',
   number: 4,
   nameKey: 'level.forest.4',
   bounds: bounds(38, 16),
@@ -97,7 +97,7 @@ const F4 = {
 
 const F5 = {
   id: 'forest-5',
-  difficulty: 'hard',
+  difficulty: 'extreme',
   number: 5,
   nameKey: 'level.forest.5',
   bounds: bounds(54, 12),
@@ -116,7 +116,7 @@ const F5 = {
 
 const F6 = {
   id: 'forest-6',
-  difficulty: 'medium',
+  difficulty: 'expert',
   number: 6,
   nameKey: 'level.forest.6',
   bounds: bounds(54, 14),
@@ -158,7 +158,7 @@ const F6 = {
 
 const F7 = {
   id: 'forest-7',
-  difficulty: 'hard',
+  difficulty: 'extreme',
   number: 7,
   nameKey: 'level.forest.7',
   bounds: bounds(54, 16),
@@ -181,7 +181,7 @@ const F7 = {
 
 const F8 = {
   id: 'forest-8',
-  difficulty: 'medium',
+  difficulty: 'expert',
   number: 8,
   nameKey: 'level.forest.8',
   bounds: bounds(48, 15),
@@ -206,7 +206,7 @@ const F8 = {
 
 const F9 = {
   id: 'forest-9',
-  difficulty: 'hard',
+  difficulty: 'extreme',
   number: 9,
   nameKey: 'level.forest.9',
   bounds: bounds(60, 12),
@@ -229,7 +229,7 @@ const F9 = {
 
 const F10 = {
   id: 'forest-10',
-  difficulty: 'hard',
+  difficulty: 'extreme',
   number: 10,
   nameKey: 'level.forest.10',
   bounds: bounds(76, 17),

@@ -6,7 +6,7 @@ const lava = (x0, x1) => ({ x: x0, y: -0.4, w: x1 - x0 });
 
 const V1 = {
   id: 'volcano-1',
-  difficulty: 'easy',
+  difficulty: 'hard',
   number: 1,
   nameKey: 'level.volcano.1',
   bounds: bounds(50),
@@ -27,7 +27,7 @@ const V1 = {
 
 const V2 = {
   id: 'volcano-2',
-  difficulty: 'medium',
+  difficulty: 'expert',
   number: 2,
   nameKey: 'level.volcano.2',
   bounds: bounds(50),
@@ -53,7 +53,7 @@ const V2 = {
 
 const V3 = {
   id: 'volcano-3',
-  difficulty: 'easy',
+  difficulty: 'hard',
   number: 3,
   nameKey: 'level.volcano.3',
   bounds: bounds(50),
@@ -79,7 +79,7 @@ const V3 = {
 
 const V4 = {
   id: 'volcano-4',
-  difficulty: 'medium',
+  difficulty: 'expert',
   number: 4,
   nameKey: 'level.volcano.4',
   bounds: bounds(44, 15),
@@ -104,7 +104,7 @@ const V4 = {
 
 const V5 = {
   id: 'volcano-5',
-  difficulty: 'hard',
+  difficulty: 'expert',
   number: 5,
   nameKey: 'level.volcano.5',
   bounds: bounds(52, 13),
@@ -133,7 +133,7 @@ const V5 = {
 
 const V6 = {
   id: 'volcano-6',
-  difficulty: 'medium',
+  difficulty: 'expert',
   number: 6,
   nameKey: 'level.volcano.6',
   bounds: bounds(50, 13.5),
@@ -176,7 +176,7 @@ const V6 = {
 
 const V7 = {
   id: 'volcano-7',
-  difficulty: 'hard',
+  difficulty: 'expert',
   number: 7,
   nameKey: 'level.volcano.7',
   bounds: bounds(54),
@@ -207,7 +207,7 @@ const V7 = {
 
 const V8 = {
   id: 'volcano-8',
-  difficulty: 'medium',
+  difficulty: 'hard',
   number: 8,
   nameKey: 'level.volcano.8',
   bounds: bounds(58, 13.5),
@@ -237,7 +237,7 @@ const V8 = {
 
 const V9 = {
   id: 'volcano-9',
-  difficulty: 'hard',
+  difficulty: 'expert',
   number: 9,
   nameKey: 'level.volcano.9',
   bounds: bounds(52, 12),
@@ -262,7 +262,7 @@ const V9 = {
 
 const V10 = {
   id: 'volcano-10',
-  difficulty: 'hard',
+  difficulty: 'extreme',
   number: 10,
   nameKey: 'level.volcano.10',
   bounds: bounds(90, 13),
