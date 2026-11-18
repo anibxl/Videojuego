@@ -392,3 +392,93 @@ test('zone de gravité inversée : le ballon tombe vers le plafond, rebondit ver
   assert.ok(flips.includes(1));
   assert.ok(g.playing);
 });
+
+// ─── Pièges de l'étape 9 ────────────────────────────────────────────────────
+
+test('plateforme qui tombe : tremble, chute en emportant le ballon, puis revient', () => {
+  const g = yard({ fallers: [{ x: 6, y: 3, w: 3, h: 0.4 }] }, 7.5, 3.4);
+  const f = g.level.fallers[0];
+  const seen = [];
+  for (const e of ['fallerShake', 'fallerFall']) g.events.on(e, () => seen.push(e));
+  run(g, 0.2);
+  assert.equal(f.state, 'shake');
+  run(g, 0.5);
+  assert.deepEqual(seen, ['fallerShake', 'fallerFall']);
+  run(g, 0.3);
+  assert.ok(f.offset < -0.3, 'elle descend');
+  assert.ok(g.body.y < 3.2, 'le ballon descend avec elle');
+  run(g, 5);
+  assert.equal(f.state, 'idle', 'revenue à sa place');
+  assert.equal(f.offset, 0);
+});
+
+test('bloc temporisé : solide, clignote, disparaît, réapparaît (jamais sur le ballon)', () => {
+  const g = yard({ blinkers: [{ x: 10, y: 0, w: 1, h: 3, period: 3, on: 1.8, phase: 0 }] }, 5);
+  const bl = g.level.blinkers[0];
+  assert.equal(bl.phaseAt(0.5).on, true);
+  assert.ok(bl.warning(1.5) > 0, 'clignote avant de disparaître');
+  assert.equal(bl.phaseAt(2).on, false);
+  // Mur fermé : le ballon bute ; ouvert : il passe
+  g.controller.right = true;
+  run(g, 1.2);
+  assert.ok(g.body.x < 9.7, 'bloqué par le mur');
+  run(g, 1.5);
+  assert.ok(g.body.x > 11, 'passé quand le mur a disparu');
+});
+
+test('scie mobile, boulet, laser, canon : mortels au bon moment seulement', () => {
+  const g = yard({
+    saws: [{ x: 12, y: 0.6, r: 0.6, path: { dx: 0, dy: 3, period: 2, phase: 0 } }],
+    maces: [{ x: 20, y: 5, len: 4, amp: 1, period: 2, phase: 0 }],
+    lasers: [{ x1: 26, y1: 0, x2: 26, y2: 6, period: 3, on: 1, phase: 0 }],
+    cannons: [{ x: 38, y: 0.9, dir: -1, speed: 7, period: 2.6, phase: 0 }],
+  });
+  const L = g.level;
+  // Boulet : en bas au milieu du cycle (angle 0) → au point le plus bas
+  const m = L.maces[0];
+  assert.ok(m.touches(20, 1, 0.4, 0, 0.12), 'boulet au point bas');
+  assert.equal(m.touches(20, 1, 0.4, 0.5, 0.12), false, 'boulet sur le côté');
+  // Laser : éteint puis allumé
+  const l = L.lasers[0];
+  assert.equal(l.touches(26, 1, 0.4, 0.5, 0.12), false);
+  assert.ok(l.state(1.6).warn > 0, 'grésille avant de s\'allumer');
+  assert.equal(l.touches(26, 1, 0.4, 2.5, 0.12), true);
+  // Canon : portée jusqu'au mur de gauche ; le projectile avance à vitesse constante
+  const c = L.cannons[0];
+  assert.ok(c.range > 35 && c.range < 38, `portée ${c.range.toFixed(1)}`);
+  const shots = c.shots(3.0);
+  assert.ok(shots.length >= 1 && Math.abs(shots[0] - (3.0 - 2.6) * 7) < 1e-6);
+  assert.equal(c.touches(38 - 0.6 - shots[0], 0.9, 0.4, 3.0, 0.12), true);
+  assert.ok(c.charge(2.4) > 0, 'se charge avant de tirer');
+  // Scie : le ballon posé dessous meurt quand elle descend
+  let cause = null;
+  const g2 = yard({ saws: [{ x: 8, y: 3.4, r: 0.6, path: { dx: 0, dy: -3, period: 2, phase: 0 } }] }, 8);
+  g2.events.on('death', (e) => (cause = e.cause));
+  run(g2, 2);
+  assert.equal(cause, 'saw');
+});
+
+test('aimant : attire le ballon vers lui (ou le repousse)', () => {
+  const g = yard({ magnets: [{ x: 12, y: 4, radius: 5, strength: 40 }] }, 9);
+  const seen = [];
+  g.events.on('magnetEnter', () => seen.push('in'));
+  run(g, 1.2);
+  assert.ok(g.body.x > 10 || g.body.y > 1.5, `attiré (${g.body.x.toFixed(2)}, ${g.body.y.toFixed(2)})`);
+  assert.equal(seen[0], 'in');
+  const g2 = yard({ magnets: [{ x: 12, y: 0.4, radius: 5, strength: -40 }] }, 10);
+  run(g2, 1);
+  assert.ok(g2.body.x < 9.5, 'repoussé');
+});
+
+test('point de contrôle : après une chute, on réapparaît au drapeau en gardant ses étoiles', () => {
+  const g = yard({ checkpoints: [{ x: 8, y: 0 }], stars: [{ x: 6, y: 0.6 }, { x: 30, y: 9 }, { x: 31, y: 9 }], spikes: [{ x: 14, y: 0, w: 2, dir: 'up' }] }, 3);
+  g.controller.right = true;
+  let deaths = 0;
+  g.events.on('death', () => deaths++);
+  run(g, 1.6);
+  assert.equal(deaths, 1);
+  g.controller.right = false;
+  run(g, 1.2);
+  assert.ok(Math.abs(g.body.x - 8) < 0.5, `réapparu au drapeau (${g.body.x.toFixed(2)})`);
+  assert.equal(g.starsCollected, 1, 'étoile conservée');
+});

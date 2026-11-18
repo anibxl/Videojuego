@@ -109,6 +109,27 @@ export const CONFIG = Object.freeze({
     releaseCarry: 1.08,
   }),
 
+  // ─── Pièges de l'étape 9 ────────────────────────────────────────────────────
+  faller: Object.freeze({
+    delay: 0.4,                // tremblement avant la chute (s)
+    respawn: 3,
+  }),
+  blinker: Object.freeze({
+    period: 3,
+    onTime: 1.8,
+    warnTime: 0.6,             // clignotement avant de disparaître
+  }),
+  laser: Object.freeze({
+    period: 3,
+    onTime: 1.2,
+    warnTime: 0.7,             // grésillement avant de s'allumer
+  }),
+  cannon: Object.freeze({
+    speed: 7,                  // u/s : on peut toujours esquiver en sautant
+    period: 2.6,
+    warnTime: 0.5,
+  }),
+
   camera: Object.freeze({
     viewHeight: 10.5,          // hauteur visible (u)
     minViewWidth: 13,          // largeur visible minimale (écrans peu larges)

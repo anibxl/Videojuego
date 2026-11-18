@@ -66,6 +66,10 @@ export class Game {
     for (const i of L.icicles) i.reset();
     for (const v of L.vines) v.reset();
     for (const m of L.mushrooms) m.flex = 0;
+    for (const f of L.fallers) f.reset();
+    for (const b of L.blinkers) b.reset();
+    this._cannonFired = L.cannons.map(() => -1);
+    this._laserOn = L.lasers.map(() => false);
     this.vine = null;
     this._geyserOn = L.geysers.map(() => false);
     this._rockPhase = L.rockfalls.map(() => 'idle');
@@ -98,6 +102,7 @@ export class Game {
     L.world.update(this.time);
     for (const d of L.doors) d.update(dt);
     for (const s of L.saws ?? []) {
+      if (!s.path) continue;
       const p = pathState(s.path, this.time, this._path);
       s.cx = s.x + p.x;
       s.cy = s.y + p.y;
@@ -118,10 +123,14 @@ export class Game {
     if (this.state === 'dying') {
       this._stateTimer -= dt;
       if (this._stateTimer <= 0) {
-        // Niveaux courts : une chute fait recommencer le niveau (étoiles comprises)
-        const deaths = this.deaths;
-        this.restart();
-        this.deaths = deaths;
+        // Une chute fait recommencer le niveau (étoiles comprises)… sauf si un point de contrôle a été
+        // atteint : on y réapparaît, en gardant les étoiles déjà ramassées.
+        if (L.checkpoints.some((c) => c.active)) this._respawnAtCheckpoint();
+        else {
+          const deaths = this.deaths;
+          this.restart();
+          this.deaths = deaths;
+        }
       }
       L.hoop.step(dt, { x: -1000, y: -1000, radius: b.radius });
       return;
@@ -157,6 +166,23 @@ export class Game {
       const wasInWind = this.inWind;
       this.inWind = windAccel !== 0;
       if (this.inWind !== wasInWind) this.events.emit(this.inWind ? 'windEnter' : 'windExit', {});
+    }
+
+    // Aimants : attirent (ou repoussent) le ballon
+    if (L.magnets.length) {
+      const a = this._acc ?? (this._acc = { x: 0, y: 0 });
+      let inside = false;
+      for (const m of L.magnets) {
+        if (m.accelAt(b.x, b.y, a)) {
+          inside = true;
+          b.vx += a.x * dt;
+          b.vy += a.y * dt;
+        }
+      }
+      if (inside !== !!this.inMagnet) {
+        this.inMagnet = inside;
+        this.events.emit(inside ? 'magnetEnter' : 'magnetExit', {});
+      }
     }
 
     for (const c of L.crates) c.step(dt, L.gravity, this.cfg.world.fallLimit);
@@ -204,6 +230,10 @@ export class Game {
           const cr = L.crumbles[c.collider.crumbleIndex];
           if (cr.touch()) this.events.emit('crumbleShake', { x: cr.x + cr.w / 2, y: cr.y + cr.h });
         }
+        if (tag === 'faller' && c.ny * b.gravitySign > 0.5) {
+          const f = L.fallers[c.collider.fallerIndex];
+          if (f.touch()) this.events.emit('fallerShake', { x: f.x + f.w / 2, y: f.y + f.h });
+        }
         if (tag === 'crate' && Math.abs(c.nx) > 0.6) {
           const dir = -Math.sign(c.nx);
           const crate = c.collider.crate;
@@ -234,6 +264,17 @@ export class Game {
     if (this.state === 'playing' && L.hoop.checkScore(this.prev.x, this.prev.y, b.x, b.y)) this._win();
   }
 
+  _respawnAtCheckpoint() {
+    const L = this.level;
+    for (const c of L.crates) c.reset();
+    for (const c of L.crumbles) c.reset();
+    for (const f of L.fallers) f.reset();
+    for (const i of L.icicles) i.reset();
+    for (const v of L.vines) v.reset();
+    this.vine = null;
+    this._respawn();
+  }
+
   _grabVine(v) {
     v.grab(this.body);
     this.vine = v;
@@ -261,6 +302,26 @@ export class Game {
       if (e === 'shake') this.events.emit('icicleShake', { x: ic.x, y: ic.topY });
       else if (e === 'shatter') this.events.emit('icicleShatter', { x: ic.x, y: ic.floorY });
     }
+    for (const f of L.fallers) {
+      const e = f.update(dt, b, L.gravity);
+      if (e === 'fall') this.events.emit('fallerFall', { x: f.x + f.w / 2, y: f.y });
+    }
+    for (const bl of L.blinkers) {
+      const e = bl.update(this.time, b);
+      if (e) this.events.emit('blinker', { x: bl.x + bl.w / 2, y: bl.y + bl.h / 2, on: e === 'on' });
+    }
+    L.cannons.forEach((c, i) => {
+      const n = Math.floor(this.time / c.period + c.phase);
+      if (n !== this._cannonFired[i]) {
+        if (this._cannonFired[i] >= 0) this.events.emit('cannonFire', { x: c.x, y: c.y, dx: c.dx, dy: c.dy });
+        this._cannonFired[i] = n;
+      }
+    });
+    L.lasers.forEach((l, i) => {
+      const on = l.state(this.time).on;
+      if (on && !this._laserOn[i]) this.events.emit('laserOn', { x: (l.x1 + l.x2) / 2, y: (l.y1 + l.y2) / 2 });
+      this._laserOn[i] = on;
+    });
     L.geysers.forEach((g, i) => {
       const on = g.state(this.time).erupting;
       if (on && !this._geyserOn[i]) this.events.emit('geyser', { x: g.x, y: g.y });
@@ -350,6 +411,9 @@ export class Game {
     for (const g of L.geysers) if (g.touches(b.x, b.y, b.radius, t, f)) return this._die('fire');
     for (const r of L.rockfalls) if (r.touches(b.x, b.y, b.radius, t, f)) return this._die('rock');
     for (const i of L.icicles) if (i.hits(b.x, b.y, b.radius, f)) return this._die('icicle');
+    for (const m of L.maces) if (m.touches(b.x, b.y, b.radius, t, f)) return this._die('mace');
+    for (const l of L.lasers) if (l.touches(b.x, b.y, b.radius, t, f)) return this._die('laser');
+    for (const c of L.cannons) if (c.touches(b.x, b.y, b.radius, t, f)) return this._die('cannon');
     if (b.y < this.cfg.world.fallLimit) this._die('fall');
     // Gravité inversée : le ballon ne doit pas s'envoler hors du niveau par le haut
     if (b.gravitySign < 0 && L.bounds && b.y > L.bounds.maxY + 4) this._die('fall');
@@ -370,6 +434,10 @@ export class Game {
     if (this.inWind) {
       this.inWind = false;
       this.events.emit('windExit', {});
+    }
+    if (this.inMagnet) {
+      this.inMagnet = false;
+      this.events.emit('magnetExit', {});
     }
     this.events.emit('death', { x: this.body.x, y: this.body.y, vx: this.body.vx, vy: this.body.vy, cause });
   }

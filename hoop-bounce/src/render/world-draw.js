@@ -1407,3 +1407,328 @@ export function drawGravityZone(r, z, time, active) {
   }
   ctx.globalAlpha = 1;
 }
+
+// ─── Pièges de l'étape 9 ────────────────────────────────────────────────────
+
+const FALLER_LOOK = {
+  city: ['#7a8299', '#454c62', 'grate'],
+  snow: ['#cfe9fb', '#7fb2d9', 'ice'],
+  volcano: ['#6b4a3f', '#3a2520', 'stone'],
+  forest: ['#8a5a33', '#55351f', 'wood'],
+  space: ['#5b5f96', '#2c2f5c', 'panel'],
+};
+
+export function drawFaller(r, f, time) {
+  if (f.state === 'gone') {
+    const ctx = r.ctx;
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 0.04;
+    ctx.setLineDash([0.12, 0.12]);
+    ctx.strokeRect(f.x, f.y, f.w, f.h);
+    ctx.setLineDash([]);
+    return;
+  }
+  const ctx = r.ctx;
+  const [light, dark, kind] = FALLER_LOOK[r.themeId] ?? FALLER_LOOK.city;
+  const shake = f.state === 'shake' ? Math.sin(time * 70) * 0.05 : 0;
+  const x = f.x + shake;
+  const y = f.y + f.offset;
+  ctx.globalAlpha = f.appear;
+  const g = ctx.createLinearGradient(0, y + f.h, 0, y);
+  g.addColorStop(0, light);
+  g.addColorStop(1, dark);
+  ctx.fillStyle = g;
+  roundRect(ctx, x, y, f.w, f.h, 0.06);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  if (kind === 'grate') for (let xx = x + 0.2; xx < x + f.w - 0.1; xx += 0.25) ctx.fillRect(xx, y + 0.06, 0.06, f.h - 0.14);
+  else if (kind === 'wood') for (let xx = x + 0.6; xx < x + f.w - 0.1; xx += 0.6) ctx.fillRect(xx, y, 0.04, f.h);
+  else if (kind === 'panel') {
+    ctx.fillStyle = 'rgba(130,230,255,0.7)';
+    ctx.fillRect(x + 0.1, y + f.h * 0.4, f.w - 0.2, 0.05);
+  }
+  // Boulons qui lâchent : fissures et avertissement orange quand elle tremble
+  const warn = f.state === 'shake' || f.state === 'fall';
+  ctx.strokeStyle = warn ? 'rgba(255,150,60,0.95)' : 'rgba(0,0,0,0.35)';
+  ctx.lineWidth = 0.035;
+  ctx.beginPath();
+  ctx.moveTo(x + f.w * 0.35, y + f.h);
+  ctx.lineTo(x + f.w * 0.42, y + f.h * 0.45);
+  ctx.lineTo(x + f.w * 0.36, y);
+  ctx.moveTo(x + f.w * 0.7, y + f.h);
+  ctx.lineTo(x + f.w * 0.64, y + f.h * 0.3);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fillRect(x, y + f.h - 0.05, f.w, 0.05);
+  // Supports d'accroche (qui restent en place)
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'rgba(20,20,30,0.55)';
+  ctx.fillRect(f.x + 0.1, f.y + f.h, 0.1, 0.08);
+  ctx.fillRect(f.x + f.w - 0.2, f.y + f.h, 0.1, 0.08);
+}
+
+export function drawBlinker(r, bl, time) {
+  const ctx = r.ctx;
+  const warn = bl.warning(time);
+  const space = r.themeId === 'space';
+  const col = space ? '140,200,255' : r.themeId === 'volcano' ? '255,140,70' : r.themeId === 'forest' ? '160,230,120' : r.themeId === 'snow' ? '170,220,255' : '255,200,90';
+  if (!bl.solid) {
+    // Silhouette en pointillés : il reviendra ici
+    ctx.strokeStyle = `rgba(${col},0.35)`;
+    ctx.lineWidth = 0.04;
+    ctx.setLineDash([0.15, 0.12]);
+    ctx.strokeRect(bl.x, bl.y, bl.w, bl.h);
+    ctx.setLineDash([]);
+    return;
+  }
+  const blink = warn > 0 ? (Math.sin(time * (14 + warn * 20)) > 0 ? 1 : 0.35) : 1;
+  ctx.globalAlpha = blink;
+  r._drawGlow(col, bl.x + bl.w / 2, bl.y + bl.h / 2, Math.max(bl.w, bl.h) * 0.8, 0.25);
+  ctx.fillStyle = `rgba(${col},0.22)`;
+  roundRect(ctx, bl.x, bl.y, bl.w, bl.h, 0.06);
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${col},0.9)`;
+  ctx.lineWidth = 0.06;
+  roundRect(ctx, bl.x, bl.y, bl.w, bl.h, 0.06);
+  ctx.stroke();
+  // Hachures d'énergie
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(bl.x, bl.y, bl.w, bl.h);
+  ctx.clip();
+  ctx.strokeStyle = `rgba(${col},0.35)`;
+  ctx.lineWidth = 0.05;
+  ctx.beginPath();
+  const off = (time * 0.6) % 0.5;
+  for (let d = -bl.h; d < bl.w + bl.h; d += 0.5) {
+    ctx.moveTo(bl.x + d + off, bl.y);
+    ctx.lineTo(bl.x + d + off - bl.h, bl.y + bl.h);
+  }
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(bl.x, bl.y + bl.h - 0.05, bl.w, 0.05);
+  ctx.globalAlpha = 1;
+}
+
+export function drawSaw(r, sw, time) {
+  const ctx = r.ctx;
+  // Rail du trajet
+  if (sw.path) {
+    ctx.strokeStyle = 'rgba(20,20,30,0.5)';
+    ctx.lineWidth = 0.12;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(sw.x, sw.y);
+    ctx.lineTo(sw.x + sw.path.dx, sw.y + sw.path.dy);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 0.03;
+    ctx.stroke();
+  }
+  const R = sw.r;
+  ctx.save();
+  ctx.translate(sw.cx, sw.cy);
+  ctx.rotate(-time * 12);
+  ctx.fillStyle = '#c9d0dc';
+  ctx.beginPath();
+  const n = 12;
+  for (let i = 0; i < n; i++) {
+    const a0 = (i / n) * TAU;
+    const a1 = ((i + 0.6) / n) * TAU;
+    ctx.lineTo(Math.cos(a0) * R * 0.78, Math.sin(a0) * R * 0.78);
+    ctx.lineTo(Math.cos(a1) * R, Math.sin(a1) * R);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#8e97a8';
+  ctx.beginPath();
+  ctx.arc(0, 0, R * 0.62, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = '#ff4d5e';
+  ctx.beginPath();
+  ctx.arc(0, 0, R * 0.22, 0, TAU);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.lineWidth = 0.03;
+  ctx.beginPath();
+  ctx.arc(0, 0, R * 0.45, 0.3, 1.6);
+  ctx.stroke();
+  ctx.restore();
+}
+
+const MACE_LOOK = {
+  city: ['#5a6378', '#2b3142', '#ff4d5e'],
+  snow: ['#b9dcf5', '#6a9ccc', '#ff5a6e'],
+  volcano: ['#3b2a2a', '#1a1010', '#ff8a2a'],
+  forest: ['#6b5a40', '#3a2e1e', '#ff5a5a'],
+  space: ['#6a5fb0', '#2f2766', '#ff7ad8'],
+};
+
+export function drawMace(r, m, time) {
+  const ctx = r.ctx;
+  const p = m.pos(time);
+  const [light, dark, tip] = MACE_LOOK[r.themeId] ?? MACE_LOOK.city;
+  // Ancrage et chaîne
+  ctx.fillStyle = '#2a2e3a';
+  ctx.beginPath();
+  ctx.arc(m.x, m.y, 0.16, 0, TAU);
+  ctx.fill();
+  const links = Math.max(4, Math.round(m.len / 0.3));
+  ctx.strokeStyle = '#8d93a3';
+  ctx.lineWidth = 0.05;
+  for (let i = 0; i < links; i++) {
+    const t0 = i / links;
+    const lx = m.x + (p.x - m.x) * t0;
+    const ly = m.y + (p.y - m.y) * t0;
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, 0.07, 0.11, Math.atan2(p.x - m.x, m.y - p.y), 0, TAU);
+    ctx.stroke();
+  }
+  if (r.themeId === 'volcano') r._drawGlow('255,110,40', p.x, p.y, m.r * 2.4, 0.4);
+  // Boule hérissée
+  ctx.fillStyle = tip;
+  ctx.beginPath();
+  const spikes = 10;
+  const rot = m.angle(time) * 1.5;
+  for (let i = 0; i < spikes; i++) {
+    const a = rot + (i / spikes) * TAU;
+    ctx.moveTo(p.x + Math.cos(a - 0.18) * m.r * 0.85, p.y + Math.sin(a - 0.18) * m.r * 0.85);
+    ctx.lineTo(p.x + Math.cos(a) * m.r * 1.32, p.y + Math.sin(a) * m.r * 1.32);
+    ctx.lineTo(p.x + Math.cos(a + 0.18) * m.r * 0.85, p.y + Math.sin(a + 0.18) * m.r * 0.85);
+  }
+  ctx.fill();
+  const g = ctx.createRadialGradient(p.x - m.r * 0.3, p.y + m.r * 0.3, m.r * 0.1, p.x, p.y, m.r);
+  g.addColorStop(0, light);
+  g.addColorStop(1, dark);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, m.r, 0, TAU);
+  ctx.fill();
+}
+
+export function drawLaser(r, l, time) {
+  const ctx = r.ctx;
+  const s = l.state(time);
+  const col = r.themeId === 'space' ? '255,80,200' : '255,60,80';
+  // Faisceau
+  if (s.on) {
+    const flick = 0.85 + 0.15 * Math.sin(time * 60);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(${col},${0.35 * flick})`;
+    ctx.lineWidth = 0.42;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(l.x1, l.y1);
+    ctx.lineTo(l.x2, l.y2);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(255,230,240,${0.95 * flick})`;
+    ctx.lineWidth = 0.09;
+    ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+  } else if (s.warn > 0) {
+    // Avertissement : un trait pointillé qui grésille, de plus en plus marqué
+    ctx.strokeStyle = `rgba(${col},${0.2 + 0.6 * s.warn * (Math.sin(time * 40) > 0 ? 1 : 0.4)})`;
+    ctx.lineWidth = 0.04;
+    ctx.setLineDash([0.12, 0.14]);
+    ctx.beginPath();
+    ctx.moveTo(l.x1, l.y1);
+    ctx.lineTo(l.x2, l.y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // Émetteurs
+  const a = Math.atan2(l.y2 - l.y1, l.x2 - l.x1);
+  for (const [x, y, dir] of [[l.x1, l.y1, a], [l.x2, l.y2, a + Math.PI]]) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(dir);
+    ctx.fillStyle = '#2a2e3e';
+    roundRect(ctx, -0.32, -0.26, 0.42, 0.52, 0.08);
+    ctx.fill();
+    ctx.fillStyle = s.on ? '#ffd0e0' : s.warn > 0 ? `rgba(${col},0.9)` : 'rgba(120,40,60,0.9)';
+    ctx.fillRect(0.02, -0.1, 0.1, 0.2);
+    ctx.restore();
+    if (s.on || s.warn > 0) r._drawGlow(col, x, y, 0.6, s.on ? 0.8 : s.warn * 0.6);
+  }
+}
+
+export function drawMagnet(r, m, time) {
+  const ctx = r.ctx;
+  const attract = m.strength > 0;
+  const col = attract ? '255,90,110' : '110,170,255';
+  // Ondes du champ : vers l'aimant (attire) ou vers l'extérieur (repousse)
+  ctx.strokeStyle = `rgba(${col},0.5)`;
+  ctx.lineWidth = 0.04;
+  for (let i = 0; i < 3; i++) {
+    let u = ((time * 0.6 + i / 3) % 1);
+    if (attract) u = 1 - u;
+    ctx.globalAlpha = Math.sin(u * Math.PI) * 0.8;
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, 0.6 + u * (m.radius - 0.6), 0, TAU);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = `rgba(${col},0.15)`;
+  ctx.setLineDash([0.2, 0.2]);
+  ctx.beginPath();
+  ctx.arc(m.x, m.y, m.radius, 0, TAU);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  r._drawGlow(col, m.x, m.y, 1.3, 0.45);
+  // Aimant en fer à cheval
+  ctx.lineWidth = 0.28;
+  ctx.lineCap = 'butt';
+  ctx.strokeStyle = attract ? '#e8394f' : '#3f7fe8';
+  ctx.beginPath();
+  ctx.arc(m.x, m.y + 0.05, 0.36, Math.PI, 0, true);
+  ctx.stroke();
+  ctx.fillStyle = '#d8dde8';
+  ctx.fillRect(m.x - 0.5, m.y - 0.02, 0.28, 0.2);
+  ctx.fillRect(m.x + 0.22, m.y - 0.02, 0.28, 0.2);
+}
+
+const SHOT_COLOR = { city: '40,44,58', snow: '235,245,255', volcano: '255,120,40', forest: '120,80,40', space: '200,120,255' };
+
+export function drawCannon(r, c, time) {
+  const ctx = r.ctx;
+  const col = SHOT_COLOR[r.themeId] ?? SHOT_COLOR.city;
+  const glowing = r.themeId === 'volcano' || r.themeId === 'space';
+  // Projectiles (avec une traînée)
+  for (const d of c.shots(time)) {
+    const px = c.x + c.dx * (0.6 + d);
+    const py = c.y + c.dy * (0.6 + d);
+    ctx.strokeStyle = `rgba(${col},0.35)`;
+    ctx.lineWidth = c.size * 1.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(px - c.dx * 0.8, py - c.dy * 0.8);
+    ctx.lineTo(px, py);
+    ctx.stroke();
+    if (glowing) r._drawGlow(col, px, py, c.size * 3, 0.6);
+    ctx.fillStyle = `rgb(${col})`;
+    ctx.beginPath();
+    ctx.arc(px, py, c.size, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.beginPath();
+    ctx.arc(px - c.size * 0.3, py + c.size * 0.3, c.size * 0.35, 0, TAU);
+    ctx.fill();
+  }
+  // Canon (affût + fût orienté), qui rougeoit en se chargeant
+  const charge = c.charge(time);
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.rotate(Math.atan2(c.dy, c.dx));
+  ctx.fillStyle = '#3a3f52';
+  roundRect(ctx, -0.2, -0.24, 0.85, 0.48, 0.12);
+  ctx.fill();
+  ctx.fillStyle = '#23263a';
+  ctx.fillRect(0.55, -0.28, 0.14, 0.56);
+  ctx.restore();
+  ctx.fillStyle = '#2a2e3e';
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, 0.34, 0, TAU);
+  ctx.fill();
+  if (charge > 0) r._drawGlow('255,150,60', c.x + c.dx * 0.62, c.y + c.dy * 0.62, 0.4 + charge * 0.5, charge);
+}

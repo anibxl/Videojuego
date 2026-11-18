@@ -5,7 +5,7 @@ import { createPolygonEdges, createOneWay, createCircle, boxPoints } from '../ph
 import { Mover } from '../physics/mover.js';
 import { Hoop } from './hoop.js';
 import { Door, Fan, Teleporter } from './elements.js';
-import { Crate, WindZone, Icicle, Lava, Crumble, Geyser, RockFall, Vine, GravityZone } from './world-elements.js';
+import { Crate, WindZone, Icicle, Lava, Crumble, Geyser, RockFall, Vine, GravityZone, Faller, Blinker, Mace, Laser, Magnet, Cannon } from './world-elements.js';
 
 /** Matériau par défaut selon le style d'un bloc. */
 const STYLE_MATERIAL = { ground: 'ground', wall: 'wall', ice: 'ice', snow: 'snow', rock: 'rock', wood: 'wood' };
@@ -113,6 +113,21 @@ export function buildLevel(def, config) {
     return new Crumble(cr, edges, config.crumble);
   });
 
+  // Plateformes qui tombent
+  const fallers = (def.fallers ?? []).map((f, index) => {
+    const edges = createPolygonEdges(boxPoints(f.x, f.y, f.w, f.h ?? 0.4), M.platform, 'faller');
+    for (const e of edges) e.fallerIndex = index;
+    world.add(edges);
+    return new Faller(f, edges, config.faller);
+  });
+
+  // Blocs temporisés (plateformes et murs qui apparaissent puis disparaissent)
+  const blinkers = (def.blinkers ?? []).map((b) => {
+    const edges = createPolygonEdges(boxPoints(b.x, b.y, b.w, b.h ?? 0.45), b.h > 1.5 ? M.wall : M.platform, 'blinker');
+    world.add(edges);
+    return new Blinker(b, edges, config.blinker);
+  });
+
   const hoop = new Hoop({ floorY: 0, ...def.hoop }, config.hoop, config.ball.radius, M);
   world.add(hoop.colliders);
 
@@ -142,6 +157,18 @@ export function buildLevel(def, config) {
   const geysers = (def.geysers ?? []).map((g) => new Geyser(g, config.geyser));
   const vines = (def.vines ?? []).map((v) => new Vine(v, config.vine));
   const gravityZones = (def.gravityZones ?? []).map((z) => new GravityZone(z));
+  const saws = (def.saws ?? []).map((sw) => ({ ...sw, r: sw.r ?? 0.6, cx: sw.x, cy: sw.y }));
+  const maces = (def.maces ?? []).map((m) => new Mace(m));
+  const lasers = (def.lasers ?? []).map((l) => new Laser(l, config.laser));
+  const magnets = (def.magnets ?? []).map((m) => new Magnet(m));
+  // Canons : portée = distance jusqu'au premier bloc dans l'axe du tir
+  const inBox = (x, y) => boxes.some((b) => x > b.x0 && x < b.x1 && y > b.y0 && y < b.y1);
+  const cannons = (def.cannons ?? []).map((c) => {
+    const a = c.angle ?? (c.dir === -1 ? Math.PI : 0);
+    let d = 0;
+    while (d < 40 && !inBox(c.x + Math.cos(a) * (0.6 + d), c.y + Math.sin(a) * (0.6 + d))) d += 0.1;
+    return new Cannon(c, d, config.cannon);
+  });
 
   return {
     def,
@@ -165,6 +192,13 @@ export function buildLevel(def, config) {
     geysers,
     vines,
     gravityZones,
+    saws,
+    fallers,
+    blinkers,
+    maces,
+    lasers,
+    magnets,
+    cannons,
     trampolines,
     switches,
     doors,

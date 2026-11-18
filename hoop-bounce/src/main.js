@@ -299,6 +299,23 @@ game.events.on('rockImpact', (e) => {
   particles.dust(e.x, e.y, 0, 1, 0.9 * v, 'rgba(150,120,110,0.9)');
   if (v > 0.5) camera.addTrauma(0.18 * v);
 });
+game.events.on('fallerShake', (e) => {
+  sfx.fallerShake();
+  particles.dust(e.x, e.y, 0, 1, 0.4, renderer.theme.surface.dust);
+});
+game.events.on('fallerFall', () => sfx.fallerFall());
+game.events.on('blinker', (e) => sfx.blinker(e.on, nearVolume(e.x)));
+game.events.on('cannonFire', (e) => {
+  const v = nearVolume(e.x);
+  sfx.cannon(v);
+  if (v > 0.3) particles.dust(e.x + e.dx * 0.7, e.y + e.dy * 0.7, e.dx, e.dy, 0.5 * v, 'rgba(200,200,210,0.8)');
+});
+game.events.on('laserOn', (e) => sfx.laserOn(nearVolume(e.x)));
+game.events.on('checkpoint', (e) => {
+  sfx.checkpoint();
+  haptics.success();
+  particles.sparkle(e.x + 0.3, e.y + 1.2, 14, '#a6ffe6', 3);
+});
 game.events.on('vineGrab', () => {
   sfx.vineGrab();
   haptics.light();

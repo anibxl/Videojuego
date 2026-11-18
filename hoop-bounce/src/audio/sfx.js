@@ -353,6 +353,11 @@ export class Sfx {
       this._tone(260, 60, 0.4, 0.3, 'sawtooth');
       return;
     }
+    if (cause === 'laser') {
+      this._tone(1400, 200, 0.3, 0.15, 'sawtooth');
+      this._noiseBurst(0.25, 0.3, 'highpass', 3000);
+      return;
+    }
     if (cause === 'water') {
       this._noiseBurst(0.45, 0.45, 'lowpass', 2400, 0.8, 400);
       this._tone(400, 120, 0.25, 0.2, 'sine');
@@ -368,6 +373,36 @@ export class Sfx {
     const notes = [523, 659, 784, 1047];
     notes.forEach((n, i) => this._tone(n, n, 0.35, 0.11, 'triangle', 0.08 + i * 0.09));
     this._tone(1568, 1568, 0.8, 0.05, 'sine', 0.45);
+  }
+
+  // ─── Pièges de l'étape 9 ──────────────────────────────────────────────────
+
+  cannon(volume = 1) {
+    if (!this.ready || volume <= 0.03) return;
+    this._tone(120, 45, 0.25, 0.45 * volume, 'sine');
+    this._noiseBurst(0.22, 0.35 * volume, 'lowpass', 1400, 0.8, 200);
+  }
+
+  laserOn(volume = 1) {
+    if (!this.ready || volume <= 0.03) return;
+    this._tone(1800, 600, 0.18, 0.06 * volume, 'sawtooth');
+    this._tone(220, 220, 0.5, 0.05 * volume, 'square');
+  }
+
+  fallerShake() {
+    if (!this.ready) return;
+    this._noiseBurst(0.3, 0.14, 'bandpass', 900, 2, 500);
+    this._tone(300, 260, 0.2, 0.05, 'square');
+  }
+
+  fallerFall() {
+    if (!this.ready) return;
+    this._tone(400, 90, 0.5, 0.12, 'triangle');
+  }
+
+  blinker(on, volume = 1) {
+    if (!this.ready || volume <= 0.03) return;
+    this._tone(on ? 520 : 780, on ? 780 : 520, 0.12, 0.05 * volume, 'sine');
   }
 
   /** Monde débloqué : fanfare cristalline. */

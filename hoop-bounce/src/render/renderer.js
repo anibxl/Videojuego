@@ -17,6 +17,7 @@ import { themeOf } from './themes.js';
 import {
   drawSolid, drawSpikes, drawPlank, drawThemedMover, drawCrate, drawWindZone, drawIcicle, drawLiquid, drawCrumble,
   drawGeyser, drawRockfall, drawVine, drawMushroom, drawRoller, drawBranch, drawGravityZone,
+  drawFaller, drawBlinker, drawSaw, drawMace, drawLaser, drawMagnet, drawCannon,
 } from './world-draw.js';
 
 const C = {
@@ -149,6 +150,13 @@ export class Renderer {
     for (const gy of L.geysers) if (visible(gy.x - 1, gy.x + 1)) drawGeyser(this, gy, t);
     for (const ic of L.icicles) if (visible(ic.x - 1, ic.x + 1)) drawIcicle(this, ic, time);
     for (const rf of L.rockfalls) if (visible(rf.x - 1, rf.x + 1)) drawRockfall(this, rf, t);
+    for (const mg of L.magnets) if (visible(mg.x - mg.radius, mg.x + mg.radius)) drawMagnet(this, mg, time);
+    for (const f of L.fallers) if (visible(f.x, f.x + f.w)) drawFaller(this, f, time);
+    for (const bl of L.blinkers) if (visible(bl.x, bl.x + bl.w)) drawBlinker(this, bl, t);
+    for (const sw of L.saws) if (visible(sw.cx - 1, sw.cx + 1) || (sw.path && visible(sw.x, sw.x + sw.path.dx))) drawSaw(this, sw, time);
+    for (const l of L.lasers) if (visible(Math.min(l.x1, l.x2) - 1, Math.max(l.x1, l.x2) + 1)) drawLaser(this, l, t);
+    for (const c of L.cannons) if (visible(Math.min(c.x, c.x + c.dx * c.range) - 1, Math.max(c.x, c.x + c.dx * c.range) + 1)) drawCannon(this, c, t);
+    for (const m of L.maces) if (visible(m.x - m.len - 1, m.x + m.len + 1)) drawMace(this, m, t);
     for (const tp of L.teleporters) this._drawTeleporter(tp, t, visible);
     for (const v of L.vines) if (visible(v.x - v.len, v.x + v.len)) drawVine(this, v, s.ball, time);
     for (const c of L.checkpoints) if (visible(c.x - 1, c.x + 1)) this._drawCheckpoint(c, t);
