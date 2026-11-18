@@ -716,6 +716,12 @@ export class Magnet {
     this.y = def.y;
     this.radius = def.radius ?? 3.5;
     this.strength = def.strength ?? 30;
+    // Trou noir (espace) : un cœur mortel au centre du champ
+    this.core = def.core ?? 0;
+  }
+
+  touches(x, y, r) {
+    return this.core > 0 && Math.hypot(x - this.x, y - this.y) < this.core + r * 0.5;
   }
 
   /** Accélération (ax, ay) subie par le ballon en (x, y). */
@@ -783,5 +789,104 @@ export class Cannon {
       if (Math.hypot(x - px, y - py) < r + this.size - forgiveness) return true;
     }
     return false;
+  }
+}
+
+// ─── Pièges de l'étape 10 ────────────────────────────────────────────────────
+
+function circleHitsRect(x, y, r, x0, y0, x1, y1) {
+  const cx = clamp(x, x0, x1);
+  const cy = clamp(y, y0, y1);
+  return (x - cx) * (x - cx) + (y - cy) * (y - cy) < r * r;
+}
+
+/**
+ * Pilon (presse hydraulique, bloc de glace, broyeur de pierre, tronc-marteau, piston) : un bloc
+ * lourd qui attend en haut, tremble, s'écrase d'un coup jusqu'au sol, y reste un instant puis
+ * remonte lentement. Mortel au contact. Fonction pure du temps : on apprend son rythme.
+ *   def { x, w, top, bottom, h, period, phase }  top/bottom = hauteur de sa face inférieure
+ */
+export class Crusher {
+  constructor(def, cfg) {
+    this.def = def;
+    this.x = def.x;
+    this.w = def.w ?? 1.6;
+    this.h = def.h ?? 1.4;
+    this.top = def.top;
+    this.bottom = def.bottom ?? 0;
+    this.period = def.period ?? cfg.period;
+    this.phase = def.phase ?? 0;
+    this.warnTime = cfg.warnTime;
+    this.slamTime = cfg.slamTime;
+    this.holdTime = cfg.holdTime;
+    this.riseTime = def.rise ?? cfg.riseTime;
+  }
+
+  /** { y : face inférieure, shake : 0..1 avant la chute, slam : vient de toucher le sol } */
+  state(t, out = { y: 0, shake: 0, down: false }) {
+    const u = cycleTime(t, this.period, this.phase);
+    const wait = this.period - this.slamTime - this.holdTime - this.riseTime;
+    out.shake = 0;
+    out.down = false;
+    if (u < wait) {
+      out.y = this.top;
+      if (u > wait - this.warnTime) out.shake = (u - (wait - this.warnTime)) / this.warnTime;
+    } else if (u < wait + this.slamTime) {
+      const k = (u - wait) / this.slamTime;
+      out.y = this.top + (this.bottom - this.top) * k * k;
+    } else if (u < wait + this.slamTime + this.holdTime) {
+      out.y = this.bottom;
+      out.down = true;
+    } else {
+      const k = (u - wait - this.slamTime - this.holdTime) / this.riseTime;
+      out.y = this.bottom + (this.top - this.bottom) * (k * k * (3 - 2 * k));
+    }
+    return out;
+  }
+
+  touches(x, y, r, t, forgiveness) {
+    const s = this.state(t, this._s ?? (this._s = { y: 0, shake: 0, down: false }));
+    const f = forgiveness;
+    return circleHitsRect(x, y, r - f, this.x + f, s.y, this.x + this.w - f, s.y + this.h);
+  }
+}
+
+/**
+ * Rocher qui dévale (boule de neige, rocher de lave, rondin) : à chaque cycle, il part d'un bout
+ * de sa piste et roule jusqu'à l'autre à vitesse constante, puis disparaît. Un grondement
+ * l'annonce juste avant son départ. Mortel au contact ; on le saute ou on se met à l'abri.
+ *   def { x1, x2, y : sol de la piste, r, dir (+1 vers la droite, -1 vers la gauche), speed, period, phase }
+ */
+export class Boulder {
+  constructor(def, cfg) {
+    this.def = def;
+    this.x1 = def.x1;
+    this.x2 = def.x2;
+    this.r = def.r ?? 0.55;
+    this.y = def.y + this.r;
+    this.dir = def.dir ?? -1;
+    this.speed = def.speed ?? cfg.speed;
+    this.period = def.period ?? cfg.period;
+    this.phase = def.phase ?? 0;
+    this.warnTime = cfg.warnTime;
+    this.duration = (this.x2 - this.x1) / this.speed;
+  }
+
+  /** { active, x, angle, warn : 0..1 avant le départ } */
+  state(t, out = { active: false, x: 0, angle: 0, warn: 0 }) {
+    const u = cycleTime(t, this.period, this.phase);
+    out.active = u < this.duration && t >= u; // pas de rocher avant le début du niveau
+    const d = u * this.speed;
+    out.x = this.dir > 0 ? this.x1 + d : this.x2 - d;
+    out.angle = (-this.dir * d) / this.r;
+    const left = this.period - u;
+    out.warn = left < this.warnTime ? 1 - left / this.warnTime : 0;
+    return out;
+  }
+
+  touches(x, y, r, t, forgiveness) {
+    const s = this.state(t, this._s ?? (this._s = { active: false, x: 0, angle: 0, warn: 0 }));
+    if (!s.active) return false;
+    return Math.hypot(x - s.x, y - this.y) < r + this.r - forgiveness * 2;
   }
 }

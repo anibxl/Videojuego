@@ -18,7 +18,7 @@ import { themeOf } from './themes.js';
 import {
   drawSolid, drawSpikes, drawPlank, drawThemedMover, drawCrate, drawWindZone, drawIcicle, drawLiquid, drawCrumble,
   drawGeyser, drawRockfall, drawVine, drawMushroom, drawRoller, drawBranch, drawGravityZone,
-  drawFaller, drawBlinker, drawSaw, drawMace, drawLaser, drawMagnet, drawCannon,
+  drawFaller, drawBlinker, drawSaw, drawMace, drawLaser, drawMagnet, drawCannon, drawCrusher, drawBoulder,
 } from './world-draw.js';
 
 const C = {
@@ -178,6 +178,8 @@ export class Renderer {
     for (const l of L.lasers) if (visible(Math.min(l.x1, l.x2) - 1, Math.max(l.x1, l.x2) + 1)) drawLaser(this, l, t);
     for (const c of L.cannons) if (visible(Math.min(c.x, c.x + c.dx * c.range) - 1, Math.max(c.x, c.x + c.dx * c.range) + 1)) drawCannon(this, c, t);
     for (const m of L.maces) if (visible(m.x - m.len - 1, m.x + m.len + 1)) drawMace(this, m, t);
+    for (const c of L.crushers) if (visible(c.x - 0.5, c.x + c.w + 0.5)) drawCrusher(this, c, t);
+    for (const b of L.boulders) if (visible(b.x1 - 1, b.x2 + 1)) drawBoulder(this, b, t);
     for (const tp of L.teleporters) this._drawTeleporter(tp, t, visible);
     for (const v of L.vines) if (visible(v.x - v.len, v.x + v.len)) drawVine(this, v, s.ball, time);
     for (const c of L.checkpoints) if (visible(c.x - 1, c.x + 1)) this._drawCheckpoint(c, t);

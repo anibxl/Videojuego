@@ -70,6 +70,8 @@ export class Game {
     for (const b of L.blinkers) b.reset();
     this._cannonFired = L.cannons.map(() => -1);
     this._laserOn = L.lasers.map(() => false);
+    this._crusherDown = L.crushers.map(() => false);
+    this._boulderOn = L.boulders.map(() => false);
     this.vine = null;
     this._geyserOn = L.geysers.map(() => false);
     this._rockPhase = L.rockfalls.map(() => 'idle');
@@ -322,6 +324,16 @@ export class Game {
       if (on && !this._laserOn[i]) this.events.emit('laserOn', { x: (l.x1 + l.x2) / 2, y: (l.y1 + l.y2) / 2 });
       this._laserOn[i] = on;
     });
+    L.crushers.forEach((c, i) => {
+      const down = c.state(this.time).down;
+      if (down && !this._crusherDown[i]) this.events.emit('crusherSlam', { x: c.x + c.w / 2, y: c.bottom });
+      this._crusherDown[i] = down;
+    });
+    L.boulders.forEach((bo, i) => {
+      const on = bo.state(this.time).active;
+      if (on && !this._boulderOn[i]) this.events.emit('boulderStart', { x: bo.dir > 0 ? bo.x1 : bo.x2, y: bo.y });
+      this._boulderOn[i] = on;
+    });
     L.geysers.forEach((g, i) => {
       const on = g.state(this.time).erupting;
       if (on && !this._geyserOn[i]) this.events.emit('geyser', { x: g.x, y: g.y });
@@ -414,6 +426,9 @@ export class Game {
     for (const m of L.maces) if (m.touches(b.x, b.y, b.radius, t, f)) return this._die('mace');
     for (const l of L.lasers) if (l.touches(b.x, b.y, b.radius, t, f)) return this._die('laser');
     for (const c of L.cannons) if (c.touches(b.x, b.y, b.radius, t, f)) return this._die('cannon');
+    for (const c of L.crushers) if (c.touches(b.x, b.y, b.radius, t, f)) return this._die('crusher');
+    for (const bo of L.boulders) if (bo.touches(b.x, b.y, b.radius, t, f)) return this._die('boulder');
+    for (const m of L.magnets) if (m.touches(b.x, b.y, b.radius)) return this._die('void');
     if (b.y < this.cfg.world.fallLimit) this._die('fall');
     // Gravité inversée : le ballon ne doit pas s'envoler hors du niveau par le haut
     if (b.gravitySign < 0 && L.bounds && b.y > L.bounds.maxY + 4) this._die('fall');

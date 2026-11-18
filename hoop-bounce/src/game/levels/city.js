@@ -131,17 +131,20 @@ const L5 = {
   solids: [...court(38), { x: 12.4, y: 0, w: 25.6, h: 5.2, style: 'block' }],
   fans: [{ x: 9, y: 0, w: 2.2, h: 9, strength: 95 }],
   blinkers: [{ x: 18.6, y: 5.2, w: 0.8, h: 2.8, period: 3, on: 1.8, phase: 0 }],
+  // Premier pilon : il tremble, s'écrase, remonte lentement — on passe juste après sa remontée
+  crushers: [{ x: 22.8, w: 2.4, top: 7.6, bottom: 5.2, period: 2.2, phase: 0 }],
   stars: [
     { x: 10.1, y: 7.8 },
     { x: 19, y: 6.2 },
-    { x: 31.5, y: 9.4 },
+    { x: 23.8, y: 6.0 },
   ],
-  hoop: { x: 25, y: 7.8, facing: -1, mount: 'pole', floorY: 5.2 },
+  hoop: { x: 33, y: 7.8, facing: -1, mount: 'pole', floorY: 5.2 },
   hints: [{ x: 4.6, y: 4.3, key: 'hint.fan' }],
   passages: [
     { name: 'Ventilateur → terrasse', start: [6, 0], goal: ['on', 12.4, 38, 5.2], plan: [['hold', 1, 9.6], ['wait', 1.6], ['run', 1, 12.6, 38, 5.2]] },
-    { name: 'Mur qui disparaît', start: [14, 5.2], goal: ['on', 19.8, 38, 5.2], plan: [['goTo', 16.6], ['waitCycle', 3, 1.45, 1.55], ['run', 1, 20, 38, 5.2]] },
-    { name: 'Terrasse → panier', start: [20.6, 5.2], goal: ['win'], plan: 'shot' },
+    { name: 'Mur qui disparaît', start: [14, 5.2], goal: ['on', 19.8, 22, 5.2], plan: [['goTo', 16.6], ['waitCycle', 3, 1.45, 1.55], ['run', 1, 20, 22, 5.2]] },
+    { name: 'Sous le pilon', start: [21, 5.2], goal: ['on', 25.6, 38, 5.2], plan: [['goTo', 21.2], ['waitCycle', 2.2, 1.8, 1.9], ['run', 1, 25.8, 38, 5.2]] },
+    { name: 'Terrasse → panier', start: [26.5, 5.2], goal: ['win'], plan: 'shot' },
   ],
 };
 
@@ -163,17 +166,20 @@ const L6 = {
   saws: [{ x: 7.2, y: 3.1, r: 0.45, path: { dx: 2.6, dy: 0, period: 2.4, phase: 0 } }],
   doors: [{ id: 'gate', x: 16.2, y: 0, w: 0.8, h: 2.7, open: { dx: 0, dy: 2.7 }, duration: 0.8 }],
   teleporters: [{ a: { x: 22.5, y: 0.9 }, b: { x: 30, y: 1.3 }, r: 0.8 }],
+  // Premier laser : il grésille avant de s'allumer, on passe pendant qu'il est éteint
+  lasers: [{ x1: 35, y1: 0, x2: 35, y2: 6, period: 2.4, on: 1.2, phase: 0 }],
   stars: [
     { x: 8.5, y: 4.2 },
     { x: 20, y: 3.0 },
-    { x: 35.5, y: 4.6 },
+    { x: 35, y: 6.6 },
   ],
-  hoop: { x: 41, y: 3.4, facing: -1, mount: 'pole' },
+  hoop: { x: 45, y: 3.4, facing: -1, mount: 'pole' },
   hints: [{ x: 3.8, y: 3.7, key: 'hint.switch', size: 0.8 }],
   passages: [
     { name: 'Départ → interrupteur', start: [3, 0], goal: ['switch', 0], plan: [['goTo', 5.4], ['charge', 4], ['waitCycle', 2.4, 0.48, 0.58], ['jump', 1, 8.5]] },
     { name: 'Porte ouverte → téléporteur', start: [12, 0], goal: ['x', 27.5], prep: ['openDoors'], plan: [['hold', 1, 27.6]] },
-    { name: 'Après le mur → panier', start: [31, 0], goal: ['win'], plan: 'shot' },
+    { name: 'Barrière laser', start: [31, 0], goal: ['on', 36.4, 52, 0], plan: [['goTo', 33], ['waitCycle', 2.4, 0.15, 0.25], ['run', 1, 36.6, 52, 0]] },
+    { name: 'Après le laser → panier', start: [37.5, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 
@@ -189,25 +195,32 @@ const L7 = {
   solids: [...court(52), { x: 17, y: 0, w: 35, h: 5.6, style: 'block', skin: 'brick' }],
   crates: [{ x: 8, y: 0, w: 1.6, h: 1.6 }],
   saws: [{ x: 24.5, y: 6.25, r: 0.6, path: { dx: 0, dy: 2.8, period: 2.6, phase: 0 } }],
+  // Deux pilons décalés : il faut lire leur rythme, la pause se fait entre les deux
+  crushers: [
+    { x: 31, w: 1.8, top: 8.2, bottom: 5.6, period: 2.4, phase: 0 },
+    { x: 35.4, w: 1.8, top: 8.2, bottom: 5.6, period: 2.4, phase: 0.5 },
+  ],
   stars: [
     { x: 8.8, y: 3.2 },
     { x: 15.6, y: 6.6 },
-    { x: 24.5, y: 7.6 },
+    { x: 34.3, y: 6.2 },
   ],
-  hoop: { x: 41, y: 9.0, facing: -1, mount: 'pole', floorY: 5.6 },
+  hoop: { x: 46, y: 9.0, facing: -1, mount: 'pole', floorY: 5.6 },
   hints: [{ x: 4.6, y: 4.3, key: 'hint.crate' }],
   passages: [
     { name: 'Pousser la caisse contre la terrasse', start: [3, 0], goal: ['crate', 0, 15.2], plan: [['hold', 1, 14.85]] },
     { name: 'Caisse → terrasse', start: [16.2, 1.6], goal: ['on', 17, 46, 5.6], prep: ['crateAt', 0, 15.4], plan: [['wait', 0.3], ['charge', 5], ['jump', 1]] },
-    { name: 'La scie de la terrasse', start: [18.6, 5.6], goal: ['on', 28.8, 52, 5.6], plan: [['goTo', 19.2], ['waitCycle', 2.6, 0.6, 0.7], ['run', 1, 29, 52, 5.6]] },
-    { name: 'Terrasse → panier', start: [31, 5.6], goal: ['win'], plan: 'shot' },
+    { name: 'La scie de la terrasse', start: [18.6, 5.6], goal: ['on', 28.8, 30.6, 5.6], plan: [['goTo', 19.2], ['waitCycle', 2.6, 0.6, 0.7], ['run', 1, 29, 30.6, 5.6]] },
+    { name: 'Premier pilon', start: [29.6, 5.6], goal: ['on', 33.2, 35, 5.6], plan: [['goTo', 29.8], ['waitCycle', 2.4, 2.2, 2.3], ['run', 1, 33.4, 35, 5.6]] },
+    { name: 'Second pilon', start: [34.1, 5.6], goal: ['on', 37.6, 52, 5.6], plan: [['goTo', 34.1], ['waitCycle', 2.4, 1.0, 1.1], ['run', 1, 37.8, 52, 5.6]] },
+    { name: 'Terrasse → panier', start: [39, 5.6], goal: ['win'], plan: 'shot' },
   ],
 };
 
 // 8 — Les toits : d'immeuble en immeuble au-dessus du vide, antennes à éviter, nacelle mobile.
 const L8 = {
   id: 'city-roofs',
-  difficulty: 'easy',
+  difficulty: 'medium',
   number: 8,
   nameKey: 'level.city.8',
   bounds: bounds(60, 11),
@@ -221,16 +234,18 @@ const L8 = {
   ],
   spikes: [{ x: 19, y: 1.2, w: 1.6, dir: 'up' }],
   movers: [{ x: 34.2, y: -0.1, w: 3.2, h: 0.5, path: { dx: 6.6, dy: 0, period: 4.6, phase: 0 } }],
+  // Une scie monte et descend au milieu du vide entre deux toits : on saute quand elle est en bas
+  saws: [{ x: 26, y: 0.6, r: 0.6, path: { dx: 0, dy: 3.6, period: 2.8, phase: 0 } }],
   stars: [
     { x: 13.8, y: 3.4 },
-    { x: 19.8, y: 2.5 },
+    { x: 26, y: 4.9 },
     { x: 39, y: 2.6 },
   ],
   hoop: { x: 54, y: 3.4, facing: -1, mount: 'pole' },
   passages: [
     { name: 'Premier toit → deuxième', start: [3, 0], goal: ['on', 15.5, 19, 1.2], plan: [['goTo', 11.2], ['hop', 4, 17]] },
     { name: 'Au-dessus des antennes', start: [17, 1.2], goal: ['on', 20.6, 24, 1.2], plan: [['goTo', 17.4], ['hop', 3, 22.3]] },
-    { name: 'Saut vers le toit bas', start: [22.3, 1.2], goal: ['on', 28, 34, 0.4], plan: [['goTo', 23.3], ['hop', 4, 30]] },
+    { name: 'Saut vers le toit bas (scie)', start: [22.3, 1.2], goal: ['on', 28, 34, 0.4], plan: [['goTo', 23.3], ['charge', 4], ['waitCycle', 2.8, 2.5, 2.6], ['jump', 1, 30]] },
     { name: 'Nacelle → dernier toit', start: [31, 0.4], goal: ['on', 44, 60, 0], plan: [['ride', 0, 40]] },
     { name: 'Dernier toit → panier', start: [46, 0], goal: ['win'], plan: 'shot' },
   ],
@@ -252,24 +267,26 @@ const L9 = {
   trampolines: [{ x: 7, y: 0, w: 1.6 }],
   spikes: [
     { x: 9.4, y: 0, w: 4.8, dir: 'up' },
-    { x: 43, y: 0, w: 2.4, dir: 'up' },
+    { x: 43, y: 0, w: 8.4, dir: 'up' },
   ],
+  // Au milieu du champ de pics, une plaque qui lâche presque tout de suite : on rebondit dessus
+  fallers: [{ x: 46.4, y: 0.6, w: 1.4, h: 0.4 }],
   movers: [{ x: 20.6, y: 1.9, w: 2.6, h: 0.5, path: { dx: 0, dy: 3.2, period: 5, phase: 0 } }],
   saws: [{ x: 36.8, y: 0.6, r: 0.6, path: { dx: 3.6, dy: 0, period: 3, phase: 0 } }],
   checkpoints: [{ x: 26, y: 5.6 }],
   stars: [
     { x: 11.6, y: 6.4 },
     { x: 21.9, y: 7.8 },
-    { x: 44.2, y: 3.3 },
+    { x: 49.8, y: 3.2 },
   ],
-  hoop: { x: 55.5, y: 3.4, facing: -1, mount: 'pole' },
+  hoop: { x: 56.5, y: 3.4, facing: -1, mount: 'pole' },
   hints: [{ x: 4.6, y: 4.3, key: 'hint.site' }],
   passages: [
     { name: 'Trampoline → échafaudage', start: [3, 0], goal: ['on', 14.4, 20.4, 2.4], plan: [['run', 1, 14.6, 20.4, 2.4], ['goTo', 17]] },
     { name: 'Monte-charge → étage', start: [17, 2.4], goal: ['on', 23.4, 34.4, 5.6], plan: [['goTo', 19.2], ['waitMover', 'movers', 0, 'y', '<', 0.05], ['goTo', 21.9], ['waitMover', 'movers', 0, 'y', '>', 3.15], ['run', 1, 23.6, 34.4, 5.6]] },
     { name: 'Descente au-dessus de la scie', start: [27, 5.6], goal: ['on', 41, 42.8, 0], plan: [['goTo', 32.5], ['waitCycle', 3, 1.65, 1.75], ['jumpAt', 1, 34.2, 41.8], ['goTo', 41.8]] },
-    { name: 'Au-dessus des pics', start: [41.8, 0], goal: ['on', 45.4, 62, 0], plan: [['goTo', 42], ['hop', 4, 47.5]] },
-    { name: 'Sol → panier', start: [47, 0], goal: ['win'], plan: 'shot' },
+    { name: 'Plaque fragile au-dessus des pics', start: [41.8, 0], goal: ['on', 51.8, 62, 0], plan: [['goTo', 42], ['hop', 4, 47.1, 1.0], ['jump', 1, 53]] },
+    { name: 'Sol → panier', start: [52.5, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 
@@ -297,7 +314,9 @@ const L10 = {
   teleporters: [{ a: { x: 53.6, y: 6.1 }, b: { x: 60.5, y: 0.9 }, r: 0.8 }],
   lasers: [{ x1: 45.4, y1: 5.2, x2: 45.4, y2: 8.6, period: 3, on: 1.2, phase: 0 }],
   saws: [{ x: 19, y: 3, r: 0.5, path: { dx: 8, dy: 0, period: 3.4, phase: 0 } }],
-  checkpoints: [{ x: 29.6, y: 0 }, { x: 40.6, y: 5.2 }],
+  // Dans la rue, un pilon rapide garde le panier
+  crushers: [{ x: 65, w: 2.2, top: 2.6, bottom: 0, period: 1.9, phase: 0 }],
+  checkpoints: [{ x: 29.6, y: 0 }, { x: 40.6, y: 5.2 }, { x: 62.6, y: 0 }],
   stars: [
     { x: 11, y: 5.2 },
     { x: 23.2, y: 1.9 },
@@ -310,7 +329,8 @@ const L10 = {
     { name: 'Pics → ventilateur → terrasse', start: [30, 0], goal: ['on', 39.6, 49.5, 5.2], plan: [['goTo', 31.4], ['hop', 3, 35.6], ['hold', 1, 36.9], ['wait', 1.6], ['run', 1, 39.8, 49.5, 5.2]] },
     { name: 'Interrupteur → laser', start: [40, 5.2], goal: ['on', 46, 49.4, 5.2], plan: [['goTo', 43.6], ['waitCycle', 3, 0.63, 0.73], ['run', 1, 46.2, 49.4, 5.2], ['goTo', 47.4]] },
     { name: 'Porte → téléporteur', start: [47.4, 5.2], goal: ['x', 59.5], prep: ['openDoors'], plan: [['hold', 1, 59.6]] },
-    { name: 'Rue → panier', start: [62, 0], goal: ['win'], plan: 'shot' },
+    { name: 'Pilon de la rue', start: [62.4, 0], goal: ['on', 67.8, 82, 0], plan: [['goTo', 63.4], ['waitCycle', 1.9, 1.35, 1.45], ['run', 1, 68, 82, 0]] },
+    { name: 'Rue → panier', start: [69, 0], goal: ['win'], plan: 'shot' },
   ],
 };
 

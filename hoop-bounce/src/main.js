@@ -375,6 +375,17 @@ game.events.on('cannonFire', (e) => {
   if (v > 0.3) particles.dust(e.x + e.dx * 0.7, e.y + e.dy * 0.7, e.dx, e.dy, 0.5 * v, 'rgba(200,200,210,0.8)');
 });
 game.events.on('laserOn', (e) => sfx.laserOn(nearVolume(e.x)));
+game.events.on('crusherSlam', (e) => {
+  const v = nearVolume(e.x);
+  sfx.crusherSlam(v);
+  if (v > 0.3) {
+    particles.dust(e.x - 0.6, e.y, 0, 1, 0.8 * v, renderer.theme.surface.dust);
+    particles.dust(e.x + 0.6, e.y, 0, 1, 0.8 * v, renderer.theme.surface.dust);
+    camera.addTrauma(0.22 * v);
+    haptics.impact(0.4 * v);
+  }
+});
+game.events.on('boulderStart', (e) => sfx.boulderStart(nearVolume(e.x)));
 game.events.on('checkpoint', (e) => {
   sfx.checkpoint();
   haptics.success();
@@ -406,6 +417,7 @@ game.events.on('death', (e) => {
   particles.burst(e.x, e.y, e.vx, e.vy);
   if (e.cause === 'lava' || e.cause === 'fire') particles.sparkle(e.x, e.y, 22, '#ffb35c', 4);
   if (e.cause === 'water') particles.sparkle(e.x, e.y + 0.3, 18, '#bff3ff', 3.5);
+  if (e.cause === 'void') particles.sparkle(e.x, e.y, 22, '#c8b6ff', 2);
   sfx.death(e.cause);
   haptics.impact(1);
   camera.addTrauma(e.cause === 'fall' ? 0.3 : 0.7);

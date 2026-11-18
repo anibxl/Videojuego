@@ -214,6 +214,8 @@ export class Pilot {
 //   ['hopTo', n, groupe, i, dx]      charger n puis sauter vers un élément mobile (sa position + dx)
 //   ['stayOn', groupe, i, 'x'|'y', '<'|'>', v]  rester au-dessus d'un élément mobile jusqu'à la condition
 //   ['dribbleRun', dir, n, x, aimX?] dribbler en roulant jusqu'à la puissance n, rebondir en passant x
+//   ['jumpBoulder', i, d?, aimX?]    rouler et sauter par-dessus le rocher n° i quand il arrive à d devant
+//   ['dodgeBoulders', x, d?]         rouler vers x en sautant chaque rocher qui arrive à d devant
 //   ['shot']                         tir au panier (solution « experte » de tir)
 
 const GOALS = {
@@ -332,6 +334,36 @@ const STEPS = {
       }
     })) return false;
     return p.jump(dir, aim != null ? p.aim(aim) : null);
+  },
+  jumpBoulder: (p, i, d = 2.2, aim = null) => {
+    const bo = p.g.level.boulders[i];
+    p.hold(1);
+    let skip = false;
+    if (!p.until((g) => {
+      if (g.body.x > bo.x2 + bo.r + 0.5) return (skip = true);
+      const st = bo.state(g.time);
+      const ahead = bo.dir < 0 ? st.x - g.body.x : g.body.x - st.x;
+      return st.active && ahead > 0 && Math.abs(st.x - g.body.x) < d && g.controller.canBounce;
+    }, 10)) return false;
+    if (skip) return true;
+    return p.jump(1, aim != null ? p.aim(aim) : null);
+  },
+  dodgeBoulders: (p, x, d = 3) => {
+    const list = p.g.level.boulders;
+    let air = 0;
+    return p.until((g) => g.body.grounded && g.body.x > x, 12, (g) => {
+      air = g.body.grounded ? 0 : air + DT;
+      p.hold(1);
+      if (!g.controller.canBounce) return;
+      for (const bo of list) {
+        const st = bo.state(g.time);
+        const ahead = bo.dir < 0 ? st.x - g.body.x : g.body.x - st.x;
+        if (st.active && ahead > 0 && ahead < d) {
+          g.controller.pressBounce();
+          break;
+        }
+      }
+    });
   },
   jumpOver: (p, group, i, land = 2.4) => {
     // Rattraper un élément mobile (tronc) en roulant et sauter par-dessus au bon moment

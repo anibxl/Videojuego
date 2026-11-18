@@ -5,7 +5,7 @@ import { createPolygonEdges, createOneWay, createCircle, boxPoints } from '../ph
 import { Mover } from '../physics/mover.js';
 import { Hoop } from './hoop.js';
 import { Door, Fan, Teleporter } from './elements.js';
-import { Crate, WindZone, Icicle, Lava, Crumble, Geyser, RockFall, Vine, GravityZone, Faller, Blinker, Mace, Laser, Magnet, Cannon } from './world-elements.js';
+import { Crate, WindZone, Icicle, Lava, Crumble, Geyser, RockFall, Vine, GravityZone, Faller, Blinker, Mace, Laser, Magnet, Cannon, Crusher, Boulder } from './world-elements.js';
 
 /** Matériau par défaut selon le style d'un bloc. */
 const STYLE_MATERIAL = { ground: 'ground', wall: 'wall', ice: 'ice', snow: 'snow', rock: 'rock', wood: 'wood' };
@@ -161,6 +161,8 @@ export function buildLevel(def, config) {
   const maces = (def.maces ?? []).map((m) => new Mace(m));
   const lasers = (def.lasers ?? []).map((l) => new Laser(l, config.laser));
   const magnets = (def.magnets ?? []).map((m) => new Magnet(m));
+  const crushers = (def.crushers ?? []).map((c) => new Crusher(c, config.crusher));
+  const boulders = (def.boulders ?? []).map((b) => new Boulder(b, config.boulder));
   // Canons : portée = distance jusqu'au premier bloc dans l'axe du tir
   const inBox = (x, y) => boxes.some((b) => x > b.x0 && x < b.x1 && y > b.y0 && y < b.y1);
   const cannons = (def.cannons ?? []).map((c) => {
@@ -199,6 +201,8 @@ export function buildLevel(def, config) {
     lasers,
     magnets,
     cannons,
+    crushers,
+    boulders,
     trampolines,
     switches,
     doors,

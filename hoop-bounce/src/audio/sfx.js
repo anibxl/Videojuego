@@ -358,6 +358,16 @@ export class Sfx {
       this._noiseBurst(0.25, 0.3, 'highpass', 3000);
       return;
     }
+    if (cause === 'void') {
+      this._tone(600, 40, 0.8, 0.25, 'sine');
+      this._noiseBurst(0.7, 0.25, 'lowpass', 1200, 0.8, 80);
+      return;
+    }
+    if (cause === 'crusher') {
+      this._tone(110, 40, 0.3, 0.5, 'square');
+      this._noiseBurst(0.3, 0.55, 'lowpass', 1500, 0.8, 200);
+      return;
+    }
     if (cause === 'water') {
       this._noiseBurst(0.45, 0.45, 'lowpass', 2400, 0.8, 400);
       this._tone(400, 120, 0.25, 0.2, 'sine');
@@ -387,6 +397,21 @@ export class Sfx {
     if (!this.ready || volume <= 0.03) return;
     this._tone(1800, 600, 0.18, 0.06 * volume, 'sawtooth');
     this._tone(220, 220, 0.5, 0.05 * volume, 'square');
+  }
+
+  /** Pilon qui s'écrase : choc sourd et métallique. */
+  crusherSlam(volume = 1) {
+    if (!this.ready || volume <= 0.03) return;
+    this._tone(90, 40, 0.3, 0.5 * volume, 'sine');
+    this._noiseBurst(0.18, 0.4 * volume, 'lowpass', 900, 0.8, 150);
+    this._tone(this.flavor === 'city' || this.flavor === 'space' ? 520 : 220, 180, 0.12, 0.06 * volume, 'square');
+  }
+
+  /** Rocher (ou boule de neige) qui part : grondement qui roule. */
+  boulderStart(volume = 1) {
+    if (!this.ready || volume <= 0.03) return;
+    this._noiseBurst(0.9, 0.22 * volume, 'lowpass', 300, 1, 120);
+    this._tone(70, 55, 0.8, 0.12 * volume, 'triangle');
   }
 
   fallerShake() {

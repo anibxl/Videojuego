@@ -130,6 +130,20 @@ export const CONFIG = Object.freeze({
     warnTime: 0.5,
   }),
 
+  // ─── Pièges de l'étape 10 ───────────────────────────────────────────────────
+  crusher: Object.freeze({
+    period: 3,
+    warnTime: 0.5,             // tremblement avant de s'écraser
+    slamTime: 0.14,
+    holdTime: 0.35,
+    riseTime: 0.9,
+  }),
+  boulder: Object.freeze({
+    speed: 6,
+    period: 3.2,
+    warnTime: 0.7,             // grondement avant le départ
+  }),
+
   camera: Object.freeze({
     viewHeight: 10.5,          // hauteur visible (u)
     minViewWidth: 13,          // largeur visible minimale (écrans peu larges)

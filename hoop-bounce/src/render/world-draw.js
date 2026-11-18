@@ -1624,6 +1624,7 @@ export function drawMace(r, m, time) {
 }
 
 export function drawLaser(r, l, time) {
+  if (r.themeId === 'volcano' || l.def.style === 'flame') return drawFlameJet(r, l, time);
   const ctx = r.ctx;
   const s = l.state(time);
   const col = r.themeId === 'space' ? '255,80,200' : '255,60,80';
@@ -1670,6 +1671,7 @@ export function drawLaser(r, l, time) {
 }
 
 export function drawMagnet(r, m, time) {
+  if (m.core > 0) return drawBlackHole(r, m, time);
   const ctx = r.ctx;
   const attract = m.strength > 0;
   const col = attract ? '255,90,110' : '110,170,255';
@@ -1747,4 +1749,231 @@ export function drawCannon(r, c, time) {
   ctx.arc(c.x, c.y, 0.34, 0, TAU);
   ctx.fill();
   if (charge > 0) r._drawGlow('255,150,60', c.x + c.dx * 0.62, c.y + c.dy * 0.62, 0.4 + charge * 0.5, charge);
+}
+
+
+// ─── Pièges de l'étape 10 ────────────────────────────────────────────────────
+
+/**
+ * Jet de flammes (volcan) : même rythme qu'un laser (grésillement, puis feu), dessiné comme un
+ * souffle de feu qui sort d'une bouche de pierre.
+ */
+function drawFlameJet(r, l, time) {
+  const ctx = r.ctx;
+  const s = l.state(time);
+  const dx = l.x2 - l.x1;
+  const dy = l.y2 - l.y1;
+  const len = Math.hypot(dx, dy);
+  const a = Math.atan2(dy, dx);
+  ctx.save();
+  ctx.translate(l.x1, l.y1);
+  ctx.rotate(a);
+  if (s.on) {
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createLinearGradient(0, 0, len, 0);
+    g.addColorStop(0, 'rgba(255,240,170,0.95)');
+    g.addColorStop(0.35, 'rgba(255,150,50,0.8)');
+    g.addColorStop(1, 'rgba(255,60,20,0.15)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, -0.18);
+    const n = Math.max(4, Math.ceil(len / 0.5));
+    for (let i = 0; i <= n; i++) {
+      const u = i / n;
+      const w = 0.18 + u * 0.32 + Math.sin(time * 30 + i * 2.1) * 0.06;
+      ctx.lineTo(u * len, -w);
+    }
+    for (let i = n; i >= 0; i--) {
+      const u = i / n;
+      const w = 0.18 + u * 0.32 + Math.sin(time * 27 + i * 1.7 + 1) * 0.06;
+      ctx.lineTo(u * len, w);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,250,220,0.7)';
+    ctx.beginPath();
+    ctx.ellipse(len * 0.25, 0, len * 0.25, 0.09, 0, 0, TAU);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  } else if (s.warn > 0) {
+    // Avertissement : la bouche rougeoie et crache des étincelles
+    for (let i = 0; i < 5; i++) {
+      const u = (time * 2.2 + i * 0.2) % 1;
+      ctx.globalAlpha = s.warn * (1 - u);
+      ctx.fillStyle = '#ffb35c';
+      ctx.beginPath();
+      ctx.arc(0.25 + u * 1.2 * s.warn, Math.sin(i * 7 + time * 9) * 0.15, 0.05, 0, TAU);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  // Bouche de pierre
+  ctx.fillStyle = '#3a2420';
+  roundRect(ctx, -0.42, -0.34, 0.5, 0.68, 0.1);
+  ctx.fill();
+  ctx.fillStyle = s.on ? '#ffe08a' : `rgba(255,${90 + 80 * s.warn},40,${0.4 + 0.6 * s.warn})`;
+  ctx.fillRect(0.02, -0.15, 0.08, 0.3);
+  ctx.restore();
+  if (s.on || s.warn > 0) r._drawGlow('255,120,40', l.x1, l.y1, s.on ? 1.2 : 0.8, s.on ? 0.9 : s.warn * 0.7);
+}
+
+/** Trou noir (espace) : un vortex qui attire, avec un cœur mortel. */
+function drawBlackHole(r, m, time) {
+  const ctx = r.ctx;
+  // Spirales de matière aspirée
+  ctx.lineWidth = 0.05;
+  ctx.lineCap = 'round';
+  for (let k = 0; k < 4; k++) {
+    ctx.strokeStyle = k % 2 ? 'rgba(190,120,255,0.45)' : 'rgba(255,140,220,0.35)';
+    ctx.beginPath();
+    for (let i = 0; i <= 24; i++) {
+      const u = i / 24;
+      const rr = m.core + (m.radius - m.core) * (1 - u) * 0.9;
+      const ang = k * (TAU / 4) + u * 4 + time * 1.6;
+      const x = m.x + Math.cos(ang) * rr;
+      const y = m.y + Math.sin(ang) * rr;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  // Disque d'accrétion
+  r._drawGlow('200,120,255', m.x, m.y, m.core * 3.4, 0.9);
+  ctx.strokeStyle = 'rgba(255,200,255,0.85)';
+  ctx.lineWidth = 0.08;
+  ctx.beginPath();
+  ctx.ellipse(m.x, m.y, m.core * 1.7, m.core * 0.5, Math.sin(time * 0.3) * 0.2, 0, TAU);
+  ctx.stroke();
+  // Horizon : disque noir
+  ctx.fillStyle = '#05010c';
+  ctx.beginPath();
+  ctx.arc(m.x, m.y, m.core, 0, TAU);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(220,180,255,0.6)';
+  ctx.lineWidth = 0.04;
+  ctx.stroke();
+  // Limite du champ
+  ctx.strokeStyle = 'rgba(190,120,255,0.18)';
+  ctx.setLineDash([0.2, 0.2]);
+  ctx.beginPath();
+  ctx.arc(m.x, m.y, m.radius, 0, TAU);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+const CRUSHER_STYLE = {
+  city: { body: ['#59627a', '#3a4156'], band: '#ffb547', spike: '#c9d0de', rod: '#2a3042' },
+  snow: { body: ['#d9eefc', '#9cc6e6'], band: '#ffffff', spike: '#eaf7ff', rod: '#7d97c2' },
+  volcano: { body: ['#5a3a32', '#3a2420'], band: '#ff7a2a', spike: '#ffb35c', rod: '#2a1a16' },
+  forest: { body: ['#8a6440', '#5e4028'], band: '#7fb24a', spike: '#d8c39a', rod: '#4a3220' },
+  space: { body: ['#4a4f7a', '#2c2f52'], band: '#7ad8ff', spike: '#d6dcff', rod: '#1e2040' },
+};
+
+/** Pilon : bloc lourd sur une tige, dents sous la face inférieure ; il tremble avant de tomber. */
+export function drawCrusher(r, c, time) {
+  const ctx = r.ctx;
+  const st = CRUSHER_STYLE[r.themeId] ?? CRUSHER_STYLE.city;
+  const s = c.state(time);
+  const shake = s.shake > 0 ? Math.sin(time * 70) * 0.04 * s.shake : 0;
+  const x = c.x + shake;
+  const y = s.y;
+  const top = c.top + c.h;
+  // Tige (jusqu'au plafond visible)
+  ctx.fillStyle = st.rod;
+  ctx.fillRect(x + c.w / 2 - 0.12, y + c.h, 0.24, top + 6 - (y + c.h));
+  // Zone de frappe au sol : bande qui s'allume pendant l'avertissement
+  if (s.shake > 0 || s.down) {
+    ctx.fillStyle = `rgba(255,90,90,${s.down ? 0.25 : 0.12 + 0.25 * s.shake})`;
+    ctx.fillRect(c.x, c.bottom, c.w, 0.06);
+  }
+  // Corps
+  const g = ctx.createLinearGradient(0, y + c.h, 0, y);
+  g.addColorStop(0, st.body[0]);
+  g.addColorStop(1, st.body[1]);
+  ctx.fillStyle = g;
+  roundRect(ctx, x, y + 0.2, c.w, c.h - 0.2, 0.1);
+  ctx.fill();
+  // Bandes de danger
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y + c.h - 0.36, c.w, 0.2);
+  ctx.clip();
+  ctx.fillStyle = st.band;
+  ctx.fillRect(x, y + c.h - 0.36, c.w, 0.2);
+  ctx.fillStyle = 'rgba(20,20,30,0.75)';
+  for (let k = -1; k < c.w / 0.3 + 1; k++) {
+    ctx.beginPath();
+    ctx.moveTo(x + k * 0.3, y + c.h - 0.36);
+    ctx.lineTo(x + k * 0.3 + 0.15, y + c.h - 0.36);
+    ctx.lineTo(x + k * 0.3 + 0.35, y + c.h - 0.16);
+    ctx.lineTo(x + k * 0.3 + 0.2, y + c.h - 0.16);
+    ctx.fill();
+  }
+  ctx.restore();
+  // Dents
+  ctx.fillStyle = st.spike;
+  ctx.beginPath();
+  const n = Math.max(2, Math.round(c.w / 0.3));
+  const tw = c.w / n;
+  for (let i = 0; i < n; i++) {
+    ctx.moveTo(x + i * tw + 0.02, y + 0.22);
+    ctx.lineTo(x + i * tw + tw / 2, y);
+    ctx.lineTo(x + (i + 1) * tw - 0.02, y + 0.22);
+  }
+  ctx.fill();
+  if (s.shake > 0) r._drawGlow('255,90,90', x + c.w / 2, y + 0.1, 1, 0.5 * s.shake);
+}
+
+const BOULDER_STYLE = {
+  snow: { fill: ['#ffffff', '#cfe3f5'], line: 'rgba(150,180,215,0.7)', glow: null },
+  volcano: { fill: ['#5a3a32', '#2a1612'], line: 'rgba(255,120,40,0.95)', glow: '255,110,30' },
+  forest: { fill: ['#8a6440', '#5e4028'], line: 'rgba(60,40,20,0.8)', glow: null },
+  city: { fill: ['#6a7088', '#3b4158'], line: 'rgba(30,34,48,0.8)', glow: null },
+  space: { fill: ['#6a5aa8', '#3a2c74'], line: 'rgba(200,170,255,0.7)', glow: '170,130,255' },
+};
+
+/** Rocher qui dévale (boule de neige, rocher de lave…), annoncé par des secousses au départ. */
+export function drawBoulder(r, b, time) {
+  const ctx = r.ctx;
+  const st = BOULDER_STYLE[r.themeId] ?? BOULDER_STYLE.city;
+  const s = b.state(time);
+  if (s.warn > 0) {
+    // Avertissement : poussière et petits cailloux au point de départ
+    const sx = b.dir > 0 ? b.x1 : b.x2;
+    ctx.fillStyle = `rgba(255,255,255,${0.25 * s.warn})`;
+    for (let i = 0; i < 4; i++) {
+      const u = (time * 3 + i * 0.25) % 1;
+      ctx.beginPath();
+      ctx.arc(sx + Math.sin(i * 5) * 0.5, b.y - b.r + u * 0.8, 0.08 * (1 - u), 0, TAU);
+      ctx.fill();
+    }
+    ctx.fillStyle = `rgba(255,90,90,${0.5 * s.warn * (Math.sin(time * 18) > 0 ? 1 : 0.4)})`;
+    ctx.beginPath();
+    ctx.moveTo(sx - b.dir * 0.2, b.y + b.r + 0.6);
+    ctx.lineTo(sx + b.dir * 0.25, b.y + b.r + 0.35);
+    ctx.lineTo(sx - b.dir * 0.2, b.y + b.r + 0.1);
+    ctx.fill();
+  }
+  if (!s.active) return;
+  ctx.save();
+  ctx.translate(s.x, b.y);
+  ctx.rotate(s.angle);
+  if (st.glow) r._drawGlow(st.glow, 0, 0, b.r * 2.4, 0.6);
+  const g = ctx.createRadialGradient(-b.r * 0.3, b.r * 0.3, 0, 0, 0, b.r);
+  g.addColorStop(0, st.fill[0]);
+  g.addColorStop(1, st.fill[1]);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(0, 0, b.r, 0, TAU);
+  ctx.fill();
+  ctx.strokeStyle = st.line;
+  ctx.lineWidth = 0.05;
+  ctx.beginPath();
+  ctx.moveTo(-b.r * 0.6, -b.r * 0.1);
+  ctx.lineTo(-b.r * 0.1, b.r * 0.2);
+  ctx.lineTo(b.r * 0.4, -b.r * 0.3);
+  ctx.moveTo(-b.r * 0.2, -b.r * 0.6);
+  ctx.lineTo(b.r * 0.1, -b.r * 0.2);
+  ctx.stroke();
+  ctx.restore();
 }
