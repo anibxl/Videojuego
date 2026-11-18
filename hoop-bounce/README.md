@@ -3,10 +3,10 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 8 (actuelle) :** les **50 niveaux** (10 par monde : Ville, Neige, Volcan, Forêt, Espace), avec une
-difficulté qui augmente dans chaque monde et d'un monde à l'autre, et des décors refaits (ville de nuit avec
-voitures et lumières animées, montagnes enneigées, volcan fumant, forêt vivante, espace) avec des matériaux
-propres à chaque monde. Le gameplay, les commandes et le menu sont inchangés.
+**Étape 9 (actuelle) :** des niveaux plus riches et une **boutique**. Nouveaux pièges (plaques qui tombent,
+blocs qui apparaissent et disparaissent, scies, boulets qui se balancent, lasers, aimants, canons), points de
+contrôle, difficulté facile / moyen / difficile alternée, étoiles risquées ; pièces gagnées en jouant et
+boutique premium (ballons, effets de rebond, traînées, animations de panier, 4 raretés). Aucun achat réel.
 
 📘 **Documentation complète du projet (concept, mécaniques, architecture, roadmap, tâches, bugs, journal) :
 [PROJECT.md](PROJECT.md).** Ce README n'est qu'un guide rapide.
@@ -114,6 +114,15 @@ pause et la victoire. L'application mise en arrière-plan se met en pause d'elle
   encore (le menu n'a pas été modifié).
 - Format des niveaux et de tous les éléments : `src/game/levels/README.md`.
 
+## La boutique (`shop.html`)
+
+- 25 articles : 8 ballons, 6 effets de rebond, 6 traînées, 5 animations de panier ; raretés Commun, Rare,
+  Épique, Légendaire ; le premier de chaque catégorie est offert.
+- Pièces : premier panier d'un niveau 40 à 80 (selon le monde), chaque nouvelle étoile 25, 3 étoiles +20,
+  rejouer 10, swish +5. Tout se débloque en jouant.
+- Aperçu animé avant l'achat, achat, équipement ; les articles équipés apparaissent en jeu.
+- Accès : tuile « Magasin » du menu, solde de pièces, bouton de pièces de la carte des mondes.
+
 ## Tester
 
 ```bash
@@ -172,7 +181,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 253 tests : physique, dribble, éléments, mécaniques des mondes,
+npm test                               # 267 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)

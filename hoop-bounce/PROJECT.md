@@ -3,8 +3,8 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 18/11/2026 · **Version :** 0.7.0 · **Étape en cours :** validation des 50
-> niveaux et des nouveaux décors par le porteur du projet.
+> **Dernière mise à jour :** 18/11/2026 · **Version :** 0.8.0 · **Étape en cours :** validation des niveaux
+> enrichis (nouveaux pièges) et de la boutique par le porteur du projet.
 
 ## Sommaire
 
@@ -124,8 +124,12 @@ compte **au moment du toucher** (aucune latence liée au relâcher).
   d'au moins un rayon, dans l'axe du filet).
 - Un ballon qui entre puis **ressort par le haut** (rebond sur le cercle) ne compte pas.
 - Un ballon qui passe **par en dessous** du cercle ne compte pas.
-- **Pics**, **chute dans le vide**, **lave**, **feu**, **pierres**, **stalactites**, **eau** : le ballon éclate
-  et le niveau recommence (étoiles comprises).
+- **Pics**, **chute dans le vide**, **lave**, **feu**, **pierres**, **stalactites**, **eau**, **scies**,
+  **boulets**, **lasers**, **projectiles de canon** : le ballon éclate et le niveau recommence (étoiles
+  comprises)…
+- … **sauf si un point de contrôle (drapeau) a été atteint** : on réapparaît au drapeau, en gardant les étoiles
+  déjà ramassées (les plateformes fragiles, plaques qui tombent, caisses, stalactites et lianes reprennent leur
+  état de départ). Les niveaux longs et difficiles en ont un ou deux.
 - **Étoiles** : 3 par niveau, facultatives ; on garde le meilleur nombre obtenu.
 - Le chronomètre tourne pendant la partie ; le meilleur temps est enregistré par niveau.
 
@@ -170,21 +174,34 @@ compte **au moment du toucher** (aucune latence liée au relâcher).
 | Espace | **Plateformes flottantes** | flottent doucement (réacteurs bleus) |
 | Espace | **Gravité inversée** | zones où la gravité s'inverse : on roule au plafond au-dessus des pièges |
 
-Le moteur gère aussi, sans qu'ils soient utilisés dans les niveaux actuels : **scies mobiles**, **points de
-contrôle (drapeaux)**, **panier fixé au mur**.
+**Pièges de l'étape 9 (tous les mondes)** — toujours annoncés avant de frapper, pour que chaque échec
+paraisse mérité :
+
+| Piège | Comportement | Avertissement |
+|---|---|---|
+| **Plaque qui tombe** | tremble 0,4 s quand on se pose dessus, puis chute en emportant le ballon ; revient 3 s plus tard | tremblement, fissures orange |
+| **Bloc temporisé** (plateforme ou mur) | apparaît et disparaît selon un cycle (3 s, solide 1,8 s) ; ne réapparaît jamais sur le ballon | clignote avant de disparaître ; silhouette en pointillés quand il est absent |
+| **Scie mobile** | disque qui tourne sur un rail (aller-retour) ; mortelle | rail visible, trajectoire prévisible |
+| **Boulet qui se balance** | pendule régulier au bout d'une chaîne (boule de glace, de roche brûlante, tronc à pointes…) ; mortel | mouvement régulier et visible |
+| **Laser temporisé** | faisceau entre deux émetteurs, allumé une partie du cycle ; mortel quand il est allumé | grésillement en pointillés 0,7 s avant, émetteurs qui s'allument |
+| **Aimant** | attire (rouge) ou repousse (bleu) le ballon dans un rayon donné | ondes du champ, cercle de portée |
+| **Canon** | tire des projectiles en ligne droite (boulets, boules de neige, boules de feu, plasma), à vitesse constante, jusqu'au premier obstacle ; peut aussi tirer vers le haut (colonne de feu) | la bouche rougeoit 0,5 s avant le tir |
+| **Point de contrôle** | drapeau : réapparition sur place après une chute, étoiles conservées | drapeau qui se déploie |
+
+Le moteur gère aussi, sans qu'il soit utilisé dans les niveaux actuels : le **panier fixé au mur**.
 
 ### Objets
 
 - **Étoiles** (3 par niveau) : scintillement, son ascendant, étoile qui s'allume dans le HUD.
-- **Pièces** : affichées dans le menu (solde à 0), **pas encore gagnables**.
+- **Pièces** : gagnées en terminant les niveaux et en obtenant des étoiles (voir [Les récompenses](#les-récompenses)),
+  dépensées dans la boutique.
 
 ### Futurs ajouts (gameplay)
 
 Voir aussi [Idées futures](#8-idées-futures).
-- Les 50 niveaux des 5 mondes (en attente de validation des mondes).
-- Nouveaux éléments : scies, surfaces collantes, aimants, interrupteurs à minuterie, paniers mobiles.
+- Nouveaux éléments : surfaces collantes, interrupteurs à minuterie, paniers mobiles.
 - Modes : Trickshot, Endless, Défis quotidiens, Multijoueur.
-- Skins de ballons et traînées.
+- Nouveaux articles de boutique (saisons, événements).
 
 ---
 
@@ -209,6 +226,7 @@ Voir aussi [Idées futures](#8-idées-futures).
 hoop-bounce/
 ├── index.html              Menu principal (point d'entrée de l'application)
 ├── worlds.html             Carte des mondes (?unlock=all : tout ouvert, pour tester)
+├── shop.html               Boutique (pièces, ballons, effets, traînées, animations de panier)
 ├── play.html               Écran de jeu (?world=snow&level=1, &intro=1 pour l'introduction du monde)
 ├── PROJECT.md              Ce document (documentation officielle, mémoire du projet)
 ├── README.md               Guide rapide : lancer, tester, régler
@@ -222,6 +240,7 @@ hoop-bounce/
 │   ├── fonts.css           Déclaration des polices (@font-face)
 │   ├── menu.css            Styles du menu (accueil, pages, fenêtres, animations)
 │   ├── worlds.css          Styles de la carte des mondes
+│   ├── shop.css            Styles de la boutique
 │   └── style.css           Styles de l'écran de jeu (HUD, commandes, pause, victoire, tutoriel, intro de monde)
 ├── src/
 │   ├── config.js           ★ TOUS les réglages : physique, matériaux, commandes, caméra, sensations
@@ -234,6 +253,7 @@ hoop-bounce/
 │   ├── render/             Rendu Canvas du jeu (thèmes des mondes)
 │   ├── audio/              Sons et musique du jeu
 │   ├── worlds/             Carte des mondes (illustrations animées, déblocage, choix du niveau)
+│   ├── shop/               Boutique (grille, aperçu animé, achats, textes)
 │   ├── input/              Entrées tactiles et clavier du jeu
 │   ├── platform/           Fonctions propres à l'appareil (vibrations)
 │   ├── menu/               Tout le menu principal
@@ -254,6 +274,7 @@ hoop-bounce/
 | `src/render/` | Tout ce qui se dessine pendant la partie : décor de chaque monde, surfaces, éléments, caméra, ballon, effets. |
 | `src/audio/` | Effets sonores et musique des mondes (synthétisés). |
 | `src/worlds/` | Carte des mondes : cartes animées, cadenas, animation de déblocage, choix du niveau. |
+| `src/shop/` | Boutique : onglets, grille d'articles, aperçu animé, achat, équipement, textes FR/EN/ES. |
 | `src/input/` | Zones tactiles et clavier, traduits en commandes. |
 | `src/platform/` | Vibrations (point unique à remplacer par Capacitor). |
 | `src/menu/` | Menu principal : décor vivant, pages, sons, musique, icônes, textes, boutique. |
@@ -300,7 +321,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `worlds.js` | Les 5 mondes : identité (nom, accroche, couleur), mécaniques présentées, réglages physiques, niveaux ; liste à plat `LEVELS`. |
 | `levels/city.js` … `space.js` | Les niveaux de chaque monde (données). `common.js` : briques communes ; `index.js` : compatibilité ; `README.md` : format. |
 | `elements.js` | Porte coulissante, ventilateur, téléporteur (sens unique ou double sens). |
-| `world-elements.js` | Éléments des mondes : caisse, vent, stalactite, lave/eau, plateforme fragile, geyser, chute de pierres, liane, zone de gravité. |
+| `world-elements.js` | Éléments des mondes : caisse, vent, stalactite, lave/eau, plateforme fragile, geyser, chute de pierres, liane, zone de gravité ; pièges de l'étape 9 : plaque qui tombe, bloc temporisé, boulet, laser, aimant, canon. |
 | `hazards.js` | Tests de contact avec les pics et les scies (avec marge de tolérance). |
 | `hoop.js` | Le panier : formes de collision, détection d'un panier valide (en deux temps), filet. |
 | `net.js` | Filet simulé (Verlet + contraintes de cordes), qui réagit au ballon. |
@@ -314,7 +335,9 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `renderer.js` | Dessine une image : décor du monde, éléments, panier (arrière puis avant pour que le ballon passe « dedans »), ballon, effets, particules d'ambiance de premier plan, vignette teintée, jauge, débogage. |
 | `themes.js` | Identité visuelle des 5 mondes : ciel, astres, plans de décor, particules, lumière, couleurs des surfaces. |
 | `background.js` | Décor d'un monde : ciel précalculé (dégradés, nébuleuses, étoiles, soleil, lune, Terre, planète), plans en parallaxe (immeubles avec fenêtres, graffitis et lampadaires ; montagnes enneigées et sapins ; volcans en éruption et roches ; arbres, champignons et rivière ; astéroïdes et cratères), brume, rayons de lumière, particules d'ambiance. |
-| `world-draw.js` | Dessin des surfaces selon le monde (terrain, neige, glace, roche incandescente, herbe, bois, néon) et des éléments des mondes. |
+| `world-draw.js` | Dessin des surfaces selon le monde (matériaux), des pics et plateformes thématiques, des éléments des mondes et des pièges (plaques, blocs temporisés, scies, boulets, lasers, aimants, canons). |
+| `cosmetics.js` | Cosmétiques de la boutique : petit système de particules préalloué (`Fx`), effets de rebond, traînées, animations de panier. |
+| `ball-sprite.js` | Textures des 8 ballons (cuir, coutures, motifs, matières), générées au démarrage. |
 | `camera.js` | Caméra : lissage, anticipation dans le sens de la course, cadrage qui garde le sol au-dessus des commandes, secousses, zoom et cadrage sur le panier à la victoire. |
 | `ball-sprite.js` | Textures du ballon générées au démarrage (cuir et coutures qui tournent, reflet fixe). |
 | `ball-visual.js` | Déformations du ballon (écrasement à l'impact, étirement en vol, détente au rebond, étirement au dribble). |
@@ -347,6 +370,8 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 
 | Fichier | Rôle |
 |---|---|
+| `catalog.js` | Catalogue de la boutique (articles, raretés, prix, textes) et barème des pièces. |
+| `wallet.js` | Porte-monnaie et inventaire : pièces gagnées, articles possédés et équipés, étoiles déjà récompensées. |
 | `settings.js` | Réglages du joueur (musique, effets, vibrations, langue, qualité), enregistrés et corrigés s'ils sont abîmés. |
 | `version.js` | Numéro de version affiché dans les paramètres. |
 
@@ -356,7 +381,8 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 |---|---|
 | `tests/physics.test.mjs` | Moteur physique : chute libre, rebonds, repos sans tremblement, aucune traversée, roulement, déterminisme, planches traversables, surfaces mobiles. |
 | `tests/game.test.mjs` | Commandes (dribble, puissance, inertie), éléments (trampoline, pics, ventilateur, porte, téléporteur, plateforme, vide), panier. |
-| `tests/mechanics.test.mjs` | Les 21 mécaniques des mondes (caisse, glace, rampe, vent, stalactite, lave, plateforme fragile, geyser, pierres, ascenseur, liane, champignon, tronc, branche, gravité réduite, portails, astéroïde, gravité inversée). |
+| `tests/shop.test.mjs` | Boutique : catalogue, raretés et prix, gains de pièces, achats, équipement, textes. |
+| `tests/mechanics.test.mjs` | Les pièges de l'étape 9 (plaque, bloc temporisé, scie, boulet, laser, canon, aimant, drapeau) et les 21 mécaniques des mondes (caisse, glace, rampe, vent, stalactite, lave, plateforme fragile, geyser, pierres, ascenseur, liane, champignon, tronc, branche, gravité réduite, portails, astéroïde, gravité inversée). |
 | `tests/progress.test.mjs` | Progression (déblocage des mondes, statistiques, animation annoncée une fois, conversion de l'ancien format), mondes, textes de jeu dans les trois langues. |
 | `tests/menu.test.mjs` | Textes du menu dans les trois langues, réglages. |
 | `tests/routes.test.mjs` | Chaque passage de chaque niveau reste faisable (solutions enregistrées + solutions expertes). |
@@ -412,7 +438,8 @@ et recule légèrement quand une page est ouverte.
 - **Jauge au-dessus du ballon** : 5 barres croissantes (même code couleur), visible dès que la puissance monte.
 - **Pause** : Reprendre, Recommencer, Carte des mondes, Menu principal. Pause automatique quand l'application
   passe en arrière-plan.
-- **Victoire** : niveau, « Panier ! », étoiles qui tombent une à une, temps (et « Nouveau record »), boutons
+- **Victoire** : niveau, « Panier ! », étoiles qui tombent une à une, temps (et « Nouveau record »),
+  **pièces gagnées** (compteur qui défile), boutons
   Niveau suivant / Rejouer / Carte / Menu. Dernier niveau d'un monde : « Monde terminé ! », « Nouveau monde
   débloqué : … » (fanfare) et **Monde suivant**. Après le tout dernier niveau : « Bravo ! » et un message.
 - **Introduction d'un monde** : sur le décor du monde (la partie attend), « MONDE 2 », le nom en très grand
@@ -423,6 +450,22 @@ et recule légèrement quand une page est ouverte.
   « Rebondir · Appuie plusieurs fois ») qui disparaissent dès qu'on a roulé et rebondi 3 fois.
 - **Textes d'aide** peints sur le décor dans chaque niveau.
 - Message « Tourne ton téléphone » en portrait sur téléphone.
+
+### Boutique (`shop.html`)
+
+- **En-tête** : retour, onglets **Ballons / Rebonds / Traînées / Paniers** (avec le nombre possédé),
+  progression de la collection (barre + 12/25), solde de pièces (qui rebondit à chaque achat, tremble s'il
+  manque des pièces).
+- **À gauche** : **aperçu animé** de l'article choisi, combiné avec les autres articles équipés (ballon qui
+  rebondit sur un parquet avec sa traînée et son effet de rebond ; tir dans un panier pour les animations),
+  étiquette de rareté, nom, description et bouton : **Acheter · prix**, **Équiper**, **✓ Équipé**, ou
+  « Il te manque N ».
+- **À droite** : grille d'articles triés par rareté puis par prix (vignette dessinée avec le vrai rendu, nom,
+  rareté, prix ou état « Possédé / Équipé », coche sur l'article équipé, reflet animé sur les légendaires),
+  cartes qui apparaissent en cascade ; encart « Comment gagner des pièces ».
+- **Achat** : les pièces défilent, onde et étiquette « Débloqué ! » de la couleur de la rareté, fanfare,
+  vibration ; l'article est équipé aussitôt.
+- Accès : tuile « Magasin » et solde de pièces du menu, bouton de pièces de la carte des mondes.
 
 ### Carte des mondes (`worlds.html`)
 
@@ -556,7 +599,22 @@ et recule légèrement quand une page est ouverte.
 - Elles sont facultatives ; une chute les remet en jeu (le niveau recommence).
 - On conserve le **meilleur nombre d'étoiles** par niveau, ainsi que le **meilleur temps**.
 - Les étoiles sont comptées par monde et au total sur la carte des mondes.
-- Usage futur possible (à valider) : débloquer des modes ou des skins à partir d'un total d'étoiles.
+- Certaines étoiles sont placées à des **endroits risqués** (au ras d'une scie, d'un boulet, d'un laser, au-dessus
+  de la lave) pour récompenser les joueurs les plus habiles.
+- Chaque nouvelle étoile rapporte **25 pièces** (une seule fois).
+
+### La difficulté
+
+- Chaque niveau a une difficulté affichée (pastille verte, orange ou rouge sur la carte, et dans l'intro) :
+  **facile**, **moyen** ou **difficile**.
+- Dans chaque monde, les niveaux **alternent** pour éviter la frustration : 1 facile, 2 moyen, 3 facile,
+  4 moyen, 5 difficile, 6 moyen, 7 difficile, 8 facile ou moyen, 9 difficile, 10 difficile (grand final).
+- Les pièges arrivent progressivement : Ville (scies, mur temporisé, laser au final), Neige (plaques de glace
+  qui tombent, boulets de glace), Volcan (boulets de roche, canons à boules de feu), Forêt (troncs à pointes
+  qui se balancent), Espace (lasers, aimant, plateforme temporisée).
+- Les fenêtres de passage des pièges périodiques sont calculées par balayage (outil `scan`) et laissées
+  suffisamment larges (au moins ~0,35 s, souvent plus d'1 s) : on peut mourir plusieurs fois, mais on comprend
+  toujours pourquoi.
 
 ### Le déblocage des modes
 
@@ -564,16 +622,37 @@ et recule légèrement quand une page est ouverte.
 Trickshot après le monde 1, Endless après le monde 2, Défis quotidiens après 30 étoiles, Multijoueur dans une
 mise à jour dédiée.
 
-### Les skins
+### La boutique (`shop.html`)
 
-🔴 **Pas encore créés.** La page Collection (vide) et le catalogue de la boutique (`src/menu/shop-data.js`)
-sont prêts à les accueillir. Le ballon est dessiné par programme (`render/ball-sprite.js`), ce qui facilitera
-les variantes (couleurs, motifs, matières).
+Tout se débloque **en jouant**, avec les pièces : **aucun achat avec de l'argent réel**. 25 articles en
+4 catégories ; le premier de chaque catégorie est offert et équipé.
+
+| Catégorie | Commun | Rare | Épique | Légendaire |
+|---|---|---|---|---|
+| **Ballons** | Classique (offert), Street 150, Rétro 200 | Givre 400, Néon 450 | Magma 900, Galaxie 950 | Or pur 1800 |
+| **Effets de rebond** | Onde (offert), Étincelles 150 | Bulles 400, Étoiles 450 | Foudre 900 | Arc-en-ciel 1500 |
+| **Traînées** | Aucune (offert), Sillage 150 | Poudreuse 400, Flammes 450 | Arc-en-ciel 950 | Plasma 1600 |
+| **Animations de panier** | Confettis (offert), Serpentins 150 | Feu d'artifice 450 | Jackpot 900 | Supernova 1500 |
+
+- Couleurs de rareté : Commun gris bleuté, Rare bleu, Épique violet, Légendaire or (reflet animé sur la carte).
+- Les ballons sont dessinés par programme (`render/ball-sprite.js`) : cuir usé, panneaux rétro, givre, coutures
+  néon, fissures de lave, nébuleuse étoilée, or brillant.
+- Les effets, traînées et animations de panier utilisent un petit système de particules partagé
+  (`render/cosmetics.js`) : exactement le même rendu dans l'aperçu de la boutique et dans le jeu.
 
 ### Les récompenses
 
-🔴 **Pas encore définies.** Le solde de pièces est affiché (0) mais les pièces ne se gagnent pas encore.
-Pistes : pièces par niveau terminé et par étoile, bonus pour un « swish », coffres de fin de monde.
+| Action | Pièces |
+|---|---|
+| Premier panier d'un niveau | 40 + 10 par monde (Ville 40 … Espace 80) |
+| Chaque étoile obtenue pour la première fois | 25 |
+| Les 3 étoiles d'un niveau (première fois) | +20 |
+| Rejouer un niveau déjà terminé | 10 |
+| « Swish » (panier sans toucher le cercle) | +5 |
+
+- Une première partie complète rapporte environ **7 750 pièces** (50 niveaux, 150 étoiles) ; le catalogue complet
+  coûte **14 800** : les articles légendaires récompensent les joueurs qui rejouent et visent le parfait.
+- Le gain s'affiche sur l'écran de victoire (compteur qui défile, tintements) et s'ajoute au solde du menu.
 
 ---
 
@@ -623,11 +702,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 🟡 Validation des 50 niveaux et des décors par le porteur du projet
 - 🔴 Relier la tuile « Mondes » du menu à la carte (en attente d'accord : modification du menu)
 
-### Phase 6 — Économie, magasin et skins 🔴
-- 🔴 Gagner des pièces (niveaux, étoiles, swish)
-- 🔴 Skins de ballons et traînées
-- 🔴 Magasin fonctionnel et page Collection
-- 🔴 Récompenses (coffres, fin de monde)
+### Phase 6 — Économie, magasin et skins 🟡
+- ✅ Gagner des pièces (niveaux, étoiles, 3 étoiles, rejouer, swish)
+- ✅ Boutique premium : 25 articles (ballons, effets de rebond, traînées, animations de panier), 4 raretés,
+  aperçu animé, achat, équipement, progression de la collection
+- ✅ Articles équipés visibles en jeu
+- 🔴 Page Collection du menu (encore vide : la collection est visible dans la boutique)
+- 🔴 Récompenses supplémentaires (coffres de fin de monde, défis)
 
 ### Phase 7 — Modes de jeu 🔴
 - 🔴 Trickshot
@@ -663,11 +744,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ 5 mondes : thèmes, musiques, ambiances, 21 mécaniques, carte des mondes, intro, transitions, déblocage
 - ✅ Musique pendant la partie (une par monde) ; qualité graphique appliquée aux particules du jeu
 - ✅ 50 niveaux (10 par monde) avec solutions expertes en données ; décors et matériaux par monde
-- ✅ 253 tests automatiques + outil de vérification des niveaux (avec pilote pour les solutions expertes)
+- ✅ Pièges : plaques qui tombent, blocs temporisés, scies, boulets, lasers, aimants, canons, points de contrôle
+- ✅ Niveaux enrichis : rythme facile / moyen / difficile, étoiles risquées, drapeaux dans les niveaux longs
+- ✅ Boutique, pièces et cosmétiques
+- ✅ 267 tests automatiques + outil de vérification des niveaux (avec pilote pour les solutions expertes)
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur les 50 niveaux et les décors
+- 🟡 Attente des retours du porteur du projet sur les niveaux enrichis et la boutique
 
 ### À faire — court terme 🔴
 - 🔴 Ajuster le ressenti (gravité, hauteurs, dribble, inertie) selon les retours
@@ -680,8 +764,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 🔴 Relier la tuile « Mondes » du menu à `worlds.html` (petite modification du menu, en attente d'accord)
 
 ### À faire — moyen terme 🔴
-- 🔴 Pièces, skins, magasin, collection
-- 🔴 Nouveaux éléments (scies, surfaces collantes, aimants…)
+- 🔴 Page Collection du menu (afficher les articles possédés)
+- 🔴 Équilibrer les prix et les gains après les retours
+- 🔴 Nouveaux éléments (surfaces collantes, interrupteurs à minuterie…)
 - 🔴 Accessibilité : taille des boutons réglable, inversion gauche / droite pour les gauchers
 
 ### À faire — long terme 🔴
@@ -694,7 +779,6 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 8. Idées futures
 
 **Gameplay**
-- Scies mobiles (déjà gérées par le moteur).
 - Surfaces : boue (colle), caoutchouc (super-rebond).
 - Combinaisons de mécaniques entre mondes (glace + vent, lianes au-dessus de la lave…), niveaux bonus.
 - Boss de fin de monde (un panier qui bouge, un parcours chronométré).
@@ -783,6 +867,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | Moyenne | Le bouton JOUER du menu affiche toujours « Niveau 1 · Premier dribble » alors qu'il reprend au premier niveau non terminé. | 🔴 En attente d'accord (modification du menu) |
 | Faible | Niveau 5 : le panier est hors de l'écran au départ (on le découvre en montant). | 🔴 À corriger |
 | Faible | Niveau 1 : l'étiquette « Rebondir » du tutoriel recouvre en partie le panier (elle disparaît après 3 rebonds). | 🔴 À corriger |
+| Faible | La page « Magasin » d'origine du menu (`pages.js`, `shop-data.js`) n'est plus affichée : la tuile ouvre la nouvelle boutique (`shop.html`). Code conservé, à retirer lors d'un prochain nettoyage du menu. | 🟡 Nettoyage à prévoir |
+| Faible | La page « Collection » du menu reste vide (la collection se voit dans la boutique). | 🔴 À faire |
+| Info | Pièges et timings vérifiés par simulation (chaque passage a une solution), pas encore par des joueurs. | 🟡 À équilibrer après retours |
 | Moyenne | La tuile « Mondes » du menu ouvre encore la page d'attente : la carte des mondes n'est accessible que depuis la partie (pause, victoire) ou par `worlds.html`. | 🔴 En attente d'accord (modification du menu) |
 | ✅ | Carte : « Terminé » affiché alors que des niveaux prévus manquaient. | ✅ Résolu (v0.7.0 : les 50 niveaux existent) |
 | Info | Difficulté des 50 niveaux vérifiée par simulation (chaque passage a une solution), mais pas encore éprouvée par des joueurs : certains timings (geysers, astéroïdes) peuvent sembler serrés. | 🟡 À équilibrer après retours |
@@ -798,6 +885,26 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 18/11/2026 — Étape 9 : niveaux enrichis et boutique (v0.8.0)
+- **Ajouté** :
+  - 7 nouveaux pièges (`game/world-elements.js`) : plaques qui tombent, blocs temporisés (plateformes et murs),
+    scies mobiles, boulets qui se balancent, lasers temporisés, aimants, canons (y compris vers le haut) ;
+    dessins thématiques (`render/world-draw.js`), sons et effets ; points de contrôle actifs ;
+  - niveaux enrichis : nouveaux pièges introduits progressivement dans chaque monde, difficulté affichée
+    (facile / moyen / difficile) et alternée, étoiles risquées, drapeaux dans les niveaux longs ; tous les
+    passages revérifiés (fenêtres de timing calculées par balayage) ;
+  - **boutique** (`shop.html`, `src/shop/`) : 25 articles en 4 catégories et 4 raretés, aperçu animé, achat,
+    équipement, progression de la collection, animation de déblocage ; catalogue (`shared/catalog.js`),
+    porte-monnaie (`shared/wallet.js`), cosmétiques en jeu (`render/cosmetics.js`, 8 ballons dans
+    `render/ball-sprite.js`) ;
+  - **pièces** gagnées en jouant, affichées sur l'écran de victoire ; accès à la boutique depuis le menu
+    (tuile « Magasin » et solde de pièces) et depuis la carte des mondes ;
+  - 14 nouveaux tests (267 au total).
+- **Modifié** : après une chute, on réapparaît au dernier drapeau atteint (sinon le niveau recommence) ; la
+  tuile « Magasin » du menu ouvre la boutique (seule modification du menu).
+- **Reste à faire** : retours du porteur du projet, équilibrage des timings, des prix et des gains ; page
+  Collection du menu ; tuile « Mondes » (accord en attente).
 
 ### 18/11/2026 — Étape 8 : les 50 niveaux et la refonte des décors (v0.7.0)
 - **Ajouté** :
