@@ -15,7 +15,7 @@ import { createBallTextures } from './ball-sprite.js';
 import { Background } from './background.js';
 import { themeOf } from './themes.js';
 import {
-  drawSolid, drawPlank, drawThemedMover, drawCrate, drawWindZone, drawIcicle, drawLiquid, drawCrumble,
+  drawSolid, drawSpikes, drawPlank, drawThemedMover, drawCrate, drawWindZone, drawIcicle, drawLiquid, drawCrumble,
   drawGeyser, drawRockfall, drawVine, drawMushroom, drawRoller, drawBranch, drawGravityZone,
 } from './world-draw.js';
 
@@ -126,6 +126,7 @@ export class Renderer {
 
     const theme = this.theme;
     const time = s.time;
+    this.view = view;
     for (const f of L.fans) if (visible(f.x, f.x + f.w)) this._drawWind(f, time);
     for (const z of L.gravityZones) if (visible(z.x, z.x + z.w)) drawGravityZone(this, z, time, s.body.gravitySign < 0 && z.contains(s.body.x, s.body.y));
     for (const wz of L.winds) if (visible(wz.x, wz.x + wz.w)) drawWindZone(this, wz, t);
@@ -136,7 +137,7 @@ export class Renderer {
     for (const f of L.fans) if (visible(f.x, f.x + f.w)) this._drawFanGrate(f);
     for (const p of L.planks) if (visible(p.x1, p.x2)) drawPlank(this, p);
     for (const cr of L.crumbles) if (visible(cr.x, cr.x + cr.w)) drawCrumble(this, cr, time);
-    for (const m of L.movers) if (!m.style || m.style === 'platform') this._drawRail(m);
+    for (const m of L.movers) if (m.path.dy === 0 && !m.style) this._drawRail(m);
     for (const m of L.movers) if (!drawThemedMover(this, m, t, theme)) this._drawMover(m, t);
     for (const br of L.branches) drawBranch(this, br, t);
     for (const ro of L.rollers) drawRoller(this, ro, t);
@@ -144,7 +145,7 @@ export class Renderer {
     for (const m of L.mushrooms) if (visible(m.x - 0.5, m.x + m.w + 0.5)) drawMushroom(this, m);
     for (const tr of L.trampolines) if (visible(tr.x, tr.x + tr.w)) this._drawTrampoline(tr);
     for (const sw of L.switches) if (visible(sw.x, sw.x + sw.w)) this._drawSwitch(sw, time);
-    for (const sp of L.spikes) if (visible(sp.x, sp.x + sp.w)) this._drawSpikes(sp);
+    for (const sp of L.spikes) if (visible(sp.x, sp.x + sp.w)) drawSpikes(this, sp, time);
     for (const gy of L.geysers) if (visible(gy.x - 1, gy.x + 1)) drawGeyser(this, gy, t);
     for (const ic of L.icicles) if (visible(ic.x - 1, ic.x + 1)) drawIcicle(this, ic, time);
     for (const rf of L.rockfalls) if (visible(rf.x - 1, rf.x + 1)) drawRockfall(this, rf, t);

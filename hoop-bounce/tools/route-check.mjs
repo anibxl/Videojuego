@@ -3,7 +3,8 @@
 // (◀ ▶ + REBOND) jouées comme le ferait un joueur : rebonds en rythme, dribble rapide pour charger
 // la puissance, visée du cercle pendant la descente.
 //   Taux élevé = passage facile.  Taux faible = exigeant.  0 % = impossible (à corriger !).
-// Les passages qui demandent une vraie technique ont aussi une solution « experte » scriptée.
+// Chaque passage a aussi une solution « experte » : un plan de manœuvres décrit dans les données du
+// niveau (`passages`, voir src/game/levels/README.md), joué par le « pilote » ci-dessous.
 //
 // Usage : node tools/route-check.mjs [essais] [niveau 1..N, dans l'ordre de tous les mondes] [--save]
 //   --save : enregistre une solution par passage dans tests/fixtures/routes.json
@@ -22,13 +23,6 @@ const R = CONFIG.ball.radius;
 const on = (x1, x2, y) => (g) => g.body.grounded && Math.abs(g.body.y - (y + R)) < 0.08 && g.body.x > x1 && g.body.x < x2;
 const win = (g) => g.state === 'won';
 const openDoors = (g) => g.level.doors.forEach((d) => d.open());
-/** Préparation : caisse déjà poussée à la position x. */
-const crateAt = (x) => (g) => {
-  const c = g.level.crates[0];
-  c.def = { ...c.def, x };
-  c.reset();
-};
-
 // ─── Solutions expertes ─────────────────────────────────────────────────────
 
 // Chaque solution experte reçoit `make()`, qui crée une partie neuve au départ du passage.
@@ -75,31 +69,6 @@ function shotAttempt(g, h, standOff, taps, isWon) {
     if (g.state === 'dying') return false;
   }
   return isWon();
-}
-
-function expertPlatform(goal) {
-  return (make) => {
-    const g = make();
-    const m = g.level.movers[0].mover;
-    const dx = g.level.movers[0].path.dx;
-    let dead = false;
-    g.events.on('death', () => (dead = true));
-    const step = (n = 1) => { for (let i = 0; i < n && !dead; i++) g.fixedUpdate(DT); };
-    for (let i = 0; i < 2000 && !(m.offsetX < 0.1 && m.colliders[0].vx < 0); i++) step();
-    g.controller.right = true;
-    const def = g.level.movers[0];
-    while (g.body.x < def.x + 1.0 && !dead) step();
-    g.controller.right = false;
-    g.controller.left = true;
-    step(26);
-    g.controller.left = false;
-    for (let i = 0; i < 900 && m.offsetX < dx - 0.3 && !dead; i++) step();
-    g.controller.right = true;
-    step(70);
-    g.controller.right = false;
-    step(150);
-    return !dead && goal(g);
-  };
 }
 
 // ─── Pilote : petites manœuvres pour écrire les solutions expertes des mondes ──
@@ -160,17 +129,25 @@ export class Pilot {
     return ok;
   }
 
-  /** Dribble sur place jusqu'à ce que le PROCHAIN rebond ait la puissance `level`, et se pose. */
+  /** Dribble sur place jusqu'à ce que le PROCHAIN rebond ait la puissance `level`, et se pose.
+   *  Comme un joueur, on corrige la dérive (vent, glace) en revenant vers le point de départ. */
   charge(level) {
     this.hold(0);
-    if (!this.until((g) => g.controller.canBounce, 3)) return false;
+    const x0 = this.b.x;
+    const keep = (g) => {
+      const d = g.body.x - x0;
+      this.hold(Math.abs(d) > 0.12 ? -Math.sign(d) : 0);
+    };
+    if (!this.until((g) => g.controller.canBounce, 3, keep)) return false;
     while (this.c.level < level) {
       this.c.pressBounce();
-      if (!this.until(() => false, 0.13)) {
+      if (!this.until(() => false, 0.13, keep)) {
         if (this.dead) return false;
       }
     }
-    return this.until((g) => g.controller.canBounce, 3);
+    const ok = this.until((g) => g.controller.canBounce, 3, keep);
+    this.hold(0);
+    return ok;
   }
 
   /** Rebondir (puissance actuelle) en tenant la direction `dir` ; `steer(g)` peut corriger en l'air. */
@@ -178,132 +155,249 @@ export class Pilot {
     this.c.pressBounce();
     this.hold(dir);
     let air = 0;
-    return this.until((g) => air > 0.12 && g.body.grounded, maxSec, (g) => {
+    const ok = this.until((g) => air > 0.12 && g.body.grounded, maxSec, (g) => {
       air = g.body.grounded ? 0 : air + DT;
       if (steer) steer(g, this);
     });
+    if (steer) this.hold(0);
+    return ok;
   }
 
-  /** En l'air : viser x (freine et revient si besoin). */
-  aim(x) {
+  /** Après un atterrissage visé : freiner (comme un joueur) jusqu'à être presque immobile. */
+  settle() {
+    this.until((g) => Math.abs(g.body.vx - g.body.groundVx) < 0.4 && g.body.grounded, 0.8, (g) => {
+      const v = g.body.vx - g.body.groundVx;
+      this.hold(-Math.sign(v));
+    });
+    this.hold(0);
+    return !this.dead;
+  }
+
+  /**
+   * En l'air : viser x. On vise la vitesse qui amène au-dessus de x à l'atterrissage (temps de vol
+   * restant estimé jusqu'à la hauteur de départ), comme un joueur qui ajuste sa course.
+   */
+  aim(x, landY = null) {
+    const y0 = landY != null ? landY + R : this.b.y;
     return (g) => {
-      const t = x - g.body.vx * 0.12;
-      this.hold(g.body.x < t - 0.15 ? 1 : g.body.x > t + 0.15 ? -1 : 0);
+      const b = g.body;
+      const grav = g.level.gravity * b.gravitySign;
+      const up = b.vy * b.gravitySign;
+      const drop = Math.max(0, (b.y - y0) * b.gravitySign);
+      const T = Math.max(0.12, (up + Math.sqrt(up * up + 2 * Math.abs(grav) * drop)) / Math.abs(grav));
+      const want = Math.max(-7.5, Math.min(7.5, (x - b.x) / T));
+      const d = want - b.vx;
+      this.hold(Math.abs(d) < 0.35 ? 0 : Math.sign(d));
     };
   }
+
 }
 
-/** Solution experte écrite avec le pilote : `fn(p)` renvoie true si le passage est réussi. */
-const piloted = (fn, goal) => (make) => {
-  const g = make();
-  const p = new Pilot(g);
-  const ok = fn(p, g);
-  return !!ok && !p.dead && p.until(goal, 2);
+// ─── Plans : solutions expertes décrites comme des données dans les niveaux ──
+//
+// Manœuvres disponibles (coordonnées du niveau) :
+//   ['goTo', x]                      rouler jusqu'à x et s'y arrêter
+//   ['charge', n]                    dribbler sur place jusqu'à la puissance n
+//   ['jump', dir, aimX?]             rebondir en tenant dir (−1/0/1), viser aimX en l'air
+//   ['hop', n, aimX, y?]             charger n puis sauter vers aimX (surface d'arrivée à la hauteur y)
+//   ['hold', dir, x]                 rouler dans le sens dir jusqu'à dépasser x
+//   ['run', dir, x1, x2, y]          rouler (et se laisser porter) jusqu'à être posé entre x1 et x2 à la hauteur y
+//   ['jumpAt', dir, x, aimX?]        rouler et rebondir en passant x (saut lancé)
+//   ['wait', s]                      attendre
+//   ['settle']                       freiner jusqu'à l'arrêt après un atterrissage (glace)
+//   ['waitCycle', période, a, b, phase?]  attendre que (temps + phase·période) mod période soit dans [a, b[
+//   ['waitMover', groupe, i, 'x'|'y', '<'|'>', v]  attendre la position d'un élément mobile (décalage)
+//   ['ride', i]                      traverser sur la plateforme mobile n° i (aller simple)
+//   ['jumpOver', groupe, i, d?]      rattraper un élément mobile en roulant et sauter par-dessus
+//   ['vines', x, press?]             (rebondir puis) se balancer de liane en liane jusqu'à se poser au-delà de x
+//   ['fly', aimX]                    en l'air (champignon, trampoline…) : viser aimX jusqu'à se poser
+//   ['hopTo', n, groupe, i, dx]      charger n puis sauter vers un élément mobile (sa position + dx)
+//   ['stayOn', groupe, i, 'x'|'y', '<'|'>', v]  rester au-dessus d'un élément mobile jusqu'à la condition
+//   ['dribbleRun', dir, n, x, aimX?] dribbler en roulant jusqu'à la puissance n, rebondir en passant x
+//   ['shot']                         tir au panier (solution « experte » de tir)
+
+const GOALS = {
+  on: (x1, x2, y) => on(x1, x2, y),
+  win: () => win,
+  x: (v) => (g) => g.body.x > v && g.playing,
+  crate: (i, x) => (g) => g.level.crates[i].x > x,
+  // posé sur la plateforme mobile n° i
+  onMover: (i) => (g) => {
+    const m = g.level.movers[i];
+    const x0 = m.x + m.mover.offsetX;
+    const top = m.y + m.h + m.mover.offsetY;
+    const b = g.body;
+    return b.grounded && b.x > x0 && b.x < x0 + m.w && Math.abs(b.y - R - top) < 0.12;
+  },
+  switch: (i) => (g) => g.level.switches[i].pressed,
 };
 
-// ─── Passages ───────────────────────────────────────────────────────────────
+const PREPS = {
+  openDoors: () => openDoors,
+  crateAt: (i, x) => (g) => {
+    const c = g.level.crates[i];
+    c.def = { ...c.def, x };
+    c.reset();
+  },
+};
+
+function moverOf(g, group, i) {
+  const m = g.level[group][i];
+  return m.mover ?? m;
+}
+
+const STEPS = {
+  goTo: (p, x) => p.goTo(x),
+  charge: (p, n) => p.charge(n),
+  jump: (p, dir, aim, landY) => p.jump(dir, aim != null ? p.aim(aim, landY) : null),
+  hop: (p, n, aim, landY) => p.charge(n) && p.jump(Math.sign(aim - p.b.x) || 0, p.aim(aim, landY)),
+  hold: (p, dir, x) => {
+    p.hold(dir);
+    const ok = p.until((g) => (dir > 0 ? g.body.x >= x : g.body.x <= x), 10);
+    p.hold(0);
+    return ok;
+  },
+  run: (p, dir, x1, x2, y) => {
+    p.hold(dir);
+    const ok = p.until(on(x1, x2, y), 10, (g) => {
+      // on freine en arrivant sur la zone visée
+      const b = g.body;
+      if (b.grounded && Math.abs(b.y - (y + R)) < 0.1 && b.x > x1 + 0.3 && b.x < x2 - 0.3) p.hold(0);
+      else p.hold(dir);
+    });
+    p.hold(0);
+    return ok;
+  },
+  jumpAt: (p, dir, x, aim) => {
+    p.hold(dir);
+    if (!p.until((g) => (dir > 0 ? g.body.x >= x : g.body.x <= x) && g.controller.canBounce, 8)) return false;
+    return p.jump(dir, aim != null ? p.aim(aim) : null);
+  },
+  wait: (p, sec) => p.wait(sec),
+  settle: (p) => p.settle(),
+  waitCycle: (p, period, a, b, phase = 0) => p.until((g) => {
+    const u = (((g.time / period + phase) % 1) + 1) % 1 * period;
+    return u >= a && u < b;
+  }, period * 3 + 1),
+  waitMover: (p, group, i, axis, op, v) => p.until((g) => {
+    const m = moverOf(g, group, i);
+    const val = axis === 'x' ? m.offsetX : m.offsetY;
+    return op === '<' ? val < v : val > v;
+  }, 15),
+  fly: (p, aim) => {
+    let air = 0;
+    const steer = p.aim(aim);
+    return p.until((g) => air > 0.12 && g.body.grounded, 5, (g) => {
+      air = g.body.grounded ? 0 : air + DT;
+      steer(g);
+    }) && (p.hold(0), true);
+  },
+  hopTo: (p, n, group, i, dx) => {
+    if (!p.charge(n)) return false;
+    const m = p.g.level[group][i];
+    const baseX = (m.x1 ?? m.x) + 0;
+    const target = () => baseX + moverOf(p.g, group, i).offsetX + dx;
+    p.c.pressBounce();
+    p.hold(Math.sign(target() - p.b.x));
+    const top = () => (m.y ?? 0) + (m.h ?? 0) + moverOf(p.g, group, i).offsetY;
+    let air = 0;
+    return p.until((g) => air > 0.12 && g.body.grounded, 4, (g) => {
+      air = g.body.grounded ? 0 : air + DT;
+      p.aim(target(), group === 'movers' ? top() : null)(g);
+    }) && (p.hold(0), true);
+  },
+  stayOn: (p, group, i, axis, op, v) => {
+    const m = p.g.level[group][i];
+    const baseX = m.x1 !== undefined ? (m.x1 + m.x2) / 2 : m.w !== undefined ? m.x + m.w / 2 : m.x;
+    const ok = p.until((g) => {
+      const mm = moverOf(g, group, i);
+      const val = axis === 'x' ? mm.offsetX : mm.offsetY;
+      return op === '<' ? val < v : val > v;
+    }, 15, (g) => {
+      const tx = baseX + moverOf(g, group, i).offsetX;
+      const rel = g.body.x - tx;
+      const vr = g.body.vx - g.body.groundVx;
+      p.hold(Math.abs(rel) < 0.15 && Math.abs(vr) < 0.4 ? 0 : -Math.sign(rel + vr * 0.25));
+    });
+    p.hold(0);
+    return ok;
+  },
+  dribbleRun: (p, dir, n, x, aim) => {
+    p.hold(dir);
+    let last = -1;
+    if (!p.until((g) => g.controller.level >= n && (dir > 0 ? g.body.x >= x : g.body.x <= x) && g.controller.canBounce, 8, (g) => {
+      if (g.controller.level < n && g.time - last > 0.13) {
+        g.controller.pressBounce();
+        last = g.time;
+      }
+    })) return false;
+    return p.jump(dir, aim != null ? p.aim(aim) : null);
+  },
+  jumpOver: (p, group, i, land = 2.4) => {
+    // Rattraper un élément mobile (tronc) en roulant et sauter par-dessus au bon moment
+    const m = p.g.level[group][i];
+    const cx = () => m.x + moverOf(p.g, group, i).offsetX;
+    p.hold(1);
+    if (!p.until((g) => cx() - g.body.x < 1.9 && g.controller.canBounce, 10)) return false;
+    const target = cx() + land;
+    return p.jump(1, p.aim(target));
+  },
+  ride: (p, i, holdSteps = 70) => {
+    // Attendre que la plateforme revienne, monter dessus en restant au milieu, descendre à l'autre bout
+    const def = p.g.level.movers[i];
+    const m = def.mover;
+    const dx = def.path.dx;
+    if (!p.until(() => m.offsetX < 0.4 && m.colliders[0].vx < 0, 15)) return false;
+    if (!STEPS.stayOn(p, 'movers', i, 'x', '>', dx - 0.25)) return false;
+    p.hold(1);
+    p.wait(holdSteps * DT);
+    p.hold(0);
+    // On attend d'être posé sur la rive (plus sur la plateforme)
+    p.until((g) => g.body.grounded && g.body.groundVx === 0 && Math.abs(g.body.vx) < 3, 2.5);
+    return !p.dead;
+  },
+  vines: (p, x, press = true) => {
+    if (press) p.c.pressBounce();
+    return p.until((g) => g.body.grounded && g.body.x > x && !g.vine, 14, (g) => {
+      const b = g.body;
+      if (g.vine) {
+        p.hold(b.vx >= 0 ? 1 : -1);
+        if (b.vx > 0 && g.vine.angle > 0.55) g.controller.pressBounce();
+      } else p.hold(1);
+    });
+  },
+};
+
+export function runPlan(p, plan) {
+  for (const [name, ...args] of plan) {
+    const fn = STEPS[name];
+    if (!fn) throw new Error(`Manœuvre inconnue : ${name}`);
+    if (!fn(p, ...args) || p.dead) return false;
+  }
+  return true;
+}
+
+/** Solution experte d'un passage décrit dans les données du niveau. */
+function expertFor(passage, goal) {
+  const plan = passage.plan;
+  if (!plan) return null;
+  if (plan === 'shot' || (plan.length === 1 && plan[0][0] === 'shot')) return expertShot;
+  return (make) => {
+    const g = make();
+    const p = new Pilot(g);
+    const ok = runPlan(p, plan);
+    return !!ok && !p.dead && p.until(goal, 3);
+  };
+}
 
 /** Par niveau : [nom, départ [x, surface], objectif, préparation, solution experte] */
-export const ROUTES = [
-  // 1
-  [['Départ → panier', [3, 0], win, null, expertShot]],
-  // 2
-  [
-    ['Départ → au-delà du mur', [3, 0], on(12.3, 22, 0)],
-    ['Après le mur → panier', [15, 0], win, null, expertShot],
-  ],
-  // 3
-  [
-    ['Trampoline → au-delà des pics', [3, 0], on(19.6, 28, 0)],
-    ['Sol → estrade', [22, 0], on(28, 38, 2.0)],
-    ['Estrade → panier', [29.2, 2.0], win, null, expertShot],
-  ],
-  // 4
-  [
-    ['Plateforme mobile → autre rive', [8, 0], on(22.2, 30, 0), null, expertPlatform(on(22.2, 30, 0))],
-    ['Rive → panier', [24, 0], win, null, expertShot],
-  ],
-  // 5
-  [
-    ['Ventilateur → terrasse', [6, 0], on(12.4, 38, 5.2)],
-    ['Terrasse → panier', [14, 5.2], win, null, expertShot],
-  ],
-  // 6
-  [
-    ['Départ → interrupteur', [3, 0], (g) => g.level.switches[0].pressed],
-    ['Porte ouverte → téléporteur', [12, 0], (g) => g.body.x > 27.5, openDoors],
-    ['Après le mur → panier', [31, 0], win, null, expertShot],
-  ],
-  // ── MONDE 1 — VILLE ──
-  // 7 — La caisse
-  [
-    ['Pousser la caisse contre la terrasse', [3, 0], (g) => g.level.crates[0].x > 15.2, null, piloted((p) => {
-      p.hold(1);
-      return p.until((g) => g.level.crates[0].x > 15.2, 8);
-    }, (g) => g.level.crates[0].x > 15.2)],
-    ['Caisse → terrasse', [16.2, 1.6], on(17, 46, 5.6), crateAt(15.4), piloted((p) => p.wait(0.3) && p.charge(5) && p.jump(1), on(17, 46, 5.6))],
-    ['Terrasse → panier', [19, 5.6], win, null, expertShot],
-  ],
-  // ── MONDE 2 — NEIGE ──
-  [
-    ['Départ → butte enneigée', [3, 0], on(9, 13, 2.6), null, piloted((p) => p.goTo(7.4) && p.charge(4) && p.jump(1, p.aim(11)), on(9, 13, 2.6))],
-    ['Rampe de glace → au-delà de la crevasse', [11, 2.6], on(34, 47, 0), null, piloted((p) => {
-      p.hold(1);
-      if (!p.until((g) => g.body.x > 28.4 && g.body.grounded, 5)) return false;
-      p.c.pressBounce();
-      return p.until(on(34, 47, 0), 4);
-    }, on(34, 47, 0))],
-    ['Vent → panier', [36, 0], win, null, expertShot],
-  ],
-  // ── MONDE 3 — VOLCAN ──
-  [
-    ['Départ → au-delà de la lave', [3, 0], on(13, 26, 0), null, piloted((p) => p.goTo(7.3) && p.charge(2) && p.jump(1, p.aim(10.5)) && p.jump(1) && p.until(on(13, 26, 0), 3), on(13, 26, 0))],
-    ['Geysers → ascenseur → falaise', [14, 0], on(28.6, 50, 5), null, piloted((p, g) => {
-      const cyc = (t) => ((t % 3.2) + 3.2) % 3.2;
-      const m = g.level.movers[0].mover;
-      if (!p.until((gg) => Math.abs(cyc(gg.time) - 1.3) < 0.01, 5)) return false;
-      if (!p.goTo(24.5)) return false;
-      if (!p.until(() => m.offsetY < 0.03, 8)) return false;
-      if (!p.jump(1, p.aim(27.2))) return false;
-      if (!p.until(() => m.offsetY > 4.95, 8)) return false;
-      p.hold(1);
-      return p.until(on(28.6, 50, 5), 3);
-    }, on(28.6, 50, 5))],
-    ['Chute de pierres → après les pierres', [29.5, 5], (g) => on(37, 50, 5)(g)],
-    ['Falaise → panier', [37.5, 5], win, null, expertShot],
-  ],
-  // ── MONDE 4 — FORÊT ──
-  [
-    ['Rivière : les lianes', [3, 0], on(23, 40, 0), null, piloted((p) => {
-      if (!(p.goTo(10.2) && p.charge(4))) return false;
-      p.c.pressBounce();
-      return p.until(on(23, 40, 0), 12, (g) => {
-        const b = g.body;
-        if (g.vine) {
-          p.hold(b.vx >= 0 ? 1 : -1);
-          if (b.vx > 0 && g.vine.angle > 0.55) g.controller.pressBounce();
-        } else p.hold(1);
-      });
-    }, on(23, 40, 0))],
-    ['Tronc → branches → cabane', [24, 0], on(40, 54, 5.6), null, piloted((p, g) => {
-      const log = g.level.rollers[0].mover;
-      const br2 = g.level.branches[1].mover;
-      if (!p.until(() => log.offsetX > 4.3, 6) || !p.until(() => log.offsetX < 1.6, 6)) return false;
-      return p.charge(3) && p.jump(1, p.aim(31)) && p.goTo(34.7) && p.charge(4) && p.jump(0)
-        && p.charge(2) && p.jump(1, (gg) => p.aim(38.3 + br2.offsetX)(gg)) && p.charge(2) && p.jump(1, p.aim(42));
-    }, on(40, 54, 5.6))],
-    ['Cabane → panier', [42, 5.6], win, null, expertShot],
-  ],
-  // ── MONDE 5 — ESPACE ──
-  [
-    ['Plateformes flottantes', [3, 0], on(26, 33, 0), null, piloted((p) => p.goTo(9.4)
-      && p.charge(2) && p.jump(1, p.aim(13.3)) && p.charge(2) && p.jump(1, p.aim(18.1))
-      && p.charge(1) && p.jump(1, p.aim(22.9)) && p.charge(2) && p.jump(1, p.aim(28)), on(26, 33, 0))],
-    ['Portails', [27, 0], (g) => g.body.x > 34.5],
-    ['Gravité inversée', [36, 0], on(48, 60, 0)],
-    ['Zone inversée → panier', [50, 0], win, null, expertShot],
-  ],
-];
+export const ROUTES = LEVELS.map((level) =>
+  (level.passages ?? []).map((ps) => {
+    const goal = GOALS[ps.goal[0]](...ps.goal.slice(1));
+    const prep = ps.prep ? PREPS[ps.prep[0]](...ps.prep.slice(1)) : null;
+    return [ps.name, ps.start, goal, prep, expertFor(ps, goal)];
+  }),
+);
 
 export function setup(levelIndex, start, wait, prep) {
   const game = new Game(CONFIG, { ...LEVELS[levelIndex], spawn: { x: start[0], y: start[1] } });
@@ -386,12 +480,14 @@ if (isMain) {
   const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const SAVE = process.argv.includes('--save');
   const TRIES = Number(args[0] ?? 400);
-  const ONLY = args[1] !== undefined ? Number(args[1]) - 1 : null;
+  // Niveau : numéro (1..50) ou identifiant (ex. snow-3)
+  const only = args[1];
+  const ONLY = only === undefined ? null : /^\d+$/.test(only) ? Number(only) - 1 : LEVELS.findIndex((l) => l.id === only);
   const solutions = ROUTES.map((r) => r.map(() => null));
   console.log(`${TRIES} essais aléatoires par passage\n`);
   ROUTES.forEach((routes, li) => {
     if (ONLY !== null && li !== ONLY) return;
-    console.log(`Niveau ${li + 1}`);
+    console.log(`Niveau ${li + 1} — ${LEVELS[li].id}`);
     routes.forEach(([name, start, goal, prep, expert], ri) => {
       const rng = createRng(1000 + li * 50 + ri);
       let ok = 0;
@@ -407,11 +503,12 @@ if (isMain) {
         }
         if (r.death) deaths++;
       }
-      const pct = (100 * ok) / TRIES;
+      const pct = TRIES ? (100 * ok) / TRIES : 0;
       const bar = '█'.repeat(Math.round(pct / 4)).padEnd(25, '·');
       const expertOk = expert ? expert(() => setup(li, start, 36, prep)) : null;
       const flag = expertOk === true ? '  (solution experte ✓)' : expertOk === false ? '  ⚠ solution experte en échec' : ok === 0 ? '  ⚠ IMPOSSIBLE ?' : '';
-      console.log(`  ${name.padEnd(38)} ${bar} ${pct.toFixed(1).padStart(5)} %  (morts ${((100 * deaths) / TRIES).toFixed(0)} %)${flag}`);
+      if (TRIES) console.log(`  ${name.padEnd(38)} ${bar} ${pct.toFixed(1).padStart(5)} %  (morts ${((100 * deaths) / TRIES).toFixed(0)} %)${flag}`);
+      else console.log(`  ${name.padEnd(38)} ${expertOk === true ? 'expert ✓' : expertOk === false ? '⚠ EXPERT EN ÉCHEC' : '— (pas de plan)'}`);
       solutions[li][ri] = example;
     });
   });
