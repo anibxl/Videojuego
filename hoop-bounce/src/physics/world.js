@@ -34,7 +34,7 @@ export class PhysicsWorld {
     let best = -Infinity;
     const tmp = { x: 0, y: 0, t: 0 };
     for (const c of this.colliders) {
-      if (x < c.minX || x > c.maxX || c.minY > y) continue;
+      if (c.disabled || x < c.minX || x > c.maxX || c.minY > y) continue;
       let top;
       if (c.ax === c.bx && c.ay === c.by) {
         const dx = x - c.ax;

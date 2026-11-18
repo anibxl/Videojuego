@@ -3,7 +3,9 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 5 (actuelle) :** le gameplay principal et 6 niveaux. Le menu de l'étape 4 est inchangé.
+**Étape 7 (actuelle) :** les 5 mondes (Ville, Neige, Volcan, Forêt, Espace) : identité visuelle et sonore,
+21 mécaniques, carte des mondes, introduction et transitions, déblocage automatique, un niveau de
+démonstration par monde. Les 50 niveaux viendront après validation. Le menu et les commandes sont inchangés.
 
 📘 **Documentation complète du projet (concept, mécaniques, architecture, roadmap, tâches, bugs, journal) :
 [PROJECT.md](PROJECT.md).** Ce README n'est qu'un guide rapide.
@@ -60,7 +62,7 @@ jusqu'au panier.
 **Physique :** gravité franche (pas de flottement), accélération vive (pleine vitesse en ~0,3 s) mais de
 l'inertie (le ballon continue de rouler), roulement sans glissement, rebonds réalistes selon la surface.
 
-### Les 6 niveaux (`src/game/levels/index.js`)
+### Les niveaux de la Ville (`src/game/levels/city.js`)
 
 Courts, chacun avec un départ, quelques obstacles, 3 étoiles et un panier. Chaque niveau introduit une idée :
 
@@ -72,6 +74,7 @@ Courts, chacun avec un départ, quelques obstacles, 3 étoiles et un panier. Cha
 | 4 | Plateforme mobile | traverser le vide |
 | 5 | Le souffle | un ventilateur mène à la terrasse du panier |
 | 6 | Grand final | interrupteur, porte et téléporteur |
+| 7 | La caisse | pousser la caisse pour s'en servir de marche |
 
 Une chute (pics, vide) fait recommencer le niveau. Au premier lancement, des étiquettes montrent les deux
 commandes ; elles disparaissent dès qu'on a roulé et rebondi trois fois.
@@ -89,6 +92,27 @@ Discrète : niveau et étoiles en haut à gauche, recommencer et pause en haut �
 pause et la victoire. L'application mise en arrière-plan se met en pause d'elle-même. Textes en FR / EN / ES
 (langue choisie dans le menu, `src/game/i18n.js`).
 
+## Les mondes (`worlds.html`, `src/game/worlds.js`)
+
+| # | Monde | Ambiance | Mécaniques |
+|---|---|---|---|
+| 1 | Ville (tutoriel) | coucher de soleil, immeubles, graffitis, lampadaires | plateformes, plateformes mobiles, trampolines, ventilateurs, caisse à pousser |
+| 2 | Neige | montagnes, sapins, flocons, brume, lumière froide | sol glissant, plateformes de glace, vent de neige, stalactites, rampes de glace |
+| 3 | Volcan | lave, roches, cendres, éruptions, braises | lave mortelle, plateformes fragiles, geysers de feu, chutes de pierres, ascenseurs de pierre |
+| 4 | Forêt | grands arbres, rayons de lumière, champignons, rivière, lucioles | lianes, bois, champignons rebondissants, troncs qui roulent, branches mobiles |
+| 5 | Espace | planètes, étoiles, nébuleuses, astéroïdes, la Terre | gravité réduite, astéroïdes, portails, plateformes flottantes, gravité inversée |
+
+- Chaque monde a son décor animé, ses particules, sa lumière, sa musique et son ambiance sonore, ses sons.
+- **Carte des mondes** : cartes illustrées et animées, cadenas, animation de déblocage, barre de progression,
+  étoiles, pourcentage, choix du niveau (10 emplacements par monde, « Bientôt » pour ceux à venir).
+- **Introduction** de chaque monde et **transition** colorée entre deux mondes.
+- **Déblocage** : un monde s'ouvre quand tous les niveaux disponibles du précédent sont terminés.
+- Pour l'instant : 7 niveaux dans la Ville et 1 niveau de démonstration par autre monde.
+- La carte s'ouvre depuis la partie (pause → Carte des mondes, victoire → Carte) ou directement :
+  `worlds.html` (`worlds.html?unlock=all` ouvre tout, pour tester). La tuile « Mondes » du menu n'y mène pas
+  encore (le menu n'a pas été modifié).
+- Format des niveaux et de tous les éléments : `src/game/levels/README.md`.
+
 ## Tester
 
 ```bash
@@ -96,7 +120,8 @@ cd hoop-bounce
 python3 -m http.server 8080
 ```
 
-Ordinateur : <http://localhost:8080> (le menu ; `play.html?level=3` ouvre directement le niveau 3). Téléphone Android : même Wi-Fi, `http://<IP-de-l-ordinateur>:8080`
+Ordinateur : <http://localhost:8080> (le menu ; `worlds.html` la carte des mondes ; `play.html?world=snow&level=1`
+ouvre directement un niveau). Téléphone Android : même Wi-Fi, `http://<IP-de-l-ordinateur>:8080`
 dans Chrome, téléphone tenu à l'horizontale. `?debug` dans l'adresse (ou `²`) affiche les collisions et
 la zone du vent.
 
@@ -105,7 +130,8 @@ la zone du vent.
 ```
 hoop-bounce/
 ├── index.html, css/menu.css    menu principal
-├── play.html, css/style.css    partie (HUD, commandes, pause, victoire, tutoriel)
+├── worlds.html, css/worlds.css carte des mondes
+├── play.html, css/style.css    partie (HUD, commandes, pause, victoire, tutoriel, intro de monde)
 ├── css/fonts.css, assets/fonts polices embarquées (licence OFL)
 ├── src/
 │   ├── config.js               ★ TOUS les réglages (physique, déplacement, puissances, caméra…)
@@ -114,11 +140,13 @@ hoop-bounce/
 │   ├── shared/                 réglages du joueur et version, communs au menu et au jeu
 │   ├── core/                   boucle à pas fixe (120 Hz), maths, bus d'événements
 │   ├── physics/                balle, formes de collision, éléments mobiles
-│   ├── game/                   contrôleur (dribble, puissance), éléments, pièges, panier, progression,
-│   │                           textes de jeu (FR/EN/ES)
-│   │   └── levels/index.js     les 6 niveaux = de simples données
-│   ├── render/                 rendu Canvas, décor, caméra, déformations, particules
-│   ├── audio/                  sons synthétisés (aucun fichier)
+│   ├── game/                   contrôleur (dribble, puissance), éléments, éléments des mondes, pièges,
+│   │                           panier, progression par monde, textes de jeu (FR/EN/ES)
+│   │   ├── worlds.js           les 5 mondes
+│   │   └── levels/             les niveaux de chaque monde = de simples données (+ README du format)
+│   ├── render/                 rendu Canvas, thèmes et décors des mondes, caméra, déformations, particules
+│   ├── audio/                  sons et musiques synthétisés (aucun fichier)
+│   ├── worlds/                 carte des mondes (illustrations animées, déblocage)
 │   ├── input/                  tactile deux pouces + clavier
 │   └── platform/               vibrations (à remplacer par le plugin Capacitor)
 ├── tests/                      tests automatiques (Node)
@@ -126,7 +154,7 @@ hoop-bounce/
 ```
 
 Ajouter un élément de gameplay : ses données dans le niveau, sa construction dans `game/level.js`,
-sa règle dans `game/game.js`, son dessin dans `render/renderer.js`.
+sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `render/world-draw.js`.
 
 ### Régler les sensations (`src/config.js`)
 
@@ -143,9 +171,10 @@ sa règle dans `game/game.js`, son dessin dans `render/renderer.js`.
 
 ```bash
 cd hoop-bounce
-npm test                               # 57 tests : physique, dribble, éléments, panier, niveaux faisables, menu
+npm test                               # 101 tests : physique, dribble, éléments, mécaniques des mondes,
+                                       # panier, progression, niveaux faisables, menu
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
-node tools/route-check.mjs 400 3       # seulement le niveau 3
+node tools/route-check.mjs 400 3       # seulement le 3e niveau (numérotation de tous les mondes à la suite)
 node tools/route-check.mjs 400 --save  # après une modification voulue d'un niveau
 ```
 

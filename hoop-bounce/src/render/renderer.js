@@ -13,6 +13,11 @@ import { clamp, lerp } from '../core/math.js';
 import { pathState } from '../physics/mover.js';
 import { createBallTextures } from './ball-sprite.js';
 import { Background } from './background.js';
+import { themeOf } from './themes.js';
+import {
+  drawSolid, drawPlank, drawThemedMover, drawCrate, drawWindZone, drawIcicle, drawLiquid, drawCrumble,
+  drawGeyser, drawRockfall, drawVine, drawMushroom, drawRoller, drawBranch, drawGravityZone,
+} from './world-draw.js';
 
 const C = {
   cap: '#efe5d5',
@@ -52,16 +57,23 @@ export class Renderer {
     this.tex = createBallTextures();
     this.starSprite = makeStarSprite();
     this.glowSprites = new Map();
-    this.setLevel(level);
+    /** Densité des particules d'ambiance (qualité graphique : 0,4 · 0,7 · 1). */
+    this.particleDensity = 1;
     this.dpr = 1;
     this.w = 1;
     this.h = 1;
     this.fps = 60;
+    this.setLevel(level);
   }
 
-  /** Nouveau niveau : le décor de fond s'adapte à sa longueur. */
+  /** Nouveau niveau : décor et lumière de son monde, adaptés à sa longueur. */
   setLevel(level) {
-    this.background = new Background(level);
+    const themeId = level.theme ?? 'city';
+    const changed = themeId !== this.themeId;
+    this.themeId = themeId;
+    this.theme = themeOf(themeId);
+    this.background = new Background(level, { particles: this.particleDensity });
+    if (changed && this.w > 1) this._bakeVignette();
   }
 
   resize(cssWidth, cssHeight) {
@@ -70,9 +82,16 @@ export class Renderer {
     this.h = cssHeight;
     this.canvas.width = Math.round(cssWidth * this.dpr);
     this.canvas.height = Math.round(cssHeight * this.dpr);
-    // Vignette précalculée en basse résolution (un plaquage par image au lieu d'un dégradé plein écran)
-    const vw = Math.max(16, Math.round(cssWidth / 4));
-    const vh = Math.max(16, Math.round(cssHeight / 4));
+    this._bakeVignette();
+  }
+
+  /**
+   * Vignette teintée par la lumière du monde, précalculée à la résolution exacte du canvas :
+   * copiée 1:1 à chaque image (une image agrandie coûte bien plus cher à dessiner).
+   */
+  _bakeVignette() {
+    const vw = Math.max(16, this.canvas.width);
+    const vh = Math.max(16, this.canvas.height);
     const v = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(vw, vh) : document.createElement('canvas');
     v.width = vw;
     v.height = vh;
@@ -80,7 +99,7 @@ export class Renderer {
     const r = Math.hypot(vw, vh) / 2;
     const grad = vg.createRadialGradient(vw / 2, vh / 2, r * 0.55, vw / 2, vh / 2, r * 1.08);
     grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, 'rgba(2,6,18,0.45)');
+    grad.addColorStop(1, `rgba(${this.theme.light},0.5)`);
     vg.fillStyle = grad;
     vg.fillRect(0, 0, vw, vh);
     this._vignette = v;
@@ -105,21 +124,32 @@ export class Renderer {
     const visible = (x0, x1) => x1 >= view.left && x0 <= view.right;
     const t = s.renderTime;
 
-    for (const f of L.fans) if (visible(f.x, f.x + f.w)) this._drawWind(f, s.time);
+    const theme = this.theme;
+    const time = s.time;
+    for (const f of L.fans) if (visible(f.x, f.x + f.w)) this._drawWind(f, time);
+    for (const z of L.gravityZones) if (visible(z.x, z.x + z.w)) drawGravityZone(this, z, time, s.body.gravitySign < 0 && z.contains(s.body.x, s.body.y));
+    for (const wz of L.winds) if (visible(wz.x, wz.x + wz.w)) drawWindZone(this, wz, t);
     for (const d of L.doors) this._drawDoor(d);
-    for (const solid of L.solids) {
-      const x0 = Math.min(...solid.points.map((p) => p.x));
-      const x1 = Math.max(...solid.points.map((p) => p.x));
-      if (visible(x0, x1)) this._drawSolid(solid, px);
-    }
+    for (const solid of L.solids) if (visible(solid.x0, solid.x1)) drawSolid(this, solid, theme, time);
+    for (const l of L.lavas) if (visible(l.x, l.x + l.w)) drawLiquid(this, l, time, L.bounds.minY - 2);
     for (const d of L.doors) this._drawDoorLight(d);
     for (const f of L.fans) if (visible(f.x, f.x + f.w)) this._drawFanGrate(f);
-    for (const m of L.movers) this._drawRail(m);
-    for (const m of L.movers) this._drawMover(m, t);
+    for (const p of L.planks) if (visible(p.x1, p.x2)) drawPlank(this, p);
+    for (const cr of L.crumbles) if (visible(cr.x, cr.x + cr.w)) drawCrumble(this, cr, time);
+    for (const m of L.movers) if (!m.style || m.style === 'platform') this._drawRail(m);
+    for (const m of L.movers) if (!drawThemedMover(this, m, t, theme)) this._drawMover(m, t);
+    for (const br of L.branches) drawBranch(this, br, t);
+    for (const ro of L.rollers) drawRoller(this, ro, t);
+    for (const c of L.crates) if (visible(c.x, c.x + c.w)) drawCrate(this, c);
+    for (const m of L.mushrooms) if (visible(m.x - 0.5, m.x + m.w + 0.5)) drawMushroom(this, m);
     for (const tr of L.trampolines) if (visible(tr.x, tr.x + tr.w)) this._drawTrampoline(tr);
-    for (const sw of L.switches) if (visible(sw.x, sw.x + sw.w)) this._drawSwitch(sw, s.time);
+    for (const sw of L.switches) if (visible(sw.x, sw.x + sw.w)) this._drawSwitch(sw, time);
     for (const sp of L.spikes) if (visible(sp.x, sp.x + sp.w)) this._drawSpikes(sp);
+    for (const gy of L.geysers) if (visible(gy.x - 1, gy.x + 1)) drawGeyser(this, gy, t);
+    for (const ic of L.icicles) if (visible(ic.x - 1, ic.x + 1)) drawIcicle(this, ic, time);
+    for (const rf of L.rockfalls) if (visible(rf.x - 1, rf.x + 1)) drawRockfall(this, rf, t);
     for (const tp of L.teleporters) this._drawTeleporter(tp, t, visible);
+    for (const v of L.vines) if (visible(v.x - v.len, v.x + v.len)) drawVine(this, v, s.ball, time);
     for (const c of L.checkpoints) if (visible(c.x - 1, c.x + 1)) this._drawCheckpoint(c, t);
     for (const st of L.stars) if (!st.collected && visible(st.x - 1, st.x + 1)) this._drawStar(st, s.time);
     if (visible(L.hoop.leftX - 1, L.hoop.board.x + 2)) this._drawHoopBack(L.hoop);
@@ -135,7 +165,10 @@ export class Renderer {
 
     // ── Interface (écran)
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.drawImage(this._vignette, 0, 0, this.w, this.h);
+    this.background.drawFront(ctx, cam, this.w, this.h, s.time);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(this._vignette, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (s.flash > 0) {
       ctx.fillStyle = `rgba(255,70,90,${0.25 * s.flash})`;
       ctx.fillRect(0, 0, this.w, this.h);
@@ -174,7 +207,7 @@ export class Renderer {
     const ctx = this.ctx;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = C.hint;
+    ctx.fillStyle = this.theme.hint ?? C.hint;
     for (const h of hints) {
       const x = cam.worldToScreenX(h.x);
       if (x < -400 || x > this.w + 400) continue;
@@ -182,56 +215,6 @@ export class Renderer {
       ctx.font = `750 ${size}px ${FONT}`;
       ctx.fillText(h.text, x, cam.worldToScreenY(h.y));
     }
-  }
-
-  _drawSolid(s, px) {
-    const ctx = this.ctx;
-    const [p0, , p2] = s.points;
-    const x = p0.x;
-    const y = p0.y;
-    const w = p2.x - p0.x;
-    const h = p2.y - p0.y;
-    const top = y + h;
-
-    if (s.style === 'wall') {
-      // Mur : plus clair que les silhouettes du fond, bords nets, rainures horizontales
-      ctx.fillStyle = C.shadow;
-      ctx.fillRect(x + 0.1, y, w, h);
-      const g = ctx.createLinearGradient(x, 0, x + w, 0);
-      g.addColorStop(0, C.wall);
-      g.addColorStop(1, C.wallDark);
-      ctx.fillStyle = g;
-      ctx.fillRect(x, y, w, h);
-      ctx.fillStyle = 'rgba(255,255,255,0.05)';
-      for (let yy = y + 0.6; yy < y + h; yy += 0.9) ctx.fillRect(x, yy, w, 0.05);
-      ctx.fillStyle = C.wallEdge;
-      ctx.fillRect(x, y, 0.05, h);
-      ctx.fillRect(x + w - 0.05, y, 0.05, h);
-      return;
-    }
-
-    if (s.style === 'ground') {
-      const g = ctx.createLinearGradient(0, top, 0, top - 4);
-      g.addColorStop(0, C.groundTop);
-      g.addColorStop(1, C.groundBottom);
-      ctx.fillStyle = g;
-      ctx.fillRect(x, y, w, h);
-      this._cap(x, top, w);
-      return;
-    }
-
-    // Bloc : ombre portée douce, corps arrondi, liseré crème
-    ctx.fillStyle = C.shadow;
-    roundRect(ctx, x + 0.08, y - 0.14, w, h, 0.14);
-    ctx.fill();
-    const g = ctx.createLinearGradient(0, top, 0, y);
-    g.addColorStop(0, C.blockTop);
-    g.addColorStop(1, C.blockBottom);
-    ctx.fillStyle = g;
-    roundRect(ctx, x, y, w, h, 0.14);
-    ctx.fill();
-    this._cap(x, top, w, 0.14);
-    void px;
   }
 
   /** Liseré crème sur le dessus d'une surface praticable. */
@@ -442,7 +425,7 @@ export class Renderer {
 
   _drawTeleporter(tp, time, visible) {
     const ctx = this.ctx;
-    for (const [end, inward] of [[tp.a, true], [tp.b, false]]) {
+    for (const [end, inward] of [[tp.a, true], [tp.b, tp.twoWay]]) {
       if (!visible(end.x - 1.5, end.x + 1.5)) continue;
       const r = tp.r;
       const recent = clamp(1 - (time - tp.lastUse) / 0.6, 0, 1);

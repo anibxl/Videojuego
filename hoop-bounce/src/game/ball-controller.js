@@ -29,8 +29,29 @@ export class BallController {
     this.cfg = controls;
     this.events = events;
     this.maxLevel = controls.bounceHeights.length;
-    this.velocities = controls.bounceHeights.map((h) => Math.sqrt(2 * gravity * h));
+    this.setGravity(gravity);
     this.reset();
+  }
+
+  /**
+   * Gravité du niveau (monde Espace : gravité réduite). `heightScale` agrandit les rebonds
+   * en proportion : les 5 niveaux de puissance gardent le même rapport entre eux.
+   */
+  setGravity(gravity, heightScale = 1) {
+    this.gravity = gravity;
+    this.velocities = this.cfg.bounceHeights.map((h) => Math.sqrt(2 * gravity * h * heightScale));
+  }
+
+  /** Annule un dribble en cours (le ballon vient d'attraper une liane). */
+  cancelSlam() {
+    this._pending = false;
+  }
+
+  /** Consomme un appui en attente (une liane l'utilise pour lâcher prise au lieu de dribbler). */
+  takePress() {
+    const had = this._pressQueued;
+    this._pressQueued = false;
+    return had;
   }
 
   reset() {
@@ -88,24 +109,26 @@ export class BallController {
     // ── Déplacement horizontal (relatif à la surface si l'on est sur une plateforme mobile)
     const grounded = this.onGround;
     const axis = this.axis;
+    // Adhérence de la surface (glace < 1) : on accélère et on freine moins vite
+    const grip = grounded ? (b.groundMaterial?.grip ?? 1) : 1;
     const baseVx = grounded ? b.groundVx : 0;
     const rel = b.vx - baseVx;
     let accel;
     let target;
     if (axis !== 0) {
       target = axis * c.maxSpeed;
-      accel = grounded ? c.groundAccel : c.airAccel;
+      accel = grounded ? c.groundAccel * grip : c.airAccel;
       if (rel * axis < 0) accel *= c.turnBoost;
       // Au-delà de la vitesse max (trampoline, pente…), on ne freine pas : on n'accélère juste plus
       if (rel * axis > c.maxSpeed) accel = 0;
     } else {
       target = 0;
-      accel = grounded ? c.groundBrake : c.airBrake;
+      accel = grounded ? c.groundBrake * grip : c.airBrake;
     }
     const maxDelta = accel * dt;
     const newRel = rel + clamp(target - rel, -maxDelta, maxDelta);
     b.vx = baseVx + newRel;
-    if (b.grounded) b.angularVelocity = -newRel / b.radius; // roule sans glisser
+    if (b.grounded) b.angularVelocity = (-newRel / b.radius) * b.gravitySign; // roule sans glisser
 
     // ── Appui sur REBOND
     if (this._pressQueued) {
@@ -115,7 +138,8 @@ export class BallController {
       } else if (!this._pending) {
         // En l'air : on renvoie le ballon vers le sol, il rebondira au contact
         this._pending = true;
-        if (b.vy > -c.slamSpeed) b.vy = -c.slamSpeed;
+        const sign = b.gravitySign;
+        if (b.vy * sign > -c.slamSpeed) b.vy = -c.slamSpeed * sign;
         this.events?.emit('slam', { x: b.x, y: b.y, level: this.level });
       }
     }
@@ -140,7 +164,7 @@ export class BallController {
     const b = this.body;
     const level = this.level;
     const baseVy = this.onGround ? b.groundVy : 0;
-    b.vy = baseVy + this.velocities[level - 1];
+    b.vy = baseVy + this.velocities[level - 1] * b.gravitySign;
     b.timeSinceGrounded = Infinity; // décollage : pas de double rebond
     this._pending = false;
     this._cooldown = this.cfg.bounceCooldown;
@@ -153,7 +177,8 @@ export class BallController {
   /** Trampoline : propulsion vers le haut, sans toucher à la puissance. */
   launch(velocity) {
     const b = this.body;
-    b.vy = Math.max(b.vy, velocity);
+    if (b.gravitySign < 0) b.vy = Math.min(b.vy, -velocity);
+    else b.vy = Math.max(b.vy, velocity);
     b.timeSinceGrounded = Infinity;
     this._pending = false;
     this._cooldown = this.cfg.bounceCooldown;

@@ -31,6 +31,8 @@ export class BallBody {
 
     /** Multiplicateur de rebond appliqué aux contacts « sol » (utilisé pendant la charge). */
     this.groundBounceScale = 1;
+    /** Sens de la gravité : 1 = vers le bas, -1 = inversée (zones de gravité inversée, monde Espace). */
+    this.gravitySign = 1;
 
     // État de contact du dernier pas
     this.grounded = false;
@@ -38,6 +40,8 @@ export class BallBody {
     this.groundNy = 1;
     this.groundVx = 0; // vitesse de la surface sous le ballon (plateforme mobile)
     this.groundVy = 0;
+    /** Matériau de la surface sous le ballon (glace : moins d'adhérence). */
+    this.groundMaterial = null;
     this.timeSinceGrounded = Infinity;
 
     /** Contacts du dernier pas (un par forme, impact max). Objets réutilisés. */
@@ -59,6 +63,8 @@ export class BallBody {
     this.angle = 0;
     this.angularVelocity = 0;
     this.grounded = false;
+    this.gravitySign = 1;
+    this.groundMaterial = null;
     this.timeSinceGrounded = Infinity;
     this.contactCount = 0;
   }
@@ -76,6 +82,8 @@ export class BallBody {
     this.groundNy = o.groundNy;
     this.groundVx = o.groundVx;
     this.groundVy = o.groundVy;
+    this.gravitySign = o.gravitySign;
+    this.groundMaterial = o.groundMaterial;
     this.timeSinceGrounded = o.timeSinceGrounded;
     this.contactCount = 0;
   }
@@ -103,8 +111,9 @@ export class BallBody {
     const cfg = this.cfg;
 
     // Forces : gravité + légers frottements de l'air
-    this.vy -= world.gravity * h;
-    if (this.vy < -cfg.maxFallSpeed) this.vy = -cfg.maxFallSpeed;
+    const sign = this.gravitySign;
+    this.vy -= world.gravity * sign * h;
+    if (this.vy * sign < -cfg.maxFallSpeed) this.vy = -cfg.maxFallSpeed * sign;
     const drag = 1 - cfg.airDrag * h;
     this.vx *= drag;
     this.vy *= drag;
@@ -132,7 +141,7 @@ export class BallBody {
     if (groundedNow) {
       this._groundThisStep = true;
       // Résistance au roulement (relative à la surface) : le ballon finit par s'arrêter.
-      const k = 1 - cfg.rollingResistance * h;
+      const k = 1 - cfg.rollingResistance * (this.groundMaterial?.rolling ?? 1) * h;
       const tx = -this.groundNy;
       const ty = this.groundNx;
       const vt = (this.vx - this.groundVx) * tx + (this.vy - this.groundVy) * ty;
@@ -147,6 +156,7 @@ export class BallBody {
    * @returns {0|1|2} 0 = pas de contact, 1 = contact, 2 = contact « sol »
    */
   _resolve(c) {
+    if (c.disabled) return 0;
     const R = this.radius;
     // Élimination rapide par boîte englobante
     if (this.x + R < c.minX || this.x - R > c.maxX || this.y + R < c.minY || this.y - R > c.maxY) return 0;
@@ -173,9 +183,10 @@ export class BallBody {
 
     // Plateforme traversable : seulement si l'on arrive par le dessus, en descendant,
     // et sans être déjà enfoncé (sinon on est en train de passer à travers par en dessous).
+    const sign = this.gravitySign;
     if (c.oneWay) {
-      if (ny < this.cfg.groundNormalMinY) return 0;
-      if (this.vy - c.vy > 1e-6) return 0;
+      if (ny * sign < this.cfg.groundNormalMinY) return 0;
+      if ((this.vy - c.vy) * sign > 1e-6) return 0;
       if (pen > R * this.cfg.maxSubstepTravel + 0.02) return 0;
     }
 
@@ -183,12 +194,13 @@ export class BallBody {
     this.x += nx * pen;
     this.y += ny * pen;
 
-    const isGround = ny >= this.cfg.groundNormalMinY;
+    const isGround = ny * sign >= this.cfg.groundNormalMinY;
     if (isGround) {
       this.groundNx = nx;
       this.groundNy = ny;
       this.groundVx = c.vx;
       this.groundVy = c.vy;
+      this.groundMaterial = c.material;
     }
 
     // 2) Vitesse du point de contact relative à la surface : v + ω × r − v_surface, avec r = -n·R

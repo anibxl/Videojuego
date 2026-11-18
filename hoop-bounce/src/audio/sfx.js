@@ -11,6 +11,8 @@ export class Sfx {
     this.volume = 0.8;
     this._noise = null;
     this._lastByTag = new Map();
+    /** Monde en cours : colore le son du sol (neige feutrée, écho dans l'espace…). */
+    this.flavor = 'city';
   }
 
   /** À appeler lors d'un geste utilisateur (exigence des navigateurs mobiles). */
@@ -124,13 +126,131 @@ export class Sfx {
         this._tone(170 * vary, 90, 0.12, 0.55 * vol, 'sine');
         this._noiseBurst(0.09, 0.35 * vol, 'bandpass', 900, 1.2);
         break;
-      default:
+      case 'ice':
+        if (!this._throttle('ground', 0.045)) return;
+        // Glace : plus dur et plus clair, petit tintement
+        this._tone(180 * vary, 80, 0.14, 0.65 * vol, 'sine');
+        this._tone(2200 * vary, 2100 * vary, 0.12, 0.05 * vol, 'sine');
+        this._noiseBurst(0.03, 0.35 * vol, 'highpass', 4200);
+        break;
+      case 'snow':
+        if (!this._throttle('ground', 0.045)) return;
+        // Neige : choc feutré
+        this._tone(120 * vary, 60, 0.12, 0.55 * vol, 'sine');
+        this._noiseBurst(0.07, 0.3 * vol, 'lowpass', 900, 0.7);
+        break;
+      case 'wood':
+      case 'branch':
+      case 'log':
+      case 'crate':
+        if (!this._throttle('wood', 0.05)) return;
+        // Bois : « toc » creux
+        this._tone(140 * vary, 70, 0.14, 0.7 * vol, 'sine');
+        this._tone(420 * vary, 300, 0.06, 0.2 * vol, 'triangle');
+        this._noiseBurst(0.05, 0.3 * vol, 'bandpass', 1100, 1.5);
+        break;
+      case 'mushroom':
+        break; // son dédié (champignon)
+      case 'asteroid':
+        if (!this._throttle('rock', 0.05)) return;
+        this._tone(160 * vary, 70, 0.3, 0.6 * vol, 'sine');
+        this._tone(900 * vary, 860 * vary, 0.5, 0.05 * vol, 'sine');
+        this._noiseBurst(0.05, 0.25 * vol, 'bandpass', 1600, 1);
+        break;
+      default: {
         if (!this._throttle('ground', 0.045)) return;
         // Ballon de basket sur parquet : « bong » grave + claquement du cuir
         this._tone(150 * vary, 62, 0.16, 0.8 * vol, 'sine');
         this._tone(310 * vary, 180, 0.05, 0.18 * vol, 'triangle');
         this._noiseBurst(0.035, 0.4 * vol, 'bandpass', 2200, 0.8);
+        if (this.flavor === 'space') this._tone(150 * vary, 62, 0.2, 0.22 * vol, 'sine', 0.13); // écho
+        if (this.flavor === 'volcano') this._noiseBurst(0.06, 0.12 * vol, 'lowpass', 500); // roche
+      }
     }
+  }
+
+  // ─── Mécaniques des mondes ────────────────────────────────────────────────
+
+  icicleShake() {
+    if (!this.ready) return;
+    for (let i = 0; i < 4; i++) this._tone(2600 + i * 310, 2500 + i * 300, 0.08, 0.03, 'sine', i * 0.07);
+  }
+
+  icicleShatter() {
+    if (!this.ready) return;
+    this._noiseBurst(0.35, 0.3, 'highpass', 3500, 1, 6000);
+    [3100, 3900, 4700, 5600].forEach((f, i) => this._tone(f, f * 0.97, 0.2, 0.04, 'sine', i * 0.025));
+  }
+
+  crumbleShake() {
+    if (!this.ready) return;
+    this._noiseBurst(0.4, 0.18, 'lowpass', 400, 1, 250);
+  }
+
+  crumble() {
+    if (!this.ready) return;
+    this._noiseBurst(0.5, 0.4, 'lowpass', 900, 0.8, 200);
+    this._tone(90, 45, 0.4, 0.3, 'sine');
+  }
+
+  geyser(volume = 1) {
+    if (!this.ready || volume <= 0.02) return;
+    this._noiseBurst(1.0, 0.35 * volume, 'bandpass', 500, 0.6, 1800);
+    this._tone(70, 110, 0.8, 0.18 * volume, 'sawtooth');
+  }
+
+  rockImpact(volume = 1) {
+    if (!this.ready || volume <= 0.02) return;
+    this._tone(110, 40, 0.35, 0.6 * volume, 'sine');
+    this._noiseBurst(0.3, 0.4 * volume, 'lowpass', 1200, 0.8, 300);
+  }
+
+  vineGrab() {
+    if (!this.ready) return;
+    this._noiseBurst(0.15, 0.18, 'bandpass', 1400, 1.2, 800);
+    this._tone(180, 140, 0.18, 0.12, 'triangle');
+  }
+
+  vineRelease() {
+    if (!this.ready) return;
+    this._noiseBurst(0.2, 0.14, 'bandpass', 900, 1.5, 2800);
+  }
+
+  mushroom() {
+    if (!this.ready) return;
+    // « Boing » qui ondule
+    const c = this.ctx;
+    const t = c.currentTime;
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(140, t);
+    o.frequency.exponentialRampToValueAtTime(520, t + 0.28);
+    const lfo = c.createOscillator();
+    const lg = c.createGain();
+    lfo.frequency.value = 22;
+    lg.gain.value = 40;
+    lfo.connect(lg).connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+    o.connect(g).connect(this.master);
+    o.start(t);
+    lfo.start(t);
+    o.stop(t + 0.42);
+    lfo.stop(t + 0.42);
+  }
+
+  gravityFlip(up) {
+    if (!this.ready) return;
+    this._tone(up ? 220 : 880, up ? 880 : 220, 0.35, 0.12, 'sine');
+    this._tone(up ? 330 : 1320, up ? 1320 : 330, 0.35, 0.05, 'triangle', 0.04);
+  }
+
+  crateHit() {
+    if (!this.ready || !this._throttle('crate', 0.12)) return;
+    this._tone(95, 60, 0.18, 0.4, 'sine');
+    this._noiseBurst(0.12, 0.2, 'lowpass', 700);
   }
 
   /** Rebond du joueur : « pop » élastique, plus aigu et plus ample à chaque niveau de puissance. */
@@ -182,8 +302,8 @@ export class Sfx {
     this._tone(70, 95, 0.7, 0.2, 'sawtooth', 0.15);
   }
 
-  /** Souffle continu du ventilateur, tant que la balle est dedans. */
-  wind(on) {
+  /** Souffle continu du ventilateur (ou du vent de neige, plus grave), tant que la balle est dedans. */
+  wind(on, howl = false) {
     if (!this.ctx) return;
     if (on && !this._wind && this.ready) {
       const src = this.ctx.createBufferSource();
@@ -191,8 +311,8 @@ export class Sfx {
       src.loop = true;
       const f = this.ctx.createBiquadFilter();
       f.type = 'bandpass';
-      f.frequency.value = 900;
-      f.Q.value = 0.7;
+      f.frequency.value = howl ? 480 : 900;
+      f.Q.value = howl ? 1.6 : 0.7;
       const g = this.ctx.createGain();
       g.gain.setValueAtTime(0.0001, this.ctx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.12, this.ctx.currentTime + 0.25);
@@ -225,8 +345,19 @@ export class Sfx {
 
 
 
-  death() {
+  death(cause) {
     if (!this.ready) return;
+    if (cause === 'lava' || cause === 'fire') {
+      // Grésillement
+      this._noiseBurst(0.6, 0.45, 'highpass', 2500, 0.7, 6000);
+      this._tone(260, 60, 0.4, 0.3, 'sawtooth');
+      return;
+    }
+    if (cause === 'water') {
+      this._noiseBurst(0.45, 0.45, 'lowpass', 2400, 0.8, 400);
+      this._tone(400, 120, 0.25, 0.2, 'sine');
+      return;
+    }
     this._noiseBurst(0.3, 0.5, 'lowpass', 1800, 0.8, 300);
     this._tone(320, 70, 0.35, 0.4, 'sawtooth');
   }
@@ -239,8 +370,10 @@ export class Sfx {
     this._tone(1568, 1568, 0.8, 0.05, 'sine', 0.45);
   }
 
-
-
-
-
+  /** Monde débloqué : fanfare cristalline. */
+  unlockWorld() {
+    if (!this.ready) return;
+    [523, 659, 784, 1047, 1319].forEach((n, i) => this._tone(n, n, 0.5, 0.09, 'triangle', i * 0.08));
+    this._noiseBurst(0.6, 0.12, 'highpass', 5000, 1, 9000, 0.3);
+  }
 }

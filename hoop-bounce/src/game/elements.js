@@ -99,8 +99,9 @@ export class Fan {
 }
 
 /**
- * Téléporteur à sens unique : entrer dans le portail A fait ressortir par le portail B,
- * avec la même vitesse. B est neutralisé tant que la balle n'en est pas sortie.
+ * Téléporteur : entrer dans le portail A fait ressortir par le portail B, avec la même vitesse.
+ * Le portail de sortie est neutralisé tant que la balle n'en est pas sortie.
+ * `twoWay: true` (portails du monde Espace) : B mène aussi à A.
  */
 export class Teleporter {
   constructor(def) {
@@ -108,7 +109,9 @@ export class Teleporter {
     this.a = { x: def.a.x, y: def.a.y };
     this.b = { x: def.b.x, y: def.b.y };
     this.r = def.r ?? 0.75;
+    this.twoWay = !!def.twoWay;
     this.cooldown = 0;
+    this.exit = this.b;
     this.lastUse = -Infinity;
   }
 
@@ -118,5 +121,17 @@ export class Teleporter {
     const dx = x - this.a.x;
     const dy = y - this.a.y;
     return dx * dx + dy * dy < (this.r * 0.75) ** 2;
+  }
+
+  /** Portail de sortie si la balle vient d'entrer dans un portail, sinon null. */
+  destination(x, y) {
+    if (this.cooldown > 0) return null;
+    if (this.entered(x, y)) return this.b;
+    if (this.twoWay) {
+      const dx = x - this.b.x;
+      const dy = y - this.b.y;
+      if (dx * dx + dy * dy < (this.r * 0.75) ** 2) return this.a;
+    }
+    return null;
   }
 }

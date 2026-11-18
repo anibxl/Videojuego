@@ -57,6 +57,7 @@
       <div class="actions">
         <button class="primary" id="btn-resume"><svg viewBox="0 0 24 24"><path d="M8.5 5.8v12.4a1 1 0 0 0 1.5.86l10.1-6.2a1 1 0 0 0 0-1.72L10 4.94a1 1 0 0 0-1.5.86z"/></svg><span data-t="pause.resume"></span></button>
         <button class="secondary" id="btn-pause-restart"><span data-t="pause.restart"></span></button>
+        <a class="secondary" id="btn-pause-map" href="worlds.html"><span data-t="pause.map"></span></a>
         <a class="secondary" id="btn-pause-menu" href="index.html"><span data-t="pause.menu"></span></a>
       </div>
     </div>
@@ -74,13 +75,29 @@
       <p class="win-time"><span data-t="win.time"></span> <strong id="win-time"></strong> <em id="win-record" hidden></em></p>
       <div class="actions">
         <button class="primary" id="btn-next"><span data-t="win.next"></span><svg viewBox="0 0 24 24"><path d="M8.6 5.4 10 4l8 8-8 8-1.4-1.4 6.6-6.6z"/></svg></button>
-        <div class="actions-row">
+        <div class="actions-row three">
           <button class="secondary" id="btn-replay"><span data-t="win.replay"></span></button>
+          <a class="secondary" id="btn-win-map" href="worlds.html"><span data-t="win.map"></span></a>
           <a class="secondary" id="btn-win-menu" href="index.html"><span data-t="win.menu"></span></a>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Introduction d'un monde -->
+  <div class="intro hidden" id="intro" role="dialog" aria-labelledby="intro-name">
+    <div class="intro-inner">
+      <p class="intro-eyebrow" id="intro-world"></p>
+      <h1 class="intro-title" id="intro-name"></h1>
+      <p class="intro-tagline" id="intro-tagline"></p>
+      <ul class="intro-mechs" id="intro-mechs"></ul>
+      <p class="intro-level" id="intro-level"></p>
+      <p class="intro-tap" data-t="intro.tap"></p>
+    </div>
+  </div>
+
+  <!-- Transition entre deux mondes -->
+  <div class="wipe" id="wipe" aria-hidden="true"><div class="wipe-band"></div></div>
 
   <div class="rotate" id="rotate">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 2h-9A1.5 1.5 0 0 0 6 3.5v17A1.5 1.5 0 0 0 7.5 22h9a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 16.5 2zM12 20.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM16 17H8V4h8z"/></svg>

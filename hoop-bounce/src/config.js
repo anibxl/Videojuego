@@ -32,6 +32,16 @@ export const CONFIG = Object.freeze({
     door:       Object.freeze({ restitution: 0.5,  friction: 0.5 }),
     rim:        Object.freeze({ restitution: 0.55, friction: 0.35 }),
     backboard:  Object.freeze({ restitution: 0.6,  friction: 0.3 }),
+    // Matériaux des mondes. grip : adhérence pour rouler/freiner (1 = normal) ;
+    // rolling : résistance au roulement (1 = normal, la glace laisse filer le ballon).
+    crate:      Object.freeze({ restitution: 0.12, friction: 0.6 }),
+    ice:        Object.freeze({ restitution: 0.5,  friction: 0.1, grip: 0.22, rolling: 0.15 }),
+    snow:       Object.freeze({ restitution: 0.48, friction: 0.8 }),
+    rock:       Object.freeze({ restitution: 0.55, friction: 0.7 }),
+    wood:       Object.freeze({ restitution: 0.5,  friction: 0.75 }),
+    mushroom:   Object.freeze({ restitution: 0.3,  friction: 0.7 }),
+    log:        Object.freeze({ restitution: 0.45, friction: 0.7 }),
+    asteroid:   Object.freeze({ restitution: 0.6,  friction: 0.6 }),
   }),
 
   controls: Object.freeze({
@@ -61,6 +71,42 @@ export const CONFIG = Object.freeze({
   fans: Object.freeze({
     verticalDrag: 1.6,         // amortit la balle dans le souffle : elle flotte au lieu d'osciller
     horizontalDrag: 1.8,       // freine un peu la balle dans le souffle : elle se laisse « attraper »
+  }),
+
+  // ─── Éléments des mondes ───────────────────────────────────────────────────
+  crate: Object.freeze({
+    pushSpeed: 2.6,            // vitesse de la caisse poussée (u/s) : lourde, mais pas pénible
+    pushAccel: 9,
+    friction: 16,              // décélération au sol quand on ne pousse plus (u/s²)
+    impactTransfer: 0.22,      // part de la vitesse d'un choc transmise à la caisse
+    maxFall: 24,
+  }),
+  icicle: Object.freeze({
+    trigger: 1.4,              // distance horizontale qui déclenche la chute (u)
+    shakeTime: 0.45,           // tremblement d'avertissement (s)
+    regrowDelay: 2.6,
+    growTime: 0.7,
+  }),
+  crumble: Object.freeze({
+    delay: 0.5,                // temps entre le contact et l'effondrement (s)
+    respawn: 2.8,
+  }),
+  geyser: Object.freeze({
+    period: 3.2,
+    onTime: 1.1,
+    warnTime: 0.75,
+  }),
+  rockfall: Object.freeze({
+    period: 2.8,
+    warnTime: 0.85,
+    gravity: 26,
+  }),
+  vine: Object.freeze({
+    grabReach: 0.22,
+    minRope: 1.2,
+    regrabDelay: 0.45,
+    releaseBoost: 6.5,         // petit saut en lâchant la liane (u/s)
+    releaseCarry: 1.08,
   }),
 
   camera: Object.freeze({

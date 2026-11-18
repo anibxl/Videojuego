@@ -3,8 +3,9 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 17/11/2026 · **Version :** 0.5.0 · **Étape en cours :** validation du
-> gameplay principal par le porteur du projet, avant la création des mondes.
+> **Dernière mise à jour :** 18/11/2026 · **Version :** 0.6.0 · **Étape en cours :** validation des 5
+> mondes (identité, mécaniques, carte, intro, transitions) par le porteur du projet, avant la création des
+> 50 niveaux.
 
 ## Sommaire
 
@@ -107,7 +108,14 @@ compte **au moment du toucher** (aucune latence liée au relâcher).
   traversée de mur**, même très vite.
 - Gravité **34 u/s²** (franche : pas de flottement). Vitesse de chute max 28 u/s.
 - Rebond selon le matériau (restitution) : sol 0,60 · bloc 0,58 · mur 0,50 · porte 0,50 · cercle 0,55 · planche du panier 0,60 ·
-  planche traversable 0,55 · trampoline 0,30 (+ propulsion).
+  planche traversable 0,55 · trampoline 0,30 (+ propulsion) · glace 0,50 · neige 0,48 · roche 0,55 · bois 0,50 ·
+  caisse 0,12 · astéroïde 0,60.
+- **Adhérence** (`grip`) : la glace (0,22) réduit l'accélération et le freinage au sol ; sa faible résistance
+  au roulement laisse filer le ballon. Les rebonds gardent exactement leur hauteur sur toutes les surfaces.
+- **Gravité du niveau** : réglable par monde (`gravityScale`, `jumpScale`) ; l'Espace a une gravité ×0,55 et
+  des rebonds 25 % plus hauts (même rapport entre les 5 niveaux de puissance).
+- **Gravité inversée** (zones de l'Espace) : le ballon « tombe » vers le plafond ; REBOND le renvoie vers le
+  bas ; même dribble, même puissance, tout est simplement retourné.
 - Frottement de Coulomb couplé à la rotation (le ballon prend de l'effet, roule, « mord » les surfaces).
 - Inertie d'une sphère creuse (vrai ballon de basket : I = 2/3·m·r²).
 - Unités : 1 u ≈ 30 cm ; rayon du ballon 0,4 u (≈ 12 cm).
@@ -117,7 +125,8 @@ compte **au moment du toucher** (aucune latence liée au relâcher).
   d'au moins un rayon, dans l'axe du filet).
 - Un ballon qui entre puis **ressort par le haut** (rebond sur le cercle) ne compte pas.
 - Un ballon qui passe **par en dessous** du cercle ne compte pas.
-- **Pics** et **chute dans le vide** : le ballon éclate et le niveau recommence (étoiles comprises).
+- **Pics**, **chute dans le vide**, **lave**, **feu**, **pierres**, **stalactites**, **eau** : le ballon éclate
+  et le niveau recommence (étoiles comprises).
 - **Étoiles** : 3 par niveau, facultatives ; on garde le meilleur nombre obtenu.
 - Le chronomètre tourne pendant la partie ; le meilleur temps est enregistré par niveau.
 
@@ -136,8 +145,34 @@ compte **au moment du toucher** (aucune latence liée au relâcher).
 | **Téléporteur** | sens unique A → B ; conserve la vitesse ; la sortie se réarme quand on s'en éloigne | violet |
 | **Panier** | cercle (collision réelle), planche, poteau ; filet simulé qui réagit au ballon | orange + blanc |
 
-Le moteur gère aussi, sans qu'ils soient utilisés dans les niveaux actuels : **planches traversables par en
-dessous**, **scies mobiles**, **points de contrôle (drapeaux)**, **panier fixé au mur**.
+**Éléments des mondes (étape 7)** — chacun a sa règle, son dessin, ses sons, ses particules et un test :
+
+| Monde | Élément | Comportement |
+|---|---|---|
+| Ville | **Caisse à pousser** | bloc lourd soumis à la gravité ; le ballon la pousse en roulant contre elle (2,6 u/s) ; elle s'arrête dès qu'on ne pousse plus, bute contre les blocs, tombe dans les trous (pont) ; on peut monter dessus (marche) |
+| Neige | **Sol glissant / plateformes de glace** | adhérence ×0,22 : on met du temps à accélérer et à s'arrêter |
+| Neige | **Rampes de glace** | polygones inclinés : on les dévale très vite (impossible de les remonter) |
+| Neige | **Vent de neige** | zone de poussée horizontale en rafales (sensible surtout en l'air) |
+| Neige | **Stalactites** | tremblent 0,45 s quand le ballon passe dessous, tombent, tuent, se brisent au sol, repoussent |
+| Volcan | **Lave** | mortelle au contact ; surface ondulante, bulles, lueur |
+| Volcan | **Plateformes fragiles** | tremblent et se fissurent au contact, disparaissent après 0,5 s, reviennent après 2,8 s |
+| Volcan | **Geysers de feu** | jet périodique (3,2 s, dont 1,1 s de feu), fumée d'avertissement 0,75 s avant ; mortels pendant le jet |
+| Volcan | **Chutes de pierres** | rocher qui tombe toujours au même endroit, à intervalles réguliers ; ombre qui grandit au sol pour prévenir |
+| Volcan | **Ascenseurs de pierre** | plateformes verticales (dalle, chaînes, runes incandescentes) |
+| Forêt | **Lianes** | on les attrape en les touchant en l'air ; ◀ ▶ donnent de l'élan (balancement) ; REBOND lâche prise avec l'élan + un petit saut ; physiquement une corde (contrainte de distance) |
+| Forêt | **Plateformes en bois** | blocs et planches de bois (son « toc » creux) |
+| Forêt | **Champignons rebondissants** | propulsent à une hauteur propre à chaque champignon, sans toucher à la puissance |
+| Forêt | **Troncs qui roulent** | corps ronds mobiles, solides ; on saute par-dessus ou on monte dessus |
+| Forêt | **Branches mobiles** | planches traversables qui bougent (on monte par en dessous) |
+| Forêt | **Rivière** | eau mortelle (éclaboussure) |
+| Espace | **Gravité réduite** | réglage du monde (×0,55) : on flotte, on saute plus haut et plus loin |
+| Espace | **Astéroïdes mobiles** | obstacles ronds, solides, qui dérivent |
+| Espace | **Portails** | téléporteurs à double sens (A ⇄ B), vitesse conservée |
+| Espace | **Plateformes flottantes** | flottent doucement (réacteurs bleus) |
+| Espace | **Gravité inversée** | zones où la gravité s'inverse : on roule au plafond au-dessus des pièges |
+
+Le moteur gère aussi, sans qu'ils soient utilisés dans les niveaux actuels : **scies mobiles**, **points de
+contrôle (drapeaux)**, **panier fixé au mur**.
 
 ### Objets
 
@@ -147,9 +182,8 @@ dessous**, **scies mobiles**, **points de contrôle (drapeaux)**, **panier fixé
 ### Futurs ajouts (gameplay)
 
 Voir aussi [Idées futures](#8-idées-futures).
-- Mondes et nouveaux niveaux (en attente de validation du gameplay).
-- Nouveaux éléments : planches traversables, scies, plateformes verticales, surfaces glissantes / collantes,
-  aimants, interrupteurs à minuterie, paniers mobiles.
+- Les 50 niveaux des 5 mondes (en attente de validation des mondes).
+- Nouveaux éléments : scies, surfaces collantes, aimants, interrupteurs à minuterie, paniers mobiles.
 - Modes : Trickshot, Endless, Défis quotidiens, Multijoueur.
 - Skins de ballons et traînées.
 
@@ -175,7 +209,8 @@ Voir aussi [Idées futures](#8-idées-futures).
 ```
 hoop-bounce/
 ├── index.html              Menu principal (point d'entrée de l'application)
-├── play.html               Écran de jeu (?level=N pour ouvrir un niveau précis)
+├── worlds.html             Carte des mondes (?unlock=all : tout ouvert, pour tester)
+├── play.html               Écran de jeu (?world=snow&level=1, &intro=1 pour l'introduction du monde)
 ├── PROJECT.md              Ce document (documentation officielle, mémoire du projet)
 ├── README.md               Guide rapide : lancer, tester, régler
 ├── package.json            Version et scripts (npm start, npm test)
@@ -187,16 +222,19 @@ hoop-bounce/
 ├── css/
 │   ├── fonts.css           Déclaration des polices (@font-face)
 │   ├── menu.css            Styles du menu (accueil, pages, fenêtres, animations)
-│   └── style.css           Styles de l'écran de jeu (HUD, commandes, pause, victoire, tutoriel)
+│   ├── worlds.css          Styles de la carte des mondes
+│   └── style.css           Styles de l'écran de jeu (HUD, commandes, pause, victoire, tutoriel, intro de monde)
 ├── src/
 │   ├── config.js           ★ TOUS les réglages : physique, matériaux, commandes, caméra, sensations
 │   ├── main.js             Écran de jeu : assemble tout, niveaux, pause, victoire, progression
 │   ├── core/               Briques de base, sans dépendance au navigateur
 │   ├── physics/            Moteur physique (sans navigateur)
 │   ├── game/               Règles du jeu (sans navigateur)
-│   │   └── levels/         Les niveaux (données)
-│   ├── render/             Rendu Canvas du jeu
-│   ├── audio/              Sons du jeu
+│   │   ├── worlds.js       ★ Les 5 mondes (identité, mécaniques, réglages, niveaux)
+│   │   └── levels/         Les niveaux par monde (données) + README du format
+│   ├── render/             Rendu Canvas du jeu (thèmes des mondes)
+│   ├── audio/              Sons et musique du jeu
+│   ├── worlds/             Carte des mondes (illustrations animées, déblocage, choix du niveau)
 │   ├── input/              Entrées tactiles et clavier du jeu
 │   ├── platform/           Fonctions propres à l'appareil (vibrations)
 │   ├── menu/               Tout le menu principal
@@ -213,9 +251,10 @@ hoop-bounce/
 | `src/core/` | Briques génériques : boucle à pas fixe, maths, bus d'événements. |
 | `src/physics/` | Corps du ballon, formes de collision, monde physique, éléments mobiles. Aucune dépendance au navigateur : testable dans Node. |
 | `src/game/` | Règles du jeu : contrôleur (dribble, puissance), éléments, pièges, panier, construction d'un niveau, progression, textes. Sans navigateur. |
-| `src/game/levels/` | Les niveaux, décrits comme de simples données. |
-| `src/render/` | Tout ce qui se dessine pendant la partie : décor, caméra, ballon, effets. |
-| `src/audio/` | Effets sonores du jeu (synthétisés). |
+| `src/game/levels/` | Les niveaux, décrits comme de simples données, un fichier par monde ; `README.md` décrit le format complet. |
+| `src/render/` | Tout ce qui se dessine pendant la partie : décor de chaque monde, surfaces, éléments, caméra, ballon, effets. |
+| `src/audio/` | Effets sonores et musique des mondes (synthétisés). |
+| `src/worlds/` | Carte des mondes : cartes animées, cadenas, animation de déblocage, choix du niveau. |
 | `src/input/` | Zones tactiles et clavier, traduits en commandes. |
 | `src/platform/` | Vibrations (point unique à remplacer par Capacitor). |
 | `src/menu/` | Menu principal : décor vivant, pages, sons, musique, icônes, textes, boutique. |
@@ -233,7 +272,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | Fichier | Rôle |
 |---|---|
 | `config.js` | Tous les réglages chiffrés, commentés (gravité, hauteurs de rebond, accélérations, matériaux, caméra, ressentis…). C'est ici qu'on règle les sensations. |
-| `main.js` | Écran de jeu : crée la partie, le rendu, la caméra, le son ; branche les événements (effets, sons, vibrations) ; HUD, pause, victoire, tutoriel, enchaînement des niveaux, sauvegarde de la progression. |
+| `main.js` | Écran de jeu : crée la partie, le rendu, la caméra, le son, la musique ; branche les événements (effets, sons, vibrations, y compris ceux des mondes) ; HUD (couleur du monde), pause, victoire (fin de monde, déblocage), tutoriel, introduction des mondes, transition entre mondes, enchaînement des niveaux, sauvegarde de la progression. |
 
 **`src/core/`**
 
@@ -247,7 +286,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 
 | Fichier | Rôle |
 |---|---|
-| `ball-body.js` | Le ballon : intégration, sous-pas adaptatifs, résolution des contacts (rebond, frottement, rotation), surfaces mobiles, planches traversables, détection du sol. |
+| `ball-body.js` | Le ballon : intégration, sous-pas adaptatifs, résolution des contacts (rebond, frottement, rotation), surfaces mobiles, planches traversables, détection du sol, sens de la gravité (inversée), matériau du sol (glace), formes désactivées (plateformes effondrées). |
 | `colliders.js` | Formes de collision : une seule primitive, la « capsule » (segment épaissi) ; cercles, polygones, planches traversables. |
 | `world.js` | Le monde : liste des formes, éléments mobiles, recherche de la surface sous un point (ombre du ballon). |
 | `mover.js` | Trajets aller-retour en douceur et plateformes mobiles (position et vitesse exactes à chaque instant). |
@@ -256,23 +295,27 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 
 | Fichier | Rôle |
 |---|---|
-| `game.js` | Une partie : états (en jeu / chute / victoire), pas de simulation, contacts, trampolines, interrupteurs, ventilateurs, téléporteurs, étoiles, pièges, panier ; `load()` pour changer de niveau. |
-| `ball-controller.js` | Les commandes : déplacement avec inertie, dribble (rebond au sol, renvoi vers le sol en l'air), puissance à 5 niveaux et son retour quand le ballon reste au sol. |
+| `game.js` | Une partie : états (en jeu / chute / victoire), pas de simulation, contacts, trampolines, champignons, interrupteurs, ventilateurs, vent, zones de gravité, caisses, lianes, plateformes fragiles, stalactites, geysers, chutes de pierres, téléporteurs, étoiles, pièges, panier ; `load()` pour changer de niveau. |
+| `ball-controller.js` | Les commandes : déplacement avec inertie (selon l'adhérence du sol), dribble (rebond au sol, renvoi vers le sol en l'air, dans le sens de la gravité), puissance à 5 niveaux et son retour quand le ballon reste au sol ; gravité du niveau. |
 | `level.js` | Construit un niveau jouable (formes physiques, éléments, panier) à partir de ses données. |
-| `levels/index.js` | Les 6 niveaux (données) + la documentation du format. |
-| `elements.js` | Porte coulissante, ventilateur, téléporteur. |
+| `worlds.js` | Les 5 mondes : identité (nom, accroche, couleur), mécaniques présentées, réglages physiques, niveaux ; liste à plat `LEVELS`. |
+| `levels/city.js` … `space.js` | Les niveaux de chaque monde (données). `common.js` : briques communes ; `index.js` : compatibilité ; `README.md` : format. |
+| `elements.js` | Porte coulissante, ventilateur, téléporteur (sens unique ou double sens). |
+| `world-elements.js` | Éléments des mondes : caisse, vent, stalactite, lave/eau, plateforme fragile, geyser, chute de pierres, liane, zone de gravité. |
 | `hazards.js` | Tests de contact avec les pics et les scies (avec marge de tolérance). |
 | `hoop.js` | Le panier : formes de collision, détection d'un panier valide (en deux temps), filet. |
 | `net.js` | Filet simulé (Verlet + contraintes de cordes), qui réagit au ballon. |
-| `progress.js` | Progression enregistrée sur l'appareil : niveaux débloqués, étoiles, meilleurs temps. |
+| `progress.js` | Progression enregistrée sur l'appareil : niveaux terminés, étoiles, meilleurs temps, mondes débloqués (et déjà annoncés), statistiques par monde ; conversion de l'ancien format. |
 | `i18n.js` | Textes de l'écran de jeu en français, anglais et espagnol. |
 
 **`src/render/`**
 
 | Fichier | Rôle |
 |---|---|
-| `renderer.js` | Dessine une image : décor, éléments, panier (arrière puis avant pour que le ballon passe « dedans »), ballon, effets, jauge, débogage. |
-| `background.js` | Décor de fond : nuit bleue, lumières floues, silhouettes de ville en parallaxe (dégradés précalculés). |
+| `renderer.js` | Dessine une image : décor du monde, éléments, panier (arrière puis avant pour que le ballon passe « dedans »), ballon, effets, particules d'ambiance de premier plan, vignette teintée, jauge, débogage. |
+| `themes.js` | Identité visuelle des 5 mondes : ciel, astres, plans de décor, particules, lumière, couleurs des surfaces. |
+| `background.js` | Décor d'un monde : ciel précalculé (dégradés, nébuleuses, étoiles, soleil, lune, Terre, planète), plans en parallaxe (immeubles avec fenêtres, graffitis et lampadaires ; montagnes enneigées et sapins ; volcans en éruption et roches ; arbres, champignons et rivière ; astéroïdes et cratères), brume, rayons de lumière, particules d'ambiance. |
+| `world-draw.js` | Dessin des surfaces selon le monde (terrain, neige, glace, roche incandescente, herbe, bois, néon) et des éléments des mondes. |
 | `camera.js` | Caméra : lissage, anticipation dans le sens de la course, cadrage qui garde le sol au-dessus des commandes, secousses, zoom et cadrage sur le panier à la victoire. |
 | `ball-sprite.js` | Textures du ballon générées au démarrage (cuir et coutures qui tournent, reflet fixe). |
 | `ball-visual.js` | Déformations du ballon (écrasement à l'impact, étirement en vol, détente au rebond, étirement au dribble). |
@@ -282,7 +325,10 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 
 | Fichier | Rôle |
 |---|---|
-| `audio/sfx.js` | Sons du jeu synthétisés : impacts selon la surface, rebond (plus aigu à chaque niveau), dribble, trampoline, téléporteur, interrupteur, porte, vent continu, étoiles, chute, victoire. |
+| `audio/sfx.js` | Sons du jeu synthétisés : impacts selon la surface (glace, neige, bois, roche, astéroïde, écho dans l'espace), rebond, dribble, trampoline, téléporteur, interrupteur, porte, vent continu (ventilateur, vent de neige), étoiles, chute (grésillement dans la lave, éclaboussure dans l'eau), victoire, monde débloqué, et les sons des mécaniques (stalactites, plateformes fragiles, geysers, pierres, lianes, champignons, gravité, caisse). |
+| `audio/music.js` | Musique et ambiance de chaque monde, synthétisées (séquenceur à programmation anticipée, fondu enchaîné entre mondes, musique baissée en pause et à la victoire). |
+| `worlds/main.js` | Carte des mondes : cartes, chemin, pagination, déblocage animé, choix du niveau, navigation. |
+| `worlds/art.js` | Illustration animée de chaque monde (diorama dessiné avec le vrai décor et les vrais éléments du monde). |
 | `input/input.js` | Zones tactiles (moitié gauche = direction, moitié droite = rebond), multi-doigts, clavier. |
 | `platform/haptics.js` | Vibrations (API Vibration ; à remplacer par Capacitor Haptics). |
 
@@ -311,20 +357,24 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 |---|---|
 | `tests/physics.test.mjs` | Moteur physique : chute libre, rebonds, repos sans tremblement, aucune traversée, roulement, déterminisme, planches traversables, surfaces mobiles. |
 | `tests/game.test.mjs` | Commandes (dribble, puissance, inertie), éléments (trampoline, pics, ventilateur, porte, téléporteur, plateforme, vide), panier. |
-| `tests/progress.test.mjs` | Progression et textes de jeu dans les trois langues. |
+| `tests/mechanics.test.mjs` | Les 21 mécaniques des mondes (caisse, glace, rampe, vent, stalactite, lave, plateforme fragile, geyser, pierres, ascenseur, liane, champignon, tronc, branche, gravité réduite, portails, astéroïde, gravité inversée). |
+| `tests/progress.test.mjs` | Progression (déblocage des mondes, statistiques, animation annoncée une fois, conversion de l'ancien format), mondes, textes de jeu dans les trois langues. |
 | `tests/menu.test.mjs` | Textes du menu dans les trois langues, réglages. |
 | `tests/routes.test.mjs` | Chaque passage de chaque niveau reste faisable (solutions enregistrées + solutions expertes). |
 | `tests/fixtures/test-yard.js` | Terrain d'essai pour les tests de mécanique (indépendant des niveaux). |
 | `tests/fixtures/routes.json` | Solutions enregistrées des passages (générées par l'outil). |
-| `tools/route-check.mjs` | Outil de level design : essaie des centaines de séquences de commandes par passage et mesure la difficulté. |
+| `tools/route-check.mjs` | Outil de level design : essaie des centaines de séquences de commandes par passage et mesure la difficulté ; « pilote » pour écrire les solutions expertes (rouler jusqu'à, charger, sauter, viser). |
 
 ### Ajouter un niveau ou un élément
 
-- **Niveau** : l'ajouter dans `src/game/levels/index.js` (format documenté en tête du fichier), ajouter son nom
-  et ses aides dans `src/game/i18n.js`, ajouter ses passages dans `tools/route-check.mjs`, puis
-  `node tools/route-check.mjs 400 --save`.
-- **Élément** : ses données dans le niveau, sa construction dans `game/level.js`, sa règle dans `game/game.js`,
-  son dessin dans `render/renderer.js`, un test dans `tests/game.test.mjs` (terrain d'essai).
+- **Niveau** : l'ajouter dans le fichier de son monde (`src/game/levels/<monde>.js`, format complet dans
+  `src/game/levels/README.md`), ajouter son nom et ses aides dans `src/game/i18n.js`, ajouter ses passages dans
+  `tools/route-check.mjs`, puis `node tools/route-check.mjs 400 --save`.
+- **Élément** : ses données dans le niveau, sa construction dans `game/level.js`, sa logique dans
+  `game/world-elements.js` et `game/game.js`, son dessin dans `render/world-draw.js`, ses sons dans
+  `audio/sfx.js`, ses effets dans `main.js`, un test dans `tests/mechanics.test.mjs`.
+- **Monde** : son entrée dans `game/worlds.js`, son thème dans `render/themes.js` (et ses formes dans
+  `background.js` si besoin), son morceau dans `audio/music.js`, sa scène dans `worlds/art.js`, ses textes.
 
 ---
 
@@ -348,7 +398,7 @@ et recule légèrement quand une page est ouverte.
 
 | Page | Contenu |
 |---|---|
-| Mondes | Page d'attente : chemin décoratif avec nœuds verrouillés, « De nouveaux terrains arrivent ». |
+| Mondes | Page d'attente : chemin décoratif avec nœuds verrouillés, « De nouveaux terrains arrivent ». La carte des mondes (`worlds.html`) existe ; relier cette tuile à la carte demande une petite modification du menu, **en attente d'accord**. |
 | Modes | 4 cartes verrouillées « À venir » : Trickshot, Endless, Défis quotidiens, Multijoueur. Toucher une carte : tremblement + message. |
 | Magasin | Onglets À la une / Ballons / Traînées / Pièces, bannière « La boutique ouvre bientôt », emplacements d'articles « Bientôt » (catalogue vide prêt dans `shop-data.js`). |
 | Collection | Page vide : filtres (Tous, Classiques, Rares, Légendaires), compteur, emplacements en pointillés. |
@@ -356,18 +406,42 @@ et recule légèrement quand une page est ouverte.
 
 ### Écran de jeu (`play.html`)
 
-- **HUD discret** : niveau (« NIVEAU 2 · Le mur ») et étoiles en haut à gauche ; recommencer et pause en haut
-  à droite.
+- **HUD discret** : monde-niveau dans la couleur du monde (« 2-1 · Premières glissades ») et étoiles en haut à
+  gauche ; recommencer et pause en haut à droite.
 - **Commandes** : ◀ ▶ (bas gauche), grand bouton de rebond (bas droite) entouré de l'**anneau de puissance**
   (5 segments : blanc, ambre au niveau 4, or au niveau 5 ; le dernier cran clignote avant de redescendre).
 - **Jauge au-dessus du ballon** : 5 barres croissantes (même code couleur), visible dès que la puissance monte.
-- **Pause** : Reprendre, Recommencer, Menu principal. Pause automatique quand l'application passe en arrière-plan.
+- **Pause** : Reprendre, Recommencer, Carte des mondes, Menu principal. Pause automatique quand l'application
+  passe en arrière-plan.
 - **Victoire** : niveau, « Panier ! », étoiles qui tombent une à une, temps (et « Nouveau record »), boutons
-  Niveau suivant / Rejouer / Menu. Après le dernier niveau : « Bravo ! » et un message.
+  Niveau suivant / Rejouer / Carte / Menu. Dernier niveau d'un monde : « Monde terminé ! », « Nouveau monde
+  débloqué : … » (fanfare) et **Monde suivant**. Après le tout dernier niveau : « Bravo ! » et un message.
+- **Introduction d'un monde** : sur le décor du monde (la partie attend), « MONDE 2 », le nom en très grand
+  (dégradé vers la couleur du monde), l'accroche, les 5 mécaniques en pastilles qui apparaissent en cascade,
+  le niveau, « Touche pour jouer » (ou automatiquement après ~4 s). Affichée en arrivant depuis la carte, au
+  premier niveau d'un monde, et après chaque transition entre mondes.
 - **Tutoriel** (premier lancement du niveau 1) : étiquettes orange au-dessus des boutons (« Rouler »,
   « Rebondir · Appuie plusieurs fois ») qui disparaissent dès qu'on a roulé et rebondi 3 fois.
 - **Textes d'aide** peints sur le décor dans chaque niveau.
 - Message « Tourne ton téléphone » en portrait sur téléphone.
+
+### Carte des mondes (`worlds.html`)
+
+- **En-tête** : retour, « MONDES », total d'étoiles, **barre de progression** et **pourcentage** global.
+- **5 cartes** qui défilent à l'horizontale (aimantées, monde au centre agrandi et entouré de sa couleur ;
+  molette, flèches du clavier). Chaque carte : **illustration animée** du monde (son vrai décor, ses éléments
+  emblématiques et le ballon qui rebondit ; seul le monde au centre est animé), numéro, nom, accroche, barre
+  de progression et pourcentage, étoiles obtenues, niveaux terminés / disponibles / prévus, badge « Terminé ».
+- **Monde verrouillé** : illustration éteinte, **cadenas**, « Termine le monde N pour l'ouvrir » ; le toucher
+  fait trembler le cadenas (message).
+- **Animation de déblocage** (une seule fois par monde) : la carte vient au centre, le cadenas tremble, s'ouvre,
+  grossit et s'envole ; ondes et étincelles de la couleur du monde ; le monde reprend ses couleurs ; badge
+  « Monde débloqué ! » ; fanfare et vibration.
+- **Chemin** pointillé qui relie les mondes ; la partie parcourue est colorée. Pagination en points.
+- **Choix du niveau** (panneau) : 10 emplacements par monde : niveaux terminés (étoiles), prochain niveau
+  (pulsation), verrouillés, « Bientôt » pour ceux qui ne sont pas encore créés. Lancer un niveau : un pan de
+  la couleur du monde balaie l'écran, puis l'introduction du monde.
+- `?unlock=all` : tout est ouvert (pour tester), sans rien enregistrer en plus.
 
 ### Boutons
 
@@ -389,6 +463,9 @@ et recule légèrement quand une page est ouverte.
 - **Contrôles segmentés** : indicateur qui glisse sous l'option choisie.
 - **Menu → jeu** : fondu au noir, puis fondu depuis le noir à l'arrivée.
 - **Niveau suivant** : fondu rapide au noir.
+- **Changement de monde** : un grand pan de la couleur du monde suivant balaie l'écran en biais ; le nouveau
+  monde apparaît derrière, puis son introduction ; la musique passe d'un morceau à l'autre en fondu enchaîné.
+- **Carte → niveau** : balayage de la couleur du monde puis fondu ; **jeu → carte / menu** : fondu au noir.
 - **Victoire** : ralenti (×0,3 pendant 0,9 s), zoom de caméra vers le panier, secousse, carte qui monte, étoiles
   qui tombent une à une (son ascendant).
 - **Étoiles du HUD** : apparition avec rebond.
@@ -406,6 +483,15 @@ et recule légèrement quand une page est ouverte.
 - Étoile ramassée : scintillements, onde dorée.
 - Chute : le ballon éclate en morceaux, flash rouge, secousse.
 - Panier : filet animé, confettis, « SWISH ! » ou « PANIER ! ».
+- **Mondes** : chaque monde a son ciel, sa lumière (vignette teintée), ses plans de décor animés, ses particules
+  d'ambiance (poussières lumineuses du soir, flocons, braises et cendres, lucioles et feuilles, poussière
+  d'étoiles), dont une partie passe devant le niveau ; poussière d'impact à la couleur du sol (neige blanche).
+- **Éléments des mondes** : caisse (bois, pochoir), vent de neige (filets et flocons emportés), stalactites
+  (tremblement, éclats), lave (vagues, bulles, lueur), plateformes fragiles (fissures qui s'élargissent, contour
+  fantôme), geysers (fumée puis colonne de feu en trois couches), chutes de pierres (ombre, graviers, rocher qui
+  tourne, débris), ascenseurs de pierre (runes), lianes (feuilles, boucle lumineuse), champignons (écrasement,
+  onde), troncs (cernes qui tournent), branches feuillues, rivière, plateformes flottantes (réacteurs),
+  astéroïdes, zones de gravité (chevrons qui montent), portails.
 
 ---
 
@@ -413,10 +499,26 @@ et recule légèrement quand une page est ouverte.
 
 ### Les mondes
 
-🔴 **Pas encore créés** (en attente de validation du gameplay). Les 6 niveaux actuels formeront probablement
-le premier monde. La page « Mondes » du menu est une page d'attente.
+| # | Monde | Accroche | Couleur | Ambiance | Mécaniques | Niveaux |
+|---|---|---|---|---|---|---|
+| 1 | **Ville** (tutoriel) | Le terrain du coucher de soleil | orange | coucher de soleil, immeubles et fenêtres, graffitis, lampadaires modernes, lumières floues, terrain propre ; lo-fi hip-hop | plateformes, plateformes mobiles, trampolines, ventilateurs, caisse à pousser | 7 / 10 |
+| 2 | **Neige** | Les sommets gelés | bleu glacier | montagnes enneigées, sapins, flocons animés, brume légère, lune, lumière froide ; boîte à musique et nappes | sol glissant, plateformes de glace, vent de neige, stalactites, rampes de glace | 1 / 10 |
+| 3 | **Volcan** | Au cœur de la lave | orange feu | volcans en éruption au loin, roches fissurées, cendres, braises rouges, lumière orange ; tambours graves | lave mortelle, plateformes fragiles, geysers de feu, chutes de pierres, ascenseurs de pierre | 1 / 10 |
+| 4 | **Forêt** | Les bois enchantés | vert | grands arbres, rayons de lumière, champignons, rivière, lucioles, feuilles ; marimba et flûte, reposant | lianes, plateformes en bois, champignons rebondissants, troncs qui roulent, branches mobiles | 1 / 10 |
+| 5 | **Espace** | Au-delà des étoiles | violet | nébuleuses, étoiles qui scintillent, planète à anneaux, la Terre au loin, astéroïdes, cratères ; nappes de synthé | gravité réduite, astéroïdes mobiles, portails, plateformes flottantes, gravité inversée | 1 / 10 |
+
+- **50 niveaux prévus** (10 par monde). Pour l'instant : les 7 niveaux de la Ville et **un niveau de
+  démonstration** par monde, qui présente toutes ses mécaniques. Les autres emplacements s'affichent
+  « Bientôt » sur la carte. **Les 50 niveaux seront créés après validation des mondes.**
+- **Déblocage automatique** : un monde s'ouvre quand **tous les niveaux disponibles** du monde précédent sont
+  terminés (la Ville est ouverte dès le départ). Dans un monde, chaque niveau terminé ouvre le suivant.
+- La première fois que la carte montre un monde ouvert, elle joue l'**animation de déblocage** (une seule fois).
+- Pourcentage d'un monde = niveaux terminés / niveaux disponibles ; étoiles = obtenues / 3 × niveaux
+  disponibles ; le total de l'en-tête additionne les 5 mondes.
 
 ### Les niveaux
+
+**Monde 1 — Ville**
 
 | # | Identifiant | Nom | Ce qu'il apprend | Puissance nécessaire pour le panier |
 |---|---|---|---|---|
@@ -426,17 +528,29 @@ le premier monde. La page « Mondes » du menu est une page d'attente.
 | 4 | `moving` | Plateforme mobile | traverser le vide sur une plateforme | 4 |
 | 5 | `updraft` | Le souffle | ventilateur jusqu'à une terrasse, panier en hauteur | ventilateur, puis 3–4 |
 | 6 | `final` | Grand final | interrupteur, porte, téléporteur | 3 pour l'interrupteur, 4 pour le panier |
+| 7 | `city-crate` | La caisse | pousser la caisse contre la terrasse (trop haute) et s'en servir de marche | 5 depuis la caisse, puis 3–4 |
 
-- Le joueur commence au niveau 1 ; terminer un niveau débloque le suivant.
-- **JOUER** reprend au premier niveau non terminé (après le dernier, on reprend au dernier).
-- Lien direct : `play.html?level=N`.
+**Niveaux de démonstration des autres mondes** (un par monde, toutes les mécaniques du monde) :
+
+| Monde | Identifiant | Nom | Parcours |
+|---|---|---|---|
+| Neige | `snow-1` | Premières glissades | butte enneigée (puissance 3–4) → rampe de glace → lac gelé sous deux stalactites → saut de la crevasse lancé à pleine vitesse → vent de face, plateformes de glace (étoile) → panier |
+| Volcan | `volcano-1` | Terre de feu | bassin de lave avec une plateforme fragile au milieu → deux geysers décalés → ascenseur de pierre jusqu'à la falaise → deux chutes de pierres → panier en hauteur |
+| Forêt | `forest-1` | Sous les feuillages | champignon (étoile en hauteur) → rivière franchie de liane en liane → tronc qui roule → deux branches mobiles → panier sur la cabane |
+| Espace | `space-1` | Apesanteur | gravité réduite : trois plateformes flottantes au-dessus du vide (un astéroïde passe entre elles) → paroi franchie par les portails → zone de gravité inversée au-dessus d'un champ de pics → panier |
+
+- Chaque passage de chaque niveau est vérifié par l'outil (`tools/route-check.mjs`) : solutions aléatoires et
+  solutions expertes scriptées, rejouées par les tests.
+- **JOUER** (menu) reprend au premier niveau ouvert non terminé, tous mondes confondus.
+- Liens directs : `play.html?world=snow&level=1` (ou `play.html?level=N`, N dans la liste de tous les niveaux).
 
 ### Le système d'étoiles
 
 - 3 étoiles placées dans chaque niveau (souvent sur la trajectoire idéale, parfois à un endroit risqué).
 - Elles sont facultatives ; une chute les remet en jeu (le niveau recommence).
 - On conserve le **meilleur nombre d'étoiles** par niveau, ainsi que le **meilleur temps**.
-- Usage futur prévu (à valider) : débloquer mondes et modes à partir d'un total d'étoiles.
+- Les étoiles sont comptées par monde et au total sur la carte des mondes.
+- Usage futur possible (à valider) : débloquer des modes ou des skins à partir d'un total d'étoiles.
 
 ### Le déblocage des modes
 
@@ -480,21 +594,28 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Animations, transitions, sons, musique, vibrations
 - ✅ 3 langues, réglages enregistrés, polices embarquées
 
-### Phase 4 — Gameplay principal 🟡
+### Phase 4 — Gameplay principal ✅
 - ✅ Dribble et puissance à 5 niveaux
 - ✅ Retour de la puissance quand le ballon reste au sol
 - ✅ Physique plus franche (gravité, accélération)
 - ✅ Panier validé seulement quand le ballon est entièrement passé
 - ✅ 6 niveaux courts avec 3 étoiles chacun
 - ✅ HUD, pause, victoire, tutoriel, progression
-- 🟡 Validation par le porteur du projet (ressenti, difficulté)
-- 🔴 Réglages fins après retours
+- ✅ Validation par le porteur du projet (passage à l'étape des mondes)
+- 🔴 Réglages fins après retours sur appareil
 
-### Phase 5 — Mondes 🔴
-- 🔴 Définir les mondes (thèmes, nombre de niveaux)
-- 🔴 Écran de sélection des mondes et des niveaux
-- 🔴 Nouveaux niveaux et nouveaux éléments
-- 🔴 Thème visuel propre à chaque monde
+### Phase 5 — Mondes 🟡
+- ✅ 5 mondes définis : Ville, Neige, Volcan, Forêt, Espace (10 niveaux prévus chacun)
+- ✅ Identité de chaque monde : décor, couleurs, ambiance, lumière, particules, effets, animations
+- ✅ Musique et ambiance sonore de chaque monde, sons des mécaniques
+- ✅ 21 mécaniques propres aux mondes (moteur, rendu, sons, tests)
+- ✅ Carte des mondes : illustrations, cadenas, déblocage animé, barre de progression, étoiles, pourcentage
+- ✅ Choix du niveau, écran d'introduction de chaque monde, transition entre mondes
+- ✅ Déblocage automatique du monde suivant
+- ✅ Un niveau de démonstration par nouveau monde (+ « La caisse » dans la Ville)
+- 🟡 Validation des mondes par le porteur du projet
+- 🔴 Les 50 niveaux (après validation)
+- 🔴 Relier la tuile « Mondes » du menu à la carte (en attente d'accord : modification du menu)
 
 ### Phase 6 — Économie, magasin et skins 🔴
 - 🔴 Gagner des pièces (niveaux, étoiles, swish)
@@ -533,11 +654,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ 6 niveaux, étoiles, progression, records
 - ✅ HUD, pause (manuelle et automatique), victoire, tutoriel
 - ✅ Réglages du menu appliqués dans le jeu (volume des effets, vibrations, langue)
-- ✅ 57 tests automatiques + outil de vérification des niveaux
-- ✅ Documentation (README, PROJECT.md)
+- ✅ 5 mondes : thèmes, musiques, ambiances, 21 mécaniques, carte des mondes, intro, transitions, déblocage
+- ✅ Musique pendant la partie (une par monde) ; qualité graphique appliquée aux particules du jeu
+- ✅ 101 tests automatiques + outil de vérification des niveaux (avec pilote pour les solutions expertes)
+- ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur le gameplay principal
+- 🟡 Attente des retours du porteur du projet sur les mondes
 
 ### À faire — court terme 🔴
 - 🔴 Ajuster le ressenti (gravité, hauteurs, dribble, inertie) selon les retours
@@ -546,13 +669,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   modification du menu, en attente d'accord
 - 🔴 Faire apparaître le panier du niveau 5 dès le départ (il est hors de l'écran au début)
 - 🔴 Éviter que l'étiquette « Rebondir » du tutoriel recouvre le panier du niveau 1
-- 🔴 Musique pendant la partie (le réglage « Musique » ne concerne que le menu pour l'instant)
-- 🔴 Appliquer la qualité graphique choisie au jeu (elle ne concerne que le décor du menu pour l'instant)
+- 🔴 Créer les 50 niveaux (10 par monde) après validation des mondes, en réutilisant et en combinant les
+  mécaniques ; ajouter leurs passages à l'outil de vérification
+- 🔴 Relier la tuile « Mondes » du menu à `worlds.html` (petite modification du menu, en attente d'accord)
 
 ### À faire — moyen terme 🔴
-- 🔴 Mondes, écran de sélection des niveaux, niveaux supplémentaires
 - 🔴 Pièces, skins, magasin, collection
-- 🔴 Nouveaux éléments (planches traversables, scies, plateformes verticales…)
+- 🔴 Nouveaux éléments (scies, surfaces collantes, aimants…)
 - 🔴 Accessibilité : taille des boutons réglable, inversion gauche / droite pour les gauchers
 
 ### À faire — long terme 🔴
@@ -565,10 +688,10 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 8. Idées futures
 
 **Gameplay**
-- Planches traversables par en dessous (déjà gérées par le moteur).
 - Scies mobiles (déjà gérées par le moteur).
-- Plateformes verticales, plateformes qui s'effondrent, ascenseurs.
-- Surfaces : glace (glisse), boue (colle), caoutchouc (super-rebond).
+- Surfaces : boue (colle), caoutchouc (super-rebond).
+- Combinaisons de mécaniques entre mondes (glace + vent, lianes au-dessus de la lave…), niveaux bonus.
+- Boss de fin de monde (un panier qui bouge, un parcours chronométré).
 - Aimants qui attirent ou repoussent le ballon.
 - Interrupteurs à minuterie, portes multiples, leviers.
 - Paniers mobiles, paniers multiples (marquer dans l'ordre).
@@ -588,7 +711,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - Filets et paniers personnalisés.
 
 **Progression et social**
-- Mondes thématiques (gymnase, terrain de rue, plage, toits, espace…).
+- Mondes supplémentaires (plage, gymnase, toits, désert…).
 - Succès / trophées, classements Google Play Games.
 - Partage de replays en vidéo courte.
 
@@ -611,11 +734,18 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 **Rendu du jeu**
 - Seuls les éléments visibles à l'écran sont dessinés.
 - Textures du ballon, des étoiles et des halos générées une fois au démarrage.
-- Ciel et vignette **précalculés en basse résolution** puis plaqués en une opération (au lieu de grands
-  dégradés recalculés à chaque image).
+- Ciel (dégradés, nébuleuses, étoiles, astres) et vignette **précalculés à la résolution exacte de l'écran**
+  et copiés 1:1 à chaque image : une image agrandie coûtait ~10 fois plus cher (4,3 ms → 0,45 ms par copie
+  mesuré en rendu logiciel).
+- Silhouettes du décor regroupées en quelques chemins par plan (un remplissage par couleur au lieu d'un par
+  forme : immeubles et fenêtres, montagnes et neiges, sapins, arbres et feuillages…).
+- Particules d'ambiance : **fonctions du temps** (aucune mise à jour, aucune allocation) ; leur nombre suit la
+  qualité graphique (basse 40 %, moyenne 70 %, haute 100 %).
+- Éléments périodiques (geysers, chutes de pierres) : fonctions pures du temps du niveau (rien à simuler).
+- Pas de grand halo animé ni de dégradé recréé à chaque image (rayons de lumière : un dégradé partagé).
 - Silhouettes de fond : chaque plan n'est rempli que jusqu'au plan suivant (moins de surface repeinte).
 - Résolution interne du canvas plafonnée à 2× (aucun gain visible au-delà, beaucoup plus de pixels).
-- Coût mesuré du dessin : ~0,3 ms par image.
+- Résultat (Chromium sans carte graphique, écran 844×390 en ×2) : **0 image lente** sur 240 dans chaque monde.
 
 **Menu**
 - Plans fixes du décor précalculés à chaque redimensionnement ; faisceaux des projecteurs incrustés une fois
@@ -624,8 +754,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 3 niveaux de qualité graphique (résolution, particules, reflets).
 - Aucun `backdrop-filter` (flou recalculé à chaque image, coûteux sur mobile).
 
+**Carte des mondes**
+- Seul le monde au centre est animé ; les autres illustrations sont dessinées une fois.
+- Résolution des illustrations plafonnée à 1,5×.
+
 **Général**
-- Rendu et musique arrêtés quand l'application est en arrière-plan.
+- Rendu et musique arrêtés quand l'application est en arrière-plan ; la musique est programmée à chaque image
+  (aucun minuteur) et ne rattrape pas les notes manquées au retour.
 - Sons synthétisés : aucun fichier audio à charger ; sons limités en fréquence ; compresseur anti-saturation.
 - Polices réduites au sous-ensemble latin (~83 Ko au total).
 - Résultat : **60 images/s stables** dans tous les écrans, mesurées dans Chromium sans carte graphique.
@@ -639,15 +774,48 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | Moyenne | Le bouton JOUER du menu affiche toujours « Niveau 1 · Premier dribble » alors qu'il reprend au premier niveau non terminé. | 🔴 En attente d'accord (modification du menu) |
 | Faible | Niveau 5 : le panier est hors de l'écran au départ (on le découvre en montant). | 🔴 À corriger |
 | Faible | Niveau 1 : l'étiquette « Rebondir » du tutoriel recouvre en partie le panier (elle disparaît après 3 rebonds). | 🔴 À corriger |
-| Faible | Le réglage « Musique » n'agit que dans le menu (pas encore de musique en jeu). | 🔴 À faire |
-| Faible | La qualité graphique choisie n'agit que sur le décor du menu. | 🔴 À faire |
+| Moyenne | La tuile « Mondes » du menu ouvre encore la page d'attente : la carte des mondes n'est accessible que depuis la partie (pause, victoire) ou par `worlds.html`. | 🔴 En attente d'accord (modification du menu) |
+| Faible | Carte : un monde dont tous les niveaux **disponibles** sont terminés affiche « Terminé » même si tous ses niveaux prévus ne sont pas encore créés. | 🟡 Se résoudra avec les 50 niveaux |
+| Faible | Le son de déblocage sur la carte peut rester muet si le navigateur n'autorise pas encore l'audio (aucun toucher sur la page). | 🟡 Limitation des navigateurs |
+| Info | Neige : le décor (montagnes et sapins sur 4 plans) est le plus coûteux à dessiner (~6 ms en rendu logiciel, sans image lente mesurée). | 🟡 À surveiller sur appareil réel |
+| ✅ | Le réglage « Musique » agit maintenant dans la partie (musique de chaque monde). | ✅ Corrigé (v0.6.0) |
+| ✅ | La qualité graphique agit maintenant sur les particules d'ambiance du jeu. | ✅ Corrigé (v0.6.0) |
 | Faible | Version en ligne (lien de prévisualisation claude.ai) : le bouton « Menu » de la partie n'a pas pu être vérifié sur cet hébergement. En local, il fonctionne. | 🟡 À vérifier |
 | Info | Jamais testé sur un vrai téléphone : sons, vibrations et confort tactile vérifiés seulement dans le code et dans un navigateur simulé. | 🔴 À tester (phase Android) |
-| Info | Niveau 6 : quelques images lentes (≈ 2 %) mesurées en rendu logiciel, à surveiller sur appareil réel. | 🟡 À surveiller |
+| ✅ | Niveau 6 : quelques images lentes (≈ 2 %) en rendu logiciel. | ✅ Corrigé (v0.6.0 : ciel et vignette copiés 1:1) |
 
 ---
 
 ## 11. Journal des modifications
+
+### 18/11/2026 — Étape 7 : les mondes (v0.6.0)
+- **Ajouté** :
+  - 5 mondes (`src/game/worlds.js`) : Ville (tutoriel), Neige, Volcan, Forêt, Espace, 10 niveaux prévus chacun,
+    avec leur identité : décor et couleurs (`render/themes.js`, `render/background.js`), lumière, particules
+    d'ambiance, surfaces (`render/world-draw.js`), musique et ambiance sonore (`audio/music.js`), sons ;
+  - 21 mécaniques propres aux mondes (`game/world-elements.js`) : caisse à pousser ; sol glissant, plateformes
+    et rampes de glace, vent de neige, stalactites ; lave, plateformes fragiles, geysers de feu, chutes de
+    pierres, ascenseurs de pierre ; lianes, plateformes en bois, champignons, troncs qui roulent, branches
+    mobiles, rivière ; gravité réduite, astéroïdes, portails à double sens, plateformes flottantes, gravité
+    inversée ;
+  - moteur : sens de la gravité, matériau du sol (adhérence), formes désactivables, gravité par niveau ;
+  - carte des mondes (`worlds.html`, `src/worlds/`) : illustrations animées, cadenas, animation de déblocage,
+    barres de progression, étoiles, pourcentages, chemin, choix du niveau ;
+  - écran d'introduction de chaque monde, transition entre mondes (balayage coloré + fondu musical) ;
+  - progression par monde avec déblocage automatique (conversion de l'ancienne progression) ;
+  - niveau « La caisse » (Ville) et un niveau de démonstration par nouveau monde ; format des niveaux documenté
+    (`src/game/levels/README.md`) ;
+  - textes FR/EN/ES des mondes, mécaniques, carte et introduction ; 44 nouveaux tests (101 au total) ; pilote
+    dans l'outil de vérification pour écrire les solutions expertes.
+- **Modifié** :
+  - les niveaux sont rangés par monde (`levels/city.js`…) ; `levels/index.js` reste pour la compatibilité ;
+  - HUD « monde-niveau » dans la couleur du monde ; pause et victoire avec accès à la carte ; victoire de fin de
+    monde (« Monde terminé ! », monde débloqué, « Monde suivant ») ;
+  - ciel et vignette précalculés à la résolution de l'écran, décor regroupé en chemins (0 image lente) ;
+  - commandes et gameplay de base **inchangés** (mêmes réglages ; les tests et les solutions des 6 niveaux
+    d'origine passent toujours) ; **menu inchangé**.
+- **Reste à faire** : validation des mondes par le porteur du projet, puis les 50 niveaux ; relier la tuile
+  « Mondes » du menu à la carte (accord requis).
 
 ### 17/11/2026 — Création de PROJECT.md (v0.5.0)
 - **Ajouté** : ce document (présentation, gameplay, architecture, interface, progression, roadmap, tâches,

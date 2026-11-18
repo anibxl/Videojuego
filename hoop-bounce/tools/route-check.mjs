@@ -5,7 +5,7 @@
 //   Taux élevé = passage facile.  Taux faible = exigeant.  0 % = impossible (à corriger !).
 // Les passages qui demandent une vraie technique ont aussi une solution « experte » scriptée.
 //
-// Usage : node tools/route-check.mjs [essais] [niveau 1..6] [--save]
+// Usage : node tools/route-check.mjs [essais] [niveau 1..N, dans l'ordre de tous les mondes] [--save]
 //   --save : enregistre une solution par passage dans tests/fixtures/routes.json
 //            (rejouée par tests/routes.test.mjs : les niveaux doivent rester faisables)
 
@@ -13,7 +13,7 @@ import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { CONFIG } from '../src/config.js';
 import { Game } from '../src/game/game.js';
-import { LEVELS } from '../src/game/levels/index.js';
+import { LEVELS } from '../src/game/worlds.js';
 import { createRng } from '../src/core/math.js';
 
 const DT = CONFIG.physics.fixedDt;
@@ -22,6 +22,12 @@ const R = CONFIG.ball.radius;
 const on = (x1, x2, y) => (g) => g.body.grounded && Math.abs(g.body.y - (y + R)) < 0.08 && g.body.x > x1 && g.body.x < x2;
 const win = (g) => g.state === 'won';
 const openDoors = (g) => g.level.doors.forEach((d) => d.open());
+/** Préparation : caisse déjà poussée à la position x. */
+const crateAt = (x) => (g) => {
+  const c = g.level.crates[0];
+  c.def = { ...c.def, x };
+  c.reset();
+};
 
 // ─── Solutions expertes ─────────────────────────────────────────────────────
 
@@ -96,6 +102,105 @@ function expertPlatform(goal) {
   };
 }
 
+// ─── Pilote : petites manœuvres pour écrire les solutions expertes des mondes ──
+
+export class Pilot {
+  constructor(g) {
+    this.g = g;
+    this.dead = false;
+    this.won = false;
+    g.events.on('death', () => (this.dead = true));
+    g.events.on('win', () => (this.won = true));
+  }
+
+  get b() {
+    return this.g.body;
+  }
+
+  get c() {
+    return this.g.controller;
+  }
+
+  hold(dir) {
+    this.c.left = dir < 0;
+    this.c.right = dir > 0;
+  }
+
+  /** Avance tant que `cond` est faux (renvoie false si mort ou délai dépassé). */
+  until(cond, maxSec = 8, each = null) {
+    const n = Math.round(maxSec / DT);
+    for (let i = 0; i < n; i++) {
+      if (this.won || cond(this.g)) return !this.dead;
+      each?.(this.g);
+      this.g.fixedUpdate(DT);
+      if (this.dead) return false;
+    }
+    return false;
+  }
+
+  wait(sec) {
+    return this.until(() => false, sec) || (!this.dead && true);
+  }
+
+  /** Rouler jusqu'à x et s'y arrêter. */
+  goTo(x, tol = 0.3, maxSec = 8) {
+    const ok = this.until(
+      (g) => Math.abs(g.body.x - x) < tol && Math.abs(g.body.vx - g.body.groundVx) < 0.6 && g.body.grounded,
+      maxSec,
+      (g) => {
+        const dx = x - g.body.x;
+        const v = g.body.vx - g.body.groundVx;
+        const stopDist = (v * v) / (2 * 6);
+        if (Math.abs(dx) < tol) this.hold(-Math.sign(v) * (Math.abs(v) > 0.6 ? 1 : 0));
+        else if (Math.sign(v) === Math.sign(dx) && stopDist > Math.abs(dx)) this.hold(-Math.sign(dx));
+        else this.hold(Math.sign(dx));
+      },
+    );
+    this.hold(0);
+    return ok;
+  }
+
+  /** Dribble sur place jusqu'à ce que le PROCHAIN rebond ait la puissance `level`, et se pose. */
+  charge(level) {
+    this.hold(0);
+    if (!this.until((g) => g.controller.canBounce, 3)) return false;
+    while (this.c.level < level) {
+      this.c.pressBounce();
+      if (!this.until(() => false, 0.13)) {
+        if (this.dead) return false;
+      }
+    }
+    return this.until((g) => g.controller.canBounce, 3);
+  }
+
+  /** Rebondir (puissance actuelle) en tenant la direction `dir` ; `steer(g)` peut corriger en l'air. */
+  jump(dir, steer = null, maxSec = 3) {
+    this.c.pressBounce();
+    this.hold(dir);
+    let air = 0;
+    return this.until((g) => air > 0.12 && g.body.grounded, maxSec, (g) => {
+      air = g.body.grounded ? 0 : air + DT;
+      if (steer) steer(g, this);
+    });
+  }
+
+  /** En l'air : viser x (freine et revient si besoin). */
+  aim(x) {
+    return (g) => {
+      const t = x - g.body.vx * 0.12;
+      this.hold(g.body.x < t - 0.15 ? 1 : g.body.x > t + 0.15 ? -1 : 0);
+    };
+  }
+}
+
+/** Solution experte écrite avec le pilote : `fn(p)` renvoie true si le passage est réussi. */
+const piloted = (fn, goal) => (make) => {
+  const g = make();
+  const p = new Pilot(g);
+  const ok = fn(p, g);
+  return !!ok && !p.dead && p.until(goal, 2);
+};
+
 // ─── Passages ───────────────────────────────────────────────────────────────
 
 /** Par niveau : [nom, départ [x, surface], objectif, préparation, solution experte] */
@@ -128,6 +233,75 @@ export const ROUTES = [
     ['Départ → interrupteur', [3, 0], (g) => g.level.switches[0].pressed],
     ['Porte ouverte → téléporteur', [12, 0], (g) => g.body.x > 27.5, openDoors],
     ['Après le mur → panier', [31, 0], win, null, expertShot],
+  ],
+  // ── MONDE 1 — VILLE ──
+  // 7 — La caisse
+  [
+    ['Pousser la caisse contre la terrasse', [3, 0], (g) => g.level.crates[0].x > 15.2, null, piloted((p) => {
+      p.hold(1);
+      return p.until((g) => g.level.crates[0].x > 15.2, 8);
+    }, (g) => g.level.crates[0].x > 15.2)],
+    ['Caisse → terrasse', [16.2, 1.6], on(17, 46, 5.6), crateAt(15.4), piloted((p) => p.wait(0.3) && p.charge(5) && p.jump(1), on(17, 46, 5.6))],
+    ['Terrasse → panier', [19, 5.6], win, null, expertShot],
+  ],
+  // ── MONDE 2 — NEIGE ──
+  [
+    ['Départ → butte enneigée', [3, 0], on(9, 13, 2.6), null, piloted((p) => p.goTo(7.4) && p.charge(4) && p.jump(1, p.aim(11)), on(9, 13, 2.6))],
+    ['Rampe de glace → au-delà de la crevasse', [11, 2.6], on(34, 47, 0), null, piloted((p) => {
+      p.hold(1);
+      if (!p.until((g) => g.body.x > 28.4 && g.body.grounded, 5)) return false;
+      p.c.pressBounce();
+      return p.until(on(34, 47, 0), 4);
+    }, on(34, 47, 0))],
+    ['Vent → panier', [36, 0], win, null, expertShot],
+  ],
+  // ── MONDE 3 — VOLCAN ──
+  [
+    ['Départ → au-delà de la lave', [3, 0], on(13, 26, 0), null, piloted((p) => p.goTo(7.3) && p.charge(2) && p.jump(1, p.aim(10.5)) && p.jump(1) && p.until(on(13, 26, 0), 3), on(13, 26, 0))],
+    ['Geysers → ascenseur → falaise', [14, 0], on(28.6, 50, 5), null, piloted((p, g) => {
+      const cyc = (t) => ((t % 3.2) + 3.2) % 3.2;
+      const m = g.level.movers[0].mover;
+      if (!p.until((gg) => Math.abs(cyc(gg.time) - 1.3) < 0.01, 5)) return false;
+      if (!p.goTo(24.5)) return false;
+      if (!p.until(() => m.offsetY < 0.03, 8)) return false;
+      if (!p.jump(1, p.aim(27.2))) return false;
+      if (!p.until(() => m.offsetY > 4.95, 8)) return false;
+      p.hold(1);
+      return p.until(on(28.6, 50, 5), 3);
+    }, on(28.6, 50, 5))],
+    ['Chute de pierres → après les pierres', [29.5, 5], (g) => on(37, 50, 5)(g)],
+    ['Falaise → panier', [37.5, 5], win, null, expertShot],
+  ],
+  // ── MONDE 4 — FORÊT ──
+  [
+    ['Rivière : les lianes', [3, 0], on(23, 40, 0), null, piloted((p) => {
+      if (!(p.goTo(10.2) && p.charge(4))) return false;
+      p.c.pressBounce();
+      return p.until(on(23, 40, 0), 12, (g) => {
+        const b = g.body;
+        if (g.vine) {
+          p.hold(b.vx >= 0 ? 1 : -1);
+          if (b.vx > 0 && g.vine.angle > 0.55) g.controller.pressBounce();
+        } else p.hold(1);
+      });
+    }, on(23, 40, 0))],
+    ['Tronc → branches → cabane', [24, 0], on(40, 54, 5.6), null, piloted((p, g) => {
+      const log = g.level.rollers[0].mover;
+      const br2 = g.level.branches[1].mover;
+      if (!p.until(() => log.offsetX > 4.3, 6) || !p.until(() => log.offsetX < 1.6, 6)) return false;
+      return p.charge(3) && p.jump(1, p.aim(31)) && p.goTo(34.7) && p.charge(4) && p.jump(0)
+        && p.charge(2) && p.jump(1, (gg) => p.aim(38.3 + br2.offsetX)(gg)) && p.charge(2) && p.jump(1, p.aim(42));
+    }, on(40, 54, 5.6))],
+    ['Cabane → panier', [42, 5.6], win, null, expertShot],
+  ],
+  // ── MONDE 5 — ESPACE ──
+  [
+    ['Plateformes flottantes', [3, 0], on(26, 33, 0), null, piloted((p) => p.goTo(9.4)
+      && p.charge(2) && p.jump(1, p.aim(13.3)) && p.charge(2) && p.jump(1, p.aim(18.1))
+      && p.charge(1) && p.jump(1, p.aim(22.9)) && p.charge(2) && p.jump(1, p.aim(28)), on(26, 33, 0))],
+    ['Portails', [27, 0], (g) => g.body.x > 34.5],
+    ['Gravité inversée', [36, 0], on(48, 60, 0)],
+    ['Zone inversée → panier', [50, 0], win, null, expertShot],
   ],
 ];
 

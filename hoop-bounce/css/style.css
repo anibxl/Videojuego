@@ -557,3 +557,210 @@ body.overlay-open .controls {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Mondes (étape 7) ────────────────────────────────────────────────── */
+
+/* Couleur du monde en cours (définie par main.js sur <body>) */
+body { --accent: #ff8a4c; --accent-rgb: 255, 138, 76; }
+
+.level-num {
+  color: var(--accent);
+}
+
+.actions-row.three {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.actions-row.three .secondary {
+  font-size: 14.5px;
+}
+
+/* Introduction d'un monde : le décor du monde reste visible derrière */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: calc(16px + var(--safe-top)) 24px calc(16px + var(--safe-bottom));
+  background:
+    radial-gradient(120% 90% at 50% 45%, rgba(var(--accent-rgb), 0.16), rgba(3, 6, 14, 0) 60%),
+    linear-gradient(180deg, rgba(3, 6, 14, 0.5), rgba(3, 6, 14, 0.8));
+  cursor: pointer;
+  transition: opacity 0.5s ease;
+}
+
+.intro.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-inner {
+  text-align: center;
+  max-width: 640px;
+}
+
+.intro-eyebrow,
+.intro-title,
+.intro-tagline,
+.intro-mechs li,
+.intro-level,
+.intro-tap {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.intro:not(.hidden) .intro-eyebrow { animation: intro-in 0.6s var(--ease-out) 0.1s forwards; }
+.intro:not(.hidden) .intro-title { animation: intro-title 0.9s var(--ease-out) 0.2s forwards; }
+.intro:not(.hidden) .intro-tagline { animation: intro-in 0.6s var(--ease-out) 0.55s forwards; }
+.intro:not(.hidden) .intro-level { animation: intro-in 0.6s var(--ease-out) 1.25s forwards; }
+.intro:not(.hidden) .intro-tap { animation: intro-in 0.6s var(--ease-out) 1.5s forwards, tap-pulse 1.6s ease-in-out 2.1s infinite; }
+
+.intro-eyebrow {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.intro-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(44px, 11vh, 88px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #ffffff 30%, rgba(var(--accent-rgb), 1) 130%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 10px 40px rgba(var(--accent-rgb), 0.25);
+}
+
+.intro-tagline {
+  margin: 10px 0 18px;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.intro-mechs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.intro-mechs li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 13px 0 10px;
+  border-radius: 999px;
+  background: rgba(10, 16, 30, 0.6);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.intro-mechs li::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.9);
+}
+
+.intro:not(.hidden) .intro-mechs li { animation: intro-in 0.5s var(--ease-out) forwards; }
+
+.intro-level {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.intro-tap {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+@keyframes intro-in {
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes intro-title {
+  0% { opacity: 0; transform: translateY(18px) scale(0.92); letter-spacing: 0.08em; }
+  100% { opacity: 1; transform: none; letter-spacing: -0.02em; }
+}
+
+@keyframes tap-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+body.intro-open .hud,
+body.intro-open .controls {
+  opacity: 0;
+}
+
+/* Transition entre deux mondes : un grand pan de la couleur du monde suivant balaie l'écran */
+.wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.wipe-band {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -30%;
+  width: 160%;
+  background: linear-gradient(100deg, rgba(var(--wipe-rgb, 255, 138, 76), 0) 0%, rgba(var(--wipe-rgb, 255, 138, 76), 1) 18%, #05070f 40%, #05070f 60%, rgba(var(--wipe-rgb, 255, 138, 76), 1) 82%, rgba(var(--wipe-rgb, 255, 138, 76), 0) 100%);
+  transform: translateX(-110%) skewX(-12deg);
+}
+
+.wipe.run .wipe-band {
+  animation: wipe-across 1.3s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes wipe-across {
+  0% { transform: translateX(-110%) skewX(-12deg); }
+  100% { transform: translateX(110%) skewX(-12deg); }
+}
+
+@media (max-height: 340px) {
+  .intro-title { font-size: 40px; }
+  .intro-tagline { margin: 6px 0 10px; font-size: 15px; }
+  .intro-mechs li { height: 28px; font-size: 12.5px; }
+}
+
+/* Petits écrans en paysage : la carte de victoire (titre sur deux lignes, message de monde) tient en hauteur */
+@media (max-height: 430px) {
+  .overlay { overflow-y: auto; }
+  .win-card { padding: 16px 20px; }
+  .win-card h1 { font-size: 26px; line-height: 1.1; margin-bottom: 6px; }
+  .star.big { width: 40px; height: 40px; }
+  .star.big.mid { width: 48px; height: 48px; margin-top: -6px; }
+  .win-stars { margin: 0 0 8px; }
+  .win-body { margin-bottom: 8px; font-size: 14px; }
+  .win-time { margin-bottom: 10px; }
+  .primary, .secondary { height: 46px; }
+  .actions { gap: 8px; }
+  .actions-row { gap: 8px; }
+}
