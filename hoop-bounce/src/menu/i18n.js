@@ -157,7 +157,7 @@ export const STRINGS = {
       '<p>Pour effacer tes données, désinstalle le jeu ou vide les données de l’application dans les réglages de ton téléphone.</p>',
     'credits.title': 'Crédits',
     'credits.body':
-      '<p><strong>Conception et développement</strong><br>L’équipe Hoop Bounce</p>' +
+      '<p><strong>Conception et développement</strong><br>EchoSpeed</p>' +
       '<p><strong>Sons et musique</strong><br>Synthétisés en temps réel dans le jeu</p>' +
       '<p><strong>Polices</strong><br>Unbounded — The Unbounded Project Authors<br>Outfit — The Outfit Project Authors<br>Sous licence SIL Open Font License 1.1</p>' +
       '<p>Merci de jouer !</p>',
@@ -319,7 +319,7 @@ export const STRINGS = {
       '<p>To delete your data, uninstall the game or clear the app data in your phone settings.</p>',
     'credits.title': 'Credits',
     'credits.body':
-      '<p><strong>Design and development</strong><br>The Hoop Bounce team</p>' +
+      '<p><strong>Design and development</strong><br>EchoSpeed</p>' +
       '<p><strong>Sound and music</strong><br>Synthesized in real time by the game</p>' +
       '<p><strong>Fonts</strong><br>Unbounded — The Unbounded Project Authors<br>Outfit — The Outfit Project Authors<br>Licensed under the SIL Open Font License 1.1</p>' +
       '<p>Thanks for playing!</p>',
@@ -481,7 +481,7 @@ export const STRINGS = {
       '<p>Para borrar tus datos, desinstala el juego o borra los datos de la aplicación en los ajustes de tu teléfono.</p>',
     'credits.title': 'Créditos',
     'credits.body':
-      '<p><strong>Diseño y desarrollo</strong><br>El equipo de Hoop Bounce</p>' +
+      '<p><strong>Diseño y desarrollo</strong><br>EchoSpeed</p>' +
       '<p><strong>Sonido y música</strong><br>Sintetizados en tiempo real por el juego</p>' +
       '<p><strong>Tipografías</strong><br>Unbounded — The Unbounded Project Authors<br>Outfit — The Outfit Project Authors<br>Con licencia SIL Open Font License 1.1</p>' +
       '<p>¡Gracias por jugar!</p>',

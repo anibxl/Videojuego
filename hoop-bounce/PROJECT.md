@@ -3,9 +3,9 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 19/11/2026 · **Version :** 0.13.0 · **Étape en cours :** validation de l'écran de
-> chargement (et des publicités récompensées de l'étape 13) par le porteur du projet, avant la préparation
-> finale du Play Store.
+> **Dernière mise à jour :** 19/11/2026 · **Version :** 1.0.0 (build 1) · **Étape en cours :** préparation de la
+> publication Google Play terminée (rien n'est publié) — validation par le porteur du projet, puis comptes
+> Play Console / AdMob, AAB signé et tests fermés.
 
 ## Sommaire
 
@@ -14,6 +14,7 @@
 3. [Architecture](#3-architecture)
 4. [Interface](#4-interface)
 5. [Progression](#5-progression)
+5 bis. [Publication Google Play](#5-bis-publication-google-play-version-100)
 6. [Roadmap](#6-roadmap)
 7. [Liste des tâches](#7-liste-des-tâches)
 8. [Idées futures](#8-idées-futures)
@@ -249,8 +250,11 @@ hoop-bounce/
 ├── PROJECT.md              Ce document (documentation officielle, mémoire du projet)
 ├── README.md               Guide rapide : lancer, tester, régler
 ├── package.json            Version et scripts (npm start, npm test)
+├── capacitor.config.json   Application Android : identifiant com.echospeed.hoopbounce, nom, dossier web (www/)
+├── android/                Projet Android natif (Capacitor 8) : manifeste, icônes, écran de démarrage, signature
+├── store/                  ★ Fiche Google Play : icône, feature graphic, captures, textes, checklist, confidentialité
 ├── native/
-│   └── android/README.md   Emballage Android (Capacitor) et AdMob : manifeste, vrais identifiants, consentement
+│   └── android/README.md   Projet Android et AdMob : ce qui est en place, synchronisation, vrais identifiants
 ├── assets/
 │   └── fonts/              Polices embarquées + licences OFL
 │       ├── unbounded.woff2     Titres, logo, boutons principaux (latin, ~50 Ko)
@@ -285,6 +289,7 @@ hoop-bounce/
 │   └── shared/             Ce que le menu, la boutique et le jeu partagent (réglages, porte-monnaie,
 │                           statistiques, récompenses quotidiennes, missions, succès, coffres,
 │                           publicités récompensées, coffre bonus et roue de la chance)
+├── tools/build-web.mjs     Prépare www/ (fichiers du jeu seulement) pour l'application Android
 ├── tests/                  Tests automatiques (node --test)
 │   └── fixtures/           Terrain d'essai et solutions enregistrées des niveaux
 └── tools/                  Outils de développement (level design)
@@ -1033,6 +1038,93 @@ qu'avec les récompenses quotidiennes et les succès (présentés à la fin de c
 
 ---
 
+## 5 bis. Publication Google Play (version 1.0.0)
+
+**Rien n'est publié.** Tout ce qu'il faut pour une fiche professionnelle et un premier envoi est prêt dans
+`store/` et `android/`. Le détail pas à pas est dans **`store/CHECKLIST.md`**.
+
+### Identité
+
+| Élément | Valeur |
+|---|---|
+| Nom sur le téléphone | Hoop Bounce |
+| Titre Play Store | « Hoop Bounce: Basket & Rebonds » (FR) · « Hoop Bounce: Basketball Jump » (EN) · « Hoop Bounce: Bota y Encesta » (ES) |
+| Développeur | EchoSpeed |
+| Identifiant du paquet | `com.echospeed.hoopbounce` (⚠️ définitif après le premier envoi) |
+| Version / build | 1.0.0 / 1 |
+| SDK cible / minimum | Android 16 (API 36) / Android 7.0 (API 24) |
+| Catégorie | Jeux › Arcade |
+| Classification attendue | PEGI 3 · ESRB Everyone (questionnaire IARC) |
+| Public cible recommandé | 13 ans et plus (pas d'obligations Familles ; annonces « PG » maximum) |
+| Prix | Gratuit, aucun achat intégré, publicités récompensées facultatives |
+| Pays | Tous |
+| Langues | Français (par défaut), anglais, espagnol |
+
+### Visuels
+
+- **Icône** (`store/src/icon.svg` → `store/icon/icon-512.png`) :
+  - un gros ballon de basket qui plonge dans un cercle blanc avec son filet, sur fond bleu nuit et halo orange ;
+  - formes épaisses, aucun petit détail : lisible à 48 px et reconnaissable à 16 px.
+  - Déclinée en icône adaptative Android (motif dans la zone sûre + fond), ronde et classique, pour toutes les
+    densités.
+- **Feature graphic 1024 × 500** (`store/src/feature-graphic.html` → `store/feature-graphic/`, FR / EN / ES) :
+  - salle de basket la nuit : projecteurs, parquet en perspective, tribunes floues ;
+  - logo HoopBounce, « Dribble · Rebondis · Marque », « Par EchoSpeed » ;
+  - un ballon lumineux qui file vers un panier (panneau de verre, cercle, filet), avec traînée, impact de
+    rebond et étincelles.
+- **Écran de démarrage natif** : le fond du jeu (`#04070F`) et le ballon, puis l'écran de chargement du jeu
+  (enchaînement sans flash blanc).
+- **Captures** (`store/screenshots/`, 10 par langue, 1920 × 1080) : Gameplay (panier « SWISH ! »), Menu, Ville,
+  Neige, Volcan, Forêt, Espace, Boutique, Missions, Récompenses quotidiennes.
+  - Chaque capture existe en version « fiche » (légende + cadre) et en version brute.
+  - Ce que chacune doit montrer et l'ordre conseillé : `store/SCREENSHOTS.md`. Google n'en accepte que 8 par
+    type d'appareil.
+- Tous les visuels se régénèrent :
+  - `node store/tools/render-assets.mjs` pour l'icône, la bannière, les icônes et les écrans de démarrage ;
+  - `node store/tools/screenshots.mjs fr|en|es` pour les captures, prises dans le vrai jeu avec un profil de
+    joueur préparé.
+
+### Textes (`store/LISTING.md`)
+
+- Pour chaque langue (FR, EN, ES) : titre, description courte, description complète, points forts et
+  mots-clés, avec un ton dynamique.
+- Longueurs vérifiées (titre ≤ 30, courte ≤ 80, complète ≤ 4 000).
+- Les mots-clés sont intégrés au texte, car Google Play n'a pas de champ dédié.
+
+### Politique de confidentialité (`store/privacy-policy.html`)
+
+- Page autonome en FR / EN / ES, à héberger (GitHub Pages ou site du développeur). Son URL est obligatoire.
+- Elle explique :
+  - données uniquement sur l'appareil, aucun compte ;
+  - publicités AdMob facultatives et données collectées par le SDK ;
+  - consentement UMP, enfants, permissions, suppression.
+- Reste à remplacer : `[E-MAIL DE CONTACT]`.
+
+### Projet Android (`android/`, Capacitor 8)
+
+- `npm run android:sync` copie le jeu (`tools/build-web.mjs` → `www/`) dans l'application ;
+  `npm run android:open` ouvre Android Studio.
+- Manifeste :
+  - paysage forcé (`sensorLandscape`) ;
+  - identifiant d'application AdMob (test) ;
+  - permissions Internet et Vibreur.
+- `MainActivity` : plein écran immersif (barres système masquées).
+- Thème : fond `#04070F` sur l'écran de démarrage, la fenêtre et les barres système.
+- Signature de la version publiée via `android/keystore.properties` (ignoré par Git, modèle
+  `keystore.properties.example`).
+- Construction de l'AAB : `./gradlew bundleRelease`, avec la signature d'application par Google Play.
+- Elle n'a pas pu être faite dans l'environnement de développement : le téléchargement du SDK Android y est
+  bloqué. Elle se fait dans Android Studio (`store/CHECKLIST.md` § 10).
+
+### Avant d'appuyer sur « Publier » (résumé de la checklist)
+
+1. Comptes Play Console et AdMob ; confirmer l'identifiant du paquet.
+2. Vrais identifiants AdMob (`ads-config.js`, `strings.xml`), `useTestAds: false`, `app-ads.txt`, message RGPD.
+3. Politique de confidentialité en ligne ; fiche FR / EN / ES ; questionnaires de contenu (annonces,
+   classification, public cible, sécurité des données).
+4. AAB signé (build 1) → test interne → test fermé (12 testeurs, 14 jours si compte personnel) → production en
+   déploiement progressif.
+
 ## 6. Roadmap
 
 Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
@@ -1138,21 +1230,22 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 🔴 Défis quotidiens
 - 🔴 Multijoueur
 
-### Phase 8 — Android 🔴
-- 🔴 Projet Capacitor (Android) — étapes préparées dans `native/android/README.md`
-- 🔴 Plugin AdMob installé, identifiant d'application dans le manifeste, essai des annonces de test sur appareil
-- 🔴 Vibrations natives (Capacitor Haptics), verrouillage en paysage, plein écran
-- 🔴 Icône, écran de démarrage natif (même fond `#04070f` que l'écran de chargement, pour un enchaînement
-  invisible), nom de l'application
-- 🔴 Tests sur vrais appareils (entrée de gamme, milieu de gamme, haut de gamme)
+### Phase 8 — Android 🟡
+- ✅ Projet Capacitor 8 (`android/`) : identifiant `com.echospeed.hoopbounce`, version 1.0.0 (build 1), SDK 36
+- ✅ Plugin AdMob installé, identifiant d'application (test) dans le manifeste
+- ✅ Verrouillage en paysage, plein écran immersif, vibreur
+- ✅ Icône (adaptative, ronde, classique), écran de démarrage natif assorti, nom de l'application
+- 🟡 AAB signé à construire dans Android Studio (SDK Android indisponible dans l'environnement de développement)
+- 🔴 Tests sur vrais appareils (entrée de gamme, milieu de gamme, haut de gamme), annonces de test sur appareil
+- 🔴 Vibrations natives (Capacitor Haptics), si `navigator.vibrate` ne suffit pas dans la WebView
 
-### Phase 9 — Publication 🔴
-- 🔴 Fiche Play Store (textes, captures, vidéo)
-- 🔴 Politique de confidentialité hébergée en ligne (mentionne AdMob)
-- 🔴 Vrais identifiants AdMob, `app-ads.txt`, message de consentement, déclarations « annonces » et « sécurité
-  des données »
-- 🔴 Classification du contenu, conformité Play
-- 🔴 Bêta fermée, puis publication
+### Phase 9 — Publication 🟡
+- ✅ Fiche Play Store : icône 512, feature graphic 1024 × 500, 10 captures × 3 langues, textes FR / EN / ES
+- ✅ Checklist complète avant publication (`store/CHECKLIST.md`)
+- 🟡 Politique de confidentialité prête (`store/privacy-policy.html`) : e-mail à ajouter, puis hébergement
+- 🔴 Vrais identifiants AdMob, `app-ads.txt`, message de consentement
+- 🔴 Déclarations Play Console : annonces, classification, public cible, sécurité des données
+- 🔴 Test interne, test fermé (12 testeurs × 14 jours), puis publication progressive
 
 ---
 
@@ -1182,14 +1275,17 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Publicités récompensées facultatives (AdMob) : doubler les pièces, reprendre au drapeau, coffre bonus,
   roue de la chance ; page Bonus du jour (étape 13)
 - ✅ Écran de chargement (logo, signature EchoSpeed, ballon, particules, barre, fondu vers le menu) (étape 14)
+- ✅ Préparation Google Play (étape 15) : icône, feature graphic, captures, textes FR / EN / ES, checklist,
+  politique de confidentialité, projet Android Capacitor, version 1.0.0
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur l'écran de chargement (étape 14) et sur les publicités
-  récompensées et la page Bonus (étape 13)
+- 🟡 Attente des retours du porteur du projet sur la préparation Google Play (étape 15)
 
 ### À faire — court terme 🔴
-- 🔴 Préparation finale du Play Store (après validation de l'étape 13) : Capacitor, AdMob natif, icône, fiche
+- 🔴 Publication (quand le porteur du projet le décide) : suivre `store/CHECKLIST.md` (comptes, AdMob, AAB,
+  tests fermés)
+- 🔴 Essayer l'application sur de vrais téléphones (encoche, vibrations, annonces de test, performances)
 - 🔴 Ajuster le ressenti (gravité, hauteurs, dribble, inertie) selon les retours
 - 🔴 Ajuster la difficulté (notamment la plateforme mobile du niveau 4)
 - 🔴 Faire apparaître le panier du niveau 5 dès le départ (il est hors de l'écran au début)
@@ -1333,6 +1429,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| ✅ | Boutique entre 920 et 1 100 px de large : le compteur de pièces sortait de l'écran ; sur les cartes légendaires, le prix et « ★ Exclusif » débordaient. | ✅ Corrigé (v1.0.0) |
+| Info | Application Android jamais construite ni lancée sur un appareil (SDK Android indisponible dans l'environnement de développement) : à vérifier dans Android Studio. | 🔴 À tester |
 | Info | Fournisseur AdMob (application Android) écrit d'après la documentation du plugin, **pas encore essayé sur un appareil** : événements de récompense et de fermeture à confirmer avec les annonces de test. | 🔴 À tester (phase Android) |
 | Faible | Écran de victoire sur petit téléphone : la bannière « Mission terminée ! » recouvre quelques secondes le titre « Panier ! ». | 🟡 À améliorer |
 | Info | Les limites de publicités par jour suivent l'heure de l'appareil (comme la récompense quotidienne). | 🟡 Normal hors ligne |
@@ -1362,6 +1460,40 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 19/11/2026 — Étape 15 : préparation de la publication Google Play (v1.0.0)
+- **Ajouté** :
+  - **icône** (`store/src/icon.svg`) : ballon qui plonge dans un cercle blanc, sur fond bleu nuit ;
+    PNG 512 et 1024, icônes Android adaptative, ronde et classique ;
+  - **feature graphic** 1024 × 500 en FR / EN / ES (`store/src/feature-graphic.html`) ;
+  - **10 captures** par langue, prises dans le vrai jeu (`store/tools/screenshots.mjs`), en version « fiche »
+    (légende + cadre) et brute ; guide de ce que chaque capture doit montrer (`store/SCREENSHOTS.md`) ;
+  - **textes de la fiche** FR / EN / ES : titre, descriptions courte et complète, points forts, mots-clés
+    (`store/LISTING.md`) ;
+  - **checklist complète** avant publication (`store/CHECKLIST.md`) :
+    - icône, captures, feature graphic, confidentialité ;
+    - catégorie, classification, public cible, sécurité des données ;
+    - pays, langues, version, build ;
+    - AAB, AdMob, tests ;
+  - **politique de confidentialité** autonome à héberger (`store/privacy-policy.html`) ;
+  - **projet Android Capacitor 8** (`android/`, `capacitor.config.json`, `tools/build-web.mjs`) :
+    - `com.echospeed.hoopbounce`, version 1.0.0 (build 1), SDK 36 ;
+    - paysage, plein écran immersif, AdMob (test), vibreur ;
+    - icônes, écran de démarrage assorti, signature par `keystore.properties`.
+- **Modifié** :
+  - version **1.0.0** (`package.json`, `src/shared/version.js`) ;
+  - crédits du menu : « EchoSpeed » ;
+  - `native/android/README.md` réécrit pour le projet réel.
+- **Corrigé** : boutique entre 920 et 1 100 px de large :
+  - le compteur de pièces sortait de l'écran ;
+  - le prix ou « ★ Exclusif » débordait des cartes.
+- **Reste à faire** :
+  - retours du porteur du projet ;
+  - comptes Play Console et AdMob ;
+  - vrais identifiants publicitaires ;
+  - hébergement de la politique de confidentialité ;
+  - AAB signé dans Android Studio ;
+  - tests sur appareils, test fermé, puis publication.
 
 ### 19/11/2026 — Étape 14 : écran de chargement (v0.13.0)
 - **Ajouté** :

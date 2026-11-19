@@ -1,0 +1,12 @@
+{
+  "appId": "com.echospeed.hoopbounce",
+  "appName": "Hoop Bounce",
+  "webDir": "www",
+  "backgroundColor": "#04070f",
+  "android": {
+    "backgroundColor": "#04070f",
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  }
+}

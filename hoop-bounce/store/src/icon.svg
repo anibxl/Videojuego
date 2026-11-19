@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Icône Hoop Bounce : un gros ballon qui plonge dans un cercle blanc, sur fond bleu nuit.
+       Formes épaisses, peu de détails : lisible jusqu'à 48 px (et reconnaissable à 16 px). -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#1a2a5e"/>
+      <stop offset=".55" stop-color="#0b1430"/>
+      <stop offset="1" stop-color="#04070f"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="46%" r="42%">
+      <stop offset="0" stop-color="#ff7a2f" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ff7a2f" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ball" cx="36%" cy="30%" r="78%">
+      <stop offset="0" stop-color="#ffb26b"/>
+      <stop offset=".45" stop-color="#ff7a2f"/>
+      <stop offset="1" stop-color="#c8430f"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c9d4f0"/>
+    </linearGradient>
+  </defs>
+  <g id="bg-layer"><rect width="512" height="512" fill="url(#bg)"/></g>
+  <g id="fg-layer">
+  <circle cx="256" cy="232" r="200" fill="url(#glow)"/>
+  <g transform="translate(256 262) scale(0.84) translate(-256 -275)">
+  <!-- arrière du cercle (derrière le ballon) -->
+  <path d="M104 338 A152 34 0 0 1 408 338" fill="none" stroke="#8d9cc4" stroke-width="22" stroke-linecap="round"/>
+  <!-- ballon -->
+  <g transform="translate(256 222)">
+    <circle r="132" fill="url(#ball)"/>
+    <g fill="none" stroke="#2a1206" stroke-width="15" stroke-linecap="round" opacity=".9">
+      <path d="M0 -132V132M-132 0H132"/>
+      <path d="M-92 -94c40 30 54 64 54 94s-14 64-54 94"/>
+      <path d="M92 -94c-40 30 -54 64 -54 94s14 64 54 94"/>
+    </g>
+    <ellipse cx="-44" cy="-66" rx="44" ry="24" fill="#fff" opacity=".2" transform="rotate(-28 -44 -66)"/>
+  </g>
+  <!-- filet : quelques traits épais qui se resserrent (forme de filet reconnaissable) -->
+  <g fill="none" stroke="#e8edff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" opacity=".85">
+    <path d="M122 350 L196 448"/>
+    <path d="M189 364 L226 456"/>
+    <path d="M256 372 L256 460"/>
+    <path d="M323 364 L286 456"/>
+    <path d="M390 350 L316 448"/>
+    <path d="M150 396 Q256 428 362 396"/>
+  </g>
+  <!-- avant du cercle (devant le ballon) -->
+  <path d="M104 338 A152 34 0 0 0 408 338" fill="none" stroke="url(#rim)" stroke-width="24" stroke-linecap="round"/>
+  </g>
+  </g>
+</svg>

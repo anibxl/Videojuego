@@ -1,11 +1,22 @@
 {
   "name": "hoop-bounce",
-  "version": "0.13.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Jeu mobile : un ballon de basket qu'on fait rebondir jusqu'au panier.",
+  "description": "HoopBounce, par EchoSpeed : un jeu de plateforme où l'on fait rebondir un ballon de basket jusqu'au panier.",
   "scripts": {
     "start": "python3 -m http.server 8080",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "build:web": "node tools/build-web.mjs",
+    "android:sync": "node tools/build-web.mjs && npx cap sync android",
+    "android:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^8.4.2",
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2"
   }
 }

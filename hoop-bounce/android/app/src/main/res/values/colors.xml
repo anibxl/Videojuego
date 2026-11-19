@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fond de Hoop Bounce (identique à l'écran de chargement et au menu) -->
+    <color name="hb_background">#04070F</color>
+</resources>

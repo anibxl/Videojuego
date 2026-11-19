@@ -3,7 +3,12 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 14 (actuelle) :** **écran de chargement**. Au lancement : HoopBounce en grand, « Par EchoSpeed », ballon
+**Version 1.0.0 — étape 15 (actuelle) :** **préparation de la publication Google Play** (rien n'est publié).
+Tout est dans `store/` : icône, feature graphic, captures en 3 langues, textes de la fiche, checklist complète
+(`store/CHECKLIST.md`), politique de confidentialité. Le projet Android (Capacitor 8) est dans `android/` :
+`npm install && npm run android:sync && npm run android:open`.
+
+**Étape 14 :** **écran de chargement**. Au lancement : HoopBounce en grand, « Par EchoSpeed », ballon
 qui rebondit, particules et barre de progression discrète, puis fondu avec léger zoom vers le menu. Il ne dure
 que le temps du chargement (minimum 1,1 s) et ne revient pas en sortant d'une partie (`?noboot` le désactive).
 

@@ -492,7 +492,8 @@ svg { display: block; }
 html, body, .top { max-width: 100vw; }
 .top { overflow: hidden; }
 
-@media (max-width: 920px) {
+/* L'en-tête (titre, onglets, collection, pièces) déborde sous ~1100 px : on retire le titre et l'étiquette */
+@media (max-width: 1100px) {
   .title, .collection .col-label { display: none; }
   .top { gap: 10px; }
 }
@@ -518,3 +519,9 @@ html, body, .top { max-width: 100vw; }
 
 /* Articles exclusifs (récompenses quotidiennes, succès) : non achetables */
 .price.exclusive { color: #ffd36b; font-weight: 800; letter-spacing: 0.02em; }
+
+/* Cartes étroites : rareté et prix (ou « ★ Exclusif ») ne se chevauchent jamais ; le prix passe à la ligne
+   si la place manque (version 1.0.0) */
+.item .meta { flex-wrap: wrap; gap: 0 6px; }
+.item .rar, .item .price, .item .state { white-space: nowrap; }
+.item .price, .item .state { margin-left: auto; }
