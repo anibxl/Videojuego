@@ -10,6 +10,7 @@ import { CollectionView } from './collection-view.js';
 import { DailyView, MissionsView, AchievementsView, liveBadges } from './live-views.js';
 import { RewardFx } from './rewards-fx.js';
 import { BonusView } from './bonus-view.js';
+import { aboutPage } from './about-page.js';
 import { DailyReward } from '../shared/daily.js';
 import { dayKey } from '../shared/stats.js';
 import { Settings } from '../shared/settings.js';
@@ -18,7 +19,9 @@ import { WORLDS } from '../game/worlds.js';
 import { gt } from '../game/i18n.js';
 import { Wallet } from '../shared/wallet.js';
 
-const PAGES = ['mondes', 'modes', 'collection', 'parametres', 'quotidien', 'missions', 'succes', 'bonus'];
+const PAGES = ['mondes', 'modes', 'collection', 'parametres', 'quotidien', 'missions', 'succes', 'bonus', 'apropos'];
+/** Sous-pages : le retour ramène à la page parente (même ouverte par un lien direct). */
+const PARENT = { apropos: 'parametres' };
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -97,6 +100,7 @@ function renderPages() {
   $('#page-modes').innerHTML = modesPage(l);
   collectionView.render();
   $('#page-parametres').innerHTML = settingsPage(l, settings.values);
+  $('#page-apropos').innerHTML = aboutPage(l);
   for (const v of [dailyView, missionsView, achievementsView, bonusView]) if (v.active) v.render(true);
   requestAnimationFrame(() => $$('.segmented').forEach(positionIndicator));
   refreshHome();
@@ -198,7 +202,10 @@ function goBack() {
   if (state.page === 'mondes' && worldsView.closeLevels()) return;
   sound.back();
   if (state.pushed) history.back();
-  else {
+  else if (PARENT[state.page]) {
+    history.replaceState(null, '', `#${PARENT[state.page]}`);
+    showPage(PARENT[state.page], { fromHistory: true });
+  } else {
     history.replaceState(null, '', location.pathname + location.search);
     showPage('home', { fromHistory: true });
   }
@@ -207,7 +214,8 @@ function goBack() {
 window.addEventListener('popstate', () => {
   if (!$('#sheet').hidden) closeSheet(true);
   const page = pageFromHash();
-  state.pushed = page !== 'home' && state.pushed;
+  // Entrée ajoutée par le menu (pushState) ou page ouverte par un lien direct (pas d'état) ?
+  state.pushed = page !== 'home' && !!history.state?.page;
   showPage(page, { fromHistory: true });
 });
 
@@ -323,6 +331,17 @@ document.addEventListener('click', (e) => {
     return;
   }
 
+  // À propos : lien pas encore relié à une adresse (« Bientôt »)
+  const soon = e.target.closest('[data-soon]');
+  if (soon) {
+    sound.locked();
+    vibrate([10, 40, 10]);
+    soon.classList.remove('shake');
+    void soon.offsetWidth;
+    soon.classList.add('shake');
+    toast(t(lang(), 'about.soon.toast'));
+    return;
+  }
   const sheetBtn = e.target.closest('[data-sheet]');
   if (sheetBtn) return openSheet(sheetBtn.dataset.sheet);
   if (e.target.closest('#sheet-close') || e.target === $('#sheet')) return closeSheet();

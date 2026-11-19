@@ -3,9 +3,9 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 19/11/2026 · **Version :** 1.0.0 (build 1) · **Étape en cours :** préparation de la
-> publication Google Play terminée (rien n'est publié) — validation par le porteur du projet, puis comptes
-> Play Console / AdMob, AAB signé et tests fermés.
+> **Dernière mise à jour :** 19/11/2026 · **Version :** 1.0.0 (build 1) · **Étape en cours :** validation de la
+> page « À propos » (étape 16) et de la préparation Google Play (étape 15) par le porteur du projet ; rien n'est
+> publié.
 
 ## Sommaire
 
@@ -402,6 +402,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `worlds-view.js` | Page Mondes : 5 cartes de mondes (illustration, progression, cadenas et condition), animation de déblocage, grille des 10 niveaux, lancement de n'importe quel niveau débloqué. |
 | `collection-view.js` | Page Collection : articles possédés par catégorie, aperçu animé, Équiper / Déséquiper, badge « Équipé ». |
 | `live-views.js` | Pages Récompense quotidienne (calendrier de 7 jours), Missions (3 par jour) et Succès (4 paliers), pastilles de l'accueil. |
+| `about-page.js` | Page « À propos » (étape 16) : identité du jeu, version, créateur, copyright, crédits, liens (politique de confidentialité, conditions d'utilisation). |
 | `bonus-view.js` | Page Bonus du jour (étape 13) : coffre bonus (gratuit ou amélioré avec une publicité) et roue de la chance (rotation, ralentissement, clics, pointeur). |
 | `rewards-fx.js` | Révélation d'une récompense : coffre qui tombe, tremble et s'ouvre, rayons, butin, pluie de pièces, pièces qui filent vers le compteur. |
 | `sound.js` | Sons d'interface et musique d'ambiance synthétisés. |
@@ -422,6 +423,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `live-i18n.js` | Textes des missions, des succès, des paliers, des coffres et de la page Bonus (FR / EN / ES), partagés par le menu et le jeu. |
 | `ads-config.js` | ★ **Configuration des publicités** (étape 13) : identifiants AdMob de test et de production, limites par jour, public et classification. **Le seul fichier à modifier avant la publication.** |
 | `ads.js` | Gestionnaire centralisé des publicités récompensées : chargement à l'avance, affichage, validation de la récompense, erreurs, absence d'annonce, nouvelles tentatives, moments interdits, limites du jour. Fournisseurs AdMob (Android) et annonce de test (navigateur). |
+| `about.js` | ★ **Contenu de la page « À propos »** (étape 16) : nom, créateur, première année du copyright, liste des crédits (rôle, noms, précision, icône), adresses des liens. **Le seul fichier à modifier pour ajouter un crédit ou relier un lien.** |
 | `bonus.js` | Coffre bonus quotidien et roue de la chance (8 cases pondérées) : disponibilité, tirage, récompenses, sauvegarde. |
 | `ui-polish.js` | Onde lumineuse au point touché sur les éléments interactifs de toutes les pages (sauf commandes de jeu). |
 | `settings.js` | Réglages du joueur (musique, effets, vibrations, langue, qualité), enregistrés et corrigés s'ils sont abîmés. |
@@ -437,6 +439,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tests/mechanics.test.mjs` | Les pièges de l'étape 9 (plaque, bloc temporisé, scie, boulet, laser, canon, aimant, drapeau) et les 21 mécaniques des mondes (caisse, glace, rampe, vent, stalactite, lave, plateforme fragile, geyser, pierres, ascenseur, liane, champignon, tronc, branche, gravité réduite, portails, astéroïde, gravité inversée). |
 | `tests/progress.test.mjs` | Progression (déblocage des mondes, statistiques, animation annoncée une fois, conversion de l'ancien format), mondes, textes de jeu dans les trois langues. |
 | `tests/menu.test.mjs` | Textes du menu dans les trois langues, réglages. |
+| `tests/about.test.mjs` | Page À propos : version 1.0.0, créateur, copyright, crédits demandés et traduits, liens intégrés / « Bientôt » sans adresse, vrais liens externes avec adresse. |
 | `tests/ads.test.mjs` | Publicités : identifiants test / production, récompense seulement si l'annonce va au bout, moments interdits, limites du jour sauvegardées, coffre bonus (une fois par jour, amélioré plus riche), roue (lancer gratuit, lancers bonus, tirage pondéré). |
 | `tests/live.test.mjs` | Statistiques (jour, minuit), coffres et doublons, récompense quotidienne (une par jour, 7 jours, cycle), missions (tirage, renouvellement, récompense unique), succès (paliers, progression, récupération), textes. |
 | `tests/routes.test.mjs` | Chaque passage de chaque niveau reste faisable (solutions enregistrées + solutions expertes). |
@@ -519,7 +522,8 @@ et recule légèrement quand une page est ouverte.
 | **Missions** (étape 12) | 3 missions du jour — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
 | **Succès** (étape 12) | 40 succès sur 4 paliers — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
 | **Bonus du jour** (étape 13) | Coffre bonus et roue de la chance — voir [Bonus du jour](#bonus-du-jour-indexhtmlbonus). |
-| Paramètres | Musique, effets sonores (curseurs appliqués en direct), vibrations, qualité graphique (basse / moyenne / haute), langue (FR / EN / ES), politique de confidentialité, crédits, version. |
+| Paramètres | Musique, effets sonores (curseurs appliqués en direct), vibrations, qualité graphique (basse / moyenne / haute), langue (FR / EN / ES), politique de confidentialité, **À propos de Hoop Bounce** (ouvre la page À propos, étape 16), version. |
+| **À propos** (étape 16) | Identité, version, créateur, copyright, crédits et liens — voir [À propos](#à-propos-indexhtmlapropos). |
 
 ### Écran de jeu (`play.html`)
 
@@ -665,6 +669,40 @@ Même style que les autres pages (verre sombre, ressorts), deux panneaux côte �
 - En-tête : temps avant le renouvellement (minuit) et compteur de pièces ; mention « Publicités toujours
   facultatives ».
 
+### À propos (`index.html#apropos`)
+
+Ouverte depuis **Paramètres › À propos de Hoop Bounce**. Le retour ramène aux Paramètres, même quand la page
+est ouverte par un lien direct. Même style que le reste du menu (verre sombre, accent orange, ressorts). La page
+a deux colonnes, qui restent côte à côte sur téléphone en paysage.
+
+- **Carte d'identité** (à gauche) :
+  - le logo du menu (ballon + HOOP / BOUNCE) et l'accroche « Un jeu de basket de plateforme » ;
+  - deux pastilles : **Version 1.0.0** (orange, lue dans `version.js`) et **Créateur EchoSpeed** ;
+  - **« © 2026 EchoSpeed. Tous droits réservés. »** : l'année se met à jour seule (« 2026–2027 »…).
+- **Liens** :
+  - **Politique de confidentialité** : la vraie page en ligne si une adresse est renseignée, sinon la version
+    intégrée au jeu (« Lire dans le jeu ») ;
+  - **Conditions d'utilisation** : vrai lien quand une adresse existe ; sinon une pastille « Bientôt », et le
+    toucher fait trembler le bouton avec le message « Bientôt disponible ».
+  - Les vrais liens s'ouvrent dans le navigateur, avec une icône « lien externe ».
+- **Crédits** (à droite) : une ligne par rôle (icône, rôle en orange, noms, précision) :
+  - Développement, Design ;
+  - Musiques (compositions originales jouées en temps réel) ;
+  - Effets sonores (synthétisés, aucun fichier audio) ;
+  - Graphismes (dessinés par le code) ;
+  - Polices (Unbounded, Outfit — SIL OFL 1.1) ;
+  - Technologies (Capacitor, Google Mobile Ads).
+  - En bas : « ♥ Merci de jouer ! ».
+- **Animations** :
+  - ouverture : la page glisse depuis la droite et ses blocs apparaissent en cascade ;
+  - le ballon du logo tombe, s'écrase et rebondit, le nom glisse, un reflet traverse la carte ;
+  - le halo orange respire, le cœur bat deux fois ;
+  - clic : effet de pression des boutons, onde au toucher, survol (icône orange, flèche qui avance) ; sons du
+    menu.
+- **Compléter** : tout se fait dans `src/shared/about.js` :
+  - un crédit = un bloc à copier (rôle et précision en FR / EN / ES, noms, icône) ;
+  - un lien = une adresse dans `LINKS` (`privacy`, `terms`).
+
 ### Ancienne carte des mondes (`worlds.html`)
 
 Remplacée à l'étape 11 par la sélection du menu ; l'adresse renvoie vers `index.html#mondes`. Ce qui suit
@@ -700,6 +738,8 @@ décrit l'ancienne page (étapes 7 à 10), conservé pour l'historique :
 
 ### Animations et transitions
 
+- **À propos** (étape 16) : ballon du logo qui tombe et rebondit, reflet sur la carte, halo qui respire, cœur
+  qui bat ; bouton « Bientôt » qui tremble.
 - **Écran de chargement → menu** (étape 14) : fondu + léger zoom de l'écran de chargement, décor du menu qui se
   dézoome, puis l'entrée de l'accueil (elle attend la fin de l'écran de chargement pour être vue).
 - **Entrée du menu** : logo et JOUER glissent depuis la gauche, tuiles qui montent en cascade, pièces en fondu.
@@ -1275,12 +1315,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Publicités récompensées facultatives (AdMob) : doubler les pièces, reprendre au drapeau, coffre bonus,
   roue de la chance ; page Bonus du jour (étape 13)
 - ✅ Écran de chargement (logo, signature EchoSpeed, ballon, particules, barre, fondu vers le menu) (étape 14)
+- ✅ Page « À propos » (étape 16) : version, créateur, copyright, crédits faciles à compléter, liens reliables
 - ✅ Préparation Google Play (étape 15) : icône, feature graphic, captures, textes FR / EN / ES, checklist,
   politique de confidentialité, projet Android Capacitor, version 1.0.0
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur la préparation Google Play (étape 15)
+- 🟡 Attente des retours du porteur du projet sur la page « À propos » (étape 16) et la préparation Google Play
+  (étape 15)
 
 ### À faire — court terme 🔴
 - 🔴 Publication (quand le porteur du projet le décide) : suivre `store/CHECKLIST.md` (comptes, AdMob, AAB,
@@ -1460,6 +1502,25 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 19/11/2026 — Étape 16 : page « À propos » (v1.0.0)
+- **Ajouté** :
+  - page **À propos** (`src/menu/about-page.js`, `#apropos`), ouverte depuis **Paramètres › À propos de Hoop
+    Bounce** :
+    - nom du jeu et logo, version 1.0.0, créateur EchoSpeed, copyright ;
+    - crédits : développement, design, musiques, effets sonores, graphismes, polices, technologies ;
+    - boutons Politique de confidentialité et Conditions d'utilisation ;
+  - contenu centralisé dans `src/shared/about.js` : crédits à compléter, adresses des liens à relier ;
+  - animations d'ouverture, de clic et de survol ; 8 icônes ; textes FR / EN / ES ;
+  - 3 tests (`tests/about.test.mjs`).
+- **Modifié** :
+  - la ligne « Crédits » des Paramètres devient « À propos de Hoop Bounce » ;
+  - le retour d'une sous-page ramène à sa page parente ;
+  - l'historique distingue les pages ouvertes par le menu et celles ouvertes par un lien direct.
+- **Reste à faire** :
+  - retours du porteur du projet ;
+  - renseigner l'adresse en ligne de la politique de confidentialité (`LINKS.privacy`) une fois hébergée ;
+  - conditions d'utilisation (facultatives).
 
 ### 19/11/2026 — Étape 15 : préparation de la publication Google Play (v1.0.0)
 - **Ajouté** :

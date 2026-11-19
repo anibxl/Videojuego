@@ -59,5 +59,14 @@ export const ICONS = {
   target: svg('<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><path d="M12 12l7-7M16.5 4.2l2.6.3.3 2.6"/>'),
   wheel: svg('<circle cx="12" cy="12.6" r="8.4"/><circle cx="12" cy="12.6" r="1.8" fill="currentColor"/><path d="M12 4.2v6.6M12 14.4V21M3.6 12.6h6.6M13.8 12.6h6.6M6.1 6.7l4.6 4.6M13.3 13.9l4.6 4.6M17.9 6.7l-4.6 4.6M10.7 13.9l-4.6 4.6"/><path d="M10.2 1.8h3.6L12 4.4z" fill="currentColor"/>'),
   trophy: svg('<path d="M7.5 4h9v5.2a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H4.2v1.4a3.3 3.3 0 0 0 3.6 3.3M16.5 6h3.3v1.4a3.3 3.3 0 0 1-3.6 3.3M12 13.8v3.4M8.2 20.4h7.6l-.8-3.2H9z"/>'),
+  // Page À propos
+  info: svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/>', { stroke: 2.1 }),
+  code: svg('<path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.4 5.5l-2.8 13"/>'),
+  palette: svg('<path d="M12 3.6a8.4 8.4 0 0 0 0 16.8c1.2 0 1.9-.8 1.9-1.8 0-1.2-1-1.6-1-2.7 0-1 .8-1.7 1.9-1.7h2a3.6 3.6 0 0 0 3.6-3.7C20.4 6.8 16.6 3.6 12 3.6z"/><circle cx="7.8" cy="11" r="1.2" fill="currentColor"/><circle cx="10.4" cy="7.4" r="1.2" fill="currentColor"/><circle cx="14.8" cy="7.6" r="1.2" fill="currentColor"/>'),
+  image: svg('<rect x="3.8" y="5" width="16.4" height="14" rx="2.6"/><circle cx="9" cy="10" r="1.7"/><path d="M4.5 17.5l4.8-4.6 3.4 3.1 2.6-2.4 4.5 4"/>'),
+  type: svg('<path d="M5 7V5.2h14V7M12 5.2v13.6M9 18.8h6"/>'),
+  chip: svg('<rect x="6.5" y="6.5" width="11" height="11" rx="2"/><rect x="9.6" y="9.6" width="4.8" height="4.8" rx=".8"/><path d="M9.5 3.5v3M14.5 3.5v3M9.5 17.5v3M14.5 17.5v3M3.5 9.5h3M3.5 14.5h3M17.5 9.5h3M17.5 14.5h3"/>'),
+  doc: svg('<path d="M7 3.8h6.8L18.5 8.5v11.7H7a1.5 1.5 0 0 1-1.5-1.5V5.3A1.5 1.5 0 0 1 7 3.8z"/><path d="M13.5 4v4.8h4.8M9 12.5h6M9 15.8h6"/>'),
+  external: svg('<path d="M14 4.5h5.5V10M19.5 4.5l-8 8M17 13.5v4.6a1.4 1.4 0 0 1-1.4 1.4H5.9a1.4 1.4 0 0 1-1.4-1.4V8.4A1.4 1.4 0 0 1 5.9 7h4.6"/>'),
   map: svg('<path d="M9 4.5L3.5 6.6v13l5.5-2.1 6 2.1 5.5-2.1v-13L15 6.6z"/><path d="M9 4.5v13M15 6.6v13"/>'),
 };

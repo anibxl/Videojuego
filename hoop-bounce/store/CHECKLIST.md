@@ -67,6 +67,8 @@ ou la console AdMob (compte requis).
 - [ ] **Politique de confidentialité** : URL publique de `store/privacy-policy.html`. Avant de la mettre en ligne,
       remplacer `[E-MAIL DE CONTACT]` par l'adresse de contact.
       Hébergement simple : GitHub Pages (Paramètres du dépôt › Pages), ou le site du développeur.
+      Une fois en ligne, mettre aussi l'adresse dans `src/shared/about.js` (`LINKS.privacy`) : le bouton de la
+      page À propos ouvrira la page en ligne.
 - [ ] **Annonces** : « Oui, mon application contient des annonces ». Ce sont uniquement des annonces
       récompensées et facultatives.
 - [ ] **Accès à l'application** : aucune restriction (pas de compte, pas de code).

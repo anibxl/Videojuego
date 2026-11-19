@@ -121,9 +121,9 @@ export function settingsPage(lang, s) {
             <span class="row-text"><span class="row-label">${t(lang, 'settings.privacy')}</span></span>
             <span class="chev">${ICONS.chevron}</span>
           </button>
-          <button class="row link pressable" data-sheet="credits">
-            <span class="row-icon">${ICONS.heart}</span>
-            <span class="row-text"><span class="row-label">${t(lang, 'settings.credits')}</span></span>
+          <button class="row link pressable" data-nav="apropos" id="set-about">
+            <span class="row-icon">${ICONS.info}</span>
+            <span class="row-text"><span class="row-label">${t(lang, 'settings.aboutGame')}</span><span class="row-hint">${t(lang, 'about.credits')} · ${t(lang, 'about.links')}</span></span>
             <span class="chev">${ICONS.chevron}</span>
           </button>
           <p class="version">Hoop Bounce · ${t(lang, 'settings.version', { v: APP_VERSION })}</p>

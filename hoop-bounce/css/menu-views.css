@@ -871,3 +871,179 @@
 .app:not([data-page="home"]) .brand,
 .app:not([data-page="home"]) .play,
 .app:not([data-page="home"]) .dock { animation: none !important; }
+
+/* ────────────────────────────────────────────────────────────────────────────
+   À propos (Paramètres › À propos de Hoop Bounce) — même verre sombre, même accent orange, mêmes ressorts.
+   À gauche l'identité du jeu et les liens, à droite les crédits. Animations : transform / opacity.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.about-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr);
+  gap: clamp(14px, 2.2vw, 22px);
+  align-items: start;
+}
+.about-side { display: grid; gap: clamp(14px, 2.2vw, 22px); min-width: 0; }
+
+/* Carte d'identité : logo, accroche, version, créateur, copyright */
+.about-id {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding: clamp(18px, 4.5vh, 30px) 20px clamp(14px, 3vh, 20px);
+}
+.about-glow {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  width: 260px;
+  height: 260px;
+  margin: -130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--orange-rgb), 0.22), transparent 65%);
+  pointer-events: none;
+  animation: about-breathe 4s ease-in-out infinite;
+}
+@keyframes about-breathe { 50% { opacity: 0.55; transform: scale(0.92); } }
+/* Reflet qui traverse la carte une fois à l'ouverture */
+.about-id::after {
+  content: '';
+  position: absolute;
+  inset: -20% auto -20% -50%;
+  width: 40%;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0));
+  transform: skewX(-16deg);
+  pointer-events: none;
+}
+.page.active .about-id::after { animation: about-sheen 1.4s var(--ease-out) 0.55s both; }
+@keyframes about-sheen { from { left: -50%; } to { left: 130%; } }
+
+.about-logo { position: relative; display: flex; align-items: center; gap: 14px; }
+.about-logo .wordmark { font-size: clamp(26px, 8vh, 44px); text-align: left; }
+.about-ball { width: clamp(46px, 13vh, 72px); height: clamp(46px, 13vh, 72px); flex: none; filter: drop-shadow(0 8px 18px rgba(255, 110, 40, 0.35)); }
+.about-ball svg { width: 100%; height: 100%; display: block; }
+/* Ouverture : le ballon tombe, s'écrase et rebondit ; le nom glisse */
+.page.active .about-ball { animation: about-drop 0.95s cubic-bezier(0.3, 1.4, 0.5, 1) 0.15s both; transform-origin: 50% 100%; }
+@keyframes about-drop {
+  0% { transform: translateY(-46px) rotate(-90deg); opacity: 0; }
+  45% { transform: translateY(0) scale(1.12, 0.86) rotate(-10deg); opacity: 1; }
+  70% { transform: translateY(-8px) scale(0.96, 1.04) rotate(4deg); }
+  100% { transform: none; }
+}
+.page.active .about-logo .wordmark { animation: enter-left 0.8s var(--ease-out) 0.25s both; }
+
+.about-tagline {
+  position: relative;
+  margin: 8px 0 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.about-facts {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+  margin: 0;
+}
+.about-facts div {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline);
+}
+.about-facts dt { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+.about-facts dd { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
+#about-version { color: var(--orange); }
+.about-copy { position: relative; margin: 14px 0 0; font-size: 12.5px; color: var(--ink-3); }
+
+/* Liens */
+.about-links { padding-bottom: 10px; }
+.about-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 58px;
+  padding: 8px 6px;
+  margin: 0 -6px;
+  width: calc(100% + 12px);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.2s ease, transform 0.25s var(--ease-spring);
+}
+.about-link + .about-link { border-top: 1px solid var(--hairline); }
+.about-link:hover { background: rgba(255, 255, 255, 0.04); }
+.about-link:active { transform: scale(0.97); }
+.about-link .chev { width: 20px; height: 20px; flex: none; color: var(--ink-3); transition: transform 0.25s var(--ease-spring), color 0.2s ease; }
+.about-link:hover .chev, .about-link:focus-visible .chev { transform: translateX(3px); color: var(--orange); }
+.about-link .row-icon { transition: color 0.2s ease, background-color 0.2s ease; }
+.about-link:hover .row-icon { color: var(--orange); background: rgba(var(--orange-rgb), 0.12); }
+.about-link.soon .row-label { color: var(--ink-2); }
+.about-link.soon .row-hint { display: none; }
+.about-soon {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--hairline-strong);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.about-link.shake { animation: shake 0.45s ease; }
+
+/* Crédits : une ligne par rôle (icône, rôle, noms, précision) */
+.about-credits { padding-bottom: 6px; }
+.credit-list { list-style: none; margin: 0; padding: 0; }
+.credit {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 11px 0;
+}
+.credit + .credit { border-top: 1px solid var(--hairline); }
+.credit .row-icon { margin-top: 1px; }
+.credit:hover .row-icon { color: var(--orange); background: rgba(var(--orange-rgb), 0.12); transition: color 0.2s ease, background-color 0.2s ease; }
+.credit-text { display: grid; gap: 2px; min-width: 0; }
+.credit-role { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--orange); }
+.credit-names { display: grid; gap: 1px; font-weight: 600; font-size: 15.5px; }
+.credit-note { font-size: 12.5px; color: var(--ink-3); }
+.about-thanks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 6px 0 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hairline);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.about-thanks svg { width: 18px; height: 18px; color: #ff5d7a; }
+.page.active .about-thanks svg { animation: about-beat 1.6s ease-in-out 1.2s 2; }
+@keyframes about-beat { 15%, 45% { transform: scale(1.25); } 30% { transform: scale(0.95); } }
+
+@media (max-width: 760px) {
+  .about-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 12px; }
+  .credit-names { font-size: 14.5px; }
+}
+@media (max-height: 400px) {
+  .about-id { padding: 14px 16px 12px; }
+  .about-tagline { margin: 4px 0 10px; }
+  .about-facts dd { font-size: 15px; }
+  .credit { padding: 8px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .about-glow, .page.active .about-ball, .page.active .about-logo .wordmark, .page.active .about-id::after, .page.active .about-thanks svg { animation: none !important; }
+}
