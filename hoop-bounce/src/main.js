@@ -27,6 +27,7 @@ import { Stats } from './shared/stats.js';
 import { Missions } from './shared/missions.js';
 import { Achievements } from './shared/achievements.js';
 import { lt } from './shared/live-i18n.js';
+import { getAds } from './shared/ads.js';
 
 const R = CONFIG.ball.radius;
 const DT = CONFIG.physics.fixedDt;
@@ -61,6 +62,17 @@ const ui = {
   replay: $('btn-replay'),
   winCoins: $('win-coins'),
   winCoinsN: $('win-coins-n'),
+  winReward: $('win-reward'),
+  winX2: $('win-x2'),
+  btnDouble: $('btn-double'),
+  btnDoubleSub: $('btn-double-sub'),
+  fail: $('fail'),
+  failLevel: $('fail-level'),
+  failBody: $('fail-body'),
+  btnFailRestart: $('btn-fail-restart'),
+  btnFailContinue: $('btn-fail-continue'),
+  btnFailLabel: $('btn-fail-continue-label'),
+  btnFailSub: $('btn-fail-continue-sub'),
   fade: $('fade'),
   intro: $('intro'),
   introWorld: $('intro-world'),
@@ -79,6 +91,8 @@ const stats = new Stats();
 const missions = new Missions();
 const achievements = new Achievements();
 const unlockedWorlds = () => WORLDS.filter((_, i) => progress.isWorldUnlocked(i)).map((w) => w.id);
+// Publicités récompensées (étape 13) : toujours optionnelles, jamais pendant un niveau
+const ads = getAds();
 const params = new URLSearchParams(location.search);
 let levelIndex = initialLevelIndex();
 
@@ -99,6 +113,9 @@ function initialLevelIndex() {
 const QUALITY_PARTICLES = { low: 0.4, medium: 0.7, high: 1 };
 
 const game = new Game(CONFIG, localizedLevel(levelIndex));
+// Après une chute, si un drapeau a été atteint : écran « Niveau échoué » (recommencer, ou reprendre au
+// drapeau en regardant une publicité)
+game.holdAtCheckpoint = true;
 const renderer = new Renderer(canvas, game.level);
 renderer.particleDensity = QUALITY_PARTICLES[settings.get('quality')] ?? 1;
 // Boutique : articles équipés (ballon, effet de rebond, traînée, animation de panier)
@@ -548,10 +565,22 @@ function showWin(r) {
   stats.markLevel(def.id);
   stats.save();
   setTimeout(checkLive, 1600);
-  ui.winCoins.hidden = earned.total <= 0;
+  ui.winReward.hidden = earned.total <= 0;
   ui.winCoinsN.textContent = '+0';
   ui.winCoins.setAttribute('aria-label', `+${earned.total}`);
+  ui.winX2.classList.remove('show');
   countUp(ui.winCoinsN, earned.total, 900 + r.stars * 260);
+  // Doubler les pièces avec une publicité (proposé, jamais imposé) : le bouton s'active une fois les
+  // animations de victoire terminées
+  state.winEarned = earned.total;
+  state.doubled = false;
+  ads.block('animation');
+  setTimeout(() => {
+    ads.unblock('animation');
+    if (state.overlay === 'win' && earned.total > 0) ads.prepare('doubleCoins');
+    updateAdButtons();
+  }, 1700 + r.stars * 260);
+  updateAdButtons();
   const lastOverall = levelIndex >= LEVELS.length - 1;
   const lastInWorld = def.indexInWorld === world.levels.length - 1;
   ui.winLevel.textContent = `${levelLabel(def)} · ${gt(lang, def.nameKey)}`;
@@ -606,12 +635,163 @@ function countUp(el, total, delay) {
   }, delay);
 }
 
+// ─── Publicités récompensées : doubler les pièces, reprendre au drapeau ────
+
+/** Met les boutons de publicité dans le bon état (prête, chargement, indisponible, limite du jour). */
+function updateAdButtons() {
+  // Victoire : doubler les pièces
+  const st = state.doubled ? 'done' : ads.status('doubleCoins');
+  const b = ui.btnDouble;
+  b.dataset.state = st;
+  b.disabled = st !== 'ready';
+  ui.btnDoubleSub.textContent = gt(lang, {
+    done: 'ad.doubled',
+    ready: 'ad.double',
+    blocked: 'ad.double',
+    loading: 'ad.loading',
+    unavailable: 'ad.unavailable',
+    capped: 'ad.capped',
+  }[st] ?? 'ad.double');
+  // Échec : reprendre au drapeau. Sans publicité disponible, c'est offert (on ne punit jamais le joueur)
+  const fs = ads.status('checkpoint');
+  const free = fs === 'unavailable' || fs === 'capped';
+  const c = ui.btnFailContinue;
+  c.dataset.state = free ? 'free' : fs;
+  c.disabled = !free && fs !== 'ready';
+  ui.btnFailLabel.textContent = gt(lang, free ? 'ad.freeContinue' : 'ad.watch');
+  ui.btnFailSub.textContent = gt(lang, free ? 'ad.freeNote' : fs === 'loading' ? 'ad.loading' : 'ad.checkpoint');
+}
+ads.onChange(() => updateAdButtons());
+
+/** Pendant une publicité, le jeu se tait. */
+async function watchAd(placement) {
+  state.adBusy = true;
+  const vol = settings.get('music');
+  music.setVolume(0);
+  sfx.setVolume(0);
+  const res = await ads.showRewarded(placement);
+  music.setVolume(vol);
+  sfx.setVolume(settings.get('sfx'));
+  state.adBusy = false;
+  return res;
+}
+
+function adNote(card, key) {
+  let n = card.querySelector('.ad-note');
+  if (!n) {
+    n = document.createElement('p');
+    n.className = 'ad-note';
+    const actions = card.querySelector('.actions');
+    if (actions) actions.before(n);
+    else card.appendChild(n);
+  }
+  n.textContent = gt(lang, key);
+  n.classList.remove('show');
+  void n.offsetWidth;
+  n.classList.add('show');
+}
+
+async function doubleCoins() {
+  if (state.doubled || state.adBusy || !state.winEarned) return;
+  const res = await watchAd('doubleCoins');
+  if (state.overlay !== 'win') return;
+  if (res.status === 'rewarded') {
+    // Récompense validée par le SDK : les pièces doublent, avec une petite fête
+    const bonus = state.winEarned;
+    wallet.addCoins(bonus);
+    stats.add('coins', bonus);
+    state.doubled = true;
+    countFromTo(ui.winCoinsN, bonus, bonus * 2, 900);
+    ui.winX2.classList.remove('show');
+    void ui.winX2.offsetWidth;
+    ui.winX2.classList.add('show');
+    coinBurst(ui.winCoins);
+    sfx.bonus();
+    haptics.success();
+  } else adNote(ui.win.querySelector('.card'), res.status === 'dismissed' ? 'ad.dismissed' : res.status === 'error' ? 'ad.error' : 'ad.unavailable');
+  updateAdButtons();
+}
+
+/** Petites pièces qui jaillissent autour du compteur (bonus doublé). */
+function coinBurst(anchor) {
+  const r = anchor.getBoundingClientRect();
+  for (let i = 0; i < 14; i++) {
+    const c = document.createElement('span');
+    c.className = 'burst-coin';
+    const a = (i / 14) * Math.PI * 2;
+    c.style.left = `${r.left + r.width / 2}px`;
+    c.style.top = `${r.top + r.height / 2}px`;
+    c.style.setProperty('--dx', `${Math.cos(a) * (60 + Math.random() * 50)}px`);
+    c.style.setProperty('--dy', `${Math.sin(a) * (40 + Math.random() * 30) - 20}px`);
+    document.body.appendChild(c);
+    c.addEventListener('animationend', () => c.remove(), { once: true });
+  }
+}
+
+function countFromTo(el, from, to, dur) {
+  const t0 = performance.now();
+  let lastTick = 0;
+  const tick = (now) => {
+    const k = Math.min(1, (now - t0) / dur);
+    el.textContent = `+${Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3)))}`;
+    if (now - lastTick > 60 && k < 1) {
+      sfx.star(2);
+      lastTick = now;
+    }
+    if (k < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+// Échec avec un drapeau atteint
+game.events.on('failed', (e) => {
+  const def = LEVELS[levelIndex];
+  ui.failLevel.textContent = `${levelLabel(def)} · ${gt(lang, def.nameKey)}`;
+  ui.failBody.textContent = gt(lang, 'fail.body', { n: e.stars });
+  ui.fail.querySelector('.ad-note')?.remove();
+  openOverlay('fail');
+  music.setDuck(0.45);
+  ads.prepare('checkpoint');
+  updateAdButtons();
+  ui.btnFailRestart.focus({ preventScroll: true });
+});
+
+async function continueFromCheckpoint() {
+  if (state.adBusy || state.overlay !== 'fail') return;
+  const st = ads.status('checkpoint');
+  const free = st === 'unavailable' || st === 'capped';
+  if (!free) {
+    const res = await watchAd('checkpoint');
+    if (state.overlay !== 'fail') return;
+    if (res.status !== 'rewarded') {
+      // Plus aucune annonce au moment de la montrer : on ne bloque pas le joueur
+      if (res.status === 'unavailable') return continueNow();
+      adNote(ui.fail.querySelector('.card'), res.status === 'dismissed' ? 'ad.dismissed' : 'ad.error');
+      return updateAdButtons();
+    }
+    sfx.bonus();
+  }
+  continueNow();
+}
+
+function continueNow() {
+  closeOverlays();
+  music.setDuck(1);
+  if (game.continueFromCheckpoint()) haptics.success();
+}
+
+ui.btnDouble.addEventListener('click', doubleCoins);
+ui.btnFailRestart.addEventListener('click', restart);
+ui.btnFailContinue.addEventListener('click', continueFromCheckpoint);
+
 // ─── Pause, overlays, enchaînement des niveaux ─────────────────────────────
+
+const OVERLAYS = () => ({ pause: ui.pause, win: ui.win, fail: ui.fail });
 
 function openOverlay(name) {
   state.overlay = name;
   document.body.classList.add('overlay-open');
-  (name === 'pause' ? ui.pause : ui.win).classList.remove('hidden');
+  OVERLAYS()[name].classList.remove('hidden');
   input.enabled = false;
   input.releaseAll();
   sfx.wind(false);
@@ -620,13 +800,12 @@ function openOverlay(name) {
 function closeOverlays() {
   state.overlay = null;
   document.body.classList.remove('overlay-open');
-  ui.pause.classList.add('hidden');
-  ui.win.classList.add('hidden');
+  for (const el of Object.values(OVERLAYS())) el.classList.add('hidden');
   input.enabled = true;
 }
 
 function pause() {
-  if (state.paused || game.state === 'won' || state.intro) return;
+  if (state.paused || game.state === 'won' || game.state === 'failed' || state.overlay || state.intro) return;
   state.paused = true;
   loop.stop();
   music.setDuck(0.35);
@@ -817,9 +996,10 @@ const input = new Input(canvas, { left: ui.padLeft, right: ui.padRight, bounce: 
       if (code === 'Enter' || code === 'Space' || code === 'Escape') hideIntro();
       return;
     }
-    if (code === 'Escape' || code === 'KeyP') (state.paused ? resume : pause)();
+    if ((code === 'Escape' || code === 'KeyP') && state.overlay !== 'fail' && state.overlay !== 'win') (state.paused ? resume : pause)();
     else if (code === 'KeyR') restart();
     else if (code === 'Enter' && state.overlay === 'win') (ui.next.hidden ? restart : nextLevel)();
+    else if ((code === 'Enter' || code === 'Space') && state.overlay === 'fail') restart();
     else if (code === 'Backquote' || code === 'F3') state.debug = !state.debug;
   },
 });
@@ -899,6 +1079,9 @@ function render(frameDt, alpha) {
       state.playAcc -= Math.floor(state.playAcc);
     }
   }
+  // Publicités : seulement depuis les écrans de victoire et d'échec, jamais pendant le jeu
+  if (state.overlay === 'win' || state.overlay === 'fail') ads.unblock('playing');
+  else ads.block('playing');
   state.liveTimer += frameDt;
   if (state.liveTimer > 1.2 && !state.overlay) {
     state.liveTimer = 0;
@@ -948,7 +1131,7 @@ document.addEventListener('visibilitychange', () => {
     sfx.wind(false);
     sfx.suspend();
     if (state.intro) loop.stop();
-    else if (state.overlay !== 'win') pause();
+    else if (state.overlay !== 'win' && state.overlay !== 'fail') pause();
     else loop.stop();
   } else if (state.overlay === 'win' || state.intro) {
     loop.start();

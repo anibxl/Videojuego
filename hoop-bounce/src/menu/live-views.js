@@ -12,6 +12,7 @@ import { Stats, dayKey, secondsToMidnight } from '../shared/stats.js';
 import { DailyReward, DAILY_CALENDAR } from '../shared/daily.js';
 import { Missions } from '../shared/missions.js';
 import { Achievements, TIERS } from '../shared/achievements.js';
+import { Bonus } from '../shared/bonus.js';
 import { lt } from '../shared/live-i18n.js';
 import { drawThumb } from '../shop/preview.js';
 import { ICONS } from './icons.js';
@@ -39,10 +40,14 @@ export function liveBadges() {
     daily: c.daily.canClaim() ? 1 : 0,
     missions: c.missions.claimable(c.stats, c.worlds),
     achievements: c.achievements.claimable(c),
+    bonus: (() => {
+      const b = new Bonus();
+      return (b.chestAvailable() ? 1 : 0) + (b.freeSpinAvailable() ? 1 : 0);
+    })(),
   };
 }
 
-function duration(lang, sec) {
+export function duration(lang, sec) {
   const h = Math.floor(sec / 3600);
   const m = Math.max(1, Math.ceil((sec % 3600) / 60));
   return h ? t(lang, 'time.hm', { h, m: m === 60 ? 59 : m }) : t(lang, 'time.m', { m });
@@ -50,7 +55,7 @@ function duration(lang, sec) {
 
 const fmt = (lang, n) => n.toLocaleString(lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'fr-FR');
 
-function header(lang, id, titleKey, right = '') {
+export function header(lang, id, titleKey, right = '') {
   return `
     <header class="page-head">
       <button class="icon-btn pressable" data-back aria-label="${t(lang, 'back')}">${ICONS.back}</button>
@@ -62,7 +67,7 @@ function header(lang, id, titleKey, right = '') {
 }
 
 /** Base commune : rafraîchissement, compte à rebours, compteur de pièces. */
-class LiveView {
+export class LiveView {
   constructor(root, env) {
     this.root = root;
     this.env = env;

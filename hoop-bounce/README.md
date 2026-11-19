@@ -3,7 +3,15 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 12 (actuelle) :** **revenir chaque jour**. Récompense quotidienne sur 7 jours (pièces, coffre, traînée
+**Étape 13 (actuelle) :** **publicités récompensées, toujours facultatives** (Google AdMob, identifiants
+de test uniquement pendant le développement). Doubler les pièces après une victoire, reprendre au dernier
+drapeau après un échec (offert si aucune annonce n'est disponible), coffre bonus quotidien gratuit ou amélioré,
+roue de la chance (1 lancer gratuit par jour, lancers bonus). Jamais d'annonce pendant un niveau, au lancement ou
+automatiquement. Accès : bouton Bonus de l'accueil. Configuration : `src/shared/ads-config.js` (seul fichier à
+modifier avant la publication) et `native/android/README.md`. Dans le navigateur, une annonce de test simulée
+s'affiche (`?ads=none` : aucune annonce, `?ads=fail` : erreur).
+
+**Étape 12 :** **revenir chaque jour**. Récompense quotidienne sur 7 jours (pièces, coffre, traînée
 et skin exclusifs, coffre qui s'ouvre, pluie de pièces), 3 missions quotidiennes renouvelées à minuit, 40 succès
 sur 4 paliers (Débutant → Légende) avec leurs récompenses, statistiques comptées pendant la partie. Tout est
 enregistré automatiquement. Accès : boutons Cadeau, Missions et Succès en haut de l'accueil.
@@ -197,8 +205,8 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 305 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
-                                       # panier, progression, niveaux faisables, menu
+npm test                               # 310 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+                                       # panier, progression, niveaux faisables, menu, publicités
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)
 node tools/route-check.mjs 0           # vérification rapide : solutions expertes seulement

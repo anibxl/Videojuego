@@ -57,6 +57,7 @@ export const ICONS = {
   multi: svg('<circle cx="8.6" cy="8.6" r="3.2"/><path d="M2.8 19.4a5.8 5.8 0 0 1 11.6 0"/><circle cx="16.8" cy="9.4" r="2.6"/><path d="M15.4 14a5 5 0 0 1 5.8 5.4"/>'),
   gift: svg('<rect x="3.5" y="9" width="17" height="11.5" rx="2"/><path d="M2.8 9h18.4v-3H2.8zM12 6v14.5"/><path d="M12 6c-1.2-2.8-4.6-3.6-5.4-1.6C5.9 6 9.2 6 12 6zm0 0c1.2-2.8 4.6-3.6 5.4-1.6.7 1.6-2.6 1.6-5.4 1.6z"/>'),
   target: svg('<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><path d="M12 12l7-7M16.5 4.2l2.6.3.3 2.6"/>'),
+  wheel: svg('<circle cx="12" cy="12.6" r="8.4"/><circle cx="12" cy="12.6" r="1.8" fill="currentColor"/><path d="M12 4.2v6.6M12 14.4V21M3.6 12.6h6.6M13.8 12.6h6.6M6.1 6.7l4.6 4.6M13.3 13.9l4.6 4.6M17.9 6.7l-4.6 4.6M10.7 13.9l-4.6 4.6"/><path d="M10.2 1.8h3.6L12 4.4z" fill="currentColor"/>'),
   trophy: svg('<path d="M7.5 4h9v5.2a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H4.2v1.4a3.3 3.3 0 0 0 3.6 3.3M16.5 6h3.3v1.4a3.3 3.3 0 0 1-3.6 3.3M12 13.8v3.4M8.2 20.4h7.6l-.8-3.2H9z"/>'),
   map: svg('<path d="M9 4.5L3.5 6.6v13l5.5-2.1 6 2.1 5.5-2.1v-13L15 6.6z"/><path d="M9 4.5v13M15 6.6v13"/>'),
 };

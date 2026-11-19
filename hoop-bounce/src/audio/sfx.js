@@ -399,6 +399,14 @@ export class Sfx {
     this._tone(220, 220, 0.5, 0.05 * volume, 'square');
   }
 
+  /** Bonus de publicité (pièces doublées, reprise) : cascade de pièces et accord brillant. */
+  bonus() {
+    if (!this.ready) return;
+    for (let i = 0; i < 8; i++) this._tone(1500 + i * 160, 2000 + i * 160, 0.09, 0.07, 'sine', i * 0.05);
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this._tone(f, f, 0.45, 0.09, 'triangle', 0.18 + i * 0.05));
+    this._noiseBurst(0.35, 0.12, 'highpass', 5000, 1, 9000, 0.15);
+  }
+
   /** Mission terminée / succès débloqué : petit arpège lumineux qui monte. */
   mission() {
     if (!this.ready) return;

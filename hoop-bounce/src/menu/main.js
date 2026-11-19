@@ -9,6 +9,7 @@ import { WorldsView } from './worlds-view.js';
 import { CollectionView } from './collection-view.js';
 import { DailyView, MissionsView, AchievementsView, liveBadges } from './live-views.js';
 import { RewardFx } from './rewards-fx.js';
+import { BonusView } from './bonus-view.js';
 import { DailyReward } from '../shared/daily.js';
 import { dayKey } from '../shared/stats.js';
 import { Settings } from '../shared/settings.js';
@@ -17,7 +18,7 @@ import { WORLDS } from '../game/worlds.js';
 import { gt } from '../game/i18n.js';
 import { Wallet } from '../shared/wallet.js';
 
-const PAGES = ['mondes', 'modes', 'collection', 'parametres', 'quotidien', 'missions', 'succes'];
+const PAGES = ['mondes', 'modes', 'collection', 'parametres', 'quotidien', 'missions', 'succes', 'bonus'];
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -77,6 +78,8 @@ function applyStaticTexts() {
 
 // Pages vivantes (étape 11) : sélection des mondes et collection
 const viewEnv = { lang, sound, vibrate: (p) => vibrate(p), toast: (txt) => toast(txt), launch: (e, url) => launchGame(e, url), refreshHome: () => refreshHome() };
+// Pendant une publicité (page Bonus), la musique et les sons du menu se taisent
+viewEnv.adMute = (on) => (on ? sound.setVolumes(0, 0) : sound.setVolumes(settings.get('music'), settings.get('sfx')));
 viewEnv.fx = new RewardFx(viewEnv);
 const worldsView = new WorldsView($('#page-mondes'), viewEnv);
 const collectionView = new CollectionView($('#page-collection'), viewEnv);
@@ -84,7 +87,9 @@ const collectionView = new CollectionView($('#page-collection'), viewEnv);
 const dailyView = new DailyView($('#page-quotidien'), viewEnv);
 const missionsView = new MissionsView($('#page-missions'), viewEnv);
 const achievementsView = new AchievementsView($('#page-succes'), viewEnv);
-const VIEWS = { mondes: worldsView, collection: collectionView, quotidien: dailyView, missions: missionsView, succes: achievementsView };
+// Coffre bonus et roue de la chance (étape 13)
+const bonusView = new BonusView($('#page-bonus'), viewEnv);
+const VIEWS = { mondes: worldsView, collection: collectionView, quotidien: dailyView, missions: missionsView, succes: achievementsView, bonus: bonusView };
 
 function renderPages() {
   const l = lang();
@@ -92,7 +97,7 @@ function renderPages() {
   $('#page-modes').innerHTML = modesPage(l);
   collectionView.render();
   $('#page-parametres').innerHTML = settingsPage(l, settings.values);
-  for (const v of [dailyView, missionsView, achievementsView]) if (v.active) v.render(true);
+  for (const v of [dailyView, missionsView, achievementsView, bonusView]) if (v.active) v.render(true);
   requestAnimationFrame(() => $$('.segmented').forEach(positionIndicator));
   refreshHome();
 }
@@ -120,6 +125,7 @@ function refreshHome() {
     setHubBadge('quotidien', b.daily);
     setHubBadge('missions', b.missions);
     setHubBadge('succes', b.achievements);
+    setHubBadge('bonus', b.bonus);
   } catch {
     /* sauvegarde indisponible */
   }

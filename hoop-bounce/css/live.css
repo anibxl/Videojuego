@@ -720,3 +720,223 @@
   .dday-tag { font-size: 9px; padding: 2px 5px; letter-spacing: 0.02em; }
   .dday-name { font-size: 11px; }
 }
+
+/* ── Page Bonus : coffre bonus et roue de la chance (étape 13) ───────────── */
+
+.chest.super { --c1: #ffb347; --c2: #d4471f; --band: #fff0b3; --gem: #ff9df5; }
+.chest.super .chest-body b { animation: gem-glint 1.4s ease-in-out infinite; }
+@keyframes gem-glint { 50% { box-shadow: 0 0 22px var(--gem), 0 0 6px #fff; } }
+.chest.opened .chest-lid { transform: translate(-6px, -8px) rotate(-22deg); }
+.chest.opened { filter: saturate(0.55) brightness(0.8); }
+.chest.shake { animation: chest-shake 0.5s ease-in-out; }
+
+.bv-body { padding-top: clamp(4px, 1.4vh, 10px); }
+.bv-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: clamp(10px, 1.8vw, 18px);
+}
+.bv-panel {
+  position: relative;
+  min-height: 0;
+  border-radius: 22px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), var(--shadow-soft);
+  padding: clamp(10px, 2.4vh, 18px) clamp(12px, 2vw, 20px);
+  overflow: hidden;
+}
+.bv-title { margin: 0; font-family: var(--font-display); font-size: clamp(16px, 4.2vh, 20px); font-weight: 800; }
+.bv-sub { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.35; }
+.bv-emoji { font-size: 20px; line-height: 1; }
+
+/* Coffre */
+.bv-chest { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.bv-chest::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 240px;
+  height: 240px;
+  margin: -120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 201, 77, 0.22), transparent 65%);
+  pointer-events: none;
+}
+.bv-chest[data-open="0"]::before { opacity: 0.3; }
+.bv-stage { position: relative; flex: 1; min-height: 70px; display: grid; place-items: center; }
+.bv-stage .chest { width: clamp(74px, 18vh, 104px); height: clamp(62px, 15vh, 87px); }
+.bv-stage .chest-lid { border-radius: 28px 28px 6px 6px; }
+.bv-sparkles { position: absolute; inset: 0; pointer-events: none; }
+.bv-sparkles i { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #fff3c4; box-shadow: 0 0 10px #ffd36b; opacity: 0; }
+.bv-sparkles i:nth-child(1) { left: 30%; top: 30%; }
+.bv-sparkles i:nth-child(2) { left: 68%; top: 26%; }
+.bv-sparkles i:nth-child(3) { left: 24%; top: 66%; }
+.bv-sparkles i:nth-child(4) { left: 74%; top: 62%; }
+.bv-chest[data-open="1"] .bv-sparkles i { animation: sparkle 2.4s ease-in-out infinite; }
+.bv-sparkles i:nth-child(2) { animation-delay: 0.6s !important; }
+.bv-sparkles i:nth-child(3) { animation-delay: 1.2s !important; }
+.bv-sparkles i:nth-child(4) { animation-delay: 1.8s !important; }
+@keyframes sparkle { 0%, 100% { opacity: 0; transform: scale(0.3); } 40% { opacity: 1; transform: scale(1.2); } }
+/* Coffre amélioré : éclair et étincelles avant l'ouverture */
+.bv-stage.upgrade::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 220, 160, 0.95), rgba(255, 140, 60, 0) 70%);
+  animation: upgrade-flash 0.9s ease-out forwards;
+}
+@keyframes upgrade-flash { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(14); opacity: 0; } }
+.bv-stage.upgrade .chest { animation: chest-upgrade 0.9s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes chest-upgrade { 0% { transform: scale(1); } 35% { transform: scale(1.25) rotate(-6deg); } 60% { transform: scale(0.95) rotate(4deg); } 100% { transform: scale(1); } }
+
+.bv-actions { display: grid; gap: 6px; width: 100%; max-width: 320px; }
+.bv-free, .bv-spin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 46px;
+  border-radius: 15px;
+  background: linear-gradient(180deg, #ffd36b, #ffab2e 55%, #ff8a1e);
+  color: #2a1400;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 10px 24px rgba(255, 171, 46, 0.35);
+}
+.bv-free:disabled, .bv-spin:disabled { filter: saturate(0.5) brightness(0.8); }
+.bv-or { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+.bv-perks { margin: 8px 0 0; font-size: 11.5px; color: #ffcf9a; line-height: 1.35; }
+.bv-perks span { color: #ffd36b; }
+.bv-done { display: inline-flex; align-items: center; gap: 7px; margin: 4px 0 0; color: #7cf0c8; font-weight: 700; font-size: 14px; }
+.bv-done svg { width: 18px; height: 18px; fill: currentColor; }
+.bv-done.small { font-size: 13px; margin: 0; }
+.bv-renew { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; }
+
+/* Roue */
+.bv-wheel { display: flex; align-items: center; gap: clamp(12px, 2.4vw, 26px); }
+.wheel-wrap { position: relative; flex: none; height: 100%; max-height: 300px; aspect-ratio: 1; display: grid; place-items: center; padding-top: 10px; }
+.wheel { position: relative; width: 100%; aspect-ratio: 1; border-radius: 50%; container-type: inline-size; }
+.wheel-disc {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  will-change: transform;
+  box-shadow: inset 0 0 0 2px rgba(255, 214, 120, 0.6), inset 0 0 30px rgba(0, 0, 0, 0.45);
+}
+.wheel-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 63%, #6b4512 63.5%, #ffcf6b 66%, #b47a22 70%, #4a2c08 71%);
+  pointer-events: none;
+}
+/* Petites lumières du bord : elles clignotent pendant le lancer */
+.wheel-rim::before {
+  content: '';
+  position: absolute;
+  inset: 1.6%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 11deg, #fff6d0 0deg 3deg, transparent 3deg 22.5deg);
+  -webkit-mask: radial-gradient(circle, transparent 66%, #000 66.5%, #000 69%, transparent 69.5%);
+  mask: radial-gradient(circle, transparent 66%, #000 66.5%, #000 69%, transparent 69.5%);
+  opacity: 0.55;
+}
+.wheel.spinning .wheel-rim::before { animation: rim-lights 0.25s steps(2) infinite; }
+@keyframes rim-lights { 50% { opacity: 1; filter: drop-shadow(0 0 4px #ffd36b); } }
+.wheel-hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 17%;
+  height: 17%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffb26b, #ff7a2f 55%, #c8430f);
+  box-shadow: 0 0 0 3px #ffd36b, 0 6px 14px rgba(0, 0, 0, 0.5), inset -3px -4px 0 rgba(0, 0, 0, 0.18);
+}
+.wheel-hub::before, .wheel-hub::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(60, 20, 0, 0.45); }
+.wheel-hub::before { clip-path: inset(0 48% 0 48%); }
+.wheel-hub::after { clip-path: inset(48% 0 48% 0); }
+.wheel-pointer {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 3;
+  width: 26px;
+  height: 34px;
+  transform: translateX(-50%);
+  transform-origin: 50% 30%;
+  background: linear-gradient(180deg, #fff3c4, #ffc23d 60%, #d18a12);
+  clip-path: polygon(50% 100%, 0 25%, 15% 0, 85% 0, 100% 25%);
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5));
+}
+.wseg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: rotate(var(--a));
+}
+.wseg-in {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  width: 21cqw;
+  transform: translate(-50%, calc(-1 * var(--r)));
+  --r: 34cqw;
+  color: #fff;
+  font-size: max(9px, 4.4cqw);
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  transition: transform 0.3s var(--ease-spring);
+}
+.wseg-in b { font-size: max(9px, 4.4cqw); line-height: 1.05; text-align: center; }
+.wseg .coin { width: max(14px, 7.5cqw); height: max(14px, 7.5cqw); color: #ffc94d; filter: drop-shadow(0 0 4px rgba(255, 201, 77, 0.6)); }
+.wseg .coin svg { width: 100%; height: 100%; }
+.wseg .chest.mini { width: max(16px, 8cqw); height: max(14px, 6.8cqw); }
+.wseg-emoji { font-size: max(13px, 6.6cqw); line-height: 1; }
+.wseg.win .wseg-in { animation: seg-win 0.9s var(--ease-spring) 2; }
+@keyframes seg-win { 50% { transform: translate(-50%, calc(-1 * var(--r))) scale(1.35); filter: drop-shadow(0 0 10px #ffd36b); } }
+.wheel.landed .wheel-pointer { animation: pointer-pop 0.5s var(--ease-spring); }
+@keyframes pointer-pop { 40% { transform: translateX(-50%) scale(1.3); } }
+
+.wheel-side { flex: 1; min-width: 0; display: grid; gap: 10px; align-content: center; }
+.wheel-side .ad-btn { width: 100%; }
+
+.bv-note { margin: 8px 0 0; text-align: center; font-size: 11.5px; color: var(--ink-3); }
+
+/* Tailles de la roue selon la hauteur disponible (rayon des libellés) */
+@media (max-height: 460px) { .wheel-wrap { max-height: 230px; } }
+@media (max-height: 400px) {
+  .wheel-wrap { max-height: 194px; }
+  .bv-sub, .bv-note { display: none; }
+  .bv-free, .bv-spin { height: 40px; font-size: 14px; }
+  .bv-panel .ad-btn { min-height: 44px; padding: 4px 12px; }
+  .bv-perks { margin-top: 4px; font-size: 10.5px; }
+}
+@media (max-height: 350px) {
+  .wheel-wrap { max-height: 164px; }
+  .bv-perks { display: none; }
+}
+@media (max-width: 760px) {
+  .bv-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+  .bv-or { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bv-sparkles i, .chest.super .chest-body b, .wheel.spinning .wheel-rim::before { animation: none !important; }
+}

@@ -3,8 +3,9 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 19/11/2026 · **Version :** 0.11.0 · **Étape en cours :** validation des systèmes
-> « revenir chaque jour » (récompense quotidienne, missions, succès) par le porteur du projet.
+> **Dernière mise à jour :** 19/11/2026 · **Version :** 0.12.0 · **Étape en cours :** validation du système de
+> publicités récompensées (AdMob, toujours facultatives) par le porteur du projet, avant la préparation finale
+> du Play Store.
 
 ## Sommaire
 
@@ -128,9 +129,12 @@ compte **au moment du toucher** (aucune latence liée au relâcher).
 - **Pics**, **chute dans le vide**, **lave**, **feu**, **pierres**, **stalactites**, **eau**, **scies**,
   **boulets**, **lasers**, **jets de flammes**, **projectiles de canon**, **pilons**, **rochers qui dévalent**,
   **cœur d'un trou noir** : le ballon éclate et le niveau recommence (étoiles comprises)…
-- … **sauf si un point de contrôle (drapeau) a été atteint** : on réapparaît au drapeau, en gardant les étoiles
-  déjà ramassées (les plateformes fragiles, plaques qui tombent, caisses, stalactites et lianes reprennent leur
-  état de départ). Les niveaux longs et difficiles en ont un ou deux.
+- … **sauf si un point de contrôle (drapeau) a été atteint** : l'écran **« Niveau échoué »** propose
+  **Recommencer** ou **Regarder une publicité → Continuer depuis le dernier checkpoint** (étape 13). On
+  réapparaît alors au drapeau en gardant les étoiles déjà ramassées (les plateformes fragiles, plaques qui
+  tombent, caisses, stalactites et lianes reprennent leur état de départ). **S'il n'y a aucune publicité
+  disponible** (pas de réseau) ou si la limite du jour est atteinte, la reprise est **offerte** : le joueur
+  n'est jamais puni. Les niveaux longs et difficiles ont un ou deux drapeaux.
 - **Étoiles** : 3 par niveau, facultatives ; on garde le meilleur nombre obtenu.
 - Le chronomètre tourne pendant la partie ; le meilleur temps est enregistré par niveau.
 
@@ -245,6 +249,8 @@ hoop-bounce/
 ├── PROJECT.md              Ce document (documentation officielle, mémoire du projet)
 ├── README.md               Guide rapide : lancer, tester, régler
 ├── package.json            Version et scripts (npm start, npm test)
+├── native/
+│   └── android/README.md   Emballage Android (Capacitor) et AdMob : manifeste, vrais identifiants, consentement
 ├── assets/
 │   └── fonts/              Polices embarquées + licences OFL
 │       ├── unbounded.woff2     Titres, logo, boutons principaux (latin, ~50 Ko)
@@ -254,9 +260,10 @@ hoop-bounce/
 │   ├── fonts.css           Déclaration des polices (@font-face)
 │   ├── menu.css            Styles du menu (accueil, pages, fenêtres, animations)
 │   ├── menu-views.css      Styles des pages Mondes (cartes, niveaux) et Collection du menu
-│   ├── live.css            Récompense quotidienne, Missions, Succès, révélation des récompenses (coffre, pluie de pièces)
+│   ├── live.css            Récompense quotidienne, Missions, Succès, Bonus (coffre, roue), révélation des récompenses
 │   ├── shop.css            Styles de la boutique
-│   ├── polish.css          Finitions communes à toutes les pages (onde au toucher, boutons, transitions)
+│   ├── polish.css          Finitions communes à toutes les pages (onde au toucher, boutons, transitions,
+│   │                       bouton « Regarder une publicité », annonce de test simulée)
 │   └── style.css           Styles de l'écran de jeu (HUD, commandes, pause, victoire, tutoriel, intro de monde)
 ├── src/
 │   ├── config.js           ★ TOUS les réglages : physique, matériaux, commandes, caméra, sensations
@@ -274,7 +281,8 @@ hoop-bounce/
 │   ├── platform/           Fonctions propres à l'appareil (vibrations)
 │   ├── menu/               Tout le menu principal
 │   └── shared/             Ce que le menu, la boutique et le jeu partagent (réglages, porte-monnaie,
-│                           statistiques, récompenses quotidiennes, missions, succès, coffres)
+│                           statistiques, récompenses quotidiennes, missions, succès, coffres,
+│                           publicités récompensées, coffre bonus et roue de la chance)
 ├── tests/                  Tests automatiques (node --test)
 │   └── fixtures/           Terrain d'essai et solutions enregistrées des niveaux
 └── tools/                  Outils de développement (level design)
@@ -381,6 +389,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `worlds-view.js` | Page Mondes : 5 cartes de mondes (illustration, progression, cadenas et condition), animation de déblocage, grille des 10 niveaux, lancement de n'importe quel niveau débloqué. |
 | `collection-view.js` | Page Collection : articles possédés par catégorie, aperçu animé, Équiper / Déséquiper, badge « Équipé ». |
 | `live-views.js` | Pages Récompense quotidienne (calendrier de 7 jours), Missions (3 par jour) et Succès (4 paliers), pastilles de l'accueil. |
+| `bonus-view.js` | Page Bonus du jour (étape 13) : coffre bonus (gratuit ou amélioré avec une publicité) et roue de la chance (rotation, ralentissement, clics, pointeur). |
 | `rewards-fx.js` | Révélation d'une récompense : coffre qui tombe, tremble et s'ouvre, rayons, butin, pluie de pièces, pièces qui filent vers le compteur. |
 | `sound.js` | Sons d'interface et musique d'ambiance synthétisés. |
 | `icons.js` | Icônes SVG dessinées à la main. |
@@ -397,7 +406,10 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `daily.js` | Récompense quotidienne : calendrier de 7 jours, une récompense par jour, mémorisée, nouveau cycle après le 7e jour. |
 | `missions.js` | Missions quotidiennes : 9 modèles, 3 missions tirées par jour (facile, moyenne, difficile), progression, récompenses. |
 | `achievements.js` | Succès : 40 succès sur 4 paliers, mesure de la progression, récompenses à récupérer. |
-| `live-i18n.js` | Textes des missions, des succès, des paliers et des coffres (FR / EN / ES), partagés par le menu et le jeu. |
+| `live-i18n.js` | Textes des missions, des succès, des paliers, des coffres et de la page Bonus (FR / EN / ES), partagés par le menu et le jeu. |
+| `ads-config.js` | ★ **Configuration des publicités** (étape 13) : identifiants AdMob de test et de production, limites par jour, public et classification. **Le seul fichier à modifier avant la publication.** |
+| `ads.js` | Gestionnaire centralisé des publicités récompensées : chargement à l'avance, affichage, validation de la récompense, erreurs, absence d'annonce, nouvelles tentatives, moments interdits, limites du jour. Fournisseurs AdMob (Android) et annonce de test (navigateur). |
+| `bonus.js` | Coffre bonus quotidien et roue de la chance (8 cases pondérées) : disponibilité, tirage, récompenses, sauvegarde. |
 | `ui-polish.js` | Onde lumineuse au point touché sur les éléments interactifs de toutes les pages (sauf commandes de jeu). |
 | `settings.js` | Réglages du joueur (musique, effets, vibrations, langue, qualité), enregistrés et corrigés s'ils sont abîmés. |
 | `version.js` | Numéro de version affiché dans les paramètres. |
@@ -412,6 +424,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tests/mechanics.test.mjs` | Les pièges de l'étape 9 (plaque, bloc temporisé, scie, boulet, laser, canon, aimant, drapeau) et les 21 mécaniques des mondes (caisse, glace, rampe, vent, stalactite, lave, plateforme fragile, geyser, pierres, ascenseur, liane, champignon, tronc, branche, gravité réduite, portails, astéroïde, gravité inversée). |
 | `tests/progress.test.mjs` | Progression (déblocage des mondes, statistiques, animation annoncée une fois, conversion de l'ancien format), mondes, textes de jeu dans les trois langues. |
 | `tests/menu.test.mjs` | Textes du menu dans les trois langues, réglages. |
+| `tests/ads.test.mjs` | Publicités : identifiants test / production, récompense seulement si l'annonce va au bout, moments interdits, limites du jour sauvegardées, coffre bonus (une fois par jour, amélioré plus riche), roue (lancer gratuit, lancers bonus, tirage pondéré). |
 | `tests/live.test.mjs` | Statistiques (jour, minuit), coffres et doublons, récompense quotidienne (une par jour, 7 jours, cycle), missions (tirage, renouvellement, récompense unique), succès (paliers, progression, récupération), textes. |
 | `tests/routes.test.mjs` | Chaque passage de chaque niveau reste faisable (solutions enregistrées + solutions expertes). |
 | `tests/fixtures/test-yard.js` | Terrain d'essai pour les tests de mécanique (indépendant des niveaux). |
@@ -453,6 +466,8 @@ et recule légèrement quand une page est ouverte.
 - **Cadeau, Missions, Succès** (étape 12) : trois boutons en haut à droite, chacun avec sa couleur ; une
   **pastille rouge** compte ce qui attend d'être récupéré et l'icône s'agite doucement. Sur petit écran, seules
   les icônes restent.
+- **Bonus** (étape 13) : quatrième bouton (icône de roue, orange), pastille quand le coffre du jour ou le lancer
+  gratuit attend.
 - **Première visite du jour** : la page Récompense quotidienne s'ouvre d'elle-même (une fois par jour).
 
 **Pages**
@@ -466,6 +481,7 @@ et recule légèrement quand une page est ouverte.
 | **Récompense quotidienne** (étape 12) | Calendrier de 7 jours — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
 | **Missions** (étape 12) | 3 missions du jour — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
 | **Succès** (étape 12) | 40 succès sur 4 paliers — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
+| **Bonus du jour** (étape 13) | Coffre bonus et roue de la chance — voir [Bonus du jour](#bonus-du-jour-indexhtmlbonus). |
 | Paramètres | Musique, effets sonores (curseurs appliqués en direct), vibrations, qualité graphique (basse / moyenne / haute), langue (FR / EN / ES), politique de confidentialité, crédits, version. |
 
 ### Écran de jeu (`play.html`)
@@ -479,9 +495,21 @@ et recule légèrement quand une page est ouverte.
   dans le menu), Menu principal. Pause automatique quand l'application passe en arrière-plan. La carte s'ouvre
   avec un ressort et ses boutons arrivent l'un après l'autre ; petit son à chaque bouton.
 - **Victoire** : niveau, « Panier ! », étoiles qui tombent une à une, temps (et « Nouveau record »),
-  **pièces gagnées** (compteur qui défile), boutons
+  **« Récompense : 🪙 +45 »** (compteur qui défile), puis le bouton facultatif **« 🎁 Regarder une publicité →
+  Doubler les pièces »** (étape 13). Il ne s'active qu'à la fin des animations de victoire. Après l'annonce
+  validée, le compteur file jusqu'au double, un **« ×2 »** jaillit, des pièces éclatent autour du compteur et un
+  son de cascade retentit. Annonce interrompue ou indisponible : petit message, le joueur continue normalement.
+  Boutons
   Niveau suivant / Rejouer / **Niveaux** / Menu. Dernier niveau d'un monde : « Monde terminé ! », « Nouveau monde
   débloqué : … » (fanfare) et **Monde suivant**. Après le tout dernier niveau : « Bravo ! » et un message.
+- **Niveau échoué** (étape 13, seulement si un drapeau a été atteint) : « Niveau échoué », étoiles gardées,
+  **Recommencer** (bouton principal, Entrée / Espace) et **« 🎁 Regarder une publicité → Continuer depuis le
+  dernier drapeau »** ; sans annonce disponible, le bouton devient doré : **« Continuer depuis le drapeau —
+  Aucune publicité disponible : c'est offert »**. Liens Niveaux et Menu. Sans drapeau atteint, le niveau
+  recommence aussitôt, comme avant (aucun écran en plus).
+- **Annonce de test** (navigateur, développement) : écran sombre « Annonce de test AdMob — TEST », barre de
+  5 s, croix pour fermer (fermer avant la fin = pas de récompense). Pendant une annonce, musique et sons se
+  taisent.
 - **Introduction d'un monde** : sur le décor du monde (la partie attend), « MONDE 2 », le nom en très grand
   (dégradé vers la couleur du monde), l'accroche, les 5 mécaniques en pastilles qui apparaissent en cascade,
   le niveau, « Touche pour jouer » (ou automatiquement après ~4 s). Affichée en arrivant depuis la carte, au
@@ -579,6 +607,26 @@ Même style que le reste du menu (verre sombre, accent orange, ressorts) ; chaqu
   obtenu : « ✓ Obtenu ». Les succès prêts sont en tête de liste.
 - **Pendant la partie** : une bannière glisse en haut de l'écran — « **Mission terminée !** » (vert) ou
   « **Succès débloqué !** » (or) — avec un arpège lumineux et une vibration.
+
+### Bonus du jour (`index.html#bonus`)
+
+Même style que les autres pages (verre sombre, ressorts), deux panneaux côte à côte :
+
+- **Coffre bonus** : un coffre qui flotte et scintille, **« 🎁 Coffre gratuit »** OU **« 📺 Regarder une
+  publicité → Coffre amélioré »** (« Plus de pièces · article presque garanti · skins et effets rares »).
+  Coffre amélioré : le coffre de la page **se transforme** (orange et or, gemme rose) dans un éclair avec un
+  son de surprise, tremble, puis la grande révélation (rayons, butin, pluie de pièces). Une fois ouvert :
+  « ✓ Coffre du jour ouvert · Revient dans 12 h 53 min » (coffre entrouvert, éteint).
+- **Roue de la chance** : roue à 8 cases (pièces 100 / 250 / 500 / 1000, coffre, coffre rare, effet, skin
+  rare), cercle doré avec lumières, pointeur. **« 🎡 Lancer gratuit »** (1 par jour) puis **« 📺 Regarder une
+  publicité → Lancer supplémentaire · 3 restants »**. Lancer : **rotation fluide** (≈ 5,6 s, 6 tours),
+  **ralentissement progressif** (les dernières cases passent au ralenti : suspense), **clic à chaque case**
+  (plus grave quand la roue ralentit), **pointeur qui sautille**, lumières du bord qui clignotent, puis la case
+  gagnante grossit et la révélation de la récompense s'ouvre.
+- Boutons de publicité : « Chargement de la publicité… », « Aucune publicité disponible pour le moment »,
+  « Limite du jour atteinte — revenez demain ». Les options gratuites restent toujours utilisables.
+- En-tête : temps avant le renouvellement (minuit) et compteur de pièces ; mention « Publicités toujours
+  facultatives ».
 
 ### Ancienne carte des mondes (`worlds.html`)
 
@@ -849,6 +897,63 @@ quotidienne » ou « Exclusif · Succès ») :
 | Couronne (anneau d'or et pointes d'étoiles) | Effet de rebond | Légendaire | Succès « Maître du swish » |
 | Constellation (étoiles reliées par des fils de lumière) | Animation de panier | Légendaire | Succès « Constellation » |
 
+### Publicités récompensées (étape 13)
+
+**Principe : aucune publicité forcée.** Toutes les annonces sont des **publicités récompensées** (Google AdMob,
+SDK officiel Google Mobile Ads via le plugin Capacitor `@capacitor-community/admob`). Le joueur **choisit** de
+les regarder en échange d'une récompense. La récompense n'est donnée **qu'après la validation complète** de
+l'annonce par le SDK.
+
+**Gestionnaire centralisé** (`src/shared/ads.js`, une seule instance partagée `getAds()`) :
+
+| Fonction | Rôle |
+|---|---|
+| `prepare(emplacement)` | Charge une annonce à l'avance, quand son bouton apparaît (jamais au lancement). En cas d'échec : nouvel essai après 8 s, puis 16, 32… (jusqu'à 2 min). |
+| `showRewarded(emplacement)` | Affiche l'annonce à la demande du joueur → `rewarded` (donner la récompense), `dismissed` (fermée avant la fin), `unavailable` (aucune annonce), `capped` (limite du jour), `blocked` (moment interdit), `error`. Si l'annonce n'est pas encore prête, attend jusqu'à 6 s. |
+| `status(emplacement)` | `ready` · `loading` · `unavailable` · `capped` · `blocked` : l'état affiché sur les boutons. |
+| `block()` / `unblock()` | Moments interdits : `playing` (pendant un niveau) et `animation` (animations de victoire). |
+| `onChange(fn)` | Prévient l'interface pour mettre à jour les boutons. |
+
+**Emplacements et récompenses**
+
+| Emplacement | Où | Récompense | Limite / jour |
+|---|---|---|---|
+| `doubleCoins` | Écran de victoire | Pièces du niveau doublées (animation ×2, éclat de pièces, son) | 15 |
+| `checkpoint` | Écran « Niveau échoué » | Reprise au dernier drapeau, étoiles et progression gardées (offerte si aucune annonce) | 15 |
+| `bonusChest` | Page Bonus | Coffre amélioré : 450–750 pièces, 85 % de chances d'un article rare, épique ou légendaire (au lieu du coffre commun : 120–250 pièces, 35 % d'un article commun ou rare) | 1 |
+| `wheelSpin` | Page Bonus | Lancer supplémentaire de la roue | 3 |
+
+**Roue de la chance** (`src/shared/bonus.js`) — chances : 100 pièces 24 %, coffre commun 15 %, 250 pièces 20 %,
+effet de rebond rare / épique 9 %, 500 pièces 12 %, coffre rare 9 %, 1 000 pièces 7 %, skin de ballon épique /
+légendaire 4 %. Un article déjà possédé est remplacé par des pièces.
+
+**Règles imposées par le gestionnaire** (quel que soit l'écran) : jamais pendant un niveau, jamais pendant une
+animation importante, jamais au lancement du jeu (le SDK n'est même pas initialisé avant le premier bouton
+affiché), jamais automatiquement après une partie. Les plafonds par jour gardent les récompenses précieuses.
+Le jeu reste entièrement jouable sans regarder une seule annonce.
+
+**Sauvegardes** : `hoopbounce.ads` (annonces regardées par emplacement aujourd'hui, total) et
+`hoopbounce.bonus` (coffre du jour ouvert ou non et lequel, lancer gratuit utilisé, lancers bonus du jour,
+nombre de lancers et de coffres, dernière case). Les récompenses vont dans `hoopbounce.coins` /
+`hoopbounce.inventory` et les statistiques (`hoopbounce.stats`). Le tirage est enregistré **avant**
+l'animation : quitter pendant que la roue tourne ne fait rien perdre.
+
+**Développement** : seuls les **identifiants de test officiels de Google** sont utilisés (`useTestAds: true`).
+Dans le navigateur, une annonce de test simulée remplace AdMob ; `?ads=none` simule l'absence d'annonce,
+`?ads=fail` une erreur, `?ads=instant` une annonce éclair (tests automatisés).
+
+**Configuration avant publication** (détails dans `native/android/README.md`) :
+1. Console AdMob : créer l'application Android et **4 blocs « Avec récompense »** (`doubleCoins`,
+   `checkpoint`, `bonusChest`, `wheelSpin`).
+2. `src/shared/ads-config.js` : remplacer les identifiants `prod` (les `XXXX`) et passer `useTestAds` à
+   `false`. Garde-fou : tant qu'un `XXXX` reste, le jeu reste en mode test.
+3. `AndroidManifest.xml` : balise `com.google.android.gms.ads.APPLICATION_ID` avec le vrai identifiant
+   d'application.
+4. Fichier `app-ads.txt` sur le site du développeur ; message de consentement RGPD dans la console AdMob
+   (« Confidentialité et messages ») ; déclarations Play Console (contient des annonces, sécurité des données,
+   public cible / Familles).
+5. Politique de confidentialité en ligne (texte du menu, mis à jour à l'étape 13).
+
 ### Le déblocage des modes
 
 🔴 **Pas encore défini.** Les 4 modes sont affichés « À venir » dans le menu. Proposition à valider :
@@ -885,6 +990,8 @@ qu'avec les récompenses quotidiennes et les succès (présentés à la fin de c
 | Rejouer un niveau déjà terminé | 10 |
 | « Swish » (panier sans toucher le cercle) | +5 |
 | Récompense quotidienne, missions, succès (étape 12) | voir [Revenir chaque jour](#revenir-chaque-jour-étape-12) |
+| Publicité facultative sur l'écran de victoire (étape 13) | pièces du niveau doublées |
+| Coffre bonus et roue de la chance (étape 13) | voir [Publicités récompensées](#publicités-récompensées-étape-13) |
 
 - Une première partie complète rapporte environ **7 750 pièces** (50 niveaux, 150 étoiles) ; le catalogue complet
   coûte **14 800** : les articles légendaires récompensent les joueurs qui rejouent et visent le parfait.
@@ -977,6 +1084,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Coffres et 6 articles exclusifs ; pastilles sur l'accueil ; ouverture automatique une fois par jour
 - 🟡 Validation par le porteur du projet ; équilibrage des récompenses
 
+### Phase 6 quinquies — Publicités récompensées 🟡
+- ✅ Gestionnaire centralisé (chargement, affichage, récompense validée, erreurs, absence d'annonce, limites)
+- ✅ Configuration unique `ads-config.js` : identifiants de test officiels, production prête à remplir
+- ✅ Doubler les pièces (victoire), reprendre au drapeau (échec), coffre bonus amélioré, lancer de roue
+- ✅ Page Bonus du jour : coffre gratuit ou amélioré, roue de la chance animée
+- ✅ Annonce de test simulée dans le navigateur ; politique de confidentialité mise à jour
+- 🟡 Validation par le porteur du projet ; essai du vrai SDK sur un appareil (phase Android)
+
 ### Phase 7 — Modes de jeu 🔴
 - 🔴 Trickshot
 - 🔴 Endless
@@ -984,14 +1099,17 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 🔴 Multijoueur
 
 ### Phase 8 — Android 🔴
-- 🔴 Projet Capacitor (Android)
+- 🔴 Projet Capacitor (Android) — étapes préparées dans `native/android/README.md`
+- 🔴 Plugin AdMob installé, identifiant d'application dans le manifeste, essai des annonces de test sur appareil
 - 🔴 Vibrations natives (Capacitor Haptics), verrouillage en paysage, plein écran
 - 🔴 Icône, écran de démarrage, nom de l'application
 - 🔴 Tests sur vrais appareils (entrée de gamme, milieu de gamme, haut de gamme)
 
 ### Phase 9 — Publication 🔴
 - 🔴 Fiche Play Store (textes, captures, vidéo)
-- 🔴 Politique de confidentialité hébergée en ligne
+- 🔴 Politique de confidentialité hébergée en ligne (mentionne AdMob)
+- 🔴 Vrais identifiants AdMob, `app-ads.txt`, message de consentement, déclarations « annonces » et « sécurité
+  des données »
 - 🔴 Classification du contenu, conformité Play
 - 🔴 Bêta fermée, puis publication
 
@@ -1020,12 +1138,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   `jumpBoulder` et `dodgeBoulders` pour les rochers)
 - ✅ Sélection des mondes et des niveaux dans le menu, Collection complète, niveau à reprendre sous JOUER
 - ✅ Récompense quotidienne (7 jours), missions quotidiennes (3 par jour), 40 succès, coffres, 6 exclusifs
+- ✅ Publicités récompensées facultatives (AdMob) : doubler les pièces, reprendre au drapeau, coffre bonus,
+  roue de la chance ; page Bonus du jour (étape 13)
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur la récompense quotidienne, les missions et les succès (étape 12)
+- 🟡 Attente des retours du porteur du projet sur les publicités récompensées et la page Bonus (étape 13)
 
 ### À faire — court terme 🔴
+- 🔴 Préparation finale du Play Store (après validation de l'étape 13) : Capacitor, AdMob natif, icône, fiche
 - 🔴 Ajuster le ressenti (gravité, hauteurs, dribble, inertie) selon les retours
 - 🔴 Ajuster la difficulté (notamment la plateforme mobile du niveau 4)
 - 🔴 Faire apparaître le panier du niveau 5 dès le départ (il est hors de l'écran au début)
@@ -1034,7 +1155,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   Forêt 5 et Espace 5 (fenêtres les plus serrées)
 
 ### À faire — moyen terme 🔴
-- 🔴 Équilibrer les prix et les gains après les retours (pièces des missions, des succès et des coffres comprises)
+- 🔴 Équilibrer les prix et les gains après les retours (pièces des missions, des succès, des coffres, de la roue
+  et du doublement par publicité comprises)
 - 🔴 Notifications Android (rappel de la récompense quotidienne) une fois l'application emballée
 - 🔴 Nouveaux éléments (surfaces collantes, interrupteurs à minuterie…)
 - 🔴 Accessibilité : taille des boutons réglable, inversion gauche / droite pour les gauchers
@@ -1143,6 +1265,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - Chaleur du volcan allégée après mesure : le grand dégradé plein écran animé (≈ 6 ms en rendu logiciel) est
   remplacé par la lueur cuite dans la vignette ; il ne reste que de fines ondulations (0,2 ms).
 - Onde au toucher des pages : un élément créé puis retiré, jamais sur les commandes de jeu.
+
+**Publicités (étape 13)**
+- Le SDK publicitaire n'est **ni chargé ni initialisé au démarrage** : seulement quand un bouton de publicité
+  apparaît (fin d'animation de victoire, écran d'échec, page Bonus). Aucun coût pendant le jeu.
+- Une annonce est **préchargée** pendant que le joueur regarde l'écran : l'affichage est immédiat au toucher.
+- Échecs de chargement : nouvelles tentatives espacées (8 s → 2 min), pas de boucle qui épuise la batterie.
+- Roue de la chance animée par `transform` dans `requestAnimationFrame` (une seule couche), libellés en
+  unités de conteneur (`cqw`) : nette à toutes les tailles sans recalcul.
 - Mesure (Chromium sans carte graphique, 844×390 en ×2) : **médiane 16,7 ms (60 images/s)** sur les 5 grands
   finals, 0 à 9 images lentes sur 240 ; rendu d'une image ≈ 8–10 ms en logiciel (bien moins sur un GPU mobile).
 
@@ -1152,6 +1282,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | Fournisseur AdMob (application Android) écrit d'après la documentation du plugin, **pas encore essayé sur un appareil** : événements de récompense et de fermeture à confirmer avec les annonces de test. | 🔴 À tester (phase Android) |
+| Faible | Écran de victoire sur petit téléphone : la bannière « Mission terminée ! » recouvre quelques secondes le titre « Panier ! ». | 🟡 À améliorer |
+| Info | Les limites de publicités par jour suivent l'heure de l'appareil (comme la récompense quotidienne). | 🟡 Normal hors ligne |
 | ✅ | Ouvrir une page du menu pendant l'entrée animée de l'accueil laissait les boutons du haut par-dessus l'en-tête. | ✅ Corrigé (v0.11.0) |
 | Info | La journée change à minuit, heure de l'appareil : changer l'heure du téléphone permet de récupérer plus tôt (aucun serveur pour vérifier). | 🟡 Normal hors ligne ; à revoir si un compte en ligne arrive |
 | Info | Les statistiques comptent à partir de la v0.11.0 : les succès basés sur les rebonds, paniers, chutes ou le temps de jeu repartent de zéro (ceux basés sur les niveaux, les étoiles et les achats tiennent compte de la progression existante). | 🟡 Sans conséquence (phase de développement) |
@@ -1178,6 +1311,33 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 19/11/2026 — Étape 13 : publicités récompensées facultatives (v0.12.0)
+- **Ajouté** :
+  - **gestionnaire de publicités** centralisé (`shared/ads.js`) : chargement, affichage, récompense après
+    validation complète, erreurs de chargement, absence d'annonce, nouvelles tentatives, moments interdits
+    (pendant un niveau, pendant les animations), limites par jour sauvegardées (`hoopbounce.ads`) ;
+    fournisseurs **Google AdMob** (SDK officiel via `@capacitor-community/admob`, consentement UMP) et
+    **annonce de test** simulée dans le navigateur ;
+  - **configuration unique** `shared/ads-config.js` : identifiants de **test officiels** de Google pendant le
+    développement, emplacements de production prêts à remplir, garde-fou tant qu'un `XXXX` reste ;
+  - **Doubler les pièces** sur l'écran de victoire (×2 qui jaillit, éclat de pièces, son de cascade) ;
+  - écran **« Niveau échoué »** quand un drapeau a été atteint : Recommencer, ou **continuer depuis le dernier
+    drapeau** avec une publicité (offert si aucune annonce n'est disponible) ;
+  - page **Bonus du jour** (`menu/bonus-view.js`, `#bonus`) : **coffre bonus** gratuit ou **amélioré** avec une
+    publicité (nouveau coffre `super`), **roue de la chance** à 8 cases (1 lancer gratuit, 3 lancers bonus avec
+    publicité), rotation fluide, ralentissement progressif, clics, pointeur, révélation ; bouton **Bonus** avec
+    pastille sur l'accueil ; sauvegarde `hoopbounce.bonus` (`shared/bonus.js`) ;
+  - sons : cascade de pièces (jeu), élan, clic de roue et surprise (menu) ;
+  - `native/android/README.md` : Capacitor, manifeste, vrais identifiants, `app-ads.txt`, consentement,
+    déclarations Play Console ;
+  - 5 nouveaux tests (`tests/ads.test.mjs`).
+- **Modifié** : après une chute avec un drapeau atteint, le jeu attend le choix du joueur (`holdAtCheckpoint`) ;
+  la politique de confidentialité (3 langues) mentionne les publicités facultatives AdMob ; les textes du menu
+  se rabattent sur `shared/live-i18n.js` ; récompenses : article au hasard limité à une catégorie et à
+  plusieurs raretés.
+- **Reste à faire** : retours du porteur du projet ; essai du vrai SDK AdMob sur un appareil ; préparation
+  finale du Play Store (après validation).
 
 ### 19/11/2026 — Étape 12 : revenir chaque jour (v0.11.0)
 - **Ajouté** :

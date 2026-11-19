@@ -102,6 +102,21 @@ export const GAME_STRINGS = {
     'intro.tap': 'Touche pour jouer',
     'pause.map': 'Choisir un niveau',
     'win.map': 'Niveaux',
+    'win.reward': 'Récompense',
+    'ad.watch': 'Regarder une publicité',
+    'ad.double': 'Doubler les pièces',
+    'ad.checkpoint': 'Continuer depuis le dernier drapeau',
+    'ad.loading': 'Chargement de la publicité…',
+    'ad.unavailable': 'Aucune publicité pour le moment',
+    'ad.capped': 'Limite du jour atteinte',
+    'ad.doubled': 'Pièces doublées !',
+    'ad.dismissed': 'Publicité interrompue : pas de bonus',
+    'ad.error': 'La publicité n’a pas pu s’afficher',
+    'ad.freeContinue': 'Continuer depuis le drapeau',
+    'ad.freeNote': 'Aucune publicité disponible : c’est offert',
+    'fail.title': 'Niveau échoué',
+    'fail.body': 'Tu avais atteint un drapeau ({n} étoile gardée).|Tu avais atteint un drapeau ({n} étoiles gardées).',
+    'fail.restart': 'Recommencer',
     'win.world.title': 'Monde terminé !',
     'win.world.body': 'Nouveau monde débloqué : {name}',
     'win.world.next': 'Monde suivant',
@@ -282,6 +297,21 @@ export const GAME_STRINGS = {
     'intro.tap': 'Tap to play',
     'pause.map': 'Choose a level',
     'win.map': 'Levels',
+    'win.reward': 'Reward',
+    'ad.watch': 'Watch an ad',
+    'ad.double': 'Double your coins',
+    'ad.checkpoint': 'Continue from the last flag',
+    'ad.loading': 'Loading the ad…',
+    'ad.unavailable': 'No ad available right now',
+    'ad.capped': 'Daily limit reached',
+    'ad.doubled': 'Coins doubled!',
+    'ad.dismissed': 'Ad closed early: no bonus',
+    'ad.error': 'The ad could not be shown',
+    'ad.freeContinue': 'Continue from the flag',
+    'ad.freeNote': 'No ad available: it’s on us',
+    'fail.title': 'Level failed',
+    'fail.body': 'You had reached a flag ({n} star kept).|You had reached a flag ({n} stars kept).',
+    'fail.restart': 'Restart',
     'win.world.title': 'World complete!',
     'win.world.body': 'New world unlocked: {name}',
     'win.world.next': 'Next world',
@@ -462,6 +492,21 @@ export const GAME_STRINGS = {
     'intro.tap': 'Toca para jugar',
     'pause.map': 'Elegir un nivel',
     'win.map': 'Niveles',
+    'win.reward': 'Recompensa',
+    'ad.watch': 'Ver un anuncio',
+    'ad.double': 'Duplicar las monedas',
+    'ad.checkpoint': 'Continuar desde la última bandera',
+    'ad.loading': 'Cargando el anuncio…',
+    'ad.unavailable': 'No hay anuncios por ahora',
+    'ad.capped': 'Límite diario alcanzado',
+    'ad.doubled': '¡Monedas duplicadas!',
+    'ad.dismissed': 'Anuncio interrumpido: sin bonus',
+    'ad.error': 'No se pudo mostrar el anuncio',
+    'ad.freeContinue': 'Continuar desde la bandera',
+    'ad.freeNote': 'No hay anuncios: va por nuestra cuenta',
+    'fail.title': 'Nivel fallido',
+    'fail.body': 'Habías alcanzado una bandera ({n} estrella conservada).|Habías alcanzado una bandera ({n} estrellas conservadas).',
+    'fail.restart': 'Reintentar',
     'win.world.title': '¡Mundo completado!',
     'win.world.body': 'Nuevo mundo desbloqueado: {name}',
     'win.world.next': 'Siguiente mundo',
@@ -545,6 +590,11 @@ export const GAME_STRINGS = {
 };
 
 export function gt(lang, key, vars = {}) {
-  const s = GAME_STRINGS[lang]?.[key] ?? GAME_STRINGS.fr[key] ?? key;
+  let s = GAME_STRINGS[lang]?.[key] ?? GAME_STRINGS.fr[key] ?? key;
+  // « singulier|pluriel » selon {n} (fr : 0 et 1 au singulier)
+  if (s.includes('|') && typeof vars.n === 'number') {
+    const [one, many] = s.split('|');
+    s = vars.n === 1 || (lang === 'fr' && vars.n === 0) ? one : many;
+  }
   return s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? String(vars[k]) : `{${k}}`));
 }

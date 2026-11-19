@@ -212,6 +212,27 @@ export class MenuSound {
     this._tone(2093, 2093, 0.6, 0.025, 'sine', 0.4);
   }
 
+  /** Roue de la chance : élan au départ (souffle qui monte). */
+  spin() {
+    if (!this._ok) return;
+    this._air(0.7, 0.07, 300, 2400, 1);
+    this._tone(220, 440, 0.4, 0.05, 'triangle');
+  }
+
+  /** Roue : petit clic quand le pointeur passe une case (plus grave quand elle ralentit). */
+  wheelTick(speed = 1) {
+    if (!this._ok) return;
+    const f = 900 + Math.min(1, speed) * 700;
+    this._tone(f, f * 0.7, 0.035, 0.07, 'square');
+  }
+
+  /** Coffre amélioré : effet de surprise (roulement qui monte puis éclat). */
+  surprise() {
+    if (!this._ok) return;
+    for (let i = 0; i < 10; i++) this._tone(300 + i * 60, 300 + i * 60, 0.05, 0.04, 'triangle', i * 0.05);
+    this._air(0.5, 0.06, 800, 5000, 0.9, 0.45);
+  }
+
   /** Pluie de pièces : tintements rapides. */
   coins() {
     if (!this._ok) return;

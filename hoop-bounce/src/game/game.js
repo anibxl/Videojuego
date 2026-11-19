@@ -2,6 +2,7 @@
 // Aucune dépendance au navigateur : tout ce fichier peut tourner dans Node (tests, outils).
 //
 // États : 'playing' → ('dying' → 'playing')* → 'won'
+//         avec `holdAtCheckpoint` : 'dying' → 'failed' (écran « Niveau échoué ») → restart() ou continueFromCheckpoint()
 
 import { EventBus } from '../core/events.js';
 import { BallBody } from '../physics/ball-body.js';
@@ -127,13 +128,23 @@ export class Game {
       if (this._stateTimer <= 0) {
         // Une chute fait recommencer le niveau (étoiles comprises)… sauf si un point de contrôle a été
         // atteint : on y réapparaît, en gardant les étoiles déjà ramassées.
-        if (L.checkpoints.some((c) => c.active)) this._respawnAtCheckpoint();
-        else {
+        if (L.checkpoints.some((c) => c.active)) {
+          // Étape 13 : le jeu peut attendre le choix du joueur (recommencer, ou reprendre au drapeau)
+          if (this.holdAtCheckpoint) {
+            this.state = 'failed';
+            this.events.emit('failed', { deaths: this.deaths, stars: this.starsCollected });
+          } else this._respawnAtCheckpoint();
+        } else {
           const deaths = this.deaths;
           this.restart();
           this.deaths = deaths;
         }
       }
+      L.hoop.step(dt, { x: -1000, y: -1000, radius: b.radius });
+      return;
+    }
+    // « Niveau échoué » affiché : la partie attend le choix du joueur
+    if (this.state === 'failed') {
       L.hoop.step(dt, { x: -1000, y: -1000, radius: b.radius });
       return;
     }
@@ -264,6 +275,14 @@ export class Game {
     this._checkPickups();
     this._checkHazards();
     if (this.state === 'playing' && L.hoop.checkScore(this.prev.x, this.prev.y, b.x, b.y)) this._win();
+  }
+
+  /** Après « Niveau échoué » : reprendre au dernier drapeau (étoiles et progression conservées). */
+  continueFromCheckpoint() {
+    if (this.state !== 'failed') return false;
+    this.state = 'playing';
+    this._respawnAtCheckpoint();
+    return true;
   }
 
   _respawnAtCheckpoint() {

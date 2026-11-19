@@ -1,10 +1,14 @@
 // Textes du menu en trois langues. Toute clé doit exister dans chaque langue (vérifié par les tests).
+// Les textes des pages « vivantes » (shared/live-i18n.js) servent de repli.
+
+import { LIVE_STRINGS } from '../shared/live-i18n.js';
 
 export const STRINGS = {
   fr: {
     'nav.daily': 'Cadeau',
     'nav.missions': 'Missions',
     'nav.achievements': 'Succès',
+    'nav.bonus': 'Bonus',
     'daily.title': 'Récompense quotidienne',
     'daily.subtitle': 'Reviens chaque jour : le 7e jour, un ballon exclusif !',
     'daily.day': 'Jour {n}',
@@ -147,9 +151,9 @@ export const STRINGS = {
 
     'privacy.title': 'Politique de confidentialité',
     'privacy.body':
-      '<p>Hoop Bounce ne collecte aucune donnée personnelle.</p>' +
+      '<p>Hoop Bounce ne collecte lui-même aucune donnée personnelle.</p>' +
       '<p>Tes réglages, ta progression et tes records sont enregistrés uniquement sur ton appareil. Ils ne sont envoyés à aucun serveur et ne sont partagés avec personne.</p>' +
-      '<p>Le jeu ne contient ni publicité ni outil de suivi. Si cela change dans une future version, cette page sera mise à jour avant et tu en seras informé dans le jeu.</p>' +
+      '<p><strong>Publicités facultatives.</strong> Le jeu propose des publicités récompensées (Google AdMob), uniquement si tu choisis d’en regarder une pour obtenir un bonus. Aucune publicité n’est imposée. Quand tu en regardes une, Google peut utiliser l’identifiant publicitaire de ton appareil et des données techniques, selon ton consentement, demandé au premier affichage dans les pays où il est requis. Détails : policies.google.com/technologies/ads</p>' +
       '<p>Pour effacer tes données, désinstalle le jeu ou vide les données de l’application dans les réglages de ton téléphone.</p>',
     'credits.title': 'Crédits',
     'credits.body':
@@ -166,6 +170,7 @@ export const STRINGS = {
     'nav.daily': 'Gift',
     'nav.missions': 'Missions',
     'nav.achievements': 'Trophies',
+    'nav.bonus': 'Bonus',
     'daily.title': 'Daily reward',
     'daily.subtitle': 'Come back every day: on day 7, an exclusive ball!',
     'daily.day': 'Day {n}',
@@ -308,9 +313,9 @@ export const STRINGS = {
 
     'privacy.title': 'Privacy policy',
     'privacy.body':
-      '<p>Hoop Bounce does not collect any personal data.</p>' +
+      '<p>Hoop Bounce itself does not collect any personal data.</p>' +
       '<p>Your settings, progress and records are stored only on your device. They are not sent to any server and are not shared with anyone.</p>' +
-      '<p>The game contains no ads and no tracking tools. If this changes in a future version, this page will be updated first and you will be told in the game.</p>' +
+      '<p><strong>Optional ads.</strong> The game offers rewarded ads (Google AdMob), only when you choose to watch one to get a bonus. No ad is ever forced. When you watch one, Google may use your device’s advertising ID and technical data, according to your consent, asked the first time in countries where it is required. Details: policies.google.com/technologies/ads</p>' +
       '<p>To delete your data, uninstall the game or clear the app data in your phone settings.</p>',
     'credits.title': 'Credits',
     'credits.body':
@@ -327,6 +332,7 @@ export const STRINGS = {
     'nav.daily': 'Regalo',
     'nav.missions': 'Misiones',
     'nav.achievements': 'Logros',
+    'nav.bonus': 'Bonus',
     'daily.title': 'Premio diario',
     'daily.subtitle': 'Vuelve cada día: ¡el día 7, un balón exclusivo!',
     'daily.day': 'Día {n}',
@@ -469,9 +475,9 @@ export const STRINGS = {
 
     'privacy.title': 'Política de privacidad',
     'privacy.body':
-      '<p>Hoop Bounce no recopila ningún dato personal.</p>' +
+      '<p>Hoop Bounce no recopila por sí mismo ningún dato personal.</p>' +
       '<p>Tus ajustes, tu progreso y tus récords se guardan solo en tu dispositivo. No se envían a ningún servidor ni se comparten con nadie.</p>' +
-      '<p>El juego no contiene publicidad ni herramientas de seguimiento. Si esto cambia en una versión futura, esta página se actualizará antes y te avisaremos en el juego.</p>' +
+      '<p><strong>Anuncios opcionales.</strong> El juego ofrece anuncios con recompensa (Google AdMob), solo si eliges ver uno para conseguir un bonus. Nunca se impone ningún anuncio. Cuando ves uno, Google puede usar el identificador de publicidad de tu dispositivo y datos técnicos, según tu consentimiento, solicitado la primera vez en los países donde es obligatorio. Detalles: policies.google.com/technologies/ads</p>' +
       '<p>Para borrar tus datos, desinstala el juego o borra los datos de la aplicación en los ajustes de tu teléfono.</p>',
     'credits.title': 'Créditos',
     'credits.body':
@@ -489,7 +495,7 @@ export const LANGUAGE_NAMES = { fr: 'Français', en: 'English', es: 'Español' }
 
 /** Traduit une clé. `{n}` et `{v}` sont remplacés ; « singulier|pluriel » selon n. */
 export function t(lang, key, vars = {}) {
-  let s = STRINGS[lang]?.[key] ?? STRINGS.fr[key] ?? key;
+  let s = STRINGS[lang]?.[key] ?? LIVE_STRINGS[lang]?.[key] ?? STRINGS.fr[key] ?? LIVE_STRINGS.fr[key] ?? key;
   if (s.includes('|') && typeof vars.n === 'number') {
     const [one, many] = s.split('|');
     s = vars.n === 1 || (lang === 'fr' && vars.n === 0) ? one : many;

@@ -56,8 +56,8 @@ export class RewardFx {
     el.querySelector('.rfx-eyebrow').textContent = r.title ?? '';
     ok.textContent = t(l, 'reward.ok');
     loot.innerHTML = '';
-    el.dataset.rarity = r.item?.rarity ?? (r.chest === 'epic' ? 'epic' : r.chest === 'rare' ? 'rare' : 'gold');
-    el.style.setProperty('--glow', r.item ? RARITIES[r.item.rarity].rgb : r.chest === 'epic' ? '180,107,255' : r.chest === 'rare' ? '77,163,255' : '255,201,77');
+    el.dataset.rarity = r.item?.rarity ?? (r.chest === 'epic' || r.chest === 'super' ? 'epic' : r.chest === 'rare' ? 'rare' : 'gold');
+    el.style.setProperty('--glow', r.item ? RARITIES[r.item.rarity].rgb : r.chest === 'super' ? '255,150,70' : r.chest === 'epic' ? '180,107,255' : r.chest === 'rare' ? '77,163,255' : '255,201,77');
     el.classList.remove('open', 'is-burst', 'done');
     el.hidden = false;
     void el.offsetWidth;

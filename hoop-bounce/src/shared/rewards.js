@@ -14,6 +14,8 @@ export const CHESTS = {
   common: { coins: [120, 250], itemChance: 0.35, rarities: ['common', 'rare'] },
   rare: { coins: [300, 500], itemChance: 0.6, rarities: ['rare', 'epic'] },
   epic: { coins: [600, 900], itemChance: 1, rarities: ['epic', 'legendary'] },
+  // Coffre bonus amélioré (publicité regardée) : plus de pièces, presque toujours un article, rares compris
+  super: { coins: [450, 750], itemChance: 0.85, rarities: ['rare', 'epic', 'legendary'] },
 };
 
 /** Valeur en pièces d'un article déjà possédé (récompense remplacée). */
@@ -22,8 +24,10 @@ const DUPLICATE = { common: 150, rare: 300, epic: 600, legendary: 1000 };
 const purchasable = (it) => typeof it.price === 'number' && it.price > 0 && !it.exclusive;
 
 /** Un article achetable pas encore possédé, d'une des raretés demandées (au hasard), ou null. */
-export function randomUnowned(wallet, rarities, rng = Math.random) {
-  let pool = CATALOG.filter((it) => purchasable(it) && rarities.includes(it.rarity) && !wallet.owns(it.id));
+export function randomUnowned(wallet, rarities, rng = Math.random, category = null) {
+  const inCat = (it) => !category || it.category === category;
+  let pool = CATALOG.filter((it) => purchasable(it) && inCat(it) && rarities.includes(it.rarity) && !wallet.owns(it.id));
+  if (!pool.length) pool = CATALOG.filter((it) => purchasable(it) && inCat(it) && !wallet.owns(it.id));
   if (!pool.length) pool = CATALOG.filter((it) => purchasable(it) && !wallet.owns(it.id));
   return pool.length ? pool[Math.floor(rng() * pool.length)] : null;
 }
@@ -56,9 +60,11 @@ export function grant(reward, wallet, stats = null, rng = Math.random) {
     }
   }
   if (reward.cosmetic) {
-    const it = randomUnowned(wallet, [reward.cosmetic], rng);
+    // `cosmetic` : une rareté ou une liste ; `category` (facultatif) : ballon, rebond, traînée, panier
+    const rarities = Array.isArray(reward.cosmetic) ? reward.cosmetic : [reward.cosmetic];
+    const it = randomUnowned(wallet, rarities, rng, reward.category ?? null);
     if (it) out.item = it;
-    else out.coins += DUPLICATE[reward.cosmetic] ?? 200;
+    else out.coins += DUPLICATE[rarities[rarities.length - 1]] ?? 200;
   }
   if (out.item) wallet.grant(out.item.id);
   if (out.coins) {
