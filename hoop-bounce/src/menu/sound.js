@@ -182,6 +182,20 @@ export class MenuSound {
     this._tone(330, 240, 0.08, 0.05, 'sine', 0.05);
   }
 
+  /** Article équipé : petit carillon brillant. */
+  equip() {
+    if (!this._ok) return;
+    [880, 1318.5, 1760].forEach((f, i) => this._tone(f, f, 0.22, 0.05, 'triangle', i * 0.05));
+    this._air(0.25, 0.03, 2000, 6000, 1.4);
+  }
+
+  /** Monde débloqué : fanfare cristalline qui monte. */
+  unlockWorld() {
+    if (!this._ok) return;
+    this._air(0.9, 0.07, 400, 5000, 0.8);
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => this._tone(f, f, 0.7 - i * 0.06, 0.06, 'triangle', i * 0.08));
+  }
+
   /** JOUER : accord qui monte et grand souffle. */
   play() {
     if (!this._ok) return;

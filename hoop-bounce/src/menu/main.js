@@ -4,10 +4,16 @@ import { MenuScene } from './scene.js';
 import { MenuSound } from './sound.js';
 import { ICONS } from './icons.js';
 import { STRINGS, t } from './i18n.js';
-import { ballEmblem, collectionPage, modesPage, settingsPage, shopPage, worldsPage } from './pages.js';
+import { ballEmblem, modesPage, settingsPage } from './pages.js';
+import { WorldsView } from './worlds-view.js';
+import { CollectionView } from './collection-view.js';
 import { Settings } from '../shared/settings.js';
+import { Progress } from '../game/progress.js';
+import { WORLDS } from '../game/worlds.js';
+import { gt } from '../game/i18n.js';
+import { Wallet } from '../shared/wallet.js';
 
-const PAGES = ['mondes', 'modes', 'magasin', 'collection', 'parametres'];
+const PAGES = ['mondes', 'modes', 'collection', 'parametres'];
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -20,7 +26,6 @@ const scene = new MenuScene($('#scene'), { quality: settings.get('quality'), red
 
 const state = {
   page: 'home',
-  shopTab: 'featured',
   coins: readCoins(),
   pushed: false, // la page actuelle a-t-elle ajouté une entrée d'historique ?
 };
@@ -66,14 +71,53 @@ function applyStaticTexts() {
   $('#sheet-close').setAttribute('aria-label', t(l, 'close'));
 }
 
+// Pages vivantes (étape 11) : sélection des mondes et collection
+const viewEnv = { lang, sound, vibrate: (p) => vibrate(p), toast: (txt) => toast(txt), launch: (e, url) => launchGame(e, url) };
+const worldsView = new WorldsView($('#page-mondes'), viewEnv);
+const collectionView = new CollectionView($('#page-collection'), viewEnv);
+const VIEWS = { mondes: worldsView, collection: collectionView };
+
 function renderPages() {
   const l = lang();
-  $('#page-mondes').innerHTML = worldsPage(l);
+  worldsView.render();
   $('#page-modes').innerHTML = modesPage(l);
-  $('#page-magasin').innerHTML = shopPage(l, state.coins, state.shopTab);
-  $('#page-collection').innerHTML = collectionPage(l);
+  collectionView.render();
   $('#page-parametres').innerHTML = settingsPage(l, settings.values);
   requestAnimationFrame(() => $$('.segmented').forEach(positionIndicator));
+  refreshHome();
+}
+
+/** Accueil : niveau à reprendre sous JOUER, progression sur les tuiles Mondes et Collection. */
+function refreshHome() {
+  const l = lang();
+  const progress = new Progress(WORLDS);
+  const r = progress.resume();
+  const w = WORLDS[r.worldIndex];
+  const def = w.levels[r.levelIndex];
+  const tot = progress.totals();
+  $('.play-sub').textContent = tot.done === tot.total
+    ? t(l, 'play.done')
+    : t(l, 'play.resume', { w: w.number, n: def.number, name: gt(l, def.nameKey) });
+  const wallet = new Wallet();
+  state.coins = wallet.coins;
+  $('#coin-count').textContent = String(state.coins);
+  const col = wallet.progress();
+  setTileBadge('mondes', t(l, 'nav.progress', { done: tot.done, total: tot.total }), tot.percent);
+  setTileBadge('collection', t(l, 'nav.progress', { done: col.owned, total: col.total }), col.percent);
+}
+
+function setTileBadge(nav, text, percent) {
+  const tile = $(`.tile[data-nav="${nav}"]`);
+  if (!tile) return;
+  let b = $('.tile-badge', tile);
+  if (!b) {
+    b = document.createElement('span');
+    b.className = 'tile-badge';
+    b.innerHTML = '<b></b><i><s></s></i>';
+    tile.appendChild(b);
+  }
+  $('b', b).textContent = text;
+  $('s', b).style.width = `${percent}%`;
 }
 
 function positionIndicator(seg) {
@@ -86,9 +130,10 @@ function positionIndicator(seg) {
 
 // ─── Navigation (avec le bouton retour d'Android) ───────────────────────────
 
-function showPage(page, { fromHistory = false } = {}) {
+function showPage(page, { fromHistory = false, world = null } = {}) {
   if (page === state.page) return;
   const opening = page !== 'home';
+  VIEWS[state.page]?.onHide();
   state.page = page;
   app.dataset.page = page;
   for (const p of PAGES) $(`#page-${p}`).classList.toggle('active', p === page);
@@ -102,6 +147,7 @@ function showPage(page, { fromHistory = false } = {}) {
       r.style.animation = '';
     }
     $('.page-body', el)?.scrollTo(0, 0);
+    VIEWS[page]?.onShow(world);
     requestAnimationFrame(() => $$('.segmented', el).forEach(positionIndicator));
     setTimeout(() => $('[data-back]', el)?.focus({ preventScroll: true }), 450);
     if (!fromHistory) {
@@ -114,6 +160,8 @@ function showPage(page, { fromHistory = false } = {}) {
 function goBack() {
   if (!$('#sheet').hidden) return closeSheet();
   if (state.page === 'home') return;
+  // Dans un monde ouvert, « retour » ramène d'abord aux cartes des mondes
+  if (state.page === 'mondes' && worldsView.closeLevels()) return;
   sound.back();
   if (state.pushed) history.back();
   else {
@@ -178,6 +226,8 @@ document.addEventListener('pointerdown', (e) => {
   sound.unlock();
   const el = e.target.closest('.pressable');
   if (!el || el.disabled) return;
+  // Petit « pop » au toucher (les boutons qui ont leur propre son s'en passent)
+  if (!el.matches('[data-nav], [data-back], #btn-play, .ltile:not(.locked), .wcard')) sound.tap();
   el.classList.remove('is-released');
   el.classList.add('is-pressed');
   vibrate(6);
@@ -242,21 +292,6 @@ document.addEventListener('click', (e) => {
   const sheetBtn = e.target.closest('[data-sheet]');
   if (sheetBtn) return openSheet(sheetBtn.dataset.sheet);
   if (e.target.closest('#sheet-close') || e.target === $('#sheet')) return closeSheet();
-
-  const tab = e.target.closest('[data-tab]');
-  if (tab) {
-    state.shopTab = tab.dataset.tab;
-    const page = $('#page-magasin');
-    for (const b of $$('[data-tab]', page)) b.setAttribute('aria-selected', String(b === tab));
-    for (const p of $$('.shop-panel', page)) {
-      const on = p.dataset.panel === state.shopTab;
-      p.classList.toggle('active', on);
-      if (on) for (const r of $$('.reveal', p)) { r.style.animation = 'none'; void r.offsetWidth; r.style.animation = ''; }
-    }
-    positionIndicator(tab.closest('.segmented'));
-    sound.tab();
-    return;
-  }
 
   const option = e.target.closest('[data-segmented] [data-value]');
   if (option) {
@@ -341,6 +376,14 @@ window.addEventListener('pageshow', (e) => {
     launching = false;
     app.classList.remove('launching');
     $('#curtain').classList.remove('on');
+    // Retour de la boutique ou d'une partie : pièces, progression et collection à jour
+    worldsView.render();
+    collectionView.render();
+    refreshHome();
+    if (state.page !== 'home') {
+      for (const r of $$(`#page-${state.page} .reveal`)) r.style.animation = 'none';
+      VIEWS[state.page]?.onShow();
+    }
   }
 });
 
@@ -359,6 +402,8 @@ document.addEventListener('keydown', (e) => {
 function resize() {
   scene.resize(window.innerWidth, window.innerHeight);
   $$('.segmented').forEach(positionIndicator);
+  worldsView.layout();
+  collectionView.layout();
 }
 window.addEventListener('resize', resize);
 
@@ -372,6 +417,8 @@ function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   scene.frame(dt);
+  worldsView.frame(dt);
+  collectionView.frame(dt);
   raf = requestAnimationFrame(loop);
 }
 
@@ -390,7 +437,6 @@ document.addEventListener('visibilitychange', () => {
 
 $('.logo-ball').innerHTML = ballEmblem();
 $('.rotate-icon').innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 2h-9A1.5 1.5 0 0 0 6 3.5v17A1.5 1.5 0 0 0 7.5 22h9a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 16.5 2zM12 20.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM16 17H8V4h8z"/></svg>`;
-$('#coin-count').textContent = String(state.coins);
 injectIcons();
 applyStaticTexts();
 renderPages();
@@ -407,8 +453,9 @@ Promise.race([fontsReady, new Promise((r) => setTimeout(r, 700))]).then(() => {
 });
 
 // Lien direct vers une page (#modes…) : on l'ouvre, le retour mène à l'accueil
+// (?world=snow#mondes ouvre directement les niveaux de ce monde : bouton « Niveaux » de la partie)
 const initial = pageFromHash();
-if (initial !== 'home') showPage(initial, { fromHistory: true });
+if (initial !== 'home') showPage(initial, { fromHistory: true, world: new URLSearchParams(location.search).get('world') });
 
 // Accès pour les tests automatisés
-window.__menu = { scene, settings, sound, showPage, STRINGS };
+window.__menu = { scene, settings, sound, showPage, STRINGS, worldsView, collectionView };

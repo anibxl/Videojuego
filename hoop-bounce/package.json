@@ -1,6 +1,6 @@
 {
   "name": "hoop-bounce",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "description": "Jeu mobile : un ballon de basket qu'on fait rebondir jusqu'au panier.",

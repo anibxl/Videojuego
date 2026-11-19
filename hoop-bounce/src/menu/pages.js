@@ -1,9 +1,10 @@
-// Contenu des pages du menu. Chaque fonction renvoie le HTML de sa page dans la langue demandée ;
+// Contenu des pages statiques du menu (Modes, Paramètres) ; Mondes et Collection sont des vues
+// vivantes (worlds-view.js, collection-view.js).
+// Chaque fonction renvoie le HTML de sa page dans la langue demandée ;
 // le menu les régénère quand la langue change.
 
 import { ICONS } from './icons.js';
 import { LANGUAGE_NAMES, t } from './i18n.js';
-import { BALL_COLLECTION, SHOP_CATALOG } from './shop-data.js';
 import { APP_VERSION } from '../shared/version.js';
 
 let emblemId = 0;
@@ -35,29 +36,6 @@ const head = (id, lang, titleKey, right = '') => `
     ${right}
   </header>`;
 
-const coinChip = (coins) => `
-  <span class="chip coins"><span class="chip-icon">${ICONS.coin}</span><span class="chip-value">${coins}</span></span>`;
-
-// ─── Mondes ─────────────────────────────────────────────────────────────────
-
-export function worldsPage(lang) {
-  return `${head('mondes', lang, 'worlds.title')}
-  <div class="page-body">
-    <div class="world-path reveal" style="--i:0">
-      <svg viewBox="0 0 560 100" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M40 70 C 140 10, 200 10, 280 50 S 420 95, 520 30" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2.5" stroke-dasharray="2 10" stroke-linecap="round"/>
-      </svg>
-      <span class="world-node first" style="left:7%;top:70%">${ICONS.collection}</span>
-      <span class="world-node" style="left:50%;top:50%">${ICONS.lock}</span>
-      <span class="world-node" style="left:93%;top:30%">${ICONS.lock}</span>
-    </div>
-    <div class="empty reveal" style="--i:1">
-      <h2>${t(lang, 'worlds.empty.title')}</h2>
-      <p>${t(lang, 'worlds.empty.body')}</p>
-    </div>
-  </div>`;
-}
-
 // ─── Modes ──────────────────────────────────────────────────────────────────
 
 const MODES = [
@@ -81,88 +59,6 @@ export function modesPage(lang) {
   <div class="page-body">
     <p class="subtitle reveal" style="--i:0">${t(lang, 'modes.subtitle')}</p>
     <div class="modes-grid">${cards}</div>
-  </div>`;
-}
-
-// ─── Magasin ────────────────────────────────────────────────────────────────
-
-function productCard(lang, item, i) {
-  if (!item) {
-    // Emplacement en attente d'article (même mise en page qu'un vrai article)
-    return `
-    <div class="card product reveal" style="--i:${i}">
-      <span class="product-preview"></span>
-      <span class="skeleton-line"></span>
-      <span class="price"><span class="chip-icon">${ICONS.coin}</span>—</span>
-      <button class="buy" disabled>${t(lang, 'shop.item.soon')}</button>
-    </div>`;
-  }
-  const [c1, c2] = item.colors ?? ['#ff9b52', '#c8430f'];
-  return `
-    <div class="card product reveal" style="--i:${i}">
-      <span class="product-preview" style="background: radial-gradient(circle at 35% 30%, ${c1}, ${c2})"></span>
-      <span class="row-label">${item.name?.[lang] ?? item.name?.fr ?? item.id}</span>
-      <span class="price"><span class="chip-icon">${ICONS.coin}</span>${item.price}</span>
-      <button class="buy pressable" data-buy="${item.id}">${item.price}</button>
-    </div>`;
-}
-
-function productGrid(lang, items, offset = 0, count = SHOP_CATALOG.placeholderCount) {
-  const list = items?.length ? items : Array.from({ length: count }, () => null);
-  return `<div class="product-grid">${list.map((it, i) => productCard(lang, it, offset + i)).join('')}</div>`;
-}
-
-export function shopPage(lang, coins, activeTab = 'featured') {
-  const tabs = SHOP_CATALOG.tabs
-    .map(
-      (tab) =>
-        `<button role="tab" data-tab="${tab.id}" aria-selected="${tab.id === activeTab}">${t(lang, tab.labelKey)}</button>`,
-    )
-    .join('');
-  const panels = SHOP_CATALOG.tabs
-    .map((tab) => {
-      const inner =
-        tab.id === 'featured'
-          ? `<div class="shop-featured">
-              <div class="card banner reveal" style="--i:1">
-                <span class="banner-art">${ballEmblem()}</span>
-                <div class="banner-text">
-                  <span class="label">${t(lang, 'shop.featured.label')}</span>
-                  <h2>${t(lang, 'shop.featured.title')}</h2>
-                  <p>${t(lang, 'shop.featured.body')}</p>
-                </div>
-              </div>
-              ${productGrid(lang, null, 2, 2)}
-            </div>`
-          : productGrid(lang, tab.items, 1);
-      return `<div class="shop-panel ${tab.id === activeTab ? 'active' : ''}" role="tabpanel" data-panel="${tab.id}">${inner}</div>`;
-    })
-    .join('');
-  return `${head('magasin', lang, 'shop.title', coinChip(coins))}
-  <div class="page-body">
-    <div class="segmented shop-tabs reveal" role="tablist" style="--i:0"><span class="seg-indicator"></span>${tabs}</div>
-    ${panels}
-  </div>`;
-}
-
-// ─── Collection ─────────────────────────────────────────────────────────────
-
-export function collectionPage(lang) {
-  const n = BALL_COLLECTION.length;
-  const filters = ['all', 'classic', 'rare', 'legendary']
-    .map((f, i) => `<button class="filter" aria-pressed="${i === 0}" disabled>${t(lang, `collection.filter.${f}`)}</button>`)
-    .join('');
-  return `${head('collection', lang, 'collection.title', `<span class="count-chip">${t(lang, 'collection.count', { n })}</span>`)}
-  <div class="page-body">
-    <div class="collection-head reveal" style="--i:0"><div class="filters">${filters}</div></div>
-    <div class="collection-stage reveal" style="--i:1">
-      <div class="slots" aria-hidden="true">${'<span class="slot"></span>'.repeat(16)}</div>
-      <div class="empty">
-        <span class="empty-icon">${ICONS.collection}</span>
-        <h2>${t(lang, 'collection.empty.title')}</h2>
-        <p>${t(lang, 'collection.empty.body')}</p>
-      </div>
-    </div>
   </div>`;
 }
 

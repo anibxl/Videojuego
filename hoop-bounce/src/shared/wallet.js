@@ -70,6 +70,14 @@ export class Wallet {
     return true;
   }
 
+  /** Retire l'article équipé d'une catégorie : l'article de base reprend sa place. */
+  unequip(category) {
+    if (!DEFAULTS[category]) return false;
+    this.inv.equipped[category] = DEFAULTS[category];
+    this._save();
+    return true;
+  }
+
   /** Progression de la collection : articles possédés / total. */
   progress(category = null) {
     const items = category ? CATALOG.filter((i) => i.category === category) : CATALOG;

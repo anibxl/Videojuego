@@ -157,3 +157,38 @@
   from { transform: scale(0.92); opacity: 1; }
   to { transform: scale(1.35); opacity: 0; }
 }
+
+/* Fenêtres du jeu (pause, victoire) : la carte s'ouvre avec un ressort, puis ses boutons
+   arrivent l'un après l'autre (étape 11) */
+.overlay:not(.hidden) .card {
+  animation: card-open 0.55s var(--polish-spring) both;
+}
+
+.overlay:not(.hidden) .actions > *,
+.overlay:not(.hidden) .actions-row > * {
+  animation: action-in 0.45s var(--polish-spring) both;
+}
+
+.overlay:not(.hidden) .actions > *:nth-child(1) { animation-delay: 0.12s; }
+.overlay:not(.hidden) .actions > *:nth-child(2) { animation-delay: 0.17s; }
+.overlay:not(.hidden) .actions > *:nth-child(3) { animation-delay: 0.22s; }
+.overlay:not(.hidden) .actions > *:nth-child(4) { animation-delay: 0.27s; }
+.overlay:not(.hidden) .actions-row > *:nth-child(1) { animation-delay: 0.24s; }
+.overlay:not(.hidden) .actions-row > *:nth-child(2) { animation-delay: 0.29s; }
+.overlay:not(.hidden) .actions-row > *:nth-child(3) { animation-delay: 0.34s; }
+
+@keyframes card-open {
+  from { transform: translateY(26px) scale(0.9); opacity: 0; }
+}
+
+@keyframes action-in {
+  from { transform: translateY(10px) scale(0.92); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay .card,
+  .overlay .actions > *,
+  .overlay .actions-row > * {
+    animation: none !important;
+  }
+}

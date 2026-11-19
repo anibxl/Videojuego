@@ -591,6 +591,8 @@ function startLevel(index) {
   updateLevelLabels();
   const def = LEVELS[index];
   history.replaceState(null, '', `?world=${def.world}&level=${def.number}`);
+  // « Niveaux » (pause, victoire) : la sélection des mondes du menu, ouverte sur ce monde
+  for (const id of ['btn-pause-map', 'btn-win-map']) $(id).href = `index.html?world=${def.world}#mondes`;
   setupTutorial();
 }
 
@@ -749,7 +751,14 @@ const input = new Input(canvas, { left: ui.padLeft, right: ui.padRight, bounce: 
 });
 
 // Les boutons des fenêtres doivent rester utilisables même quand le jeu ignore les touchers
-for (const el of document.querySelectorAll('.overlay')) el.addEventListener('pointerdown', () => sfx.unlock());
+for (const el of document.querySelectorAll('.overlay')) {
+  el.addEventListener('pointerdown', (e) => {
+    sfx.unlock();
+    if (e.target.closest('button, a')) sfx.click(); // petit « pop » sur chaque bouton des fenêtres
+  });
+}
+// Boutons du HUD (pause, recommencer) : même petit son
+for (const b of [ui.pauseBtn, ui.restart]) b.addEventListener('pointerdown', () => sfx.click());
 
 // ─── Boucle ────────────────────────────────────────────────────────────────
 

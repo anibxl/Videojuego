@@ -399,6 +399,13 @@ export class Sfx {
     this._tone(220, 220, 0.5, 0.05 * volume, 'square');
   }
 
+  /** Clic d'interface (boutons des fenêtres, de la boutique) : « pop » rond et bref. */
+  click() {
+    if (!this.ready || !this._throttle('click', 0.04)) return;
+    this._tone(540, 820, 0.07, 0.12, 'sine');
+    this._tone(1640, 1640, 0.03, 0.02, 'triangle');
+  }
+
   /** Pilon qui s'écrase : choc sourd et métallique. */
   crusherSlam(volume = 1) {
     if (!this.ready || volume <= 0.03) return;

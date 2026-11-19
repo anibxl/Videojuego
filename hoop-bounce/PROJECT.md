@@ -3,8 +3,8 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 18/11/2026 · **Version :** 0.9.0 · **Étape en cours :** validation de la grande
-> passe de finition (mondes, difficulté, sensations, animations) par le porteur du projet.
+> **Dernière mise à jour :** 19/11/2026 · **Version :** 0.10.0 · **Étape en cours :** validation de l'expérience
+> utilisateur (sélection des mondes et des niveaux, Collection, finitions) par le porteur du projet.
 
 ## Sommaire
 
@@ -239,7 +239,7 @@ Voir aussi [Idées futures](#8-idées-futures).
 ```
 hoop-bounce/
 ├── index.html              Menu principal (point d'entrée de l'application)
-├── worlds.html             Carte des mondes (?unlock=all : tout ouvert, pour tester)
+├── worlds.html             Ancienne carte des mondes : renvoie vers la sélection du menu (index.html#mondes)
 ├── shop.html               Boutique (pièces, ballons, effets, traînées, animations de panier)
 ├── play.html               Écran de jeu (?world=snow&level=1, &intro=1 pour l'introduction du monde)
 ├── PROJECT.md              Ce document (documentation officielle, mémoire du projet)
@@ -253,7 +253,7 @@ hoop-bounce/
 ├── css/
 │   ├── fonts.css           Déclaration des polices (@font-face)
 │   ├── menu.css            Styles du menu (accueil, pages, fenêtres, animations)
-│   ├── worlds.css          Styles de la carte des mondes
+│   ├── menu-views.css      Styles des pages Mondes (cartes, niveaux) et Collection du menu
 │   ├── shop.css            Styles de la boutique
 │   ├── polish.css          Finitions communes à toutes les pages (onde au toucher, boutons, transitions)
 │   └── style.css           Styles de l'écran de jeu (HUD, commandes, pause, victoire, tutoriel, intro de monde)
@@ -364,8 +364,8 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 |---|---|
 | `audio/sfx.js` | Sons du jeu synthétisés : impacts selon la surface (glace, neige, bois, roche, astéroïde, écho dans l'espace), rebond, dribble, trampoline, téléporteur, interrupteur, porte, vent continu (ventilateur, vent de neige), étoiles, chute (grésillement dans la lave, éclaboussure dans l'eau), victoire, monde débloqué, et les sons des mécaniques (stalactites, plateformes fragiles, geysers, pierres, lianes, champignons, gravité, caisse). |
 | `audio/music.js` | Musique et ambiance de chaque monde, synthétisées (séquenceur à programmation anticipée, fondu enchaîné entre mondes, musique baissée en pause et à la victoire). |
-| `worlds/main.js` | Carte des mondes : cartes, chemin, pagination, déblocage animé, choix du niveau, navigation. |
-| `worlds/art.js` | Illustration animée de chaque monde (diorama dessiné avec le vrai décor et les vrais éléments du monde). |
+| `worlds/redirect.js` | Ancienne carte des mondes : renvoie vers `index.html#mondes` (garde `?world=` et `?unlock=all`). |
+| `worlds/art.js` | Illustration animée de chaque monde (diorama dessiné avec le vrai décor et les vrais éléments du monde), utilisée par les cartes des mondes du menu. |
 | `input/input.js` | Zones tactiles (moitié gauche = direction, moitié droite = rebond), multi-doigts, clavier. |
 | `platform/haptics.js` | Vibrations (API Vibration ; à remplacer par Capacitor Haptics). |
 
@@ -373,13 +373,14 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 
 | Fichier | Rôle |
 |---|---|
-| `main.js` | Menu : navigation (avec le bouton retour d'Android), effet de pression des boutons, sons, vibrations, réglages appliqués en direct, fenêtres, lancement de la partie. |
+| `main.js` | Menu : navigation (avec le bouton retour d'Android), effet de pression des boutons, sons, vibrations, réglages appliqués en direct, fenêtres, lancement de la partie ; niveau à reprendre sous JOUER et progression sur les tuiles ; rafraîchissement au retour de la boutique ou d'une partie. |
 | `scene.js` | Décor vivant du menu (salle de basket la nuit, projecteurs, parquet verni, panier, ballon qui rebondit, poussières, parallaxe), avec 3 niveaux de qualité. |
-| `pages.js` | Contenu HTML des pages Mondes, Modes, Magasin, Collection, Paramètres. |
+| `pages.js` | Contenu HTML des pages statiques Modes et Paramètres. |
+| `worlds-view.js` | Page Mondes : 5 cartes de mondes (illustration, progression, cadenas et condition), animation de déblocage, grille des 10 niveaux, lancement de n'importe quel niveau débloqué. |
+| `collection-view.js` | Page Collection : articles possédés par catégorie, aperçu animé, Équiper / Déséquiper, badge « Équipé ». |
 | `sound.js` | Sons d'interface et musique d'ambiance synthétisés. |
 | `icons.js` | Icônes SVG dessinées à la main. |
 | `i18n.js` | Textes du menu en français, anglais et espagnol. |
-| `shop-data.js` | Catalogue de la boutique et de la collection (vides, prêts à être remplis). |
 
 **`src/shared/`**
 
@@ -432,17 +433,21 @@ et recule légèrement quand une page est ouverte.
 **Accueil**
 - Logo : ballon vectoriel + « HOOP » (blanc) / « BOUNCE » (dégradé orange), police Unbounded ; slogan.
 - Bouton **JOUER** : seul élément chaud et lumineux de l'écran, lueur qui « respire », reflet qui balaie.
-- **Dock** de 5 tuiles : Mondes, Modes, Magasin, Collection, Paramètres (chaque tuile a sa couleur d'accent).
-- Solde de **pièces** en haut à droite (ouvre le Magasin).
+- Sous JOUER : **le niveau à reprendre** (« Monde 2 · Niveau 3 — Stalactites »), ou « Tous les niveaux sont
+  terminés ! ».
+- **Dock** de 5 tuiles : Mondes, Modes, Magasin, Collection, Paramètres (chaque tuile a sa couleur d'accent) ;
+  **pastilles de progression** sur Mondes (niveaux terminés / 50) et Collection (articles possédés / 25).
+- Solde de **pièces** en haut à droite (ouvre la boutique). Tout est relu au retour d'une partie ou de la
+  boutique.
 
 **Pages**
 
 | Page | Contenu |
 |---|---|
-| Mondes | Page d'attente : chemin décoratif avec nœuds verrouillés, « De nouveaux terrains arrivent ». La carte des mondes (`worlds.html`) existe ; relier cette tuile à la carte demande une petite modification du menu, **en attente d'accord**. |
+| **Mondes** (étape 11) | Vraie **sélection des mondes**, puis des niveaux — voir [Sélection des mondes](#sélection-des-mondes-et-des-niveaux-indexhtmlmondes). |
 | Modes | 4 cartes verrouillées « À venir » : Trickshot, Endless, Défis quotidiens, Multijoueur. Toucher une carte : tremblement + message. |
-| Magasin | Onglets À la une / Ballons / Traînées / Pièces, bannière « La boutique ouvre bientôt », emplacements d'articles « Bientôt » (catalogue vide prêt dans `shop-data.js`). |
-| Collection | Page vide : filtres (Tous, Classiques, Rares, Légendaires), compteur, emplacements en pointillés. |
+| Magasin | La tuile ouvre la boutique (`shop.html`). |
+| **Collection** (étape 11) | Tous les articles possédés, aperçu, Équiper / Déséquiper — voir [Collection](#collection-indexhtmlcollection). |
 | Paramètres | Musique, effets sonores (curseurs appliqués en direct), vibrations, qualité graphique (basse / moyenne / haute), langue (FR / EN / ES), politique de confidentialité, crédits, version. |
 
 ### Écran de jeu (`play.html`)
@@ -452,11 +457,12 @@ et recule légèrement quand une page est ouverte.
 - **Commandes** : ◀ ▶ (bas gauche), grand bouton de rebond (bas droite) entouré de l'**anneau de puissance**
   (5 segments : blanc, ambre au niveau 4, or au niveau 5 ; le dernier cran clignote avant de redescendre).
 - **Jauge au-dessus du ballon** : 5 barres croissantes (même code couleur), visible dès que la puissance monte.
-- **Pause** : Reprendre, Recommencer, Carte des mondes, Menu principal. Pause automatique quand l'application
-  passe en arrière-plan.
+- **Pause** : Reprendre, Recommencer, **Choisir un niveau** (ouvre directement les 10 niveaux du monde en cours
+  dans le menu), Menu principal. Pause automatique quand l'application passe en arrière-plan. La carte s'ouvre
+  avec un ressort et ses boutons arrivent l'un après l'autre ; petit son à chaque bouton.
 - **Victoire** : niveau, « Panier ! », étoiles qui tombent une à une, temps (et « Nouveau record »),
   **pièces gagnées** (compteur qui défile), boutons
-  Niveau suivant / Rejouer / Carte / Menu. Dernier niveau d'un monde : « Monde terminé ! », « Nouveau monde
+  Niveau suivant / Rejouer / **Niveaux** / Menu. Dernier niveau d'un monde : « Monde terminé ! », « Nouveau monde
   débloqué : … » (fanfare) et **Monde suivant**. Après le tout dernier niveau : « Bravo ! » et un message.
 - **Introduction d'un monde** : sur le décor du monde (la partie attend), « MONDE 2 », le nom en très grand
   (dégradé vers la couleur du monde), l'accroche, les 5 mécaniques en pastilles qui apparaissent en cascade,
@@ -481,9 +487,57 @@ et recule légèrement quand une page est ouverte.
   cartes qui apparaissent en cascade ; encart « Comment gagner des pièces ».
 - **Achat** : les pièces défilent, onde et étiquette « Débloqué ! » de la couleur de la rareté, fanfare,
   vibration ; l'article est équipé aussitôt.
-- Accès : tuile « Magasin » et solde de pièces du menu, bouton de pièces de la carte des mondes.
+- Accès : tuile « Magasin » et solde de pièces du menu, bouton « Boutique » de la Collection ; le retour ramène
+  à la page d'où l'on vient (accueil ou Collection).
 
-### Carte des mondes (`worlds.html`)
+### Sélection des mondes et des niveaux (`index.html#mondes`)
+
+Refaite à l'étape 11 : plus de page « Bientôt disponible ». Tout se passe dans le menu, sans rechargement.
+
+- **En-tête** : retour, « Mondes », fil d'Ariane (« Monde 2 · Neige » quand un monde est ouvert), **progression
+  totale** (étoiles / 150, barre, pourcentage).
+- **5 grandes cartes** qui défilent à l'horizontale (aimantées ; molette sur ordinateur) : 🏙️ Ville, ❄️ Neige,
+  🌋 Volcan, 🌲 Forêt, 🌌 Espace. Chaque carte : **illustration animée** du vrai décor du monde (seule la carte
+  au centre est animée), numéro, emoji et nom, « 10 niveaux », accroche, **barre de progression** qui se
+  remplit à l'ouverture, étoiles (x/30) et niveaux terminés (x/10), badge « ✓ Terminé ».
+- **Animations des cartes** : apparition en cascade, léger flottement du décor (décalé d'une carte à l'autre),
+  la carte au centre se soulève et prend la lumière de son monde, reflet qui la balaie, élévation au survol.
+- **Monde verrouillé** : décor éteint, **cadenas** et **condition de déblocage** (« Termine les 10 niveaux de
+  Neige ») ; le toucher fait trembler le cadenas, avec un son sourd et un message.
+- **Déblocage** (une seule fois par monde) : la carte vient au centre, le cadenas tremble, s'ouvre et s'envole,
+  ondes et étincelles de la couleur du monde, « Monde débloqué ! », fanfare et vibration.
+- **Ouvrir un monde** : les cartes glissent vers la gauche et **les 10 niveaux apparaissent aussitôt** (à gauche
+  le monde : illustration, nom, accroche, progression ; à droite une grille 5 × 2). Chaque case : **numéro**,
+  nom, **étoiles obtenues (0 à 3)**, **coche** si terminé, **cadenas** si verrouillé, pastille de difficulté ;
+  le prochain niveau à jouer « respire » avec l'étiquette « À jouer ». Les cases arrivent une à une.
+- **Rejouer n'importe quel niveau débloqué** d'un toucher (la case grossit, rideau, partie) — plus besoin de
+  finir une partie pour choisir un autre niveau. Un niveau verrouillé tremble et dit lequel terminer d'abord.
+- Retour (bouton, Échap, retour Android) : d'abord aux cartes des mondes, puis à l'accueil.
+- Liens : `index.html?world=snow#mondes` ouvre directement les niveaux de la Neige (bouton « Choisir un
+  niveau » de la partie) ; `?unlock=all` ouvre tout pour tester ; l'ancienne adresse `worlds.html` y renvoie.
+
+### Collection (`index.html#collection`)
+
+Corrigée à l'étape 11 (elle restait vide : elle lisait un ancien catalogue vide au lieu de l'inventaire de la
+boutique).
+
+- **Source unique** : le porte-monnaie partagé avec la boutique et le jeu (`shared/wallet.js`, clé
+  `hoopbounce.inventory`). Un article acheté apparaît **dès le retour au menu**.
+- **En-tête** : retour, « Collection », progression (barre + « 7/25 possédés »), bouton **Boutique**.
+- **À gauche** : **aperçu animé** de l'article choisi, porté avec le reste de la tenue équipée (même rendu que
+  dans le jeu), étiquette de rareté (ou « Par défaut »), badge **« ✓ Équipé »**, nom, description et bouton
+  **Équiper** ou **Déséquiper**.
+- **À droite** : onglets **Tout / Ballons / Rebonds / Traînées / Paniers**, grille des articles possédés
+  (vignette, nom, rareté, **badge « Équipé »**, reflet sur les légendaires), « Encore N articles à débloquer
+  dans la boutique ».
+- **Déséquiper** remet l'article de base de la catégorie (ballon classique, onde, aucune traînée, confettis).
+- **Enregistré tout de suite** : l'article équipé reste équipé au prochain lancement (jeu, boutique, menu).
+- Sons : sélection, carillon à l'équipement, son descendant au retrait ; vibration courte ; message.
+
+### Ancienne carte des mondes (`worlds.html`)
+
+Remplacée à l'étape 11 par la sélection du menu ; l'adresse renvoie vers `index.html#mondes`. Ce qui suit
+décrit l'ancienne page (étapes 7 à 10), conservé pour l'historique :
 
 - **En-tête** : retour, « MONDES », total d'étoiles, **barre de progression** et **pourcentage** global.
 - **5 cartes** qui défilent à l'horizontale (aimantées, monde au centre agrandi et entouré de sa couleur ;
@@ -505,7 +559,7 @@ et recule légèrement quand une page est ouverte.
 
 | Bouton | Comportement |
 |---|---|
-| Tous les boutons du menu | Enfoncement à la pression, léger **grossissement au relâcher** (ressort), **éclat lumineux** au point touché, son, vibration courte. |
+| Tous les boutons du menu | Enfoncement à la pression, léger **grossissement au relâcher** (ressort), **éclat lumineux** au point touché, **petit « pop » sonore** (étape 11 ; les boutons qui ont leur propre son — navigation, retour, JOUER, mondes, niveaux — gardent le leur), vibration courte. |
 | JOUER | Accord montant + souffle, éclair dans le décor, l'accueil s'efface, fondu au noir vers la partie. |
 | Tuiles du dock | Icône qui prend sa couleur d'accent et halo coloré à la pression ; son d'ouverture. |
 | Retour (pages) | Son descendant ; la page glisse, l'accueil revient. |
@@ -761,14 +815,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Difficulté refaite : 5 paliers, courbe beaucoup plus raide, une difficulté nouvelle par niveau
 - ✅ Pièges propres aux mondes : pilons, rochers qui dévalent, jets de flammes, trous noirs
 - 🟡 Validation de la passe de finition par le porteur du projet
-- 🔴 Relier la tuile « Mondes » du menu à la carte (en attente d'accord : modification du menu)
+- ✅ Vraie sélection des mondes et des niveaux dans le menu (étape 11) : la tuile « Mondes » n'ouvre plus de
+  page d'attente
 
 ### Phase 6 — Économie, magasin et skins 🟡
 - ✅ Gagner des pièces (niveaux, étoiles, 3 étoiles, rejouer, swish)
 - ✅ Boutique premium : 25 articles (ballons, effets de rebond, traînées, animations de panier), 4 raretés,
   aperçu animé, achat, équipement, progression de la collection
 - ✅ Articles équipés visibles en jeu
-- 🔴 Page Collection du menu (encore vide : la collection est visible dans la boutique)
+- ✅ Page Collection du menu : articles possédés, aperçu, Équiper / Déséquiper, badge « Équipé » (étape 11)
 - 🔴 Récompenses supplémentaires (coffres de fin de monde, défis)
 
 ### Phase 6 bis — Finition « vrai jeu mobile » 🟡
@@ -778,6 +833,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Animations d'interface : onde au toucher, boutons élastiques, reflets, transitions entre pages
 - ✅ Performances revérifiées (60 images/s, décors du volcan allégés)
 - 🟡 Validation par le porteur du projet ; réglages fins sur un vrai téléphone
+
+### Phase 6 ter — Expérience utilisateur 🟡
+- ✅ Sélection des mondes (grandes cartes, cadenas et condition, déblocage animé) et des 10 niveaux
+- ✅ Rejouer n'importe quel niveau débloqué depuis le menu ; « Choisir un niveau » depuis la pause
+- ✅ Collection corrigée : articles achetés visibles, aperçu, équiper / déséquiper, choix enregistré
+- ✅ Progression plus claire : niveau à reprendre sous JOUER, pastilles sur les tuiles, barres par monde
+- ✅ Sons de clic, ouverture animée des fenêtres, animations des cartes de mondes
+- 🟡 Validation par le porteur du projet
 
 ### Phase 7 — Modes de jeu 🔴
 - 🔴 Trickshot
@@ -820,24 +883,21 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   mondes, sensations de jeu, éclairage, ombres, effets, animations d'interface
 - ✅ Tests automatiques + outil de vérification des niveaux (avec pilote pour les solutions expertes, dont
   `jumpBoulder` et `dodgeBoulders` pour les rochers)
+- ✅ Sélection des mondes et des niveaux dans le menu, Collection complète, niveau à reprendre sous JOUER
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur la passe de finition (mondes, difficulté, sensations)
+- 🟡 Attente des retours du porteur du projet sur l'expérience utilisateur (étape 11)
 
 ### À faire — court terme 🔴
 - 🔴 Ajuster le ressenti (gravité, hauteurs, dribble, inertie) selon les retours
 - 🔴 Ajuster la difficulté (notamment la plateforme mobile du niveau 4)
-- 🔴 Afficher le bon niveau sur le bouton JOUER du menu (actuellement « Niveau 1 » fixe) — demande une
-  modification du menu, en attente d'accord
 - 🔴 Faire apparaître le panier du niveau 5 dès le départ (il est hors de l'écran au début)
 - 🔴 Éviter que l'étiquette « Rebondir » du tutoriel recouvre le panier du niveau 1
 - 🔴 Éprouver la nouvelle courbe de difficulté avec de vrais joueurs (et sur un vrai téléphone) : surtout
   Forêt 5 et Espace 5 (fenêtres les plus serrées)
-- 🔴 Relier la tuile « Mondes » du menu à `worlds.html` (petite modification du menu, en attente d'accord)
 
 ### À faire — moyen terme 🔴
-- 🔴 Page Collection du menu (afficher les articles possédés)
 - 🔴 Équilibrer les prix et les gains après les retours
 - 🔴 Nouveaux éléments (surfaces collantes, interrupteurs à minuterie…)
 - 🔴 Accessibilité : taille des boutons réglable, inversion gauche / droite pour les gauchers
@@ -948,14 +1008,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
-| Moyenne | Le bouton JOUER du menu affiche toujours « Niveau 1 · Premier dribble » alors qu'il reprend au premier niveau non terminé. | 🔴 En attente d'accord (modification du menu) |
+| ✅ | Le bouton JOUER du menu affichait toujours « Niveau 1 · Premier dribble ». | ✅ Corrigé (v0.10.0 : il affiche le niveau à reprendre) |
+| ✅ | Collection : un article acheté dans la boutique n'apparaissait pas (la page lisait un ancien catalogue vide). | ✅ Corrigé (v0.10.0 : lecture de l'inventaire partagé, relu au retour de la boutique) |
 | Faible | Niveau 5 : le panier est hors de l'écran au départ (on le découvre en montant). | 🔴 À corriger |
 | Faible | Niveau 1 : l'étiquette « Rebondir » du tutoriel recouvre en partie le panier (elle disparaît après 3 rebonds). | 🔴 À corriger |
-| Faible | La page « Magasin » d'origine du menu (`pages.js`, `shop-data.js`) n'est plus affichée : la tuile ouvre la nouvelle boutique (`shop.html`). Code conservé, à retirer lors d'un prochain nettoyage du menu. | 🟡 Nettoyage à prévoir |
-| Faible | La page « Collection » du menu reste vide (la collection se voit dans la boutique). | 🔴 À faire |
+| ✅ | Ancienne page « Magasin » du menu restée dans le code. | ✅ Retirée (v0.10.0) |
+| ✅ | La page « Collection » du menu restait vide. | ✅ Corrigé (v0.10.0) |
 | Info | Pièges et timings vérifiés par simulation (chaque passage a une solution), pas encore par des joueurs. La nouvelle courbe (étape 10) est volontairement raide : à éprouver avec de vrais joueurs. | 🟡 À équilibrer après retours |
 | Info | Contrôle légèrement plus vif (étape 10) : les anciennes solutions enregistrées ont été régénérées. | ✅ Fait |
-| Moyenne | La tuile « Mondes » du menu ouvre encore la page d'attente : la carte des mondes n'est accessible que depuis la partie (pause, victoire) ou par `worlds.html`. | 🔴 En attente d'accord (modification du menu) |
+| ✅ | La tuile « Mondes » du menu ouvrait une page d'attente. | ✅ Corrigé (v0.10.0 : sélection des mondes et des niveaux) |
 | ✅ | Carte : « Terminé » affiché alors que des niveaux prévus manquaient. | ✅ Résolu (v0.7.0 : les 50 niveaux existent) |
 | Info | Difficulté des 50 niveaux vérifiée par simulation (chaque passage a une solution), mais pas encore éprouvée par des joueurs : certains timings (geysers, astéroïdes) peuvent sembler serrés. | 🟡 À équilibrer après retours |
 | Info | Ancienne progression : les niveaux de démonstration de l'étape 7 (`snow-1`, `volcano-1`, `forest-1`, `space-1`) sont devenus les niveaux 6 de leur monde ; un niveau `…-1` déjà terminé compte pour le nouveau niveau 1. | 🟡 Sans conséquence (phase de développement) |
@@ -970,6 +1031,31 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 19/11/2026 — Étape 11 : expérience utilisateur (v0.10.0)
+- **Ajouté** :
+  - **sélection des mondes** dans le menu (`src/menu/worlds-view.js`, `css/menu-views.css`) : 5 grandes cartes
+    (🏙️ ❄️ 🌋 🌲 🌌, « 10 niveaux », illustration animée, progression, étoiles, badge « Terminé »), cadenas et
+    condition de déblocage, animation de déblocage ; ouvrir un monde montre aussitôt ses 10 niveaux (numéro,
+    étoiles 0–3, coche, cadenas, difficulté, « À jouer ») ; **n'importe quel niveau débloqué se relance
+    directement** depuis le menu ;
+  - **« Choisir un niveau »** dans la pause et **« Niveaux »** à la victoire : ouvrent les niveaux du monde en
+    cours dans le menu ;
+  - **Collection** (`src/menu/collection-view.js`) : tous les articles possédés, aperçu animé, Équiper /
+    Déséquiper (`Wallet.unequip`), badge « Équipé », onglets par catégorie, lien vers la boutique ;
+  - **progression plus claire** : niveau à reprendre sous JOUER, pastilles de progression sur les tuiles
+    Mondes et Collection, progression totale dans l'en-tête des mondes ;
+  - **finitions** : vues qui glissent l'une sur l'autre, cartes qui flottent, se soulèvent et sont balayées
+    par un reflet, barres qui se remplissent, cases de niveau qui arrivent une à une ; ouverture à ressort des
+    fenêtres de pause et de victoire ; **sons de clic** dans le menu, les fenêtres du jeu et la boutique ;
+    carillon d'équipement et fanfare de déblocage dans le menu ;
+  - 2 nouveaux tests (299 au total).
+- **Modifié** : `worlds.html` renvoie vers `index.html#mondes` ; la boutique revient à la page d'où l'on vient
+  (accueil ou Collection) ; le menu relit pièces, progression et collection au retour d'une partie ou de la
+  boutique.
+- **Retiré** : page d'attente « Mondes », ancienne page « Magasin » du menu (`shop-data.js`), ancienne carte
+  (`src/worlds/main.js`, `css/worlds.css`).
+- **Reste à faire** : retours du porteur du projet ; essais sur un vrai téléphone.
 
 ### 18/11/2026 — Étape 10 : grande passe de finition (v0.9.0)
 - **Ajouté** :

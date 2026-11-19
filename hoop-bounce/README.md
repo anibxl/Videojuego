@@ -3,7 +3,12 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 10 (actuelle) :** grande passe de **finition**. Mondes reconnaissables au premier coup d'œil (néons,
+**Étape 11 (actuelle) :** **expérience utilisateur**. Vraie sélection des mondes dans le menu (grandes cartes,
+cadenas et condition de déblocage, puis les 10 niveaux de chaque monde : étoiles, coche, cadenas) ; on relance
+n'importe quel niveau débloqué depuis le menu ou depuis la pause ; Collection corrigée (articles achetés,
+aperçu, équiper / déséquiper, badge « Équipé ») ; progression plus claire, sons de clic, animations.
+
+**Étape 10 :** grande passe de **finition**. Mondes reconnaissables au premier coup d'œil (néons,
 avions, nuages de froid, traces dans la neige, chaleur visible, papillons, débris en apesanteur, lumière propre
 à chaque monde) et à l'oreille (ambiance sonore par monde) ; difficulté à **5 paliers** qui monte vite, une
 difficulté nouvelle par niveau, et 4 pièges propres aux mondes (pilons, rochers qui dévalent, jets de flammes,
@@ -95,7 +100,7 @@ Discrète : niveau et étoiles en haut à gauche, recommencer et pause en haut �
 pause et la victoire. L'application mise en arrière-plan se met en pause d'elle-même. Textes en FR / EN / ES
 (langue choisie dans le menu, `src/game/i18n.js`).
 
-## Les mondes (`worlds.html`, `src/game/worlds.js`)
+## Les mondes (`index.html#mondes`, `src/game/worlds.js`)
 
 | # | Monde | Ambiance | Mécaniques |
 |---|---|---|---|
@@ -106,14 +111,17 @@ pause et la victoire. L'application mise en arrière-plan se met en pause d'elle
 | 5 | Espace | planètes, étoiles, nébuleuses, astéroïdes, la Terre | gravité réduite, astéroïdes, portails, plateformes flottantes, gravité inversée |
 
 - Chaque monde a son décor animé, ses particules, sa lumière, sa musique et son ambiance sonore, ses sons.
-- **Carte des mondes** : cartes illustrées et animées, cadenas, animation de déblocage, barre de progression,
-  étoiles, pourcentage, choix du niveau (10 emplacements par monde, « Bientôt » pour ceux à venir).
+- **Sélection des mondes** (menu, tuile « Mondes ») : 5 grandes cartes illustrées et animées, cadenas et
+  condition de déblocage, animation de déblocage, progression et étoiles ; ouvrir un monde affiche ses
+  10 niveaux (numéro, étoiles, coche, cadenas, difficulté) et tout niveau débloqué se relance d'un toucher.
 - **Introduction** de chaque monde et **transition** colorée entre deux mondes.
 - **Déblocage** : un monde s'ouvre quand tous les niveaux disponibles du précédent sont terminés.
 - 50 niveaux : 10 par monde, 5 paliers de difficulté (facile → extrême) ; l'Espace est le monde final.
-- La carte s'ouvre depuis la partie (pause → Carte des mondes, victoire → Carte) ou directement :
-  `worlds.html` (`worlds.html?unlock=all` ouvre tout, pour tester). La tuile « Mondes » du menu n'y mène pas
-  encore (le menu n'a pas été modifié).
+- Depuis la partie : pause → « Choisir un niveau », victoire → « Niveaux » (ouvre les niveaux du monde en
+  cours). Lien direct : `index.html?world=snow#mondes` ; `?unlock=all` ouvre tout pour tester ; l'ancienne
+  adresse `worlds.html` y renvoie.
+- **Collection** (menu) : tous les articles possédés, aperçu, Équiper / Déséquiper, badge « Équipé » ; le
+  choix est enregistré.
 - Format des niveaux et de tous les éléments : `src/game/levels/README.md`.
 
 ## La boutique (`shop.html`)
@@ -123,7 +131,7 @@ pause et la victoire. L'application mise en arrière-plan se met en pause d'elle
 - Pièces : premier panier d'un niveau 40 à 80 (selon le monde), chaque nouvelle étoile 25, 3 étoiles +20,
   rejouer 10, swish +5. Tout se débloque en jouant.
 - Aperçu animé avant l'achat, achat, équipement ; les articles équipés apparaissent en jeu.
-- Accès : tuile « Magasin » du menu, solde de pièces, bouton de pièces de la carte des mondes.
+- Accès : tuile « Magasin » du menu, solde de pièces, bouton « Boutique » de la Collection.
 
 ## Tester
 
@@ -132,7 +140,7 @@ cd hoop-bounce
 python3 -m http.server 8080
 ```
 
-Ordinateur : <http://localhost:8080> (le menu ; `worlds.html` la carte des mondes ; `play.html?world=snow&level=1`
+Ordinateur : <http://localhost:8080> (le menu ; `index.html#mondes` la sélection des mondes ; `play.html?world=snow&level=1`
 ouvre directement un niveau). Téléphone Android : même Wi-Fi, `http://<IP-de-l-ordinateur>:8080`
 dans Chrome, téléphone tenu à l'horizontale. `?debug` dans l'adresse (ou `²`) affiche les collisions et
 la zone du vent.
@@ -142,7 +150,8 @@ la zone du vent.
 ```
 hoop-bounce/
 ├── index.html, css/menu.css    menu principal
-├── worlds.html, css/worlds.css carte des mondes
+├── css/menu-views.css           pages Mondes et Collection du menu
+├── worlds.html                 ancienne carte : renvoie vers index.html#mondes
 ├── play.html, css/style.css    partie (HUD, commandes, pause, victoire, tutoriel, intro de monde)
 ├── css/fonts.css, assets/fonts polices embarquées (licence OFL)
 ├── src/
@@ -183,7 +192,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 297 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+npm test                               # 299 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)

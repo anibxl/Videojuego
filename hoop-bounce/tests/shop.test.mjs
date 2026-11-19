@@ -1,6 +1,7 @@
 // Boutique : catalogue, pièces gagnées en jouant, achats, équipement.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { CATALOG, CATEGORIES, DEFAULTS, RARITIES, REWARDS } from '../src/shared/catalog.js';
 import { Wallet } from '../src/shared/wallet.js';
@@ -66,4 +67,25 @@ test('inventaire abîmé : on repart proprement', () => {
 test('textes de la boutique dans les trois langues', () => {
   const ref = Object.keys(SHOP_STRINGS.fr).sort();
   for (const l of Object.keys(SHOP_STRINGS)) assert.deepEqual(Object.keys(SHOP_STRINGS[l]).sort(), ref, l);
+});
+
+test('collection : équiper puis déséquiper un article, retour à l\'article de base, choix enregistré', () => {
+  const store = memory();
+  const w = new Wallet(store);
+  w.coins = 5000;
+  assert.equal(w.buy('ball-neon'), 'ok');
+  assert.equal(w.equip('ball-neon'), true);
+  assert.equal(new Wallet(store).equipped('ball'), 'ball-neon', 'gardé au prochain lancement');
+  assert.equal(w.unequip('ball'), true);
+  assert.equal(w.equipped('ball'), 'ball-classic');
+  assert.equal(new Wallet(store).equipped('ball'), 'ball-classic', 'retrait enregistré');
+  assert.ok(new Wallet(store).owns('ball-neon'), 'toujours possédé');
+  assert.equal(w.unequip('nope'), false);
+});
+
+test('page Mondes du menu : plus d\'écran « bientôt », l\'ancienne carte renvoie vers le menu', () => {
+  const html = readFileSync(new URL('../worlds.html', import.meta.url), 'utf8');
+  assert.match(html, /src\/worlds\/redirect\.js/);
+  const redirect = readFileSync(new URL('../src/worlds/redirect.js', import.meta.url), 'utf8');
+  assert.match(redirect, /index\.html.*#mondes/);
 });

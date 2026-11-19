@@ -211,6 +211,12 @@ function frame(now) {
 
 // ─── Navigation ─────────────────────────────────────────────────────────────
 
+/** Retour vers la page d'où l'on vient (accueil, sélection des mondes, collection). */
+function backUrl() {
+  const from = params.get('from');
+  return from === 'worlds' ? 'index.html#mondes' : from === 'collection' ? 'index.html#collection' : 'index.html';
+}
+
 function go(url) {
   $('fade').classList.remove('out');
   setTimeout(() => (location.href = url), 320);
@@ -218,10 +224,12 @@ function go(url) {
 
 $('btn-back').addEventListener('click', (e) => {
   e.preventDefault();
-  go(params.get('from') === 'worlds' ? 'worlds.html' : 'index.html');
+  sfx.unlock();
+  sfx.click();
+  go(backUrl());
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') go('index.html');
+  if (e.key === 'Escape') go(backUrl());
 });
 window.addEventListener('pageshow', (e) => {
   if (e.persisted) $('fade').classList.add('out');
