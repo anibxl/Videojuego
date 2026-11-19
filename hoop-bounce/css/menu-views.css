@@ -1047,3 +1047,81 @@
 @media (prefers-reduced-motion: reduce) {
   .about-glow, .page.active .about-ball, .page.active .about-logo .wordmark, .page.active .about-id::after, .page.active .about-thanks svg { animation: none !important; }
 }
+
+/* ── Collection : album complet (étape 17) ─────────────────────────────────── */
+
+/* Article pas encore possédé : visible, grisé, cadenas et prix */
+.citem.locked { background: linear-gradient(180deg, rgba(var(--r), 0.07), rgba(var(--r), 0.01)), var(--surface); border-style: dashed; }
+.citem.locked canvas { filter: saturate(0.35) brightness(0.62); }
+.citem.locked .citem-name { color: var(--ink-2); }
+.citem-lock {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  padding: 4px;
+  border-radius: 50%;
+  background: rgba(6, 10, 22, 0.75);
+  border: 1px solid rgba(var(--r), 0.4);
+}
+.citem-lock svg { width: 100%; height: 100%; fill: rgba(var(--r), 0.95); }
+.citem-price { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
+.citem-price .chip-icon { width: 11px; height: 11px; display: inline-flex; }
+.citem-price .chip-icon svg { width: 100%; height: 100%; }
+.citem-price.ex { color: #ffd36b; }
+
+/* Épique : lueur ; légendaire : bordure dorée qui respire (en plus du reflet) */
+.citem.epic:not(.locked) { box-shadow: 0 0 16px rgba(var(--r), 0.18); }
+.citem.legendary:not(.locked) { border-color: rgba(var(--r), 0.75); animation: tile-in 0.45s var(--ease-spring) both, citem-legend 2.6s ease-in-out 0.6s infinite; }
+@keyframes citem-legend { 50% { box-shadow: 0 0 0 1px rgba(var(--r), 0.6), 0 0 26px rgba(var(--r), 0.4); } }
+
+/* Débloqué depuis la dernière visite : badge « Nouveau ! » et petit saut */
+.citem.fresh { animation: tile-in 0.45s var(--ease-spring) both, citem-fresh 1s var(--ease-spring) 0.5s 2; }
+@keyframes citem-fresh { 40% { transform: translateY(-6px) scale(1.06); box-shadow: 0 0 30px rgba(var(--r), 0.55); } }
+.citem-new {
+  position: absolute;
+  top: -7px;
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin: 0 auto;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #ffd36b, #ff8a1e);
+  color: #2a1400;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  box-shadow: 0 0 12px rgba(255, 170, 60, 0.7);
+  animation: badge-in 0.5s var(--ease-spring) 0.4s both;
+}
+
+/* Aperçu d'un article verrouillé */
+.cv-stage.is-locked .cv-preview canvas { filter: saturate(0.85); }
+.cv-btn svg { width: 15px; height: 15px; fill: currentColor; margin-right: 4px; vertical-align: -2px; }
+.cv-state.locked { color: #ffd36b; }
+.cv-state.locked svg { fill: currentColor; }
+
+/* Progression de l'album par rareté */
+.cv-more { display: flex; flex-wrap: wrap; gap: 6px; }
+.cv-rchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: rgba(var(--r), 0.1);
+  border: 1px solid rgba(var(--r), 0.3);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+.cv-rchip i { width: 8px; height: 8px; border-radius: 50%; background: rgb(var(--r)); box-shadow: 0 0 8px rgba(var(--r), 0.8); }
+.cv-rchip b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.cv-rchip.full { border-color: rgb(var(--r)); color: var(--ink); }
+.cv-complete { color: var(--gold); font-weight: 800; }
+@media (prefers-reduced-motion: reduce) {
+  .citem.legendary:not(.locked), .citem.fresh { animation: tile-in 0.45s var(--ease-spring) both; }
+}

@@ -12,7 +12,7 @@ JPEG) :
 
 Pour les refaire après une modification du jeu : `node store/tools/screenshots.mjs fr` (puis `en`, `es`).
 Le script prépare un profil de joueur crédible, puis prend chaque capture au bon moment :
-- 2 480 pièces, Ville et Neige terminées avec des étoiles ;
+- 48 250 pièces, Ville et Neige terminées avec des étoiles ;
 - traînée de flammes et effet d'étoiles équipés ;
 - récompense du 3e jour à récupérer, missions en cours.
 
@@ -54,8 +54,8 @@ montrent l'action et la variété des mondes, pas un menu.
 ### 02 — Menu principal (`02-menu.jpg`) · « Un vrai jeu de basket de plateforme »
 - Logo HOOP BOUNCE, bouton **JOUER** lumineux avec le niveau à reprendre (« Monde 3 · Niveau 5 »).
 - Les boutons Cadeau / Missions / Succès / Bonus avec leurs **pastilles rouges** (il y a des choses à
-  récupérer), solde de pièces élevé (2 480).
-- Dock complet (Mondes 24/50, Collection 13/31) : on voit que le jeu a du contenu.
+  récupérer), solde de pièces élevé (48 250).
+- Dock complet (Mondes 24/50, Collection 13/51) : on voit que le jeu a du contenu.
 - Le décor de salle de basket avec le ballon qui rebondit et le panier.
 - À éviter : écran de chargement, page ouverte, pièces à 0.
 
@@ -83,11 +83,12 @@ montrent l'action et la variété des mondes, pas un menu.
 - **Astéroïdes**, plateformes lumineuses flottantes et l'anneau d'un **trou noir**.
 - Ballon en apesanteur au milieu, étoiles.
 
-### 08 — Boutique (`08-shop.jpg`) · « 31 ballons, effets et traînées à débloquer »
+### 08 — Boutique (`08-shop.jpg`) · « 51 objets à collectionner »
 - Onglet **Ballons** avec la grille des articles et leurs **raretés en couleur** (commun, rare, épique,
   légendaire) et leurs prix.
 - Un **article épique sélectionné** (Galaxie) dans le grand aperçu animé (ballon qui rebondit avec son effet).
-- Compteur de collection (13/31) et solde de pièces bien visibles.
+- Compteur de collection (13/51), solde de pièces, prix et cadenas des objets à débloquer bien visibles ;
+  les cartes légendaires dorées en bas de la grille.
 
 ### 09 — Missions quotidiennes (`09-missions.jpg`) · « 3 nouvelles missions chaque jour »
 - Les **3 cartes** (facile vert, moyenne bleue, difficile violette) avec des **barres de progression**

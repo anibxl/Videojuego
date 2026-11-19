@@ -47,7 +47,7 @@ const CAPTIONS = {
     volcano: ['Monde 3 · Le Volcan', 'lave et geysers'],
     forest: ['Monde 4 · La Forêt', 'lianes et rivières'],
     space: ['Monde 5 · L’Espace', 'astéroïdes et trous noirs'],
-    shop: ['31 ballons, effets', 'et traînées à débloquer'],
+    shop: ['51 objets', 'à collectionner'],
     missions: ['3 nouvelles missions', 'chaque jour'],
     daily: ['Une récompense', 'chaque jour'],
   },
@@ -59,7 +59,7 @@ const CAPTIONS = {
     volcano: ['World 3 · The Volcano', 'lava and geysers'],
     forest: ['World 4 · The Forest', 'vines and rivers'],
     space: ['World 5 · Space', 'asteroids and black holes'],
-    shop: ['31 balls, effects', 'and trails to unlock'],
+    shop: ['51 items', 'to collect'],
     missions: ['3 new missions', 'every day'],
     daily: ['A reward', 'every day'],
   },
@@ -71,7 +71,7 @@ const CAPTIONS = {
     volcano: ['Mundo 3 · El Volcán', 'lava y géiseres'],
     forest: ['Mundo 4 · El Bosque', 'lianas y ríos'],
     space: ['Mundo 5 · El Espacio', 'asteroides y agujeros negros'],
-    shop: ['31 balones, efectos', 'y estelas para desbloquear'],
+    shop: ['51 objetos', 'para coleccionar'],
     missions: ['3 misiones nuevas', 'cada día'],
     daily: ['Una recompensa', 'cada día'],
   },
@@ -131,7 +131,7 @@ await page.evaluate(async () => {
   wallet.equip('trail-flame');
   wallet.equip('bounce-stars');
   wallet.equip('goal-fireworks');
-  wallet.addCoins(2480 - wallet.coins);
+  wallet.addCoins(48250 - wallet.coins);
   const y = new Date(Date.now() - 864e5);
   localStorage.setItem('hoopbounce.daily', JSON.stringify({ v: 1, streak: 2, last: dayKey(y), total: 2 }));
   localStorage.setItem('hoopbounce.dailyAuto', dayKey());

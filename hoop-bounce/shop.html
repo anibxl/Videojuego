@@ -37,11 +37,12 @@
       <div class="preview-box" id="preview-box">
         <canvas id="preview"></canvas>
         <span class="rarity-tag" id="d-rarity"></span>
-        <div class="unlock-burst" id="burst" aria-hidden="true"><span></span><span></span><b id="burst-text"></b></div>
+        <div class="unlock-burst" id="burst" aria-hidden="true"><i class="burst-rays"></i><span></span><span></span><b id="burst-text"></b><div class="burst-bits"></div></div>
       </div>
       <div class="detail">
         <h2 id="d-name"></h2>
         <p id="d-desc"></p>
+        <div class="goal-bar" id="d-goal" hidden><i id="d-goal-fill"></i><span id="d-goal-text"></span></div>
         <button class="action" id="d-action"></button>
       </div>
     </section>
@@ -55,6 +56,7 @@
           <li data-t="earn.star"></li>
           <li data-t="earn.perfect"></li>
           <li data-t="earn.replay"></li>
+          <li data-t="earn.daily"></li>
         </ul>
       </div>
     </section>

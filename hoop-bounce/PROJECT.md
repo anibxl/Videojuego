@@ -4,8 +4,7 @@
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
 > **Dernière mise à jour :** 19/11/2026 · **Version :** 1.0.0 (build 1) · **Étape en cours :** validation de la
-> page « À propos » (étape 16) et de la préparation Google Play (étape 15) par le porteur du projet ; rien n'est
-> publié.
+> nouvelle économie de la boutique (étape 17) par le porteur du projet ; rien n'est publié.
 
 ## Sommaire
 
@@ -368,8 +367,8 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `themes.js` | Identité visuelle des 5 mondes : ciel, astres, plans de décor, particules, lumière, couleurs des surfaces. |
 | `background.js` | Décor d'un monde : ciel précalculé (dégradés, nébuleuses, étoiles, soleil, lune, Terre, planète), plans en parallaxe (immeubles avec fenêtres, graffitis et lampadaires ; montagnes enneigées et sapins ; volcans en éruption et roches ; arbres, champignons et rivière ; astéroïdes et cratères), brume, rayons de lumière, particules d'ambiance ; effets d'identité (enseignes au néon, avions, nuages de froid, chaleur, papillons, débris en apesanteur). |
 | `world-draw.js` | Dessin des surfaces selon le monde (matériaux), des pics et plateformes thématiques, des éléments des mondes et des pièges (plaques, blocs temporisés, scies, boulets, lasers, aimants, canons). |
-| `cosmetics.js` | Cosmétiques de la boutique : petit système de particules préalloué (`Fx`), effets de rebond, traînées, animations de panier. |
-| `ball-sprite.js` | Textures des 8 ballons (cuir, coutures, motifs, matières), générées au démarrage. |
+| `cosmetics.js` | Cosmétiques de la boutique : petit système de particules préalloué (`Fx` : points, anneaux, étoiles, bulles, étincelles, éclairs, pièces, serpentins, fumée, halos, flammes), 9 effets de rebond, 10 traînées, 10 animations de panier. |
+| `ball-sprite.js` | Textures des 25 ballons (cuir, coutures, motifs, matières, facettes, spirale, veines d'énergie), générées au démarrage ; `drawFace` dessine le visage des ballons amusants (droit, regarde dans le sens du mouvement, cligne des yeux, yeux qui roulent) ; `drawAura` l'aura des légendaires ; `skinInfo` dit ce qu'il faut dessiner. |
 | `camera.js` | Caméra : lissage, anticipation dans le sens de la course, cadrage qui garde le sol au-dessus des commandes, secousses, zoom et cadrage sur le panier à la victoire, recul quand le ballon monte haut, coups de zoom amortis. |
 | `ball-sprite.js` | Textures du ballon générées au démarrage (cuir et coutures qui tournent, reflet fixe). |
 | `ball-visual.js` | Déformations du ballon (écrasement à l'impact, étirement en vol, détente au rebond, étirement au dribble). |
@@ -435,7 +434,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 |---|---|
 | `tests/physics.test.mjs` | Moteur physique : chute libre, rebonds, repos sans tremblement, aucune traversée, roulement, déterminisme, planches traversables, surfaces mobiles. |
 | `tests/game.test.mjs` | Commandes (dribble, puissance, inertie), éléments (trampoline, pics, ventilateur, porte, téléporteur, plateforme, vide), panier. |
-| `tests/shop.test.mjs` | Boutique : catalogue, raretés et prix, gains de pièces, achats, équipement, textes. |
+| `tests/shop.test.mjs` | Boutique : catalogue, raretés et fourchettes de prix (étape 17), gains de pièces inchangés, achats, équipement, nouveaux objets sauvegardés et toujours équipés après relance, visages et auras, nouveaux effets dessinés, textes. |
 | `tests/mechanics.test.mjs` | Les pièges de l'étape 9 (plaque, bloc temporisé, scie, boulet, laser, canon, aimant, drapeau) et les 21 mécaniques des mondes (caisse, glace, rampe, vent, stalactite, lave, plateforme fragile, geyser, pierres, ascenseur, liane, champignon, tronc, branche, gravité réduite, portails, astéroïde, gravité inversée). |
 | `tests/progress.test.mjs` | Progression (déblocage des mondes, statistiques, animation annoncée une fois, conversion de l'ancien format), mondes, textes de jeu dans les trois langues. |
 | `tests/menu.test.mjs` | Textes du menu dans les trois langues, réglages. |
@@ -562,18 +561,29 @@ et recule légèrement quand une page est ouverte.
 
 ### Boutique (`shop.html`)
 
-- **En-tête** : retour, onglets **Ballons / Rebonds / Traînées / Paniers** (avec le nombre possédé),
-  progression de la collection (barre + 12/25), solde de pièces (qui rebondit à chaque achat, tremble s'il
-  manque des pièces).
+- **En-tête** : retour, onglets **Ballons / Visages / Rebonds / Traînées / Paniers** (avec le nombre possédé),
+  progression de la collection (barre + 7/51), solde de pièces (« 612 480 », qui défile à chaque achat et
+  tremble s'il manque des pièces).
 - **À gauche** : **aperçu animé** de l'article choisi, combiné avec les autres articles équipés (ballon qui
   rebondit sur un parquet avec sa traînée et son effet de rebond ; tir dans un panier pour les animations),
   étiquette de rareté, nom, description et bouton : **Acheter · prix**, **Équiper**, **✓ Équipé**, ou
   « Il te manque N ».
-- **À droite** : grille d'articles triés par rareté puis par prix (vignette dessinée avec le vrai rendu, nom,
-  rareté, prix ou état « Possédé / Équipé », coche sur l'article équipé, reflet animé sur les légendaires),
-  cartes qui apparaissent en cascade ; encart « Comment gagner des pièces ».
-- **Achat** : les pièces défilent, onde et étiquette « Débloqué ! » de la couleur de la rareté, fanfare,
-  vibration ; l'article est équipé aussitôt.
+  - **Objectif d'épargne** (étape 17) : barre « 112 480 / 1 000 000 » dans la couleur de la rareté pour tout
+    article pas encore possédé.
+  - Les articles verrouillés se prévisualisent comme les autres.
+- **À droite** : grille d'articles triés par rareté puis par prix. Chaque carte montre :
+  - la vignette dessinée avec le vrai rendu, le nom et la rareté en couleur ;
+  - le prix, abrégé au-delà de 100 000 (« 650 k », « 1 M »), ou l'état « Possédé / Équipé » ;
+  - un **cadenas** sur les articles non possédés et une coche sur l'article équipé.
+  - Épiques : lueur violette. **Légendaires** : fond doré, bordure dorée qui respire et reflet animé.
+  - Les cartes apparaissent en cascade. L'encart « Comment gagner des pièces » mentionne aussi les gains
+    quotidiens.
+- **Achat** : les pièces défilent, onde et étiquette de la couleur de la rareté, fanfare, vibration ; l'article
+  est équipé aussitôt.
+  - **Épique** : rayons violets qui tournent, éclats, « ÉPIQUE ! », son bonus.
+  - **Légendaire** : grands rayons dorés, 26 éclats, étiquette dorée « LÉGENDAIRE ! » plus longue, vibration
+    plus forte.
+- `shop.html?item=ball-diamond` ouvre directement un article (bouton « Débloquer » de la Collection).
 - Accès : tuile « Magasin » et solde de pièces du menu, bouton « Boutique » de la Collection ; le retour ramène
   à la page d'où l'on vient (accueil ou Collection).
 
@@ -610,13 +620,21 @@ boutique).
 
 - **Source unique** : le porte-monnaie partagé avec la boutique et le jeu (`shared/wallet.js`, clé
   `hoopbounce.inventory`). Un article acheté apparaît **dès le retour au menu**.
-- **En-tête** : retour, « Collection », progression (barre + « 7/25 possédés »), bouton **Boutique**.
+- **Album complet** (étape 17) : **tous les articles** sont visibles, possédés ou non.
+- **En-tête** : retour, « Collection », progression (barre + « 7/51 possédés »), bouton **Boutique**.
 - **À gauche** : **aperçu animé** de l'article choisi, porté avec le reste de la tenue équipée (même rendu que
   dans le jeu), étiquette de rareté (ou « Par défaut »), badge **« ✓ Équipé »**, nom, description et bouton
   **Équiper** ou **Déséquiper**.
-- **À droite** : onglets **Tout / Ballons / Rebonds / Traînées / Paniers**, grille des articles possédés
-  (vignette, nom, rareté, **badge « Équipé »**, reflet sur les légendaires), « Encore N articles à débloquer
-  dans la boutique ».
+- **À droite** : onglets **Tout / Ballons / Visages / Rebonds / Traînées / Paniers** et la grille :
+  - **articles possédés** : vignette, nom, rareté, badge « Équipé », lueur ou bordure dorée qui respire ;
+  - **articles verrouillés** : bordure en pointillés, vignette grisée, cadenas, prix (ou « ★ Exclusif ») ;
+    leur aperçu animé reste disponible ;
+  - **« Nouveau ! »** sur les articles débloqués depuis la dernière visite (petit saut lumineux), une seule
+    fois (clé `hoopbounce.collectionSeen`).
+  - Sous la grille, la progression **par rareté** (« Commun 1/9 · Rare 1/12 · Épique 0/13 · Légendaire
+    1/13 »), puis « Collection complète ! » quand tout est obtenu.
+  - Article verrouillé choisi : bouton **« Débloquer · 25 000 »**, qui ouvre la boutique sur cet article
+    (ou « Exclusif · Récompense quotidienne / Succès »).
 - **Déséquiper** remet l'article de base de la catégorie (ballon classique, onde, aucune traînée, confettis).
 - **Enregistré tout de suite** : l'article équipé reste équipé au prochain lancement (jeu, boutique, menu).
 - Sons : sélection, carillon à l'équipement, son descendant au retrait ; vibration courte ; message.
@@ -1039,25 +1057,95 @@ Dans le navigateur, une annonce de test simulée remplace AdMob ; `?ads=none` si
 Trickshot après le monde 1, Endless après le monde 2, Défis quotidiens après 30 étoiles, Multijoueur dans une
 mise à jour dédiée.
 
-### La boutique (`shop.html`)
+### La boutique (`shop.html`) — économie de collection (étape 17)
 
-Tout se débloque **en jouant**, avec les pièces : **aucun achat avec de l'argent réel**. 25 articles en vente en
-4 catégories (le premier de chaque catégorie est offert et équipé), plus **6 articles exclusifs** qu'on ne gagne
-qu'avec les récompenses quotidiennes et les succès (présentés à la fin de chaque onglet, voir
-[Revenir chaque jour](#revenir-chaque-jour-étape-12)).
+Tout se débloque **en jouant**, avec les pièces : **aucun achat avec de l'argent réel**. Depuis l'étape 17, les
+objets sont de **vrais objectifs à long terme** :
+- les **prix ont été multipliés** ;
+- les **gains du jeu n'ont pas changé** : pièces des niveaux, récompense quotidienne, missions, succès, coffres,
+  roue.
 
-| Catégorie | Commun | Rare | Épique | Légendaire |
+**51 articles** en 5 onglets :
+- 4 offerts et équipés au départ ;
+- **41 en vente** ;
+- 6 exclusifs, gagnés avec les récompenses quotidiennes et les succès, présentés à la fin de chaque onglet.
+
+| Rareté | Fourchette de prix | Articles en vente | Total |
+|---|---|---|---|
+| Commun (gris bleuté) | 6 000 – 10 000 | 9 | 65 000 |
+| Rare (bleu) | 15 000 – 50 000 | 12 | 352 000 |
+| Épique (violet) | 75 000 – 250 000 | 12 | 1 750 000 |
+| Légendaire (or) | 500 000 – 1 000 000 | 8 | 5 600 000 |
+| **Tout acheter** | | **41** | **7 767 000** |
+
+| Onglet | Commun | Rare | Épique | Légendaire |
 |---|---|---|---|---|
-| **Ballons** | Classique (offert), Street 150, Rétro 200 | Givre 400, Néon 450 | Magma 900, Galaxie 950 | Or pur 1800 |
-| **Effets de rebond** | Onde (offert), Étincelles 150 | Bulles 400, Étoiles 450 | Foudre 900 | Arc-en-ciel 1500 |
-| **Traînées** | Aucune (offert), Sillage 150 | Poudreuse 400, Flammes 450 | Arc-en-ciel 950 | Plasma 1600 |
-| **Animations de panier** | Confettis (offert), Serpentins 150 | Feu d'artifice 450 | Jackpot 900 | Supernova 1500 |
+| 🏀 **Ballons** | Classique (offert), Street 6 000, Rétro 7 500 | Givre 18 000, Néon 25 000, **Ombre** 45 000 | Magma 85 000, Galaxie 120 000, **Plasma** 180 000, **Arc-en-ciel** 240 000 | Or pur 500 000, **Diamant** 1 000 000 · exclusifs : Hoop Bounce, Légende |
+| 🎭 **Visages** (ballons amusants) | **Souriant** 6 500, **Pirate** 9 500 | **Ninja** 22 000, **Robot** 38 000 | **Fantôme** 95 000, **Yeux fous** 160 000 | **Extraterrestre** 550 000 |
+| ✨ **Effets de rebond** | Onde (offert), Étincelles 6 000, **Fumée** 8 500 | Bulles 16 000, Étoiles 28 000 | **Flammes** 80 000, Éclairs 140 000 | Arc-en-ciel 500 000, **Particules cosmiques** 800 000 · exclusif : Couronne |
+| 🌈 **Traînées** | Aucune (offert), Sillage 6 000 | Glace 18 000, Feu 30 000, **Énergie** 48 000 | Arc-en-ciel 120 000, **Galaxie** 230 000 | Plasma 600 000 · exclusifs : Hoop Bounce (épique), Aurore |
+| 🏆 **Animations de panier** | Confettis (offert), Serpentins 6 000, **Explosion de confettis** 9 000 | Feu d'artifice 22 000, **Électrique** 42 000 | Jackpot 100 000, **Spatial** 200 000 | Supernova 650 000, **Triomphe légendaire** 1 000 000 · exclusif : Constellation |
 
-- Couleurs de rareté : Commun gris bleuté, Rare bleu, Épique violet, Légendaire or (reflet animé sur la carte).
-- Les ballons sont dessinés par programme (`render/ball-sprite.js`) : cuir usé, panneaux rétro, givre, coutures
-  néon, fissures de lave, nébuleuse étoilée, or brillant.
-- Les effets, traînées et animations de panier utilisent un petit système de particules partagé
-  (`render/cosmetics.js`) : exactement le même rendu dans l'aperçu de la boutique et dans le jeu.
+En gras : les 20 nouveaux articles. « Foudre » s'appelle désormais « Éclairs », « Poudreuse » « Glace » et
+« Flammes » (traînée) « Feu » ; leurs identifiants ne changent pas, donc les achats déjà faits restent.
+
+**Rendu des nouveaux objets** (même dessin dans le jeu, l'aperçu de la boutique et les vignettes) :
+- **Ballons** :
+  - **Ombre** : noir d'encre, fumée violette, coutures lumineuses ;
+  - **Plasma** : veines d'énergie rose et cyan qui brillent ;
+  - **Arc-en-ciel** : spirale de 12 couleurs ;
+  - **Diamant** : facettes triangulaires, reflets, éclat bleu glacier.
+- **Visages** : le visage est dessiné à chaque image par-dessus le ballon. Il ne tourne pas avec le ballon :
+  il reste droit, se décale vers le sens du mouvement et cligne des yeux toutes les ~4 s.
+  - **Souriant** : joues roses ;
+  - **Pirate** : foulard rouge à pois, bandeau sur l'œil, dent ;
+  - **Ninja** : masque noir, bandeau rouge dont les pans flottent derrière ;
+  - **Robot** : visière cyan lumineuse, grille, antenne qui clignote ;
+  - **Fantôme** : yeux creux, bouche qui ondule, halo pâle ;
+  - **Yeux fous** : pupilles qui roulent selon la vitesse et tremblent quand ça va vite ;
+  - **Extraterrestre** : yeux en amande, antennes à boule lumineuse, aura verte.
+- **Légendaires « beaucoup plus impressionnants »** : les ballons légendaires (Or pur, Diamant, Extraterrestre,
+  Légende) ont une **aura** dans le jeu : halo qui respire et 3 étincelles en orbite.
+  - **Particules cosmiques** : nébuleuse, double anneau, spirale d'étoiles.
+  - **Triomphe légendaire** : halo d'or, 3 ondes de lumière, couronne de 9 étoiles, pluie de pièces et
+    serpentins dorés.
+- **Autres effets** :
+  - **Fumée** : bouffées qui gonflent ;
+  - **Flammes** : flammes qui montent et lueur ;
+  - **Énergie** : halo vert-cyan, cœur électrique qui ondule, petits éclairs ;
+  - **Galaxie** : ruban de nébuleuse semé d'étoiles ;
+  - **Explosion de confettis** : 70 confettis et une onde ;
+  - **Électrique** : 9 éclairs, anneaux, étincelles ;
+  - **Spatial** : nébuleuse, planète à anneau, étoiles filantes.
+
+**Rythme de déblocage estimé** (gains actuels, joueur régulier) :
+- **Une première partie complète** (50 niveaux, 150 étoiles) rapporte ~7 750 pièces, plus les succès en cours
+  de route (15 550 pièces de succès au total, plus des coffres). Le **premier objet commun (6 000)** s'achète
+  donc vers la fin de la première partie, ou plus tôt avec les gains quotidiens. Un nouveau joueur ne peut pas
+  acheter plusieurs objets d'un coup.
+- **Ensuite, chaque jour** : récompense quotidienne (~190 en moyenne), 3 missions (~460), coffre bonus (~185),
+  lancer gratuit de la roue (~360), parties rejouées (10 par niveau). Total : **~1 400 pièces par jour** sans
+  publicité, **~3 000** en regardant les publicités facultatives (coffre amélioré, 3 lancers, pièces doublées).
+- Délai approximatif pour acheter :
+
+  | Objet | Sans publicité | Avec les publicités facultatives |
+  |---|---|---|
+  | rare (25 000) | ~2–3 semaines | ~1 semaine |
+  | épique (120 000) | ~3 mois | ~6 semaines |
+  | légendaire (500 000) | ~1 an | ~6 mois |
+  | Diamant (1 000 000) | ~2 ans | ~11 mois |
+
+- En plus des achats, **des objets tombent directement** :
+  - coffres des missions et des succès ;
+  - coffre bonus amélioré : 85 % de chances d'un objet rare, épique ou légendaire ;
+  - roue de la chance : effet ou skin rare ;
+  - récompense quotidienne.
+  - La collection avance donc aussi sans acheter. Voir « Bugs connus » pour l'effet de ces tirages sur la
+    valeur des légendaires.
+
+**Sauvegarde** : les achats et les objets équipés sont dans `hoopbounce.inventory` (rien ne change pour les
+anciennes sauvegardes). Ils restent après fermeture du jeu, ce que vérifient des tests qui relancent le
+porte-monnaie.
 
 ### Les récompenses
 
@@ -1072,8 +1160,8 @@ qu'avec les récompenses quotidiennes et les succès (présentés à la fin de c
 | Publicité facultative sur l'écran de victoire (étape 13) | pièces du niveau doublées |
 | Coffre bonus et roue de la chance (étape 13) | voir [Publicités récompensées](#publicités-récompensées-étape-13) |
 
-- Une première partie complète rapporte environ **7 750 pièces** (50 niveaux, 150 étoiles) ; le catalogue complet
-  coûte **14 800** : les articles légendaires récompensent les joueurs qui rejouent et visent le parfait.
+- Une première partie complète rapporte environ **7 750 pièces** (50 niveaux, 150 étoiles) ; depuis l'étape 17, le
+  catalogue complet coûte **7 767 000** : un objectif de collection à très long terme (voir la boutique ci-dessus).
 - Le gain s'affiche sur l'écran de victoire (compteur qui défile, tintements) et s'ajoute au solde du menu.
 
 ---
@@ -1225,6 +1313,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Articles équipés visibles en jeu
 - ✅ Page Collection du menu : articles possédés, aperçu, Équiper / Déséquiper, badge « Équipé » (étape 11)
 - ✅ Coffres, récompense quotidienne, missions et succès (étape 12)
+- ✅ Économie de collection (étape 17) : prix de 6 000 à 1 000 000, 51 articles (20 nouveaux dont 7 ballons à
+  visage), Collection en album avec articles verrouillés visibles, animations de déblocage par rareté
 
 ### Phase 6 bis — Finition « vrai jeu mobile » 🟡
 - ✅ Sensations : caméra (recul en hauteur, coups de zoom, arrêt sur image), contrôle en l'air plus vif
@@ -1315,14 +1405,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Publicités récompensées facultatives (AdMob) : doubler les pièces, reprendre au drapeau, coffre bonus,
   roue de la chance ; page Bonus du jour (étape 13)
 - ✅ Écran de chargement (logo, signature EchoSpeed, ballon, particules, barre, fondu vers le menu) (étape 14)
+- ✅ Nouvelle économie de la boutique (étape 17) : prix par rareté, 20 nouveaux objets, album de collection
 - ✅ Page « À propos » (étape 16) : version, créateur, copyright, crédits faciles à compléter, liens reliables
 - ✅ Préparation Google Play (étape 15) : icône, feature graphic, captures, textes FR / EN / ES, checklist,
   politique de confidentialité, projet Android Capacitor, version 1.0.0
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur la page « À propos » (étape 16) et la préparation Google Play
-  (étape 15)
+- 🟡 Attente des retours du porteur du projet sur la nouvelle économie de la boutique (étape 17)
 
 ### À faire — court terme 🔴
 - 🔴 Publication (quand le porteur du projet le décide) : suivre `store/CHECKLIST.md` (comptes, AdMob, AAB,
@@ -1471,6 +1561,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | Économie (étape 17) : les coffres et la roue donnent toujours des **objets entiers** tirés au hasard parmi les raretés prévues : coffre épique → épique ou légendaire ; coffre bonus amélioré → rare, épique ou légendaire ; roue → skin épique ou légendaire. Avec les nouveaux prix, un légendaire (500 000+) peut donc tomber d'un coffre. Les gains n'ont pas été réduits, comme demandé. | 🟡 À décider : pondérer les tirages vers les raretés basses, si les légendaires doivent rester rares |
 | ✅ | Boutique entre 920 et 1 100 px de large : le compteur de pièces sortait de l'écran ; sur les cartes légendaires, le prix et « ★ Exclusif » débordaient. | ✅ Corrigé (v1.0.0) |
 | Info | Application Android jamais construite ni lancée sur un appareil (SDK Android indisponible dans l'environnement de développement) : à vérifier dans Android Studio. | 🔴 À tester |
 | Info | Fournisseur AdMob (application Android) écrit d'après la documentation du plugin, **pas encore essayé sur un appareil** : événements de récompense et de fermeture à confirmer avec les annonces de test. | 🔴 À tester (phase Android) |
@@ -1502,6 +1593,39 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 19/11/2026 — Étape 17 : économie de la boutique (v1.0.0)
+- **Ajouté** :
+  - **20 nouveaux objets** (51 au total) :
+    - ballons Ombre, Plasma, Arc-en-ciel, Diamant ;
+    - **7 ballons à visage** (Souriant, Pirate, Ninja, Robot, Fantôme, Yeux fous, Extraterrestre), avec un
+      onglet « Visages » ;
+    - effets de rebond Fumée, Flammes, Particules cosmiques ;
+    - traînées Énergie, Galaxie ;
+    - animations de panier Explosion de confettis, Électrique, Spatial, Triomphe légendaire ;
+  - visages animés (`drawFace`) et **aura des ballons légendaires** (`drawAura`), dans le jeu, l'aperçu et les
+    vignettes ;
+  - nouvelles particules (fumée, halo, flamme) ;
+  - boutique :
+    - cadenas sur les articles non possédés, prix abrégés (« 650 k », « 1 M ») ;
+    - barre d'objectif d'épargne ;
+    - animations d'achat par rareté (rayons, éclats, « ÉPIQUE ! », « LÉGENDAIRE ! ») ;
+    - cartes épiques lumineuses, cartes légendaires dorées qui respirent ;
+  - Collection en **album** :
+    - tous les articles visibles, les verrouillés grisés avec leur prix et leur aperçu ;
+    - badge « Nouveau ! » ;
+    - progression par rareté ;
+    - bouton « Débloquer » qui ouvre la boutique sur l'article ;
+  - 3 tests (prix, sauvegarde des nouveaux objets, rendu).
+- **Modifié** :
+  - **prix** : commun 6 000–9 500, rare 16 000–48 000, épique 80 000–240 000, légendaire 500 000–1 000 000 ;
+  - « Foudre » devient « Éclairs », « Poudreuse » devient « Glace », la traînée « Flammes » devient « Feu » ;
+  - les pièces s'affichent avec séparateur de milliers.
+- **Inchangé** : tous les gains (niveaux, récompense quotidienne, missions, succès, coffres, roue, valeur des
+  doublons).
+- **Reste à faire** :
+  - retours du porteur du projet ;
+  - décider s'il faut pondérer les objets tirés des coffres et de la roue (voir « Bugs connus »).
 
 ### 19/11/2026 — Étape 16 : page « À propos » (v1.0.0)
 - **Ajouté** :

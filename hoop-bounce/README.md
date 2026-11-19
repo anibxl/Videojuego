@@ -3,7 +3,11 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Version 1.0.0 — étape 15 (actuelle) :** **préparation de la publication Google Play** (rien n'est publié).
+**Étape 17 (actuelle) :** **économie de collection**. 51 objets (dont 7 ballons à visage), prix de 6 000 à
+1 000 000 selon la rareté, gains du jeu inchangés ; Collection en album avec les objets verrouillés visibles,
+animations de déblocage épiques et légendaires.
+
+**Version 1.0.0 — étape 15 :** **préparation de la publication Google Play** (rien n'est publié).
 Tout est dans `store/` : icône, feature graphic, captures en 3 langues, textes de la fiche, checklist complète
 (`store/CHECKLIST.md`), politique de confidentialité. Le projet Android (Capacitor 8) est dans `android/` :
 `npm install && npm run android:sync && npm run android:open`.
@@ -214,7 +218,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 310 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+npm test                               # 316 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu, publicités
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)

@@ -11,7 +11,7 @@
 
 import { clamp, lerp } from '../core/math.js';
 import { pathState } from '../physics/mover.js';
-import { createBallTextures } from './ball-sprite.js';
+import { createBallTextures, skinInfo, drawFace, drawAura } from './ball-sprite.js';
 import { drawTrail } from './cosmetics.js';
 import { Background } from './background.js';
 import { themeOf } from './themes.js';
@@ -75,6 +75,7 @@ export class Renderer {
     if (id === this.ballSkin) return;
     this.ballSkin = id;
     this.tex = createBallTextures(id);
+    this.skin = skinInfo(id); // visage (ballons amusants), aura (légendaires)
   }
 
   /** Nouveau niveau : décor et lumière de son monde, adaptés à sa longueur. */
@@ -703,6 +704,13 @@ export class Renderer {
     const m = visual.m;
     ctx.save();
     ctx.translate(ball.x + visual.offsetX * ball.r, ball.y + visual.offsetY * ball.r);
+    // Aura des ballons légendaires (derrière le ballon, ne se déforme pas)
+    if (this.skin?.aura) {
+      ctx.save();
+      ctx.scale(1, -1);
+      drawAura(ctx, this.skin.aura, r, s.time);
+      ctx.restore();
+    }
     ctx.transform(m[0], m[1], m[2], m[3], 0, 0);
     ctx.save();
     ctx.rotate(ball.angle);
@@ -711,6 +719,8 @@ export class Renderer {
     ctx.restore();
     ctx.scale(1, -1);
     ctx.drawImage(this.tex.shading, -r, -r, r * 2, r * 2);
+    // Visage des ballons amusants : reste droit, regarde dans le sens du mouvement
+    if (this.skin?.face) drawFace(ctx, this.skin.face, r, { vx: s.body?.vx ?? 0, vy: s.body?.vy ?? 0, t: s.time });
     ctx.scale(1, -1);
     // Lumières du monde qui bordent le ballon (néons, lave, soleil…)
     for (const l of this.rimSprites) {

@@ -2,7 +2,7 @@
 // traînée et son effet de rebond ; pour les animations de panier, il tombe dans un panier.
 // Utilise exactement les mêmes dessins que le jeu (ball-sprite.js, cosmetics.js).
 
-import { createBallTextures } from '../render/ball-sprite.js';
+import { createBallTextures, skinInfo, drawFace, drawAura } from '../render/ball-sprite.js';
 import { Fx, bounceEffect, drawTrail, emitTrail, goalEffect } from '../render/cosmetics.js';
 
 const TAU = Math.PI * 2;
@@ -120,11 +120,22 @@ export class Preview {
     ctx.beginPath();
     ctx.ellipse(b.x, 0.02, 0.38 * Math.max(0.3, 1 - (b.y - 0.4) / 4), 0.07, 0, 0, TAU);
     ctx.fill();
-    // Ballon
+    // Ballon (aura des légendaires, visage des ballons amusants)
     const tex = ballTex(this.look.ball);
+    const info = skinInfo(this.look.ball);
     const squash = b.phase === 'hop' && (b.u < 0.05 || b.u > 0.95) ? 0.86 : 1;
+    const vx = (b.x - (this._px ?? b.x)) / Math.max(dt, 1e-3);
+    const vy = (b.y - (this._py ?? b.y)) / Math.max(dt, 1e-3);
+    this._px = b.x;
+    this._py = b.y;
     ctx.save();
     ctx.translate(b.x, b.y - 0.4 * (1 - squash));
+    if (info.aura) {
+      ctx.save();
+      ctx.scale(1, -1);
+      drawAura(ctx, info.aura, 0.4, t);
+      ctx.restore();
+    }
     ctx.scale(1 / squash, squash);
     ctx.save();
     ctx.rotate(-t * 4);
@@ -132,6 +143,7 @@ export class Preview {
     ctx.restore();
     ctx.scale(1, -1);
     ctx.drawImage(tex.shading, -0.4, -0.4, 0.8, 0.8);
+    if (info.face) drawFace(ctx, info.face, 0.4, { vx, vy, t });
     ctx.restore();
     if (this.mode === 'goal') this._hoopFront(ctx);
     this.fx.draw(ctx);
@@ -177,11 +189,16 @@ export function drawThumb(canvas, item, dpr) {
   const fx = new Fx(120);
   const ball = (x, y, id = 'ball-classic', r = 0.55) => {
     const tex = ballTex(id);
+    const info = skinInfo(id);
     ctx.save();
     ctx.translate(x, y);
+    ctx.scale(1, -1);
+    if (info.aura) drawAura(ctx, info.aura, r, 0.6);
+    ctx.scale(1, -1);
     ctx.drawImage(tex.surface, -r, -r, r * 2, r * 2);
     ctx.scale(1, -1);
     ctx.drawImage(tex.shading, -r, -r, r * 2, r * 2);
+    if (info.face) drawFace(ctx, info.face, r, { vx: 0.5, vy: 0, t: 1 });
     ctx.restore();
   };
   const step = (n) => {

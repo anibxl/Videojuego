@@ -43,15 +43,15 @@ test('achat et équipement : pièces suffisantes, article possédé, sauvegardé
   const store = memory();
   const w = new Wallet(store);
   assert.equal(w.buy('ball-neon'), 'coins');
-  w.coins = 500;
+  w.coins = 25500;
   assert.equal(w.buy('ball-neon'), 'ok');
-  assert.equal(w.coins, 50);
+  assert.equal(w.coins, 500);
   assert.equal(w.buy('ball-neon'), 'owned');
   assert.equal(w.equipped('ball'), 'ball-classic');
   assert.ok(w.equip('ball-neon'));
   assert.equal(w.equip('ball-gold'), false, 'on n\'équipe pas un article non possédé');
   const again = new Wallet(store);
-  assert.equal(again.coins, 50);
+  assert.equal(again.coins, 500);
   assert.equal(again.equipped('ball'), 'ball-neon');
   assert.ok(again.progress().owned >= 5);
 });
@@ -72,7 +72,7 @@ test('textes de la boutique dans les trois langues', () => {
 test('collection : équiper puis déséquiper un article, retour à l\'article de base, choix enregistré', () => {
   const store = memory();
   const w = new Wallet(store);
-  w.coins = 5000;
+  w.coins = 30000;
   assert.equal(w.buy('ball-neon'), 'ok');
   assert.equal(w.equip('ball-neon'), true);
   assert.equal(new Wallet(store).equipped('ball'), 'ball-neon', 'gardé au prochain lancement');
@@ -88,4 +88,59 @@ test('page Mondes du menu : plus d\'écran « bientôt », l\'ancienne carte ren
   assert.match(html, /src\/worlds\/redirect\.js/);
   const redirect = readFileSync(new URL('../src/worlds/redirect.js', import.meta.url), 'utf8');
   assert.match(redirect, /index\.html.*#mondes/);
+});
+
+test('économie (étape 17) : fourchettes de prix par rareté, prix progressifs, gains inchangés', () => {
+  const RANGES = { common: [6000, 10000], rare: [15000, 50000], epic: [75000, 250000], legendary: [500000, 1000000] };
+  for (const it of CATALOG) {
+    if (!it.price) continue; // offerts et exclusifs
+    const [lo, hi] = RANGES[it.rarity];
+    assert.ok(it.price >= lo && it.price <= hi, `${it.id} : ${it.price} hors de ${lo}–${hi}`);
+  }
+  // Les gains du jeu ne bougent pas
+  assert.deepEqual(REWARDS, { firstClear: 40, perWorld: 10, newStar: 25, perfect: 20, replay: 10, swish: 5 });
+  // Aucun objet n'est achetable dès le départ ; le premier achat reste accessible (moins que les gains d'une première partie complète)
+  const cheapest = Math.min(...CATALOG.filter((i) => i.price > 0).map((i) => i.price));
+  assert.ok(cheapest >= 6000 && cheapest < 7750);
+});
+
+test('nouveaux objets : présents, traduits, visages équipés comme des ballons, sauvegardés après « fermeture »', () => {
+  const NEW = ['ball-diamond', 'ball-plasma', 'ball-shadow', 'ball-rainbow', 'ball-smile', 'ball-robot', 'ball-alien', 'ball-ghost', 'ball-pirate', 'ball-ninja', 'ball-googly',
+    'bounce-flames', 'bounce-smoke', 'bounce-cosmic', 'trail-galaxy', 'trail-energy', 'goal-burst', 'goal-electric', 'goal-space', 'goal-legend'];
+  for (const id of NEW) assert.ok(CATALOG.some((i) => i.id === id), id);
+  assert.equal(CATALOG.filter((i) => i.group === 'fun').length, 7);
+  assert.ok(CATALOG.filter((i) => i.group === 'fun').every((i) => i.category === 'ball'));
+  const store = memory();
+  const w = new Wallet(store);
+  w.coins = 3000000;
+  for (const id of ['ball-alien', 'bounce-cosmic', 'trail-galaxy', 'goal-legend']) {
+    assert.equal(w.buy(id), 'ok', id);
+    assert.ok(w.equip(id));
+  }
+  // Relance du jeu : un nouveau porte-monnaie relit la sauvegarde
+  const again = new Wallet(store);
+  for (const id of ['ball-alien', 'bounce-cosmic', 'trail-galaxy', 'goal-legend']) assert.ok(again.owns(id), id);
+  assert.equal(again.equipped('ball'), 'ball-alien');
+  assert.equal(again.equipped('bounce'), 'bounce-cosmic');
+  assert.equal(again.equipped('trail'), 'trail-galaxy');
+  assert.equal(again.equipped('goal'), 'goal-legend');
+  assert.equal(again.coins, 3000000 - 550000 - 800000 - 230000 - 1000000);
+});
+
+test('rendu : chaque ballon a son apparence (visage, aura des légendaires), chaque effet est dessiné', async () => {
+  const { skinInfo } = await import('../src/render/ball-sprite.js');
+  for (const id of ['ball-smile', 'ball-robot', 'ball-alien', 'ball-ghost', 'ball-pirate', 'ball-ninja', 'ball-googly']) assert.ok(skinInfo(id).face, id);
+  for (const id of ['ball-gold', 'ball-diamond', 'ball-alien']) assert.ok(skinInfo(id).aura, id);
+  const { Fx, bounceEffect, goalEffect } = await import('../src/render/cosmetics.js');
+  const fx = new Fx(400);
+  for (const id of ['bounce-smoke', 'bounce-flames', 'bounce-cosmic']) {
+    fx.clear();
+    bounceEffect(fx, id, 0, 0, 3);
+    assert.ok(fx.items.some((p) => p.alive), id);
+  }
+  for (const id of ['goal-burst', 'goal-electric', 'goal-space', 'goal-legend']) {
+    fx.clear();
+    assert.equal(goalEffect(fx, id, 0, 0), true, id);
+    assert.ok(fx.items.filter((p) => p.alive).length > 10, id);
+  }
 });

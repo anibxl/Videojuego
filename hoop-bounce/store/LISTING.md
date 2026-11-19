@@ -51,7 +51,7 @@ Chaque monde a ses décors animés, sa musique et son ambiance sonore. Chaque ni
 Ramasse les étoiles cachées dans les passages les plus risqués, bats tes records de temps et vise le parfait sur les 50 niveaux.
 
 🎨 PERSONNALISE TON BALLON
-Gagne des pièces en jouant et débloque 31 objets : ballons (Néon, Magma, Galaxie, Or pur…), effets de rebond, traînées et animations de panier, en 4 raretés. Des objets exclusifs se gagnent uniquement avec les récompenses quotidiennes et les succès.
+Gagne des pièces en jouant et collectionne 51 objets : ballons (Néon, Magma, Galaxie, Diamant…), ballons rigolos avec un visage (robot, pirate, ninja, extraterrestre…), effets de rebond, traînées et animations de panier, en 4 raretés. Les légendaires ont une aura et des effets spectaculaires. Des objets exclusifs se gagnent uniquement avec les récompenses quotidiennes et les succès.
 
 🎁 UNE RAISON DE REVENIR CHAQUE JOUR
 • Une récompense quotidienne sur 7 jours, avec un ballon exclusif au 7e jour
@@ -73,7 +73,7 @@ Prêt à marquer ? Télécharge Hoop Bounce et fais rebondir ton ballon jusqu'au
 - Un **dribble unique** : enchaîner les appuis pour charger le rebond (5 niveaux de puissance).
 - **50 niveaux** faits main dans **5 mondes** très différents, avec plus de **35 mécaniques et pièges**.
 - **3 étoiles** par niveau, des records de temps et des « swish » pour les joueurs exigeants.
-- **31 objets** à débloquer en jouant (ballons, effets, traînées, animations de panier), 4 raretés et des
+- **51 objets** à collectionner en jouant (ballons, ballons à visage, effets, traînées, animations de panier), 4 raretés et des
   exclusifs.
 - **Récompense quotidienne, missions, succès, coffre bonus et roue de la chance** : du contenu chaque jour.
 - **Aucun achat intégré**, publicités **uniquement facultatives**, jouable **hors connexion**.
@@ -125,7 +125,7 @@ Every world has its own animated scenery, music and soundscape. Every level adds
 Grab the stars hidden on the riskiest paths, beat your best times and go for a perfect run across all 50 levels.
 
 🎨 CUSTOMIZE YOUR BALL
-Earn coins as you play and unlock 31 items: balls (Neon, Magma, Galaxy, Pure Gold…), bounce effects, trails and hoop celebrations, in 4 rarities. Exclusive items can only be earned through daily rewards and achievements.
+Earn coins as you play and collect 51 items: balls (Neon, Magma, Galaxy, Diamond…), funny balls with faces (robot, pirate, ninja, alien…), bounce effects, trails and hoop celebrations, in 4 rarities. Legendary items have an aura and spectacular effects. Exclusive items can only be earned through daily rewards and achievements.
 
 🎁 A REASON TO COME BACK EVERY DAY
 • A 7-day daily reward, with an exclusive ball on day 7
@@ -147,7 +147,7 @@ Ready to score? Download Hoop Bounce and bounce your way to the top!
 - A **unique dribble**: chain taps to charge your bounce (5 power levels).
 - **50 handcrafted levels** across **5 distinct worlds**, with **35+ mechanics and traps**.
 - **3 stars** per level, best times and swishes for skilled players.
-- **31 items** to unlock by playing, 4 rarities and exclusives.
+- **51 items** to collect by playing, including funny balls with faces, 4 rarities and exclusives.
 - **Daily reward, missions, achievements, bonus chest and wheel of fortune.**
 - **No in-app purchases**, **optional ads only**, **plays offline**.
 - Animated scenery, music and soundscape per world; **60 FPS**.
@@ -196,7 +196,7 @@ Cada mundo tiene sus escenarios animados, su música y su ambiente sonoro. Cada 
 Recoge las estrellas escondidas en los caminos más arriesgados, bate tus récords de tiempo y busca la perfección en los 50 niveles.
 
 🎨 PERSONALIZA TU BALÓN
-Gana monedas jugando y desbloquea 31 objetos: balones (Neón, Magma, Galaxia, Oro puro…), efectos de rebote, estelas y animaciones de canasta, en 4 rarezas. Los objetos exclusivos solo se consiguen con los premios diarios y los logros.
+Gana monedas jugando y colecciona 51 objetos: balones (Neón, Magma, Galaxia, Diamante…), balones divertidos con cara (robot, pirata, ninja, extraterrestre…), efectos de rebote, estelas y animaciones de canasta, en 4 rarezas. Los legendarios tienen aura y efectos espectaculares. Los objetos exclusivos solo se consiguen con los premios diarios y los logros.
 
 🎁 UN MOTIVO PARA VOLVER CADA DÍA
 • Un premio diario durante 7 días, con un balón exclusivo el 7.º día
@@ -217,7 +217,7 @@ Gana monedas jugando y desbloquea 31 objetos: balones (Neón, Magma, Galaxia, Or
 
 - Un **bote único**: encadena toques para cargar el rebote (5 niveles de potencia).
 - **50 niveles** hechos a mano en **5 mundos**, con más de **35 mecánicas y trampas**.
-- **31 objetos** para desbloquear jugando, 4 rarezas y exclusivos.
+- **51 objetos** para coleccionar jugando, con balones con cara, 4 rarezas y exclusivos.
 - **Premio diario, misiones, logros, cofre bonus y rueda de la suerte.**
 - **Sin compras integradas**, **anuncios solo opcionales**, **sin conexión**.
 

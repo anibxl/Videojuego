@@ -120,6 +120,37 @@ export class Fx {
           ctx.fillRect(-s * 1.6, -s * 0.3, s * 3.2, s * 0.6);
           ctx.restore();
           break;
+        case 'smoke':
+          // Bouffée de fumée : disque doux qui grossit et pâlit
+          ctx.fillStyle = `rgba(${p.color},${0.35 * (1 - u)})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, s, 0, TAU);
+          ctx.fill();
+          ctx.fillStyle = `rgba(${p.color},${0.25 * (1 - u)})`;
+          ctx.beginPath();
+          ctx.arc(p.x + s * 0.35, p.y + s * 0.2, s * 0.7, 0, TAU);
+          ctx.fill();
+          break;
+        case 'glow': {
+          // Halo lumineux (nébuleuse, éclat légendaire)
+          const gr = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, s);
+          gr.addColorStop(0, `rgba(${p.color},0.7)`);
+          gr.addColorStop(1, `rgba(${p.color},0)`);
+          ctx.fillStyle = gr;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, s, 0, TAU);
+          ctx.fill();
+          break;
+        }
+        case 'flame':
+          // Flamme : goutte qui monte, du jaune au rouge
+          ctx.fillStyle = `rgb(${u < 0.35 ? '255,230,120' : u < 0.7 ? '255,150,40' : '220,60,20'})`;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y + s * 1.8);
+          ctx.quadraticCurveTo(p.x + s, p.y, p.x, p.y - s);
+          ctx.quadraticCurveTo(p.x - s, p.y, p.x, p.y + s * 1.8);
+          ctx.fill();
+          break;
         default:
           ctx.fillStyle = `rgb(${p.color})`;
           ctx.beginPath();
@@ -184,6 +215,31 @@ export function bounceEffect(fx, id, x, y, level) {
         fx.spawn({ kind: 'star', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 4, drag: 2, vr: 0, life: 0.55, size: 0.16, color: i === 2 ? '255,255,255' : '255,214,90' });
       }
       for (let i = 0; i < 6; i++) fx.spawn({ kind: 'spark', x: x + rand(-0.4, 0.4), y, vx: rand(-1, 1), vy: rand(1, 3), g: 3, life: 0.4, size: 0.05, color: '255,240,180' });
+      return true;
+    }
+    case 'bounce-smoke':
+      for (let i = 0; i < 6 + level; i++) {
+        const sx = rand(-1, 1);
+        fx.spawn({ kind: 'smoke', x: x + sx * 0.3, y: y + 0.05, vx: sx * rand(0.8, 1.8) * k, vy: rand(0.3, 1.1), drag: 2.2, life: rand(0.6, 1), size: rand(0.14, 0.24), grow: 1.6, color: i % 2 ? '200,200,210' : '160,160,175' });
+      }
+      return true;
+    case 'bounce-flames':
+      for (let i = 0; i < 10 + level * 2; i++) {
+        fx.spawn({ kind: 'flame', x: x + rand(-0.45, 0.45), y: y + 0.02, vx: rand(-0.5, 0.5), vy: rand(1.5, 3.5) * k, g: -1, drag: 1.5, life: rand(0.3, 0.55), size: rand(0.07, 0.13), grow: -0.5 });
+      }
+      fx.spawn({ kind: 'glow', x, y: y + 0.1, vx: 0, vy: 0, life: 0.3, size: 0.9, grow: 0.5, color: '255,140,40' });
+      return true;
+    case 'bounce-cosmic': {
+      // Légendaire : une petite galaxie naît — nébuleuse, spirale d'étoiles, double anneau
+      fx.spawn({ kind: 'glow', x, y: y + 0.2, vx: 0, vy: 0, life: 0.6, size: 1.1, grow: 0.8, color: '160,90,255' });
+      fx.spawn({ kind: 'glow', x: x + 0.3, y: y + 0.3, vx: 0, vy: 0, life: 0.5, size: 0.7, grow: 0.8, color: '80,180,255' });
+      fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.45, size: 0.2, grow: 4 + level * 0.5, color: '200,160,255', width: 0.05 });
+      fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.6, size: 0.2, grow: 6 + level * 0.6, color: '120,200,255', width: 0.03 });
+      for (let i = 0; i < 14 + level * 2; i++) {
+        const a = (i / (14 + level * 2)) * TAU;
+        const v = rand(2, 4) * k;
+        fx.spawn({ kind: i % 3 ? 'dot' : 'star', x, y: y + 0.15, vx: Math.cos(a) * v - Math.sin(a) * 1.5, vy: Math.sin(a) * v * 0.7 + Math.cos(a) * 1.5 + 0.8, drag: 2, vr: 6, life: rand(0.5, 0.9), size: i % 3 ? 0.045 : 0.1, color: ['230,210,255', '150,210,255', '255,255,255'][i % 3] });
+      }
       return true;
     }
     case 'bounce-rainbow':
@@ -251,6 +307,39 @@ export function drawTrail(ctx, id, pts, time, r = 0.4) {
       ctx.globalCompositeOperation = 'source-over';
       break;
     }
+    case 'trail-energy': {
+      // Courant électrique : halo vert-cyan, cœur blanc qui ondule
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 1; i < n; i++) seg(i, r * 1.8 * (i / n), `rgba(60,255,200,${0.28 * (i / n)})`);
+      for (let i = 1; i < n; i++) {
+        const o1 = Math.sin(time * 30 + i * 1.7) * r * 0.25 * (i / n);
+        const o0 = Math.sin(time * 30 + (i - 1) * 1.7) * r * 0.25 * ((i - 1) / n);
+        ctx.strokeStyle = `rgba(220,255,250,${0.85 * (i / n)})`;
+        ctx.lineWidth = r * 0.22 * (i / n);
+        ctx.beginPath();
+        ctx.moveTo(pts[i - 1].x, pts[i - 1].y + o0);
+        ctx.lineTo(pts[i].x, pts[i].y + o1);
+        ctx.stroke();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      break;
+    }
+    case 'trail-galaxy': {
+      // Ruban de nébuleuse (violet → bleu) semé d'étoiles fixes
+      for (let i = 1; i < n; i++) seg(i, r * 2.1 * (i / n), `rgba(${i % 2 ? '120,60,220' : '60,90,220'},${0.55 * (i / n)})`);
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 1; i < n; i++) seg(i, r * 0.9 * (i / n), `rgba(255,120,220,${0.22 * (i / n)})`);
+      ctx.globalCompositeOperation = 'source-over';
+      for (let i = 2; i < n; i += 2) {
+        const a = i * 2.4 + time * 0.5;
+        const d = Math.sin(i * 7.3) * r * 0.7 * (i / n);
+        ctx.fillStyle = `rgba(255,255,255,${0.9 * (i / n)})`;
+        ctx.beginPath();
+        ctx.arc(pts[i].x + Math.cos(a) * d * 0.4, pts[i].y + d, 0.035 + 0.02 * ((i * 13) % 3), 0, TAU);
+        ctx.fill();
+      }
+      break;
+    }
     case 'trail-plasma':
       ctx.globalCompositeOperation = 'lighter';
       for (let i = 1; i < n; i++) seg(i, r * 2.1 * (i / n), `rgba(180,90,255,${0.4 * (i / n)})`);
@@ -264,13 +353,15 @@ export function drawTrail(ctx, id, pts, time, r = 0.4) {
 /** Particules émises le long de la traînée (appelé à chaque image). */
 export function emitTrail(fx, id, x, y, speed, dt) {
   if (speed < 1.5) return;
-  const rate = id === 'trail-flame' ? 40 : id === 'trail-frost' ? 22 : id === 'trail-plasma' ? 26 : id === 'trail-hoop' ? 10 : id === 'trail-aurora' ? 18 : 0;
+  const rate = id === 'trail-flame' ? 40 : id === 'trail-frost' ? 22 : id === 'trail-plasma' ? 26 : id === 'trail-hoop' ? 10 : id === 'trail-aurora' ? 18 : id === 'trail-energy' ? 24 : id === 'trail-galaxy' ? 14 : 0;
   if (!rate || Math.random() > rate * dt) return;
   if (id === 'trail-flame') fx.spawn({ x: x + rand(-0.15, 0.15), y: y + rand(-0.15, 0.15), vx: rand(-0.4, 0.4), vy: rand(0.6, 1.6), life: rand(0.25, 0.45), size: rand(0.06, 0.12), grow: -0.5, color: Math.random() < 0.5 ? '255,160,50' : '255,230,120' });
   else if (id === 'trail-frost') fx.spawn({ kind: 'star', x: x + rand(-0.2, 0.2), y: y + rand(-0.2, 0.2), vx: 0, vy: -0.4, vr: 3, life: rand(0.4, 0.7), size: rand(0.05, 0.09), color: '235,250,255' });
   else if (id === 'trail-hoop') fx.spawn({ kind: 'coin', x, y, vx: rand(-0.6, 0.6), vy: rand(0.2, 1), g: 2, vr: rand(3, 8), life: 0.6, size: 0.1, color: '255,140,60' });
   else if (id === 'trail-aurora') fx.spawn({ kind: 'star', x: x + rand(-0.2, 0.2), y: y + rand(-0.2, 0.2), vx: 0, vy: 0.3, vr: 2, life: rand(0.4, 0.8), size: rand(0.04, 0.08), color: Math.random() < 0.5 ? '120,255,200' : '200,160,255' });
   else if (id === 'trail-plasma') fx.spawn({ kind: 'spark', x, y, vx: rand(-3, 3), vy: rand(-3, 3), life: 0.2, size: 0.05, color: '220,180,255' });
+  else if (id === 'trail-energy') fx.spawn({ kind: 'bolt', x, y, vx: 0, vy: 0, rot: rand(0, TAU), len: rand(0.25, 0.5), life: 0.1, color: '150,255,230' });
+  else if (id === 'trail-galaxy') fx.spawn({ kind: 'star', x: x + rand(-0.25, 0.25), y: y + rand(-0.25, 0.25), vx: rand(-0.3, 0.3), vy: rand(-0.3, 0.3), vr: 2, life: rand(0.5, 0.9), size: rand(0.04, 0.08), color: Math.random() < 0.5 ? '255,255,255' : '200,170,255' });
 }
 
 // ─── Animations de panier ───────────────────────────────────────────────────
@@ -321,6 +412,66 @@ export function goalEffect(fx, id, x, y) {
         }
       });
       fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.8, size: 0.3, grow: 9, color: '170,200,255', width: 0.06 });
+      return true;
+    }
+    case 'goal-burst':
+      // Explosion de confettis : deux salves, beaucoup plus de confettis qu'à l'origine
+      fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.4, size: 0.2, grow: 7, color: '255,255,255', width: 0.06 });
+      for (let i = 0; i < 70; i++) {
+        const a = rand(0.15, Math.PI - 0.15);
+        const v = rand(5, 12);
+        fx.spawn({ kind: i % 3 ? 'streamer' : 'dot', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 10, drag: 1.3, vr: rand(-12, 12), life: rand(1.3, 2), size: i % 3 ? 0.1 : 0.07, color: RAINBOW[i % RAINBOW.length], fade: false });
+      }
+      return true;
+    case 'goal-electric':
+      // Éclairs qui jaillissent du cercle, anneaux électriques, étincelles
+      for (let i = 0; i < 9; i++) {
+        fx.spawn({ kind: 'bolt', x, y, vx: 0, vy: 0, rot: (i / 9) * TAU, len: rand(1.2, 2.2), life: rand(0.18, 0.3), color: i % 2 ? '150,220,255' : '255,255,255' });
+      }
+      fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.35, size: 0.3, grow: 6, color: '120,200,255', width: 0.06 });
+      fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.55, size: 0.3, grow: 9, color: '200,240,255', width: 0.03 });
+      fx.spawn({ kind: 'glow', x, y, vx: 0, vy: 0, life: 0.35, size: 2.2, grow: 0.3, color: '120,190,255' });
+      for (let i = 0; i < 24; i++) {
+        const a = rand(0, TAU);
+        const v = rand(3, 7);
+        fx.spawn({ kind: 'spark', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 6, life: rand(0.3, 0.6), size: 0.06, color: '200,240,255' });
+      }
+      return true;
+    case 'goal-space': {
+      // Effet spatial : nébuleuse, planète à anneau, étoiles filantes
+      fx.spawn({ kind: 'glow', x, y: y + 1, vx: 0, vy: 0, life: 1.4, size: 2.4, grow: 0.4, color: '140,80,255' });
+      fx.spawn({ kind: 'glow', x: x - 1, y: y + 1.6, vx: 0, vy: 0, life: 1.2, size: 1.6, grow: 0.4, color: '60,170,255' });
+      fx.spawn({ kind: 'dot', x: x + 1.4, y: y + 2.2, vx: 0, vy: 0.3, life: 1.6, size: 0.32, color: '255,170,110' });
+      fx.spawn({ kind: 'ring', x: x + 1.4, y: y + 2.2, vx: 0, vy: 0.3, life: 1.6, size: 0.5, grow: 0, color: '255,220,180', width: 0.05 });
+      for (let i = 0; i < 6; i++) {
+        const sx = x - 3 + i * 0.9;
+        fx.spawn({ kind: 'spark', x: sx, y: y + 3.5 + rand(0, 1), vx: rand(5, 8), vy: rand(-4, -2), life: rand(0.5, 0.8), size: 0.08, color: '255,255,255' });
+      }
+      for (let i = 0; i < 26; i++) {
+        const a = (i / 26) * TAU;
+        const v = rand(2, 5);
+        fx.spawn({ kind: 'star', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, drag: 1.6, vr: 4, life: rand(0.8, 1.3), size: rand(0.08, 0.16), color: ['210,180,255', '150,210,255', '255,255,255'][i % 3] });
+      }
+      return true;
+    }
+    case 'goal-legend': {
+      // Effet légendaire : halo d'or, trois ondes de lumière, couronne d'étoiles, pluie d'or et serpentins dorés
+      fx.spawn({ kind: 'glow', x, y, vx: 0, vy: 0, life: 1.2, size: 3.2, grow: 0.5, color: '255,200,80' });
+      for (let k = 0; k < 3; k++) fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.7 + k * 0.25, size: 0.3, grow: 10 + k * 4, color: k === 1 ? '255,255,255' : '255,210,90', width: 0.1 - k * 0.025 });
+      for (let i = 0; i < 9; i++) {
+        const a = Math.PI * (0.1 + (i / 8) * 0.8);
+        fx.spawn({ kind: 'star', x: x + Math.cos(a) * 2.2, y: y + 0.6 + Math.sin(a) * 1.8, vx: Math.cos(a) * 0.6, vy: Math.sin(a) * 0.6, vr: 2, life: 1.5, size: i === 4 ? 0.34 : 0.22, color: i % 2 ? '255,240,180' : '255,205,80' });
+      }
+      for (let i = 0; i < 30; i++) {
+        const a = rand(0.3, Math.PI - 0.3);
+        const v = rand(5, 10);
+        fx.spawn({ kind: 'coin', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 12, vr: rand(6, 14), life: rand(1.3, 1.9), size: 0.15, fade: false });
+      }
+      for (let i = 0; i < 30; i++) {
+        const a = rand(0.2, Math.PI - 0.2);
+        const v = rand(4, 9);
+        fx.spawn({ kind: 'streamer', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 8, drag: 1.3, vr: rand(-10, 10), life: rand(1.4, 2), size: 0.11, color: i % 2 ? '255,214,90' : '255,250,220', fade: false });
+      }
       return true;
     }
     case 'goal-supernova':
