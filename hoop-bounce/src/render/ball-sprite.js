@@ -23,6 +23,9 @@ const SKINS = {
   'ball-lava': { base: ['#2a1410', '#0d0605'], grain: ['rgba(0,0,0,0.25)', 'rgba(255,120,60,0.08)'], seam: '#ff7a2a', glow: '#ff5a1a', cracks: true },
   'ball-galaxy': { base: ['#4b2a9b', '#120a3a'], grain: ['rgba(0,0,0,0.15)', 'rgba(200,170,255,0.08)'], seam: '#d9c8ff', stars: true },
   'ball-gold': { base: ['#ffe9a3', '#c98f1b'], grain: ['rgba(120,70,0,0.12)', 'rgba(255,250,220,0.22)'], seam: '#7a5208', shine: true },
+  // Exclusifs (récompense du 7e jour, succès « Au-delà des étoiles »)
+  'ball-hoop': { base: ['#ff8a3d', '#d4521a'], grain: ['rgba(90,30,0,0.12)', 'rgba(255,200,150,0.12)'], seam: '#0d1838', logo: true },
+  'ball-legend': { base: ['#2a2412', '#07060a'], grain: ['rgba(0,0,0,0.25)', 'rgba(255,210,120,0.07)'], seam: '#ffd36b', glow: '#ffb52e', shine: true },
 };
 
 export function createBallTextures(skin = 'ball-classic') {
@@ -137,6 +140,24 @@ function createSurface(S) {
       g.stroke();
     }
     g.restore();
+  }
+
+  if (S.logo) {
+    // Ballon officiel : panneau bleu nuit avec le monogramme « HB » et un anneau orange
+    g.fillStyle = '#0d1838';
+    g.beginPath();
+    g.arc(0, 0, r * 0.46, 0, Math.PI * 2);
+    g.fill();
+    g.strokeStyle = '#ffb36b';
+    g.lineWidth = SIZE * 0.025;
+    g.beginPath();
+    g.arc(0, 0, r * 0.38, 0, Math.PI * 2);
+    g.stroke();
+    g.fillStyle = '#ffffff';
+    g.font = `900 ${Math.round(r * 0.42)}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('HB', 0, r * 0.03);
   }
 
   // Coutures (lumineuses pour certains ballons)

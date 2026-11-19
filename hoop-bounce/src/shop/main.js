@@ -67,7 +67,8 @@ $('tabs').addEventListener('click', (e) => {
 // ─── Grille ─────────────────────────────────────────────────────────────────
 
 function renderGrid() {
-  const items = CATALOG.filter((i) => i.category === tab).sort((a, b) => RARITIES[a.rarity].order - RARITIES[b.rarity].order || a.price - b.price);
+  // Les exclusifs (gagnés en jouant chaque jour ou avec les succès) sont présentés à la fin
+  const items = CATALOG.filter((i) => i.category === tab).sort((a, b) => !!a.exclusive - !!b.exclusive || RARITIES[a.rarity].order - RARITIES[b.rarity].order || a.price - b.price);
   const grid = $('grid');
   grid.innerHTML = items
     .map((it, i) => {
@@ -76,7 +77,9 @@ function renderGrid() {
       const poor = !owned && wallet.coins < it.price;
       const right = owned
         ? `<span class="state ${on ? 'on' : ''}">${st(lang, on ? 'equipped' : 'owned')}</span>`
-        : `<span class="price ${poor ? 'poor' : ''}"><span class="coin-ico"></span>${it.price}</span>`;
+        : it.exclusive
+          ? `<span class="price exclusive">★ ${st(lang, 'exclusive')}</span>`
+          : `<span class="price ${poor ? 'poor' : ''}"><span class="coin-ico"></span>${it.price}</span>`;
       return `<button class="item ${it.rarity} ${owned ? '' : 'locked'} ${it.id === selected ? 'selected' : ''}" data-id="${it.id}" style="--r:${RARITIES[it.rarity].rgb};animation-delay:${i * 0.04}s" aria-label="${name(it)} · ${st(lang, `rarity.${it.rarity}`)}">
         <canvas></canvas>
         ${on ? '<span class="check"></span>' : ''}
@@ -119,6 +122,9 @@ function renderDetail() {
   } else if (owned) {
     btn.classList.add('equip');
     btn.textContent = st(lang, 'equip');
+  } else if (it.exclusive) {
+    btn.classList.add('poor');
+    btn.textContent = st(lang, `exclusive.${it.exclusive}`);
   } else if (wallet.coins >= it.price) {
     btn.classList.add('buy');
     btn.innerHTML = `${st(lang, 'buy')} · <span class="coin-ico"></span>${it.price}`;

@@ -3,7 +3,12 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 11 (actuelle) :** **expérience utilisateur**. Vraie sélection des mondes dans le menu (grandes cartes,
+**Étape 12 (actuelle) :** **revenir chaque jour**. Récompense quotidienne sur 7 jours (pièces, coffre, traînée
+et skin exclusifs, coffre qui s'ouvre, pluie de pièces), 3 missions quotidiennes renouvelées à minuit, 40 succès
+sur 4 paliers (Débutant → Légende) avec leurs récompenses, statistiques comptées pendant la partie. Tout est
+enregistré automatiquement. Accès : boutons Cadeau, Missions et Succès en haut de l'accueil.
+
+**Étape 11 :** **expérience utilisateur**. Vraie sélection des mondes dans le menu (grandes cartes,
 cadenas et condition de déblocage, puis les 10 niveaux de chaque monde : étoiles, coche, cadenas) ; on relance
 n'importe quel niveau débloqué depuis le menu ou depuis la pause ; Collection corrigée (articles achetés,
 aperçu, équiper / déséquiper, badge « Équipé ») ; progression plus claire, sons de clic, animations.
@@ -192,7 +197,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 299 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+npm test                               # 305 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)

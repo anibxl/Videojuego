@@ -196,6 +196,28 @@ export class MenuSound {
     [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => this._tone(f, f, 0.7 - i * 0.06, 0.06, 'triangle', i * 0.08));
   }
 
+  /** Coffre : il tombe (choc sourd) puis grince en tremblant. */
+  chest() {
+    if (!this._ok) return;
+    this._tone(140, 60, 0.25, 0.22, 'sine', 0.35);
+    this._air(0.18, 0.05, 900, 400, 1.2, 0.35);
+    for (let i = 0; i < 4; i++) this._tone(260 + i * 30, 220 + i * 30, 0.06, 0.06, 'triangle', 0.6 + i * 0.1);
+  }
+
+  /** Récompense : éclat de lumière, accord majeur et scintillement. */
+  reward() {
+    if (!this._ok) return;
+    this._air(0.6, 0.08, 600, 6000, 0.8);
+    [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => this._tone(f, f, 0.5, 0.06, 'triangle', i * 0.06));
+    this._tone(2093, 2093, 0.6, 0.025, 'sine', 0.4);
+  }
+
+  /** Pluie de pièces : tintements rapides. */
+  coins() {
+    if (!this._ok) return;
+    for (let i = 0; i < 9; i++) this._tone(1800 + ((i * 377) % 900), 2200 + ((i * 377) % 900), 0.08, 0.04, 'sine', 0.1 + i * 0.07);
+  }
+
   /** JOUER : accord qui monte et grand souffle. */
   play() {
     if (!this._ok) return;

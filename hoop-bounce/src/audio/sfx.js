@@ -399,6 +399,13 @@ export class Sfx {
     this._tone(220, 220, 0.5, 0.05 * volume, 'square');
   }
 
+  /** Mission terminée / succès débloqué : petit arpège lumineux qui monte. */
+  mission() {
+    if (!this.ready) return;
+    [784, 988, 1175, 1568].forEach((f, i) => this._tone(f, f, 0.22, 0.09, 'triangle', i * 0.07));
+    this._tone(2350, 2350, 0.35, 0.03, 'sine', 0.3);
+  }
+
   /** Clic d'interface (boutons des fenêtres, de la boutique) : « pop » rond et bref. */
   click() {
     if (!this.ready || !this._throttle('click', 0.04)) return;

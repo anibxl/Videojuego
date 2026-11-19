@@ -7,13 +7,17 @@ import { STRINGS, t } from './i18n.js';
 import { ballEmblem, modesPage, settingsPage } from './pages.js';
 import { WorldsView } from './worlds-view.js';
 import { CollectionView } from './collection-view.js';
+import { DailyView, MissionsView, AchievementsView, liveBadges } from './live-views.js';
+import { RewardFx } from './rewards-fx.js';
+import { DailyReward } from '../shared/daily.js';
+import { dayKey } from '../shared/stats.js';
 import { Settings } from '../shared/settings.js';
 import { Progress } from '../game/progress.js';
 import { WORLDS } from '../game/worlds.js';
 import { gt } from '../game/i18n.js';
 import { Wallet } from '../shared/wallet.js';
 
-const PAGES = ['mondes', 'modes', 'collection', 'parametres'];
+const PAGES = ['mondes', 'modes', 'collection', 'parametres', 'quotidien', 'missions', 'succes'];
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -72,10 +76,15 @@ function applyStaticTexts() {
 }
 
 // Pages vivantes (étape 11) : sélection des mondes et collection
-const viewEnv = { lang, sound, vibrate: (p) => vibrate(p), toast: (txt) => toast(txt), launch: (e, url) => launchGame(e, url) };
+const viewEnv = { lang, sound, vibrate: (p) => vibrate(p), toast: (txt) => toast(txt), launch: (e, url) => launchGame(e, url), refreshHome: () => refreshHome() };
+viewEnv.fx = new RewardFx(viewEnv);
 const worldsView = new WorldsView($('#page-mondes'), viewEnv);
 const collectionView = new CollectionView($('#page-collection'), viewEnv);
-const VIEWS = { mondes: worldsView, collection: collectionView };
+// Revenir chaque jour (étape 12)
+const dailyView = new DailyView($('#page-quotidien'), viewEnv);
+const missionsView = new MissionsView($('#page-missions'), viewEnv);
+const achievementsView = new AchievementsView($('#page-succes'), viewEnv);
+const VIEWS = { mondes: worldsView, collection: collectionView, quotidien: dailyView, missions: missionsView, succes: achievementsView };
 
 function renderPages() {
   const l = lang();
@@ -83,6 +92,7 @@ function renderPages() {
   $('#page-modes').innerHTML = modesPage(l);
   collectionView.render();
   $('#page-parametres').innerHTML = settingsPage(l, settings.values);
+  for (const v of [dailyView, missionsView, achievementsView]) if (v.active) v.render(true);
   requestAnimationFrame(() => $$('.segmented').forEach(positionIndicator));
   refreshHome();
 }
@@ -104,6 +114,24 @@ function refreshHome() {
   const col = wallet.progress();
   setTileBadge('mondes', t(l, 'nav.progress', { done: tot.done, total: tot.total }), tot.percent);
   setTileBadge('collection', t(l, 'nav.progress', { done: col.owned, total: col.total }), col.percent);
+  // Pastilles rouges : ce qui attend d'être récupéré
+  try {
+    const b = liveBadges();
+    setHubBadge('quotidien', b.daily);
+    setHubBadge('missions', b.missions);
+    setHubBadge('succes', b.achievements);
+  } catch {
+    /* sauvegarde indisponible */
+  }
+}
+
+function setHubBadge(nav, n) {
+  const hub = $(`.hub[data-nav="${nav}"]`);
+  if (!hub) return;
+  const b = $('.hub-badge', hub);
+  b.hidden = !n;
+  b.textContent = n > 9 ? '9+' : String(n);
+  hub.classList.toggle('has-reward', n > 0);
 }
 
 function setTileBadge(nav, text, percent) {
@@ -447,15 +475,34 @@ raf = requestAnimationFrame(loop);
 // Entrée animée une fois les polices prêtes (pas de saut de mise en page)
 const fontsReady = document.fonts?.ready ?? Promise.resolve();
 Promise.race([fontsReady, new Promise((r) => setTimeout(r, 700))]).then(() => {
+  $$('.segmented').forEach(positionIndicator);
+  if (state.page !== 'home') return; // arrivée directe sur une page : pas d'entrée animée de l'accueil par-dessus
   app.classList.add('intro');
   setTimeout(() => app.classList.remove('intro'), 1800);
-  $$('.segmented').forEach(positionIndicator);
 });
 
 // Lien direct vers une page (#modes…) : on l'ouvre, le retour mène à l'accueil
 // (?world=snow#mondes ouvre directement les niveaux de ce monde : bouton « Niveaux » de la partie)
 const initial = pageFromHash();
 if (initial !== 'home') showPage(initial, { fromHistory: true, world: new URLSearchParams(location.search).get('world') });
+else autoOpenDaily();
+
+/** Première visite du jour : la récompense quotidienne s'ouvre d'elle-même (une fois par jour). */
+function autoOpenDaily() {
+  try {
+    const today = dayKey();
+    if (!new DailyReward().canClaim() || localStorage.getItem('hoopbounce.dailyAuto') === today) return;
+    localStorage.setItem('hoopbounce.dailyAuto', today);
+    setTimeout(() => {
+      if (state.page === 'home' && !launching) {
+        sound.open();
+        showPage('quotidien');
+      }
+    }, 1500);
+  } catch {
+    /* stockage indisponible */
+  }
+}
 
 // Accès pour les tests automatisés
-window.__menu = { scene, settings, sound, showPage, STRINGS, worldsView, collectionView };
+window.__menu = { scene, settings, sound, showPage, STRINGS, worldsView, collectionView, dailyView, missionsView, achievementsView, refreshHome };

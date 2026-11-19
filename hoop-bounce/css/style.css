@@ -797,3 +797,76 @@ body.intro-open .controls {
 @media (max-height: 430px) {
   .win-coins { margin: -4px 0 8px; font-size: 16px; }
 }
+
+/* ── Mission terminée / succès débloqué (étape 12) ───────────────────── */
+
+.live-banner {
+  position: fixed;
+  top: calc(12px + var(--safe-top));
+  left: 50%;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 260px;
+  max-width: min(440px, 80vw);
+  padding: 10px 18px 10px 12px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(28, 40, 72, 0.96), rgba(14, 22, 42, 0.96));
+  border: 1px solid rgba(63, 224, 184, 0.55);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(63, 224, 184, 0.25);
+  transform: translate(-50%, -140%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+.live-banner.show { transform: translate(-50%, 0); opacity: 1; }
+.live-banner[data-kind="achievement"] { border-color: rgba(255, 201, 77, 0.6); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 201, 77, 0.3); }
+
+.live-ico {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 35% 30%, #a6ffe6, #20b48f);
+  box-shadow: 0 0 18px rgba(63, 224, 184, 0.6);
+  position: relative;
+}
+
+.live-ico::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 9px;
+  width: 9px;
+  height: 16px;
+  border: solid #04251c;
+  border-width: 0 4px 4px 0;
+  transform: rotate(45deg);
+}
+
+.live-banner[data-kind="achievement"] .live-ico {
+  background: radial-gradient(circle at 35% 30%, #fff2b0, #e2a21d);
+  box-shadow: 0 0 18px rgba(255, 201, 77, 0.7);
+}
+
+.live-banner[data-kind="achievement"] .live-ico::after {
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  margin: -10px 0 0 -10px;
+  background: #5a3a00;
+  transform: none;
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.live-banner.show .live-ico { animation: live-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both; }
+@keyframes live-pop { from { transform: scale(0.3) rotate(-30deg); } }
+
+.live-txt { display: grid; gap: 1px; min-width: 0; }
+.live-txt b { font-family: var(--font-display); font-size: 13px; letter-spacing: 0.03em; color: #a6ffe6; }
+.live-banner[data-kind="achievement"] .live-txt b { color: #ffd36b; }
+.live-txt span { font-size: 14px; font-weight: 600; color: #f2f5ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -175,6 +175,17 @@ export function bounceEffect(fx, id, x, y, level) {
       }
       fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.25, size: 0.2, grow: 4, color: '150,210,255', width: 0.04 });
       return true;
+    case 'bounce-crown': {
+      // Couronne d'or : cinq pointes d'étoiles qui jaillissent en éventail + anneau doré
+      fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.4, size: 0.2, grow: 3 + level * 0.5, color: '255,210,90', width: 0.07 });
+      for (let i = 0; i < 5; i++) {
+        const a = Math.PI * (0.25 + i * 0.125);
+        const v = (3.2 + (i % 2 ? 0 : 1.2)) * k;
+        fx.spawn({ kind: 'star', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 4, drag: 2, vr: 0, life: 0.55, size: 0.16, color: i === 2 ? '255,255,255' : '255,214,90' });
+      }
+      for (let i = 0; i < 6; i++) fx.spawn({ kind: 'spark', x: x + rand(-0.4, 0.4), y, vx: rand(-1, 1), vy: rand(1, 3), g: 3, life: 0.4, size: 0.05, color: '255,240,180' });
+      return true;
+    }
     case 'bounce-rainbow':
       RAINBOW.forEach((c, i) => fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.45 + i * 0.03, size: 0.15 + i * 0.05, grow: 3 + level * 0.4, color: c, width: 0.05 }));
       return true;
@@ -217,6 +228,29 @@ export function drawTrail(ctx, id, pts, time, r = 0.4) {
     case 'trail-rainbow':
       for (let i = 1; i < n; i++) seg(i, r * 1.7 * (i / n), `rgba(${RAINBOW[(i + Math.floor(time * 10)) % RAINBOW.length]},${0.75 * (i / n)})`);
       break;
+    case 'trail-hoop':
+      // Ruban orange et bleu nuit qui alternent
+      for (let i = 1; i < n; i++) seg(i, r * 1.8 * (i / n), i % 2 ? `rgba(255,130,50,${0.75 * (i / n)})` : `rgba(30,50,110,${0.75 * (i / n)})`);
+      for (let i = 1; i < n; i++) seg(i, r * 0.35 * (i / n), `rgba(255,230,200,${0.6 * (i / n)})`);
+      break;
+    case 'trail-aurora': {
+      // Aurore boréale : voiles verts, turquoise et violets qui ondulent
+      ctx.globalCompositeOperation = 'lighter';
+      const cols = ['80,255,170', '60,220,255', '170,110,255'];
+      for (let band = 0; band < 3; band++) {
+        for (let i = 1; i < n; i++) {
+          const off = Math.sin(time * 4 + i * 0.6 + band * 2) * r * 0.5;
+          ctx.strokeStyle = `rgba(${cols[band]},${0.32 * (i / n)})`;
+          ctx.lineWidth = r * (1.2 + band * 0.3) * (i / n);
+          ctx.beginPath();
+          ctx.moveTo(pts[i - 1].x, pts[i - 1].y + off);
+          ctx.lineTo(pts[i].x, pts[i].y + off);
+          ctx.stroke();
+        }
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      break;
+    }
     case 'trail-plasma':
       ctx.globalCompositeOperation = 'lighter';
       for (let i = 1; i < n; i++) seg(i, r * 2.1 * (i / n), `rgba(180,90,255,${0.4 * (i / n)})`);
@@ -230,10 +264,12 @@ export function drawTrail(ctx, id, pts, time, r = 0.4) {
 /** Particules émises le long de la traînée (appelé à chaque image). */
 export function emitTrail(fx, id, x, y, speed, dt) {
   if (speed < 1.5) return;
-  const rate = id === 'trail-flame' ? 40 : id === 'trail-frost' ? 22 : id === 'trail-plasma' ? 26 : 0;
+  const rate = id === 'trail-flame' ? 40 : id === 'trail-frost' ? 22 : id === 'trail-plasma' ? 26 : id === 'trail-hoop' ? 10 : id === 'trail-aurora' ? 18 : 0;
   if (!rate || Math.random() > rate * dt) return;
   if (id === 'trail-flame') fx.spawn({ x: x + rand(-0.15, 0.15), y: y + rand(-0.15, 0.15), vx: rand(-0.4, 0.4), vy: rand(0.6, 1.6), life: rand(0.25, 0.45), size: rand(0.06, 0.12), grow: -0.5, color: Math.random() < 0.5 ? '255,160,50' : '255,230,120' });
   else if (id === 'trail-frost') fx.spawn({ kind: 'star', x: x + rand(-0.2, 0.2), y: y + rand(-0.2, 0.2), vx: 0, vy: -0.4, vr: 3, life: rand(0.4, 0.7), size: rand(0.05, 0.09), color: '235,250,255' });
+  else if (id === 'trail-hoop') fx.spawn({ kind: 'coin', x, y, vx: rand(-0.6, 0.6), vy: rand(0.2, 1), g: 2, vr: rand(3, 8), life: 0.6, size: 0.1, color: '255,140,60' });
+  else if (id === 'trail-aurora') fx.spawn({ kind: 'star', x: x + rand(-0.2, 0.2), y: y + rand(-0.2, 0.2), vx: 0, vy: 0.3, vr: 2, life: rand(0.4, 0.8), size: rand(0.04, 0.08), color: Math.random() < 0.5 ? '120,255,200' : '200,160,255' });
   else if (id === 'trail-plasma') fx.spawn({ kind: 'spark', x, y, vx: rand(-3, 3), vy: rand(-3, 3), life: 0.2, size: 0.05, color: '220,180,255' });
 }
 
@@ -269,6 +305,24 @@ export function goalEffect(fx, id, x, y) {
         fx.spawn({ kind: 'coin', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 14, vr: rand(6, 14), life: rand(1.2, 1.8), size: 0.17, fade: false });
       }
       return true;
+    case 'goal-constellation': {
+      // Des étoiles s'allument en arc au-dessus du panier, reliées par des fils de lumière
+      const pts = [];
+      for (let i = 0; i < 7; i++) {
+        const a = Math.PI * (0.15 + (i / 6) * 0.7);
+        pts.push([x + Math.cos(a) * 2.6, y + 1 + Math.sin(a) * 2.2]);
+      }
+      pts.forEach(([px, py], i) => {
+        fx.spawn({ kind: 'star', x: px, y: py, vx: 0, vy: 0, vr: 1.5, life: 1.6 + i * 0.05, size: 0.2, color: i % 2 ? '200,220,255' : '255,255,255', fade: true });
+        fx.spawn({ kind: 'ring', x: px, y: py, vx: 0, vy: 0, life: 0.6, size: 0.1, grow: 2, color: '170,200,255', width: 0.03 });
+        if (i) {
+          const [qx, qy] = pts[i - 1];
+          for (let k = 1; k < 5; k++) fx.spawn({ kind: 'dot', x: qx + ((px - qx) * k) / 5, y: qy + ((py - qy) * k) / 5, vx: 0, vy: 0, life: 1.4, size: 0.035, color: '190,210,255' });
+        }
+      });
+      fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.8, size: 0.3, grow: 9, color: '170,200,255', width: 0.06 });
+      return true;
+    }
     case 'goal-supernova':
       fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.7, size: 0.3, grow: 14, color: '255,240,200', width: 0.12 });
       fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.9, size: 0.3, grow: 10, color: '200,160,255', width: 0.08 });

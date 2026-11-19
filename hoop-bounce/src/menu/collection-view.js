@@ -102,8 +102,8 @@ export class CollectionView {
     requestAnimationFrame(() => {
       for (const el of grid.querySelectorAll('.citem')) drawThumb(el.querySelector('canvas'), itemById(el.dataset.item), dpr);
     });
-    const p = this.wallet.progress();
-    const missing = p.total - p.owned;
+    // Articles encore en vente (les exclusifs se gagnent avec les récompenses quotidiennes et les succès)
+    const missing = CATALOG.filter((it) => typeof it.price === 'number' && it.price > 0 && !it.exclusive && !this.wallet.owns(it.id)).length;
     this.root.querySelector('.cv-more').textContent = missing ? t(l, 'collection.more', { n: missing }) : t(l, 'collection.allOwned');
   }
 

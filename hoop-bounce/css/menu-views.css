@@ -865,3 +865,9 @@
 }
 
 .tile { position: relative; }
+
+/* Une page ouverte pendant l'entrée animée de l'accueil : l'accueil s'efface quand même */
+.app:not([data-page="home"]) .topbar,
+.app:not([data-page="home"]) .brand,
+.app:not([data-page="home"]) .play,
+.app:not([data-page="home"]) .dock { animation: none !important; }

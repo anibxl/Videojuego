@@ -50,16 +50,39 @@ export class Wallet {
     return id && this.owns(id) ? id : DEFAULTS[category];
   }
 
-  /** @returns {'ok'|'owned'|'coins'|'unknown'} */
+  /** @returns {'ok'|'owned'|'coins'|'unknown'|'exclusive'} */
   buy(id) {
     const item = itemById(id);
     if (!item) return 'unknown';
     if (this.owns(id)) return 'owned';
+    if (item.exclusive || typeof item.price !== 'number') return 'exclusive';
     if (this.coins < item.price) return 'coins';
     this.coins -= item.price;
     this.inv.owned.push(id);
     this._save();
     return 'ok';
+  }
+
+  /** Donne un article (récompense : coffre, récompense quotidienne, succès). */
+  grant(id) {
+    if (!itemById(id) || this.owns(id)) return false;
+    this.inv.owned.push(id);
+    this._save();
+    return true;
+  }
+
+  /** Ajoute des pièces (récompenses quotidiennes, missions, succès). */
+  addCoins(n) {
+    this.coins += Math.max(0, Math.round(n));
+    this._save();
+  }
+
+  /** Articles achetés dans la boutique (sans les articles offerts ni les exclusifs). */
+  boughtCount() {
+    return this.inv.owned.filter((id) => {
+      const it = itemById(id);
+      return it && typeof it.price === 'number' && it.price > 0 && !it.exclusive;
+    }).length;
   }
 
   equip(id) {

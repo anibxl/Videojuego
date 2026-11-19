@@ -23,6 +23,10 @@ import { Haptics } from './platform/haptics.js';
 import { Settings } from './shared/settings.js';
 import { Wallet } from './shared/wallet.js';
 import { Fx, bounceEffect, goalEffect, emitTrail } from './render/cosmetics.js';
+import { Stats } from './shared/stats.js';
+import { Missions } from './shared/missions.js';
+import { Achievements } from './shared/achievements.js';
+import { lt } from './shared/live-i18n.js';
 
 const R = CONFIG.ball.radius;
 const DT = CONFIG.physics.fixedDt;
@@ -70,6 +74,11 @@ const ui = {
 const settings = new Settings();
 const lang = settings.get('lang');
 const progress = new Progress(WORLDS);
+// Systèmes quotidiens (étape 12) : statistiques, missions du jour, succès
+const stats = new Stats();
+const missions = new Missions();
+const achievements = new Achievements();
+const unlockedWorlds = () => WORLDS.filter((_, i) => progress.isWorldUnlocked(i)).map((w) => w.id);
 const params = new URLSearchParams(location.search);
 let levelIndex = initialLevelIndex();
 
@@ -137,7 +146,56 @@ const state = {
   tutoBounces: 0,
   ball: { x: 0, y: 0, angle: 0, r: R, scale: 1 },
   goal: null,            // gerbe de lumière du panier { x, y, t0, swish }
+  runDeaths: 0,          // chutes depuis le début du niveau (mission « sans mourir »)
+  playAcc: 0,            // temps de jeu pas encore enregistré
+  liveTimer: 0,
 };
+
+// ─── Missions et succès annoncés pendant la partie ─────────────────────────
+
+const banner = { queue: [], busy: false };
+
+/** Vérifie les missions terminées et les succès atteints depuis la dernière fois, et les annonce. */
+function checkLive() {
+  try {
+    for (const m of missions.newlyCompleted(stats, unlockedWorlds())) {
+      banner.queue.push({ kind: 'mission', title: lt(lang, 'live.mission'), text: missionText(m) });
+    }
+    for (const a of achievements.newlyUnlocked({ stats, progress, wallet })) {
+      banner.queue.push({ kind: 'achievement', title: lt(lang, 'live.achievement'), text: lt(lang, `ach.${a.id}`) });
+    }
+  } catch {
+    /* sauvegarde indisponible : rien à annoncer */
+  }
+  showNextBanner();
+}
+
+function missionText(m) {
+  const n = m.tpl === 'time' ? Math.round(m.target / 60) : m.target;
+  return lt(lang, `mission.${m.tpl}`, { n, world: m.world ? gt(lang, `world.${m.world}`) : '' });
+}
+
+function showNextBanner() {
+  if (banner.busy || !banner.queue.length) return;
+  const b = banner.queue.shift();
+  banner.busy = true;
+  const el = $('live-banner');
+  el.dataset.kind = b.kind;
+  $('live-title').textContent = b.title;
+  $('live-text').textContent = b.text;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  sfx.mission?.();
+  haptics.success();
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => {
+      banner.busy = false;
+      showNextBanner();
+    }, 450);
+  }, 2600);
+}
 
 /** Arrêt sur image très bref : donne du poids aux moments forts (éclatement, étoile). */
 let hitStopTimer = 0;
@@ -266,6 +324,7 @@ game.events.on('impact', (e) => {
 });
 
 game.events.on('bounce', (e) => {
+  stats.add('bounces', 1, false);
   visual.onBounce();
   sfx.bounce(e.level);
   haptics.light();
@@ -414,6 +473,8 @@ game.events.on('star', (e) => {
 });
 
 game.events.on('death', (e) => {
+  stats.add('deaths', 1, false);
+  state.runDeaths++;
   particles.burst(e.x, e.y, e.vx, e.vy);
   if (e.cause === 'lava' || e.cause === 'fire') particles.sparkle(e.x, e.y, 22, '#ffb35c', 4);
   if (e.cause === 'water') particles.sparkle(e.x, e.y + 0.3, 18, '#bff3ff', 3.5);
@@ -476,6 +537,17 @@ function showWin(r) {
   const world = WORLDS[def.worldIndex];
   const res = progress.complete(def.id, r.stars, r.time);
   const earned = wallet.reward(def.id, def.worldIndex, r.stars, !!state.swish);
+  // Statistiques (missions et succès)
+  stats.add('goals', 1, false);
+  stats.add('clears', 1, false);
+  stats.add(`world.${def.world}`, 1, false);
+  stats.add('stars', r.stars, false);
+  stats.add('coins', earned.total, false);
+  if (state.swish) stats.add('swishes', 1, false);
+  if (state.runDeaths === 0) stats.add('noDeath', 1, false);
+  stats.markLevel(def.id);
+  stats.save();
+  setTimeout(checkLive, 1600);
   ui.winCoins.hidden = earned.total <= 0;
   ui.winCoinsN.textContent = '+0';
   ui.winCoins.setAttribute('aria-label', `+${earned.total}`);
@@ -572,6 +644,8 @@ function resume() {
 
 function startLevel(index) {
   levelIndex = index;
+  state.runDeaths = 0;
+  stats.add('games');
   applyWorld(worldOf(index));
   music.setDuck(1);
   game.load(localizedLevel(index));
@@ -817,6 +891,19 @@ function render(frameDt, alpha) {
   updateRing(ctrl.level, warn);
 
   state.flash = Math.max(0, state.flash - frameDt * 2.5);
+  // Temps de jeu (seulement quand on joue vraiment) et vérification des missions / succès
+  if (game.state === 'playing' && !state.paused && !state.intro && !state.overlay) {
+    state.playAcc += frameDt;
+    if (state.playAcc >= 5) {
+      stats.add('playTime', Math.floor(state.playAcc), true);
+      state.playAcc -= Math.floor(state.playAcc);
+    }
+  }
+  state.liveTimer += frameDt;
+  if (state.liveTimer > 1.2 && !state.overlay) {
+    state.liveTimer = 0;
+    checkLive();
+  }
   state.goalFlash = Math.max(0, (state.goalFlash ?? 0) - frameDt * 4);
 
   renderer.draw({
@@ -853,8 +940,10 @@ function easeOutBack(t) {
 const loop = new FixedLoop({ dt: DT, update: (dt) => !state.intro && game.fixedUpdate(dt), render });
 
 // L'application passe en arrière-plan : on met en pause (le joueur reprend quand il veut)
+window.addEventListener('pagehide', () => stats.save());
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
+    stats.save();
     input.releaseAll();
     sfx.wind(false);
     sfx.suspend();

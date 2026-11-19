@@ -3,8 +3,8 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 19/11/2026 · **Version :** 0.10.0 · **Étape en cours :** validation de l'expérience
-> utilisateur (sélection des mondes et des niveaux, Collection, finitions) par le porteur du projet.
+> **Dernière mise à jour :** 19/11/2026 · **Version :** 0.11.0 · **Étape en cours :** validation des systèmes
+> « revenir chaque jour » (récompense quotidienne, missions, succès) par le porteur du projet.
 
 ## Sommaire
 
@@ -254,6 +254,7 @@ hoop-bounce/
 │   ├── fonts.css           Déclaration des polices (@font-face)
 │   ├── menu.css            Styles du menu (accueil, pages, fenêtres, animations)
 │   ├── menu-views.css      Styles des pages Mondes (cartes, niveaux) et Collection du menu
+│   ├── live.css            Récompense quotidienne, Missions, Succès, révélation des récompenses (coffre, pluie de pièces)
 │   ├── shop.css            Styles de la boutique
 │   ├── polish.css          Finitions communes à toutes les pages (onde au toucher, boutons, transitions)
 │   └── style.css           Styles de l'écran de jeu (HUD, commandes, pause, victoire, tutoriel, intro de monde)
@@ -272,7 +273,8 @@ hoop-bounce/
 │   ├── input/              Entrées tactiles et clavier du jeu
 │   ├── platform/           Fonctions propres à l'appareil (vibrations)
 │   ├── menu/               Tout le menu principal
-│   └── shared/             Ce que le menu et le jeu partagent (réglages, version)
+│   └── shared/             Ce que le menu, la boutique et le jeu partagent (réglages, porte-monnaie,
+│                           statistiques, récompenses quotidiennes, missions, succès, coffres)
 ├── tests/                  Tests automatiques (node --test)
 │   └── fixtures/           Terrain d'essai et solutions enregistrées des niveaux
 └── tools/                  Outils de développement (level design)
@@ -378,6 +380,8 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `pages.js` | Contenu HTML des pages statiques Modes et Paramètres. |
 | `worlds-view.js` | Page Mondes : 5 cartes de mondes (illustration, progression, cadenas et condition), animation de déblocage, grille des 10 niveaux, lancement de n'importe quel niveau débloqué. |
 | `collection-view.js` | Page Collection : articles possédés par catégorie, aperçu animé, Équiper / Déséquiper, badge « Équipé ». |
+| `live-views.js` | Pages Récompense quotidienne (calendrier de 7 jours), Missions (3 par jour) et Succès (4 paliers), pastilles de l'accueil. |
+| `rewards-fx.js` | Révélation d'une récompense : coffre qui tombe, tremble et s'ouvre, rayons, butin, pluie de pièces, pièces qui filent vers le compteur. |
 | `sound.js` | Sons d'interface et musique d'ambiance synthétisés. |
 | `icons.js` | Icônes SVG dessinées à la main. |
 | `i18n.js` | Textes du menu en français, anglais et espagnol. |
@@ -387,7 +391,13 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | Fichier | Rôle |
 |---|---|
 | `catalog.js` | Catalogue de la boutique (articles, raretés, prix, textes) et barème des pièces. |
-| `wallet.js` | Porte-monnaie et inventaire : pièces gagnées, articles possédés et équipés, étoiles déjà récompensées. |
+| `wallet.js` | Porte-monnaie et inventaire : pièces gagnées, articles possédés et équipés, étoiles déjà récompensées ; articles donnés (récompenses), articles achetés. |
+| `stats.js` | Statistiques du joueur : compteurs à vie (succès) et du jour (missions), remis à zéro à minuit (heure locale). |
+| `rewards.js` | Récompenses communes : pièces, coffres (commun, rare, épique), articles exclusifs, article au hasard ; doublons convertis en pièces. |
+| `daily.js` | Récompense quotidienne : calendrier de 7 jours, une récompense par jour, mémorisée, nouveau cycle après le 7e jour. |
+| `missions.js` | Missions quotidiennes : 9 modèles, 3 missions tirées par jour (facile, moyenne, difficile), progression, récompenses. |
+| `achievements.js` | Succès : 40 succès sur 4 paliers, mesure de la progression, récompenses à récupérer. |
+| `live-i18n.js` | Textes des missions, des succès, des paliers et des coffres (FR / EN / ES), partagés par le menu et le jeu. |
 | `ui-polish.js` | Onde lumineuse au point touché sur les éléments interactifs de toutes les pages (sauf commandes de jeu). |
 | `settings.js` | Réglages du joueur (musique, effets, vibrations, langue, qualité), enregistrés et corrigés s'ils sont abîmés. |
 | `version.js` | Numéro de version affiché dans les paramètres. |
@@ -402,6 +412,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tests/mechanics.test.mjs` | Les pièges de l'étape 9 (plaque, bloc temporisé, scie, boulet, laser, canon, aimant, drapeau) et les 21 mécaniques des mondes (caisse, glace, rampe, vent, stalactite, lave, plateforme fragile, geyser, pierres, ascenseur, liane, champignon, tronc, branche, gravité réduite, portails, astéroïde, gravité inversée). |
 | `tests/progress.test.mjs` | Progression (déblocage des mondes, statistiques, animation annoncée une fois, conversion de l'ancien format), mondes, textes de jeu dans les trois langues. |
 | `tests/menu.test.mjs` | Textes du menu dans les trois langues, réglages. |
+| `tests/live.test.mjs` | Statistiques (jour, minuit), coffres et doublons, récompense quotidienne (une par jour, 7 jours, cycle), missions (tirage, renouvellement, récompense unique), succès (paliers, progression, récupération), textes. |
 | `tests/routes.test.mjs` | Chaque passage de chaque niveau reste faisable (solutions enregistrées + solutions expertes). |
 | `tests/fixtures/test-yard.js` | Terrain d'essai pour les tests de mécanique (indépendant des niveaux). |
 | `tests/fixtures/routes.json` | Solutions enregistrées des passages (générées par l'outil). |
@@ -439,6 +450,10 @@ et recule légèrement quand une page est ouverte.
   **pastilles de progression** sur Mondes (niveaux terminés / 50) et Collection (articles possédés / 25).
 - Solde de **pièces** en haut à droite (ouvre la boutique). Tout est relu au retour d'une partie ou de la
   boutique.
+- **Cadeau, Missions, Succès** (étape 12) : trois boutons en haut à droite, chacun avec sa couleur ; une
+  **pastille rouge** compte ce qui attend d'être récupéré et l'icône s'agite doucement. Sur petit écran, seules
+  les icônes restent.
+- **Première visite du jour** : la page Récompense quotidienne s'ouvre d'elle-même (une fois par jour).
 
 **Pages**
 
@@ -448,6 +463,9 @@ et recule légèrement quand une page est ouverte.
 | Modes | 4 cartes verrouillées « À venir » : Trickshot, Endless, Défis quotidiens, Multijoueur. Toucher une carte : tremblement + message. |
 | Magasin | La tuile ouvre la boutique (`shop.html`). |
 | **Collection** (étape 11) | Tous les articles possédés, aperçu, Équiper / Déséquiper — voir [Collection](#collection-indexhtmlcollection). |
+| **Récompense quotidienne** (étape 12) | Calendrier de 7 jours — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
+| **Missions** (étape 12) | 3 missions du jour — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
+| **Succès** (étape 12) | 40 succès sur 4 paliers — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
 | Paramètres | Musique, effets sonores (curseurs appliqués en direct), vibrations, qualité graphique (basse / moyenne / haute), langue (FR / EN / ES), politique de confidentialité, crédits, version. |
 
 ### Écran de jeu (`play.html`)
@@ -533,6 +551,34 @@ boutique).
 - **Déséquiper** remet l'article de base de la catégorie (ballon classique, onde, aucune traînée, confettis).
 - **Enregistré tout de suite** : l'article équipé reste équipé au prochain lancement (jeu, boutique, menu).
 - Sons : sélection, carillon à l'équipement, son descendant au retrait ; vibration courte ; message.
+
+### Récompense quotidienne, Missions, Succès (`index.html#quotidien`, `#missions`, `#succes`)
+
+Même style que le reste du menu (verre sombre, accent orange, ressorts) ; chaque page a son compteur de pièces.
+
+- **Récompense quotidienne** : 7 cases (la 7e, dorée et plus large, est balayée par un reflet). Case récupérée :
+  coche verte ; **aujourd'hui** : case dorée qui respire, illustration qui flotte, étiquette « Aujourd'hui » ;
+  demain : « Demain » ; les suivantes sont plus discrètes. Gros bouton **Récupérer** (pulsation et reflet), ou
+  « Reviens demain · Prochaine récompense dans 13 h 18 min » (compte à rebours en direct ; à minuit, la page
+  se met à jour d'elle-même). En-tête : semaine et jour (« Semaine 1 · Jour 3/7 »).
+- **Récupération** : la case grossit et fait un tour sur elle-même, puis la **révélation** : fond sombre,
+  **rayons de lumière** qui tournent, **coffre** qui tombe, tremble et **s'ouvre dans un éclair**, le butin
+  surgit (pièces, article avec sa rareté), **pluie de pièces** sur tout l'écran ; « Super ! » puis les pièces
+  **filent vers le compteur**, qui rebondit. **Son** (choc, grincement, fanfare, tintements) et **vibration
+  légère**.
+- **Missions** : 3 cartes (facile vert, moyenne bleue, difficile violette) : icône, palier, texte, **barre de
+  progression animée** (elle se remplit à l'ouverture, un reflet la parcourt), valeur (« 4/5 », « 3/10 min »),
+  récompenses (pièces, coffre, article), puis « Récupérer » (bouton qui pulse) ou « ✓ Récupérée ».
+  **Mission terminée** : la carte s'entoure de vert, un **éclat lumineux** la traverse, son de validation.
+  En-tête : « 1/3 accomplies » et « Nouvelles missions dans 13 h 18 min ».
+- **Succès** : progression totale (barre, « 12/40 obtenus »), « 3 à récupérer », onglets **Tous / Débutant /
+  Intermédiaire / Expert / Légende** (chacun avec son compte et un point rouge s'il y a quelque chose à
+  récupérer), grille de cartes : **médaille hexagonale** à la couleur du palier (bronze, argent, or, violet) avec
+  son icône, nom, description, **barre de progression**, récompense, « Récupérer ». Pas encore atteint :
+  médaille grisée et valeur (« 240/1 000 ») ; **prêt** : médaille qui brille et carte balayée par un reflet doré ;
+  obtenu : « ✓ Obtenu ». Les succès prêts sont en tête de liste.
+- **Pendant la partie** : une bannière glisse en haut de l'écran — « **Mission terminée !** » (vert) ou
+  « **Succès débloqué !** » (or) — avec un arpège lumineux et une vibration.
 
 ### Ancienne carte des mondes (`worlds.html`)
 
@@ -725,6 +771,84 @@ Ce que chaque niveau ajoute (en **gras** : la difficulté apportée par l'étape
   par balayage (outil `scan`) : en général 0,5 à 1,5 s, jusqu'à ~0,25–0,45 s dans les derniers niveaux
   (Forêt 5, Espace 5). Les niveaux longs ont des drapeaux.
 
+### Revenir chaque jour (étape 12)
+
+Tout est enregistré sur l'appareil, automatiquement, et relu par chaque page :
+
+| Clé | Contenu |
+|---|---|
+| `hoopbounce.stats` | Statistiques : compteurs à vie et compteurs du jour (remis à zéro à minuit, heure locale) |
+| `hoopbounce.daily` | Récompense quotidienne : jours récupérés, dernier jour, total |
+| `hoopbounce.missions` | Missions du jour : date, les 3 missions, récupérées, déjà annoncées |
+| `hoopbounce.achievements` | Succès récupérés et déjà annoncés |
+| `hoopbounce.dailyAuto` | Jour où la récompense quotidienne s'est ouverte d'elle-même |
+
+**Statistiques comptées par le jeu** : rebonds du joueur, paniers marqués, swish, niveaux terminés (rejouer
+compris) et niveaux différents terminés aujourd'hui, niveaux terminés sans mourir (une chute, même avec un
+drapeau, compte comme une mort), étoiles ramassées dans les niveaux réussis, chutes, parties lancées, temps de
+jeu (seulement quand on joue vraiment : pas en pause, pas pendant l'intro), niveaux terminés par monde ;
+pièces gagnées (niveaux, récompenses), coffres ouverts, récompenses quotidiennes, missions accomplies.
+
+**Récompense quotidienne** — la première connexion de chaque jour donne **une seule** récompense :
+
+| Jour | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|
+| Récompense | 100 pièces | 200 pièces | Coffre commun | 350 pièces | Traînée exclusive « Hoop Bounce » | 500 pièces | Skin exclusif « Hoop Bounce » |
+
+- On avance d'un jour à chaque récupération ; **manquer un jour ne fait rien perdre**. Après le 7e jour, une
+  nouvelle semaine commence ; les exclusifs déjà possédés sont alors remplacés par des pièces.
+
+**Coffres** :
+
+| Coffre | Pièces | Article (non possédé) |
+|---|---|---|
+| Commun | 120 à 250 | 35 % de chances : commun ou rare |
+| Rare | 300 à 500 | 60 % : rare ou épique |
+| Épique | 600 à 900 | toujours : épique ou légendaire |
+
+Si tous les articles possibles sont déjà possédés, des pièces les remplacent. Un article exclusif déjà possédé
+vaut des pièces (150 à 1 000 selon la rareté).
+
+**Missions quotidiennes** — 3 par jour (une facile, une moyenne, une difficile), tirées automatiquement d'après
+la date (le même jour donne les mêmes missions), renouvelées à minuit. Leur progression vient des compteurs du
+jour.
+
+| Mission | Facile · moyenne · difficile | Pièces |
+|---|---|---|
+| Terminer N niveaux différents | 2 · 3 · 5 | 100 · 140 · 200 |
+| Marquer N paniers | 5 · 10 · 15 | 100 · 160 · 220 |
+| Obtenir N étoiles | 4 · 7 · 10 | 110 · 160 · 220 |
+| Finir N niveaux sans mourir | 1 · 2 · 3 | 130 · 190 · 260 |
+| Jouer pendant N minutes | 5 · 10 · 15 | 90 · 150 · 210 |
+| Faire N rebonds | 30 · 60 · 100 | 80 · 130 · 180 |
+| Terminer N niveaux du monde X (un monde ouvert) | 1 · 1 · 2 | 120 · 150 · 220 |
+| Jouer N parties | 3 · 4 · 6 | 70 · 100 · 150 |
+| Marquer N swish | 1 · 2 · 3 | 110 · 160 · 210 |
+
+La mission difficile ajoute un **coffre commun** (55 %), un **coffre rare** (25 %) ou un **article** au hasard
+(20 %) ; la moyenne ajoute parfois (25 %) un coffre commun.
+
+**Succès** — 40 succès sur 4 paliers ; chacun a sa récompense à récupérer :
+
+| Palier | Succès (objectif → récompense) |
+|---|---|
+| **Débutant** (bronze) | Premier panier (1er niveau → 100) · Échauffement (100 rebonds → 100) · Chasseur d'étoiles (10 étoiles → 150) · Sans faute (1 niveau sans mourir → 150) · Premier achat (1 article → coffre commun) · Habitué (10 parties → 100) · Roi de la ville (monde Ville → coffre commun) · Tirelire (1 000 pièces gagnées → 150) · Bienvenue ! (1 récompense quotidienne → 100) · En mission (1 mission → 100) |
+| **Intermédiaire** (argent) | Dix sur dix (10 niveaux → 300) · Pluie d'étoiles (50 étoiles → coffre rare) · Dribbleur (1 000 rebonds → 300) · Tireur (100 paniers → 300) · Swish ! (25 swish → article rare) · Accro du shopping (5 articles → 400) · Montagnard (monde Neige → coffre rare) · Ne lâche rien (100 chutes → 200) · Passionné (30 min → 300) · Économe (5 000 pièces → 500) · Chasseur de trésors (5 coffres → 300) |
+| **Expert** (or) | À mi-chemin (25 niveaux → coffre épique) · Volcanologue (monde Volcan → 600) · Gardien de la forêt (monde Forêt → 700) · **Perfection** (un monde avec toutes les étoiles → traînée exclusive **Aurore**) · Tireur d'élite (500 paniers → 800) · Collectionneur (10 articles → coffre épique) · Infatigable (5 000 rebonds → 800) · Impeccable (20 niveaux sans mourir → 800) · Fortune (20 000 pièces → 1 000) · Constellation naissante (100 étoiles → 800) · Agent spécial (15 missions → coffre rare) |
+| **Légende** (violet) | **Au-delà des étoiles** (les 50 niveaux → ballon exclusif **Légende**) · **Constellation** (150 étoiles → animation de panier exclusive **Constellation**) · **Maître du swish** (100 swish → effet de rebond exclusif **Couronne**) · Astronaute (monde Espace → coffre épique) · Fidèle (7 récompenses quotidiennes → coffre épique) · Légende des missions (30 missions → 1 500) · Marathonien (3 h → 2 000) · Collection complète (tous les articles de la boutique → 3 000) |
+
+**Articles exclusifs** (jamais en vente ; dans la boutique, ils portent l'étiquette « Exclusif · Récompense
+quotidienne » ou « Exclusif · Succès ») :
+
+| Article | Catégorie | Rareté | Comment l'obtenir |
+|---|---|---|---|
+| Hoop Bounce (ballon orange, panneau bleu nuit et monogramme « HB ») | Ballon | Légendaire | 7e jour de la récompense quotidienne |
+| Hoop Bounce (ruban orange et bleu nuit semé de ballons) | Traînée | Épique | 5e jour de la récompense quotidienne |
+| Légende (noir et or, coutures lumineuses) | Ballon | Légendaire | Succès « Au-delà des étoiles » |
+| Aurore (voiles verts, turquoise et violets qui ondulent) | Traînée | Légendaire | Succès « Perfection » |
+| Couronne (anneau d'or et pointes d'étoiles) | Effet de rebond | Légendaire | Succès « Maître du swish » |
+| Constellation (étoiles reliées par des fils de lumière) | Animation de panier | Légendaire | Succès « Constellation » |
+
 ### Le déblocage des modes
 
 🔴 **Pas encore défini.** Les 4 modes sont affichés « À venir » dans le menu. Proposition à valider :
@@ -733,8 +857,10 @@ mise à jour dédiée.
 
 ### La boutique (`shop.html`)
 
-Tout se débloque **en jouant**, avec les pièces : **aucun achat avec de l'argent réel**. 25 articles en
-4 catégories ; le premier de chaque catégorie est offert et équipé.
+Tout se débloque **en jouant**, avec les pièces : **aucun achat avec de l'argent réel**. 25 articles en vente en
+4 catégories (le premier de chaque catégorie est offert et équipé), plus **6 articles exclusifs** qu'on ne gagne
+qu'avec les récompenses quotidiennes et les succès (présentés à la fin de chaque onglet, voir
+[Revenir chaque jour](#revenir-chaque-jour-étape-12)).
 
 | Catégorie | Commun | Rare | Épique | Légendaire |
 |---|---|---|---|---|
@@ -758,6 +884,7 @@ Tout se débloque **en jouant**, avec les pièces : **aucun achat avec de l'arge
 | Les 3 étoiles d'un niveau (première fois) | +20 |
 | Rejouer un niveau déjà terminé | 10 |
 | « Swish » (panier sans toucher le cercle) | +5 |
+| Récompense quotidienne, missions, succès (étape 12) | voir [Revenir chaque jour](#revenir-chaque-jour-étape-12) |
 
 - Une première partie complète rapporte environ **7 750 pièces** (50 niveaux, 150 étoiles) ; le catalogue complet
   coûte **14 800** : les articles légendaires récompensent les joueurs qui rejouent et visent le parfait.
@@ -824,7 +951,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   aperçu animé, achat, équipement, progression de la collection
 - ✅ Articles équipés visibles en jeu
 - ✅ Page Collection du menu : articles possédés, aperçu, Équiper / Déséquiper, badge « Équipé » (étape 11)
-- 🔴 Récompenses supplémentaires (coffres de fin de monde, défis)
+- ✅ Coffres, récompense quotidienne, missions et succès (étape 12)
 
 ### Phase 6 bis — Finition « vrai jeu mobile » 🟡
 - ✅ Sensations : caméra (recul en hauteur, coups de zoom, arrêt sur image), contrôle en l'air plus vif
@@ -841,6 +968,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Progression plus claire : niveau à reprendre sous JOUER, pastilles sur les tuiles, barres par monde
 - ✅ Sons de clic, ouverture animée des fenêtres, animations des cartes de mondes
 - 🟡 Validation par le porteur du projet
+
+### Phase 6 quater — Revenir chaque jour 🟡
+- ✅ Récompense quotidienne : calendrier de 7 jours, coffre, traînée et skin exclusifs, révélation animée
+- ✅ Missions quotidiennes : 3 par jour, tirées automatiquement, renouvelées à minuit, barres animées
+- ✅ Succès : 40 succès sur 4 paliers, médailles, récompenses à récupérer
+- ✅ Statistiques comptées pendant la partie, bannières « Mission terminée » / « Succès débloqué »
+- ✅ Coffres et 6 articles exclusifs ; pastilles sur l'accueil ; ouverture automatique une fois par jour
+- 🟡 Validation par le porteur du projet ; équilibrage des récompenses
 
 ### Phase 7 — Modes de jeu 🔴
 - 🔴 Trickshot
@@ -884,10 +1019,11 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Tests automatiques + outil de vérification des niveaux (avec pilote pour les solutions expertes, dont
   `jumpBoulder` et `dodgeBoulders` pour les rochers)
 - ✅ Sélection des mondes et des niveaux dans le menu, Collection complète, niveau à reprendre sous JOUER
+- ✅ Récompense quotidienne (7 jours), missions quotidiennes (3 par jour), 40 succès, coffres, 6 exclusifs
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur l'expérience utilisateur (étape 11)
+- 🟡 Attente des retours du porteur du projet sur la récompense quotidienne, les missions et les succès (étape 12)
 
 ### À faire — court terme 🔴
 - 🔴 Ajuster le ressenti (gravité, hauteurs, dribble, inertie) selon les retours
@@ -898,7 +1034,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   Forêt 5 et Espace 5 (fenêtres les plus serrées)
 
 ### À faire — moyen terme 🔴
-- 🔴 Équilibrer les prix et les gains après les retours
+- 🔴 Équilibrer les prix et les gains après les retours (pièces des missions, des succès et des coffres comprises)
+- 🔴 Notifications Android (rappel de la récompense quotidienne) une fois l'application emballée
 - 🔴 Nouveaux éléments (surfaces collantes, interrupteurs à minuterie…)
 - 🔴 Accessibilité : taille des boutons réglable, inversion gauche / droite pour les gauchers
 
@@ -991,6 +1128,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - Polices réduites au sous-ensemble latin (~83 Ko au total).
 - Résultat : **60 images/s stables** dans tous les écrans, mesurées dans Chromium sans carte graphique.
 
+**Étape 12 (revenir chaque jour)**
+- Statistiques : comptées en mémoire pendant la partie, enregistrées en groupe (fin de niveau, toutes les 5 s de
+  jeu, mise en arrière-plan) — aucune écriture à chaque rebond.
+- Missions et succès vérifiés au plus une fois toutes les 1,2 s pendant la partie (calcul très léger).
+- Révélation des récompenses : éléments DOM animés uniquement en transform / opacity ; les rayons sont un seul
+  dégradé conique (taille limitée à 130 % du petit côté de l'écran) ; la pluie de pièces dure 2,5 s puis est retirée.
+
 **Étape 10 (finition)**
 - Nouveaux effets choisis pour leur faible coût : ombre et liseré de lumière du ballon = petites images
   précalculées ; étalonnage des mondes **cuit dans la vignette** déjà copiée à chaque image (coût nul) ;
@@ -1008,6 +1152,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| ✅ | Ouvrir une page du menu pendant l'entrée animée de l'accueil laissait les boutons du haut par-dessus l'en-tête. | ✅ Corrigé (v0.11.0) |
+| Info | La journée change à minuit, heure de l'appareil : changer l'heure du téléphone permet de récupérer plus tôt (aucun serveur pour vérifier). | 🟡 Normal hors ligne ; à revoir si un compte en ligne arrive |
+| Info | Les statistiques comptent à partir de la v0.11.0 : les succès basés sur les rebonds, paniers, chutes ou le temps de jeu repartent de zéro (ceux basés sur les niveaux, les étoiles et les achats tiennent compte de la progression existante). | 🟡 Sans conséquence (phase de développement) |
 | ✅ | Le bouton JOUER du menu affichait toujours « Niveau 1 · Premier dribble ». | ✅ Corrigé (v0.10.0 : il affiche le niveau à reprendre) |
 | ✅ | Collection : un article acheté dans la boutique n'apparaissait pas (la page lisait un ancien catalogue vide). | ✅ Corrigé (v0.10.0 : lecture de l'inventaire partagé, relu au retour de la boutique) |
 | Faible | Niveau 5 : le panier est hors de l'écran au départ (on le découvre en montant). | 🔴 À corriger |
@@ -1031,6 +1178,30 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 19/11/2026 — Étape 12 : revenir chaque jour (v0.11.0)
+- **Ajouté** :
+  - **récompense quotidienne** (`shared/daily.js`, page `#quotidien`) : calendrier de 7 jours (100, 200 pièces,
+    coffre commun, 350, traînée exclusive, 500, skin exclusif Hoop Bounce), une récompense par jour, mémorisée ;
+    ouverture automatique à la première visite du jour ; compte à rebours jusqu'à minuit ;
+  - **révélation des récompenses** (`menu/rewards-fx.js`, `css/live.css`) : coffre qui tombe, tremble et s'ouvre
+    dans un éclair, rayons, butin, pluie de pièces, pièces qui filent vers le compteur, son et vibration ;
+  - **missions quotidiennes** (`shared/missions.js`, page `#missions`) : 3 missions tirées chaque jour parmi
+    9 modèles, barres animées, récompenses (pièces, coffres, articles), éclat et son à la réussite ;
+  - **succès** (`shared/achievements.js`, page `#succes`) : 40 succès sur 4 paliers, médailles, onglets,
+    récompenses à récupérer ;
+  - **statistiques** (`shared/stats.js`) comptées par le jeu ; **bannière** « Mission terminée ! » / « Succès
+    débloqué ! » pendant la partie ;
+  - **coffres** (`shared/rewards.js`) et **6 articles exclusifs** (2 ballons, 2 traînées, 1 effet de rebond,
+    1 animation de panier), dessinés dans `render/ball-sprite.js` et `render/cosmetics.js`, présentés
+    « Exclusif » dans la boutique ;
+  - boutons **Cadeau / Missions / Succès** sur l'accueil avec pastilles ; textes partagés `shared/live-i18n.js` ;
+  - 6 nouveaux tests (`tests/live.test.mjs`).
+- **Modifié** : la Collection compte les 31 articles ; le porte-monnaie sait donner un article, ajouter des
+  pièces et compter les achats.
+- **Corrigé** : boutons de l'accueil visibles par-dessus une page ouverte pendant l'entrée animée.
+- **Reste à faire** : retours du porteur du projet ; équilibrage des récompenses ; rappel par notification une
+  fois sur Android.
 
 ### 19/11/2026 — Étape 11 : expérience utilisateur (v0.10.0)
 - **Ajouté** :

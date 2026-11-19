@@ -25,6 +25,9 @@ export const CATALOG = [
   { id: 'ball-lava', category: 'ball', rarity: 'epic', price: 900, name: n('Magma', 'Magma', 'Magma'), desc: n('Obsidienne et fissures de lave en fusion.', 'Obsidian with molten lava cracks.', 'Obsidiana con grietas de lava.') },
   { id: 'ball-galaxy', category: 'ball', rarity: 'epic', price: 950, name: n('Galaxie', 'Galaxy', 'Galaxia'), desc: n('Une nébuleuse entière dans tes mains.', 'A whole nebula in your hands.', 'Una nebulosa entera en tus manos.') },
   { id: 'ball-gold', category: 'ball', rarity: 'legendary', price: 1800, name: n('Or pur', 'Pure Gold', 'Oro puro'), desc: n('Réservé aux champions. Il étincelle.', 'For champions only. It sparkles.', 'Solo para campeones. Destella.') },
+  // Exclusifs : jamais en vente, gagnés avec les récompenses quotidiennes et les succès (étape 12)
+  { id: 'ball-hoop', category: 'ball', rarity: 'legendary', price: null, exclusive: 'daily', name: n('Hoop Bounce', 'Hoop Bounce', 'Hoop Bounce'), desc: n('Le ballon officiel du jeu. Récompense du 7e jour.', 'The official ball of the game. Day 7 reward.', 'El balón oficial del juego. Premio del día 7.') },
+  { id: 'ball-legend', category: 'ball', rarity: 'legendary', price: null, exclusive: 'achievement', name: n('Légende', 'Legend', 'Leyenda'), desc: n('Noir et or. Pour qui a terminé les 50 niveaux.', 'Black and gold. For those who beat all 50 levels.', 'Negro y oro. Para quien superó los 50 niveles.') },
   // ── Effets de rebond ──
   { id: 'bounce-classic', category: 'bounce', rarity: 'common', price: 0, name: n('Onde', 'Shockwave', 'Onda'), desc: n('L’onde de choc d’origine.', 'The original shockwave.', 'La onda de choque original.') },
   { id: 'bounce-sparks', category: 'bounce', rarity: 'common', price: 150, name: n('Étincelles', 'Sparks', 'Chispas'), desc: n('Chaque rebond fait jaillir des étincelles.', 'Every bounce throws sparks.', 'Cada rebote saca chispas.') },
@@ -32,6 +35,7 @@ export const CATALOG = [
   { id: 'bounce-stars', category: 'bounce', rarity: 'rare', price: 450, name: n('Étoiles', 'Stars', 'Estrellas'), desc: n('Une pluie d’étoiles à chaque appui.', 'A shower of stars on every tap.', 'Una lluvia de estrellas en cada toque.') },
   { id: 'bounce-lightning', category: 'bounce', rarity: 'epic', price: 900, name: n('Foudre', 'Lightning', 'Rayo'), desc: n('Des éclairs crépitent sous le ballon.', 'Lightning crackles under the ball.', 'Rayos crepitan bajo el balón.') },
   { id: 'bounce-rainbow', category: 'bounce', rarity: 'legendary', price: 1500, name: n('Arc-en-ciel', 'Rainbow', 'Arcoíris'), desc: n('Des anneaux de toutes les couleurs.', 'Rings of every color.', 'Anillos de todos los colores.') },
+  { id: 'bounce-crown', category: 'bounce', rarity: 'legendary', price: null, exclusive: 'achievement', name: n('Couronne', 'Crown', 'Corona'), desc: n('Une couronne d’or à chaque rebond. Succès « Maître du swish ».', 'A golden crown on every bounce. “Swish Master” achievement.', 'Una corona de oro en cada rebote. Logro «Maestro del swish».') },
   // ── Traînées ──
   { id: 'trail-none', category: 'trail', rarity: 'common', price: 0, name: n('Aucune', 'None', 'Ninguna'), desc: n('Sobre et efficace.', 'Clean and simple.', 'Sobrio y eficaz.') },
   { id: 'trail-streak', category: 'trail', rarity: 'common', price: 150, name: n('Sillage', 'Streak', 'Estela'), desc: n('Un fin sillage de lumière.', 'A thin streak of light.', 'Una fina estela de luz.') },
@@ -39,12 +43,15 @@ export const CATALOG = [
   { id: 'trail-flame', category: 'trail', rarity: 'rare', price: 450, name: n('Flammes', 'Flames', 'Llamas'), desc: n('Le ballon laisse une traînée de feu.', 'The ball leaves a trail of fire.', 'El balón deja una estela de fuego.') },
   { id: 'trail-rainbow', category: 'trail', rarity: 'epic', price: 950, name: n('Arc-en-ciel', 'Rainbow', 'Arcoíris'), desc: n('Un ruban de toutes les couleurs.', 'A ribbon of every color.', 'Una cinta de todos los colores.') },
   { id: 'trail-plasma', category: 'trail', rarity: 'legendary', price: 1600, name: n('Plasma', 'Plasma', 'Plasma'), desc: n('Énergie pure et étincelles électriques.', 'Pure energy and electric sparks.', 'Energía pura y chispas eléctricas.') },
+  { id: 'trail-hoop', category: 'trail', rarity: 'epic', price: null, exclusive: 'daily', name: n('Hoop Bounce', 'Hoop Bounce', 'Hoop Bounce'), desc: n('Un ruban orange et bleu nuit semé de ballons. Récompense du 5e jour.', 'An orange and navy ribbon dotted with balls. Day 5 reward.', 'Una cinta naranja y azul llena de balones. Premio del día 5.') },
+  { id: 'trail-aurora', category: 'trail', rarity: 'legendary', price: null, exclusive: 'achievement', name: n('Aurore', 'Aurora', 'Aurora'), desc: n('Une aurore boréale dans ton sillage. Succès « Perfection ».', 'Northern lights in your wake. “Perfection” achievement.', 'Una aurora boreal a tu paso. Logro «Perfección».') },
   // ── Animations de panier ──
   { id: 'goal-confetti', category: 'goal', rarity: 'common', price: 0, name: n('Confettis', 'Confetti', 'Confeti'), desc: n('La fête classique.', 'The classic party.', 'La fiesta clásica.') },
   { id: 'goal-streamers', category: 'goal', rarity: 'common', price: 150, name: n('Serpentins', 'Streamers', 'Serpentinas'), desc: n('Des serpentins colorés jaillissent du filet.', 'Colorful streamers burst from the net.', 'Serpentinas de colores salen de la red.') },
   { id: 'goal-fireworks', category: 'goal', rarity: 'rare', price: 450, name: n('Feu d’artifice', 'Fireworks', 'Fuegos artificiales'), desc: n('Un vrai feu d’artifice au-dessus du panier.', 'Real fireworks above the hoop.', 'Fuegos artificiales sobre la canasta.') },
   { id: 'goal-coins', category: 'goal', rarity: 'epic', price: 900, name: n('Jackpot', 'Jackpot', 'Premio gordo'), desc: n('Une pluie de pièces d’or.', 'A shower of gold coins.', 'Una lluvia de monedas de oro.') },
   { id: 'goal-supernova', category: 'goal', rarity: 'legendary', price: 1500, name: n('Supernova', 'Supernova', 'Supernova'), desc: n('Une explosion d’étoiles et une onde de lumière.', 'An explosion of stars and a wave of light.', 'Una explosión de estrellas y una onda de luz.') },
+  { id: 'goal-constellation', category: 'goal', rarity: 'legendary', price: null, exclusive: 'achievement', name: n('Constellation', 'Constellation', 'Constelación'), desc: n('Les étoiles se relient au-dessus du panier. Succès « Constellation ».', 'Stars join up above the hoop. “Constellation” achievement.', 'Las estrellas se unen sobre la canasta. Logro «Constelación».') },
 ];
 
 export const DEFAULTS = { ball: 'ball-classic', bounce: 'bounce-classic', trail: 'trail-none', goal: 'goal-confetti' };
