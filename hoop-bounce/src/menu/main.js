@@ -478,9 +478,14 @@ applyAudio();
 resize();
 raf = requestAnimationFrame(loop);
 
-// Entrée animée une fois les polices prêtes (pas de saut de mise en page)
+// Écran de chargement (src/boot/boot.js) : le menu est prêt, puis la première image du décor est dessinée
+const boot = window.__boot ?? { done() {}, revealed: Promise.resolve(), skipped: true };
+boot.done('menu');
+requestAnimationFrame(() => requestAnimationFrame(() => boot.done('scene')));
+
+// Entrée animée une fois les polices prêtes (pas de saut de mise en page) et l'écran de chargement effacé
 const fontsReady = document.fonts?.ready ?? Promise.resolve();
-Promise.race([fontsReady, new Promise((r) => setTimeout(r, 700))]).then(() => {
+Promise.all([Promise.race([fontsReady, new Promise((r) => setTimeout(r, 700))]), boot.revealed]).then(() => {
   $$('.segmented').forEach(positionIndicator);
   if (state.page !== 'home') return; // arrivée directe sur une page : pas d'entrée animée de l'accueil par-dessus
   app.classList.add('intro');
@@ -491,7 +496,7 @@ Promise.race([fontsReady, new Promise((r) => setTimeout(r, 700))]).then(() => {
 // (?world=snow#mondes ouvre directement les niveaux de ce monde : bouton « Niveaux » de la partie)
 const initial = pageFromHash();
 if (initial !== 'home') showPage(initial, { fromHistory: true, world: new URLSearchParams(location.search).get('world') });
-else autoOpenDaily();
+else boot.revealed.then(autoOpenDaily);
 
 /** Première visite du jour : la récompense quotidienne s'ouvre d'elle-même (une fois par jour). */
 function autoOpenDaily() {

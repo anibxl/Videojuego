@@ -3,7 +3,11 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 13 (actuelle) :** **publicités récompensées, toujours facultatives** (Google AdMob, identifiants
+**Étape 14 (actuelle) :** **écran de chargement**. Au lancement : HoopBounce en grand, « Par EchoSpeed », ballon
+qui rebondit, particules et barre de progression discrète, puis fondu avec léger zoom vers le menu. Il ne dure
+que le temps du chargement (minimum 1,1 s) et ne revient pas en sortant d'une partie (`?noboot` le désactive).
+
+**Étape 13 :** **publicités récompensées, toujours facultatives** (Google AdMob, identifiants
 de test uniquement pendant le développement). Doubler les pièces après une victoire, reprendre au dernier
 drapeau après un échec (offert si aucune annonce n'est disponible), coffre bonus quotidien gratuit ou amélioré,
 roue de la chance (1 lancer gratuit par jour, lancers bonus). Jamais d'annonce pendant un niveau, au lancement ou

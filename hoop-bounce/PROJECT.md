@@ -3,9 +3,9 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 19/11/2026 · **Version :** 0.12.0 · **Étape en cours :** validation du système de
-> publicités récompensées (AdMob, toujours facultatives) par le porteur du projet, avant la préparation finale
-> du Play Store.
+> **Dernière mise à jour :** 19/11/2026 · **Version :** 0.13.0 · **Étape en cours :** validation de l'écran de
+> chargement (et des publicités récompensées de l'étape 13) par le porteur du projet, avant la préparation
+> finale du Play Store.
 
 ## Sommaire
 
@@ -258,6 +258,7 @@ hoop-bounce/
 │       └── LICENSE-*.txt       Licences SIL Open Font License 1.1
 ├── css/
 │   ├── fonts.css           Déclaration des polices (@font-face)
+│   ├── boot.css            Écran de chargement (logo, ballon qui rebondit, barre, fondu vers le menu)
 │   ├── menu.css            Styles du menu (accueil, pages, fenêtres, animations)
 │   ├── menu-views.css      Styles des pages Mondes (cartes, niveaux) et Collection du menu
 │   ├── live.css            Récompense quotidienne, Missions, Succès, Bonus (coffre, roue), révélation des récompenses
@@ -267,6 +268,7 @@ hoop-bounce/
 │   └── style.css           Styles de l'écran de jeu (HUD, commandes, pause, victoire, tutoriel, intro de monde)
 ├── src/
 │   ├── config.js           ★ TOUS les réglages : physique, matériaux, commandes, caméra, sensations
+│   ├── boot/boot.js        Écran de chargement : étapes réelles, barre, particules, sortie vers le menu
 │   ├── main.js             Écran de jeu : assemble tout, niveaux, pause, victoire, progression
 │   ├── core/               Briques de base, sans dépendance au navigateur
 │   ├── physics/            Moteur physique (sans navigateur)
@@ -379,6 +381,12 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `input/input.js` | Zones tactiles (moitié gauche = direction, moitié droite = rebond), multi-doigts, clavier. |
 | `platform/haptics.js` | Vibrations (API Vibration ; à remplacer par Capacitor Haptics). |
 
+**`src/boot/`**
+
+| Fichier | Rôle |
+|---|---|
+| `boot.js` | Écran de chargement (script classique, exécuté avant tout le reste) : suit les étapes réelles du chargement (polices, page, code du menu, première image du décor), anime la barre et les particules, puis fondu + léger zoom vers le menu. Ne s'affiche qu'au lancement (pas au retour d'une partie). Expose `window.__boot` (`done(étape)`, `revealed`, `finished`). |
+
 **`src/menu/`**
 
 | Fichier | Rôle |
@@ -445,6 +453,30 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 ---
 
 ## 4. Interface
+
+### Écran de chargement (au lancement)
+
+Le premier écran du jeu, affiché dès l'ouverture (il ne dépend que de `css/boot.css` et `src/boot/boot.js`) :
+
+- **Fond** : dégradé bleu nuit vers le noir, faisceau de projecteur venu d'en haut qui respire lentement, halo
+  orange derrière le logo, lueurs bleue et violette dans les coins ; **particules** (poussières lumineuses
+  chaudes et froides, quelques halos flous) qui montent en ondulant.
+- **Logo** au centre : **HoopBounce** en grand (« Hoop » blanc, « Bounce » dégradé orange, police Unbounded),
+  puis **« Par EchoSpeed »** (« By » / « Por » selon la langue). Entrée douce : les deux mots montent en se
+  précisant (flou → net), un **reflet** traverse le logo, la signature apparaît en resserrant ses lettres. Le
+  texte attend que la police soit chargée (aucun changement de police visible).
+- **Ballon de basket** au-dessus du logo qui **rebondit doucement** (chute accélérée, remontée qui ralentit,
+  écrasement au contact, rotation, ombre qui grandit et s'assombrit à l'impact).
+- **Barre de progression** fine et discrète en bas (orange lumineux) : elle avance avec les étapes réelles du
+  chargement.
+- **Sortie** : la barre se remplit, puis l'écran **s'efface en fondu avec un léger zoom** pendant que le décor
+  du menu arrive (léger dézoom) et que l'accueil fait son entrée animée. Aucune coupure.
+- **Durée** : le temps du chargement, avec un minimum de 1,1 s pour que le logo ait le temps d'apparaître
+  (sinon il clignoterait) et un garde-fou de 8 s (le menu s'ouvre même si une étape ne répond pas). En local
+  (application Android), l'écran dure ≈ 1,5 s puis 0,9 s de transition.
+- **Seulement au lancement** : en revenant d'une partie, de la boutique ou d'une page du menu (même session),
+  le menu s'ouvre directement. `?noboot` dans l'adresse le désactive (tests).
+- Mouvement réduit (réglage du système) : pas de zoom ni de faisceau animé, rebond plus lent.
 
 ### Menu principal (`index.html`)
 
@@ -663,6 +695,8 @@ décrit l'ancienne page (étapes 7 à 10), conservé pour l'historique :
 
 ### Animations et transitions
 
+- **Écran de chargement → menu** (étape 14) : fondu + léger zoom de l'écran de chargement, décor du menu qui se
+  dézoome, puis l'entrée de l'accueil (elle attend la fin de l'écran de chargement pour être vue).
 - **Entrée du menu** : logo et JOUER glissent depuis la gauche, tuiles qui montent en cascade, pièces en fondu.
 - **Ouverture d'une page** : l'accueil s'efface, la page glisse depuis la droite (ressort), ses blocs
   apparaissent en cascade ; le décor s'assombrit et zoome légèrement.
@@ -1092,6 +1126,12 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Annonce de test simulée dans le navigateur ; politique de confidentialité mise à jour
 - 🟡 Validation par le porteur du projet ; essai du vrai SDK sur un appareil (phase Android)
 
+### Phase 6 sexies — Écran de chargement 🟡
+- ✅ Écran de chargement premium : logo HoopBounce, « Par EchoSpeed », ballon qui rebondit, particules,
+  barre de progression qui suit les étapes réelles
+- ✅ Fondu + léger zoom vers le menu, ouverture automatique ; seulement au lancement
+- 🟡 Validation par le porteur du projet
+
 ### Phase 7 — Modes de jeu 🔴
 - 🔴 Trickshot
 - 🔴 Endless
@@ -1102,7 +1142,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 🔴 Projet Capacitor (Android) — étapes préparées dans `native/android/README.md`
 - 🔴 Plugin AdMob installé, identifiant d'application dans le manifeste, essai des annonces de test sur appareil
 - 🔴 Vibrations natives (Capacitor Haptics), verrouillage en paysage, plein écran
-- 🔴 Icône, écran de démarrage, nom de l'application
+- 🔴 Icône, écran de démarrage natif (même fond `#04070f` que l'écran de chargement, pour un enchaînement
+  invisible), nom de l'application
 - 🔴 Tests sur vrais appareils (entrée de gamme, milieu de gamme, haut de gamme)
 
 ### Phase 9 — Publication 🔴
@@ -1140,10 +1181,12 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Récompense quotidienne (7 jours), missions quotidiennes (3 par jour), 40 succès, coffres, 6 exclusifs
 - ✅ Publicités récompensées facultatives (AdMob) : doubler les pièces, reprendre au drapeau, coffre bonus,
   roue de la chance ; page Bonus du jour (étape 13)
+- ✅ Écran de chargement (logo, signature EchoSpeed, ballon, particules, barre, fondu vers le menu) (étape 14)
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur les publicités récompensées et la page Bonus (étape 13)
+- 🟡 Attente des retours du porteur du projet sur l'écran de chargement (étape 14) et sur les publicités
+  récompensées et la page Bonus (étape 13)
 
 ### À faire — court terme 🔴
 - 🔴 Préparation finale du Play Store (après validation de l'étape 13) : Capacitor, AdMob natif, icône, fiche
@@ -1266,6 +1309,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   remplacé par la lueur cuite dans la vignette ; il ne reste que de fines ondulations (0,2 ms).
 - Onde au toucher des pages : un élément créé puis retiré, jamais sur les commandes de jeu.
 
+**Écran de chargement (étape 14)**
+- Aucune image à télécharger : fond en dégradés CSS, ballon en SVG intégré à la page, particules sur un petit
+  canvas (≤ 46 points). Il s'affiche donc avant même que le code du menu soit chargé.
+- Durée liée aux étapes réelles (polices, page, menu, première image du décor) : pas d'attente artificielle au-delà
+  de 1,1 s ; boucle d'animation arrêtée et élément retiré dès la fin.
+- Rebond, écrasement, rotation et ombre en animations CSS (`transform` / `opacity`) : fluides même pendant que
+  le code du menu se charge.
+
 **Publicités (étape 13)**
 - Le SDK publicitaire n'est **ni chargé ni initialisé au démarrage** : seulement quand un bouton de publicité
   apparaît (fin d'animation de victoire, écran d'échec, page Bonus). Aucun coût pendant le jeu.
@@ -1311,6 +1362,22 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 19/11/2026 — Étape 14 : écran de chargement (v0.13.0)
+- **Ajouté** :
+  - **écran de chargement** (`css/boot.css`, `src/boot/boot.js`, balisage en tête de `index.html`) :
+    - fond dégradé sombre, faisceau et halos lumineux, particules qui montent ;
+    - **HoopBounce** en grand et **« Par EchoSpeed »**, avec une entrée animée et un reflet ;
+    - ballon qui rebondit doucement (écrasement, rotation, ombre) ;
+    - barre de progression discrète qui suit les étapes réelles du chargement ;
+  - sortie en **fondu avec léger zoom**, décor du menu qui se dézoome, ouverture automatique du menu.
+- **Modifié** :
+  - le menu signale à l'écran de chargement qu'il est prêt (code chargé, première image dessinée) ;
+  - l'entrée animée de l'accueil et l'ouverture automatique de la récompense quotidienne attendent la fin de
+    l'écran de chargement.
+- **Reste à faire** :
+  - retours du porteur du projet ;
+  - écran de démarrage natif Android assorti (préparation Play Store).
 
 ### 19/11/2026 — Étape 13 : publicités récompensées facultatives (v0.12.0)
 - **Ajouté** :
