@@ -3,7 +3,11 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 18 (actuelle) :** **son et sensations de jeu**. Identité sonore commune (le « motif du rebond »),
+**Étape 19 (actuelle) :** **page « Modes à venir »**. Trois cartes de présentation illustrées et animées,
+verrouillées « 🔒 À venir » : 🌊 Endless, 🏁 Course Multijoueur, 🛠️ Créateur de Maps (interface seulement,
+aucun mode développé).
+
+**Étape 18 :** **son et sensations de jeu**. Identité sonore commune (le « motif du rebond »),
 voix de chaque surface, roulement, réverbération et stéréo, musique qui s'intensifie avec l'action, jingles de
 victoire par monde ; panier parfait au ralenti avec halo doré, confettis plein écran, poids des atterrissages,
 effets propres à chaque monde, caméra plus naturelle. Les trajectoires (et donc les 50 niveaux) sont inchangées.
@@ -56,7 +60,7 @@ trous noirs) ; caméra, ombres, effets de rebond et de panier, animations d'inte
   balle qui rebondit lentement (avec ombre et reflet), poussières dans la lumière, parallaxe sur 4 plans.
 - **Accueil** : logo, bouton JOUER, dock de 5 tuiles (Mondes, Modes, Magasin, Collection, Paramètres),
   solde de pièces.
-- **Pages** : Mondes (bientôt), Modes (Trickshot, Endless, Défis quotidiens, Multijoueur — verrouillés,
+- **Pages** : Mondes (bientôt), Modes à venir (Endless, Course Multijoueur, Créateur de Maps — verrouillés,
   « À venir »), Magasin (onglets et emplacements prêts, catalogue dans `src/menu/shop-data.js`),
   Collection (état vide), Paramètres (musique, effets sonores, vibrations, langue, qualité graphique,
   politique de confidentialité, crédits).
@@ -223,7 +227,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 326 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+npm test                               # 328 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu, publicités, game feel
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)

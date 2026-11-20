@@ -3,8 +3,9 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 20/11/2026 · **Version :** 1.0.0 (build 1) · **Étape en cours :** validation du
-> nouveau son et des nouvelles sensations de jeu (étape 18, game feel) par le porteur du projet ; rien n'est publié.
+> **Dernière mise à jour :** 20/11/2026 · **Version :** 1.0.0 (build 1) · **Étape en cours :** validation de la
+> page « Modes à venir » (étape 19 : Endless, Course Multijoueur, Créateur de Maps, présentés seulement) par le
+> porteur du projet ; rien n'est publié.
 
 ## Sommaire
 
@@ -218,7 +219,8 @@ Le moteur gère aussi, sans qu'il soit utilisé dans les niveaux actuels : le **
 
 Voir aussi [Idées futures](#8-idées-futures).
 - Nouveaux éléments : surfaces collantes, interrupteurs à minuterie, paniers mobiles.
-- Modes : Trickshot, Endless, Défis quotidiens, Multijoueur.
+- Modes prévus (présentés dans le menu, pas encore développés) : **Endless**, **Course Multijoueur**,
+  **Créateur de Maps** — voir [Modes à venir](#modes-à-venir-étape-19).
 - Nouveaux articles de boutique (saisons, événements).
 
 ---
@@ -401,7 +403,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 |---|---|
 | `main.js` | Menu : navigation (avec le bouton retour d'Android), effet de pression des boutons, sons, vibrations, réglages appliqués en direct, fenêtres, lancement de la partie ; niveau à reprendre sous JOUER et progression sur les tuiles ; rafraîchissement au retour de la boutique ou d'une partie. |
 | `scene.js` | Décor vivant du menu (salle de basket la nuit, projecteurs, parquet verni, panier, ballon qui rebondit, poussières, parallaxe), avec 3 niveaux de qualité. |
-| `pages.js` | Contenu HTML des pages statiques Modes et Paramètres. |
+| `pages.js` | Contenu HTML des pages statiques « Modes à venir » (3 cartes illustrées en SVG animé) et Paramètres. |
 | `worlds-view.js` | Page Mondes : 5 cartes de mondes (illustration, progression, cadenas et condition), animation de déblocage, grille des 10 niveaux, lancement de n'importe quel niveau débloqué. |
 | `collection-view.js` | Page Collection : articles possédés par catégorie, aperçu animé, Équiper / Déséquiper, badge « Équipé ». |
 | `live-views.js` | Pages Récompense quotidienne (calendrier de 7 jours), Missions (3 par jour) et Succès (4 paliers), pastilles de l'accueil. |
@@ -518,7 +520,7 @@ et recule légèrement quand une page est ouverte.
 | Page | Contenu |
 |---|---|
 | **Mondes** (étape 11) | Vraie **sélection des mondes**, puis des niveaux — voir [Sélection des mondes](#sélection-des-mondes-et-des-niveaux-indexhtmlmondes). |
-| Modes | 4 cartes verrouillées « À venir » : Trickshot, Endless, Défis quotidiens, Multijoueur. Toucher une carte : tremblement + message. |
+| Modes à venir | 3 cartes de présentation verrouillées « 🔒 À venir » : Endless, Course Multijoueur, Créateur de Maps (étape 19, voir plus bas). Toucher une carte : tremblement, cadenas qui bascule, son sourd, message. |
 | Magasin | La tuile ouvre la boutique (`shop.html`). |
 | **Collection** (étape 11) | Tous les articles possédés, aperçu, Équiper / Déséquiper — voir [Collection](#collection-indexhtmlcollection). |
 | **Récompense quotidienne** (étape 12) | Calendrier de 7 jours — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
@@ -724,6 +726,27 @@ a deux colonnes, qui restent côte à côte sur téléphone en paysage.
 - **Compléter** : tout se fait dans `src/shared/about.js` :
   - un crédit = un bloc à copier (rôle et précision en FR / EN / ES, noms, icône) ;
   - un lien = une adresse dans `LINKS` (`privacy`, `terms`).
+
+### Modes à venir (étape 19)
+
+Page **« Modes à venir »** (tuile *Modes* de l'accueil, `index.html#modes`). Elle **présente** les futurs modes ;
+**aucun n'est développé** ni jouable. Code : `modesPage()` dans `src/menu/pages.js`, styles `.fmode*` et `.m-*`
+dans `css/menu.css`, textes `mode.<id>` et `mode.<id>.desc` dans `src/menu/i18n.js` (FR / EN / ES).
+
+| Carte | Titre | Description | Illustration animée | Couleur |
+|---|---|---|---|---|
+| `endless` | 🌊 Endless | « Un défi sans fin. Va le plus loin possible et bats ton meilleur score. » | ciel de nuit, vagues sur trois plans et plateformes qui **défilent sans fin**, pièces, ballon qui court avec traînée, compteur « 2 480 m », grand ∞ lumineux | bleu |
+| `race` | 🏁 Course Multijoueur | « Affronte tes amis dans des courses folles jusqu'au panier. » | **trois ballons** (orange, cyan, violet) qui **se dépassent** sur une piste qui défile, traits de vitesse, ligne d'arrivée à damier, panier, **classement** en direct (barres qui bougent), projecteurs | rose-rouge |
+| `creator` | 🛠️ Créateur de Maps | « Crée tes propres niveaux et joue avec tes amis. » | plan **quadrillé**, **barre d'outils** (bloc, pics, panier, gomme), **curseur** qui pose une **plateforme** (contour en pointillés puis bloc qui tombe en place), pics, panier, ballon | menthe |
+
+**Style** : carte premium (dégradé de la couleur du mode, bord lumineux, ombre), illustration en haut (cadrage
+320 × 150 conservé), **cadenas** en haut à droite, pastille **« 🔒 À venir »** qui respire, **reflet** qui balaie
+l'illustration de temps en temps, entrée en cascade à l'ouverture de la page, carte qui se soulève au survol.
+Animations uniquement en `transform` / `opacity`, **mises en pause quand la page est fermée**, coupées si le
+système demande moins d'animations. 3 colonnes en paysage (1 seule sur un écran très étroit).
+
+**Pour ouvrir un mode dans une future mise à jour** : retirer `data-locked` de sa carte, lui donner une
+destination (page ou `play.html?mode=…`), remplacer la pastille « À venir » par « Jouer ».
 
 ### Ancienne carte des mondes (`worlds.html`)
 
@@ -1164,9 +1187,10 @@ Dans le navigateur, une annonce de test simulée remplace AdMob ; `?ads=none` si
 
 ### Le déblocage des modes
 
-🔴 **Pas encore défini.** Les 4 modes sont affichés « À venir » dans le menu. Proposition à valider :
-Trickshot après le monde 1, Endless après le monde 2, Défis quotidiens après 30 étoiles, Multijoueur dans une
-mise à jour dédiée.
+🔴 **Pas encore défini.** Les 3 modes prévus (Endless, Course Multijoueur, Créateur de Maps) sont affichés
+« À venir » dans le menu (étape 19) ; aucun n'est développé. Proposition à valider le moment venu : Endless après
+le monde 2, Course Multijoueur et Créateur de Maps dans des mises à jour dédiées (elles demandent un serveur pour
+jouer et partager entre amis).
 
 ### La boutique (`shop.html`) — économie de collection (étape 17)
 
@@ -1474,11 +1498,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Caméra : impulsions, regard vers le bas, plan d'ouverture, ralentis progressifs, mouvements réduits
 - 🟡 Validation par le porteur du projet ; essai au casque et sur haut-parleur de téléphone
 
-### Phase 7 — Modes de jeu 🔴
-- 🔴 Trickshot
-- 🔴 Endless
-- 🔴 Défis quotidiens
-- 🔴 Multijoueur
+### Phase 7 — Modes de jeu 🟡
+- ✅ Page « Modes à venir » : 3 cartes de présentation illustrées et animées, verrouillées (étape 19)
+- 🔴 **Endless** : course infinie (passages générés à la suite), distance et meilleur score
+- 🔴 **Course Multijoueur** : plusieurs ballons sur le même parcours jusqu'au panier, classement (temps réel ou
+  fantômes asynchrones ; demande un serveur)
+- 🔴 **Créateur de Maps** : éditeur de niveaux (plateformes, obstacles, panier), essai, partage avec les amis
+  (demande un format de niveau partageable et un serveur)
 
 ### Phase 8 — Android 🟡
 - ✅ Projet Capacitor 8 (`android/`) : identifiant `com.echospeed.hoopbounce`, version 1.0.0 (build 1), SDK 36
@@ -1525,6 +1551,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Publicités récompensées facultatives (AdMob) : doubler les pièces, reprendre au drapeau, coffre bonus,
   roue de la chance ; page Bonus du jour (étape 13)
 - ✅ Écran de chargement (logo, signature EchoSpeed, ballon, particules, barre, fondu vers le menu) (étape 14)
+- ✅ Page « Modes à venir » (étape 19) : Endless, Course Multijoueur, Créateur de Maps (présentation seulement)
 - ✅ Son et sensations (étape 18) : identité sonore, sons des surfaces et du roulement, musique dynamique,
   jingles, ambiances, retours des grands moments, effets des mondes, caméra
 - ✅ Nouvelle économie de la boutique (étape 17) : prix par rareté, 20 nouveaux objets, album de collection
@@ -1534,7 +1561,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur le son et les sensations (étape 18)
+- 🟡 Attente des retours du porteur du projet sur la page « Modes à venir » (étape 19) et sur le son et les
+  sensations (étape 18)
 - 🟡 Décision en attente (étape 17) : pondérer les objets tirés des coffres et de la roue
 
 ### À faire — court terme 🔴
@@ -1558,7 +1586,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 🔴 Accessibilité : taille des boutons réglable, inversion gauche / droite pour les gauchers
 
 ### À faire — long terme 🔴
-- 🔴 Modes Trickshot, Endless, Défis quotidiens, Multijoueur
+- 🔴 Développer les modes présentés dans « Modes à venir » : Endless, Course Multijoueur, Créateur de Maps
 - 🔴 Emballage Android (Capacitor), tests sur appareils, publication Play Store
 - 🔴 Sauvegarde dans le cloud (Google Play Games)
 
@@ -1577,11 +1605,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - Bonus « tir parfait » : marquer sans toucher le cercle (« swish ») rapporte plus.
 - Ralenti « bullet time » au-dessus du panier.
 
-**Modes**
-- Trickshot : marquer depuis des positions imposées, avec des rebonds sur les murs.
-- Endless : niveaux générés à l'infini, score croissant.
-- Défis quotidiens : un niveau par jour, classement.
-- Multijoueur : course au panier en temps réel ou fantômes asynchrones.
+**Modes** (les trois premiers sont annoncés dans le menu depuis l'étape 19)
+- **Endless** : passages générés à l'infini à partir des briques des 50 niveaux, difficulté qui monte, distance et
+  meilleur score, pièces en route.
+- **Course Multijoueur** : course au panier contre des amis, en temps réel ou contre leurs fantômes enregistrés ;
+  classement à l'arrivée.
+- **Créateur de Maps** : poser plateformes, obstacles et panier sur une grille, tester son niveau, le partager par
+  un code ; les niveaux utilisent le même format que les 50 niveaux du jeu (`src/game/levels/`).
+- Idées retirées de la page (gardées pour plus tard) : Trickshot (marquer depuis des positions imposées, avec des
+  rebonds sur les murs), Défis quotidiens (un niveau par jour, classement).
 - Contre-la-montre avec fantôme de son meilleur passage.
 
 **Personnalisation**
@@ -1732,6 +1764,23 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 20/11/2026 — Étape 19 : page « Modes à venir » (v1.0.0)
+- **Ajouté** :
+  - **3 cartes de présentation** dans le menu (`index.html#modes`), toutes verrouillées « 🔒 À venir » :
+    🌊 **Endless**, 🏁 **Course Multijoueur**, 🛠️ **Créateur de Maps**, avec les descriptions demandées ;
+  - une **illustration animée** par carte (SVG intégré + animations CSS) : défilement infini au-dessus des vagues ;
+    trois ballons qui se dépassent avec classement en direct ; curseur qui pose une plateforme sur un plan
+    quadrillé avec barre d'outils ;
+  - style premium : couleur par mode, bord lumineux, cadenas qui bascule au toucher, pastille qui respire, reflet
+    qui balaie l'illustration, entrée en cascade, carte qui se soulève au survol ;
+  - textes FR / EN / ES ; 2 tests (`tests/modes.test.mjs`).
+- **Modifié** :
+  - la page s'appelle « Modes à venir » (« Coming modes », « Próximos modos ») ;
+  - les anciennes cartes Trickshot et Défis quotidiens sont retirées (idées gardées dans « Idées futures ») ;
+  - roadmap, tâches et idées futures : les modes prévus sont Endless, Course Multijoueur, Créateur de Maps.
+- **Non fait, volontairement** : aucun des trois modes n'est développé (interface seulement).
+- **Reste à faire** : retours du porteur du projet.
 
 ### 20/11/2026 — Étape 18 : son et sensations de jeu (game feel) (v1.0.0)
 - **Ajouté** :
