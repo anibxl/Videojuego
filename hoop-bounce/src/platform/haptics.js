@@ -35,4 +35,20 @@ export class Haptics {
   success() {
     this._vibrate([18, 50, 28], 0);
   }
+
+  /** Appui sur REBOND en l'air (dribble) : un tic à peine perceptible, confirme l'appui. */
+  tap() {
+    this._vibrate(5, 25);
+  }
+
+  /** Rebond : plus la puissance est haute, plus la vibration est franche. */
+  bounce(level) {
+    if (level >= 5) this._vibrate([16, 28, 10], 0);
+    else this._vibrate(level >= 4 ? 13 : 8, 30);
+  }
+
+  /** Panier : petite fanfare de vibrations, plus riche pour un panier parfait. */
+  goal(perfect) {
+    this._vibrate(perfect ? [20, 40, 26, 40, 42] : [18, 50, 28], 0);
+  }
 }

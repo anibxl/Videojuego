@@ -934,3 +934,70 @@ body.intro-open .controls {
   .ad-btn .ad-ico { font-size: 19px; }
   .fail-body { margin-bottom: 10px; }
 }
+
+/* ── Étape 18 : game feel ────────────────────────────────────────────── */
+
+/* Confettis de victoire : par-dessus l'écran de victoire, sous le fondu */
+.confetti {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 12;
+  pointer-events: none;
+}
+
+/* Bouton REBOND : onde lumineuse à chaque appui, couleur selon la puissance */
+.bounce::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  opacity: 0;
+  pointer-events: none;
+}
+.bounce.hit::after { animation: pad-ripple 0.38s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.bounce[data-hit='0'].hit::after { border-color: rgba(255, 255, 255, 0.35); animation-duration: 0.25s; }
+.bounce[data-hit='4'].hit::after { border-color: var(--amber); }
+.bounce[data-hit='5'].hit::after { border-color: var(--gold); border-width: 4px; animation-duration: 0.5s; }
+.bounce[data-hit='5'].hit { box-shadow: 0 0 34px rgba(255, 214, 90, 0.45); }
+
+@keyframes pad-ripple {
+  0% { transform: scale(0.9); opacity: 0.95; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+
+/* Anneau de puissance : chaque segment qui s'allume « claque » */
+.ring path.on { animation: seg-pop 0.28s ease-out; }
+.ring path.warn { animation: blink 0.25s steps(2) infinite; }
+@keyframes seg-pop {
+  0% { stroke-width: 10; }
+  100% { stroke-width: 5; }
+}
+
+/* Écran de victoire, panier parfait : halo doré qui respire, titre qui brille */
+#win.perfect .win-card {
+  box-shadow: 0 0 0 1px rgba(255, 214, 90, 0.35), 0 0 70px rgba(255, 196, 70, 0.35), 0 30px 80px rgba(0, 0, 0, 0.5);
+  animation: perfect-glow 2.4s 0.6s ease-in-out infinite;
+}
+#win.perfect h1 {
+  background: linear-gradient(100deg, #ffd65a 20%, #fff6d0 45%, #ffd65a 70%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: title-shine 2.2s 0.5s ease-in-out infinite;
+}
+@keyframes perfect-glow {
+  50% { box-shadow: 0 0 0 1px rgba(255, 214, 90, 0.5), 0 0 95px rgba(255, 196, 70, 0.5), 0 30px 80px rgba(0, 0, 0, 0.5); }
+}
+@keyframes title-shine {
+  0% { background-position: 120% 0; }
+  60%, 100% { background-position: -20% 0; }
+}
+.win-stars .star.on { filter: drop-shadow(0 0 10px rgba(255, 214, 90, 0.55)); }
+
+@media (prefers-reduced-motion: reduce) {
+  #win.perfect .win-card, #win.perfect h1 { animation: none; }
+}

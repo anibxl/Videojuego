@@ -151,6 +151,8 @@ export class WorldsView {
       }
     }
     if (best === this.focus && this.cards[best].el.classList.contains('focus')) return;
+    // Changement de monde sous le doigt : petit « tic » de sélection (pas pendant le recentrage auto)
+    if (best !== this.focus && performance.now() > (this._quietUntil ?? 0)) this.env.sound.select?.(best);
     this.focus = best;
     for (const c of this.cards) c.el.classList.toggle('focus', c.index === best);
   }
@@ -173,6 +175,7 @@ export class WorldsView {
 
   /** La page s'ouvre : on recentre sur le monde à jouer et on joue les déblocages en attente. */
   async onShow(worldId = null) {
+    this._quietUntil = performance.now() + 700;
     this.active = true;
     this.render(); // progression relue : elle a pu changer depuis le dernier affichage
     const asked = WORLDS.findIndex((w) => w.id === worldId);
@@ -197,6 +200,7 @@ export class WorldsView {
   scrollTo(i, smooth = true) {
     const c = this.cards[i]?.el;
     if (!c) return;
+    this._quietUntil = performance.now() + 700; // défilement automatique : pas de « tic »
     this.track.scrollTo({ left: c.offsetLeft + c.offsetWidth / 2 - this.track.clientWidth / 2, behavior: smooth ? 'smooth' : 'auto' });
   }
 

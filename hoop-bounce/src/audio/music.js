@@ -6,6 +6,21 @@
 // à chaque image : aucun minuteur, et rien ne joue quand le jeu est en arrière-plan.
 //
 // Partage le contexte audio des effets sonores (une seule AudioContext pour tout le jeu).
+//
+// Étape 18 :
+//  - forme en 8 mesures : A (thème) puis B (variation de la mélodie, percussions en plus) et un
+//    petit roulement de batterie à la fin de chaque cycle — la boucle ne lasse plus ;
+//  - **intensité dynamique** : une couche de percussions et de contre-chant qui monte quand on
+//    joue vite et fort (puissance, vitesse) et redescend au calme ou en pause ;
+//  - réverbération propre à chaque monde (la musique respire, elle n'est plus « sèche ») ;
+//  - **jingles** de victoire, de panier parfait et d'échec, joués dans l'instrument et la tonalité
+//    du monde, sur le motif du rebond (identité sonore du jeu, voir ui-voice.js) ;
+//  - ambiances enrichies (terrain de basket et train au loin en ville, sifflement du vent à la
+//    montagne, lave qui glougloute et grondements au volcan, grillons et grenouilles en forêt,
+//    pulsars et scintillements dans l'espace). Les grondements sont signalés au jeu (`onAmbient`)
+//    pour que l'image tremble avec eux.
+
+import { BOUNCE_MOTIF, makeImpulse } from './ui-voice.js';
 
 const LOOKAHEAD = 0.3; // s programmées à l'avance
 const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
@@ -21,6 +36,10 @@ export const SONGS = {
     keys: { inst: 'epiano', steps: [0, 7, 10] },
     lead: { inst: 'pluck', steps: [2, 6, 11, 14], pattern: [3, 2, 1, 2] },
     drums: { kick: [0, 7, 10], snare: [4, 12], hat: [0, 2, 4, 6, 8, 10, 12, 14] },
+    leadB: { steps: [0, 3, 6, 8, 10, 14], pattern: [3, 2, 3, 1, 2, 0] },
+    layer: { hat: [1, 3, 5, 7, 9, 11, 13, 15], shaker: [2, 6, 10, 14], counter: { inst: 'pluck', steps: [3, 11], octave: 12 } },
+    key: { root: 72, scale: 'major', inst: 'epiano' },
+    verb: { len: 1.8, decay: 3, send: 0.22 },
     gain: 0.5,
   },
   // Neige : boîte à musique et nappes froides, lent et cristallin
@@ -32,6 +51,10 @@ export const SONGS = {
     pad: true,
     lead: { inst: 'bell', steps: [0, 3, 6, 8, 11, 14], pattern: [0, 2, 3, 1, 2, 3], octave: 12 },
     drums: { shaker: [4, 12] },
+    leadB: { steps: [0, 2, 4, 8, 10, 12], pattern: [3, 2, 1, 3, 2, 0] },
+    layer: { shaker: [2, 6, 10, 14], kick: [0, 8], counter: { inst: 'bell', steps: [6, 14], octave: 24 } },
+    key: { root: 72, scale: 'major', inst: 'bell' },
+    verb: { len: 3.2, decay: 2.6, send: 0.38 },
     gain: 0.45,
   },
   // Volcan : tambours graves et basse menaçante, mode phrygien
@@ -43,6 +66,10 @@ export const SONGS = {
     bassInst: 'growl',
     lead: { inst: 'brass', steps: [0, 10], pattern: [3, 2], octave: -12 },
     drums: { tom: [0, 3, 6, 8, 11, 14], kick: [0, 8], hat: [4, 12] },
+    leadB: { steps: [0, 6, 10, 12], pattern: [3, 2, 1, 3] },
+    layer: { hat: [2, 6, 10, 14], tom: [5, 13], snare: [12] },
+    key: { root: 64, scale: 'minor', inst: 'brass' },
+    verb: { len: 2.6, decay: 2.4, send: 0.26 },
     gain: 0.5,
   },
   // Forêt : marimba, flûte douce, pentatonique et léger shaker — reposant
@@ -54,6 +81,10 @@ export const SONGS = {
     keys: { inst: 'marimba', steps: [0, 3, 6, 8, 10, 13], arp: true },
     lead: { inst: 'flute', steps: [0, 8], pattern: [3, 1], octave: 12, long: true },
     drums: { shaker: [2, 6, 10, 14], kick: [0, 8] },
+    leadB: { steps: [0, 4, 8, 12], pattern: [3, 2, 1, 2] },
+    layer: { hat: [0, 4, 8, 12], snare: [4, 12], counter: { inst: 'marimba', steps: [1, 5, 9, 13], octave: 12 } },
+    key: { root: 74, scale: 'major', inst: 'marimba' },
+    verb: { len: 1.6, decay: 3.2, send: 0.2 },
     gain: 0.45,
   },
   // Espace : nappes de synthé qui respirent, arpège lumineux, sous-basse
@@ -66,6 +97,11 @@ export const SONGS = {
     pad: true,
     keys: { inst: 'arp', steps: [0, 2, 4, 6, 8, 10, 12, 14], arp: true, octave: 12 },
     drums: { kick: [0], hat: [8] },
+    lead: { inst: 'bell', steps: [0, 6], pattern: [3, 2], octave: 12 },
+    leadB: { steps: [0, 4, 6, 10], pattern: [3, 1, 2, 3] },
+    layer: { kick: [8], hat: [2, 6, 10, 14], shaker: [4, 12] },
+    key: { root: 72, scale: 'minor', inst: 'arp' },
+    verb: { len: 4.5, decay: 1.8, send: 0.42 },
     gain: 0.45,
   },
 };
@@ -83,6 +119,9 @@ export class Music {
     this._step = 0;
     this._ambience = null;
     this._ambTimer = 0;
+    this.intensity = 0;
+    /** Appelé lors des grondements d'ambiance (le jeu fait trembler l'image). */
+    this.onAmbient = null;
   }
 
   get ctx() {
@@ -108,7 +147,36 @@ export class Music {
     this.ambBus = c.createGain();
     this.ambBus.gain.value = 0;
     this.ambBus.connect(this.out);
+    // Couche d'intensité (percussions et contre-chant en plus quand l'action monte)
+    this.layerBus = c.createGain();
+    this.layerBus.gain.value = 0;
+    this.layerBus.connect(this.bus);
+    // Réverbération de la musique (une par monde)
+    this.verb = c.createConvolver();
+    this.verbSend = c.createGain();
+    this.verbSend.gain.value = 0.2;
+    this.tone.connect(this.verbSend).connect(this.verb).connect(this.out);
+    // Jingles : à part, pour ne pas être baissés avec la musique pendant la victoire
+    this.stingBus = c.createGain();
+    this.stingBus.gain.value = this._stingGain();
+    const sverb = c.createGain();
+    sverb.gain.value = 0.3;
+    this.stingBus.connect(comp);
+    this.stingBus.connect(sverb).connect(this.verb);
     return true;
+  }
+
+  _stingGain() {
+    return 0.9 * this.volume * this.volume;
+  }
+
+  /**
+   * Intensité de la partie (0 calme … 1 action) : la couche de percussions et de contre-chant suit,
+   * doucement (plusieurs secondes), pour ne jamais faire « sauter » la musique.
+   */
+  setIntensity(k) {
+    this.intensity = Math.max(0, Math.min(1, k));
+    if (this.layerBus) this.layerBus.gain.setTargetAtTime(this.intensity, this.ctx.currentTime, 1.4);
   }
 
   _targetGain() {
@@ -119,6 +187,7 @@ export class Music {
   setVolume(v) {
     this.volume = v;
     if (this.out) this.out.gain.setTargetAtTime(this._targetGain(), this.ctx.currentTime, 0.1);
+    if (this.stingBus) this.stingBus.gain.setTargetAtTime(this._stingGain(), this.ctx.currentTime, 0.1);
   }
 
   /** Baisse la musique (pause, victoire) : k = 1 normal, 0.35 en pause. */
@@ -142,6 +211,9 @@ export class Music {
     this.ambBus.gain.linearRampToValueAtTime(0, now + 0.6);
     this._stopAmbience(now + 0.65);
     this.song = SONGS[theme] ?? SONGS.city;
+    const v = this.song.verb ?? { len: 2, decay: 3, send: 0.2 };
+    this.verb.buffer = makeImpulse(c, v.len, v.decay, { tone: 0.4 });
+    this.verbSend.gain.setValueAtTime(v.send, now);
     this._nextTime = now + 0.7;
     this._step = 0;
     this.bus.gain.linearRampToValueAtTime(this.song.gain, now + 1.6);
@@ -166,7 +238,7 @@ export class Music {
       const swing = this._step % 2 === 1 ? this.song.swing * stepDur : 0;
       this._playStep(this._step, this._nextTime + swing, stepDur);
       this._nextTime += stepDur;
-      this._step = (this._step + 1) % 64;
+      this._step = (this._step + 1) % 128;
     }
     this._updateAmbience();
   }
@@ -177,6 +249,8 @@ export class Music {
     const s = step % 16;
     const chord = S.chords[bar % S.chords.length];
     const root = chord[0];
+    const partB = bar >= 4; // mesures 5 à 8 : variation
+    const fill = bar === 7 && s >= 12; // fin du cycle : petit roulement
 
     if (S.pad && s === 0) for (const n of chord) this._pad(mtof(n), t, stepDur * 16);
     if (S.bass && S.bass[s] !== null && S.bass[s] !== undefined) {
@@ -196,16 +270,37 @@ export class Music {
         for (const n of chord) this._inst(k.inst, mtof(n + oct), t, stepDur * 3);
       }
     }
-    if (S.lead && S.lead.steps.includes(s)) {
-      const L = S.lead;
-      const idx = L.steps.indexOf(s);
-      const n = chord[L.pattern[idx % L.pattern.length]] + (L.octave ?? 0) + 12;
-      this._inst(L.inst, mtof(n), t, stepDur * (L.long ? 6 : 2));
+    const LS = partB && S.leadB ? { ...S.lead, ...S.leadB } : S.lead;
+    if (LS && LS.steps.includes(s)) {
+      const idx = LS.steps.indexOf(s);
+      const n = chord[LS.pattern[idx % LS.pattern.length]] + (LS.octave ?? 0) + 12 + (partB && bar === 6 && idx === 0 ? 12 : 0);
+      this._inst(LS.inst, mtof(n), t, stepDur * (LS.long ? 6 : 2));
+    }
+    // Couche d'intensité (passe par layerBus, dont le volume suit l'action)
+    const Y = S.layer;
+    if (Y && this.intensity > 0.02) {
+      const dest = this.layerBus;
+      if (Y.hat?.includes(s)) this._hat(t, 0.025, dest);
+      if (Y.shaker?.includes(s)) this._shaker(t, dest);
+      if (Y.kick?.includes(s)) this._kick(t, dest);
+      if (Y.snare?.includes(s)) this._snare(t, dest);
+      if (Y.tom?.includes(s)) this._tom(t, 0.5, dest);
+      if (Y.counter?.steps.includes(s)) {
+        const idx = Y.counter.steps.indexOf(s);
+        this._inst(Y.counter.inst, mtof(chord[(idx + bar) % chord.length] + (Y.counter.octave ?? 0)), t, stepDur * 2, dest);
+      }
+    }
+    if (fill) {
+      if (S.drums?.tom || S.drums?.snare) this._tom(t, 0.35 + (s - 12) * 0.12);
+      else this._shaker(t);
+      if (s === 15) this._noise(t + stepDur * 0.9, 0.9, 0.025, 'highpass', 6000, 1, 0.01); // cymbale douce
+      return;
     }
     const D = S.drums ?? {};
     if (D.kick?.includes(s)) this._kick(t);
     if (D.snare?.includes(s)) this._snare(t);
     if (D.hat?.includes(s)) this._hat(t, s % 4 === 0 ? 0.05 : 0.03);
+    if (partB && D.kick && s === 14 && !D.kick.includes(14)) this._kick(t);
     if (D.tom?.includes(s)) this._tom(t, s === 0 ? 1 : 0.6);
     if (D.shaker?.includes(s)) this._shaker(t);
   }
@@ -232,18 +327,18 @@ export class Music {
     return o;
   }
 
-  _inst(name, f, t, dur) {
+  _inst(name, f, t, dur, dest = this.bus) {
     switch (name) {
       case 'epiano':
-        this._osc('sine', f, t, dur * 1.4, 0.05, 0.008);
-        this._osc('triangle', f * 2, t, dur * 0.5, 0.012, 0.004);
+        this._osc('sine', f, t, dur * 1.4, 0.05, 0.008, dest);
+        this._osc('triangle', f * 2, t, dur * 0.5, 0.012, 0.004, dest);
         break;
       case 'pluck':
-        this._osc('triangle', f, t, dur * 0.7, 0.045, 0.003);
+        this._osc('triangle', f, t, dur * 0.7, 0.045, 0.003, dest);
         break;
       case 'bell':
-        this._osc('sine', f, t, dur * 3.5, 0.05, 0.002);
-        this._osc('sine', f * 2.76, t, dur * 1.2, 0.014, 0.002);
+        this._osc('sine', f, t, dur * 3.5, 0.05, 0.002, dest);
+        this._osc('sine', f * 2.76, t, dur * 1.2, 0.014, 0.002, dest);
         break;
       case 'brass': {
         const c = this.ctx;
@@ -251,17 +346,17 @@ export class Music {
         f2.type = 'lowpass';
         f2.frequency.setValueAtTime(400, t);
         f2.frequency.linearRampToValueAtTime(1400, t + 0.15);
-        f2.connect(this.bus);
+        f2.connect(dest);
         this._osc('sawtooth', f, t, dur * 2.5, 0.035, 0.06, f2);
         this._osc('sawtooth', f, t, dur * 2.5, 0.025, 0.06, f2, 9);
         break;
       }
       case 'marimba':
-        this._osc('sine', f, t, dur * 0.8, 0.06, 0.002);
-        this._osc('sine', f * 4, t, dur * 0.15, 0.012, 0.001);
+        this._osc('sine', f, t, dur * 0.8, 0.06, 0.002, dest);
+        this._osc('sine', f * 4, t, dur * 0.15, 0.012, 0.001, dest);
         break;
       case 'flute': {
-        const o = this._osc('sine', f, t, dur, 0.035, 0.12);
+        const o = this._osc('sine', f, t, dur, 0.035, 0.12, dest);
         const lfo = this.ctx.createOscillator();
         const lg = this.ctx.createGain();
         lfo.frequency.value = 5;
@@ -272,11 +367,11 @@ export class Music {
         break;
       }
       case 'arp':
-        this._osc('square', f, t, dur * 0.6, 0.012, 0.004);
-        this._osc('sine', f * 2, t, dur * 0.9, 0.012, 0.004);
+        this._osc('square', f, t, dur * 0.6, 0.012, 0.004, dest);
+        this._osc('sine', f * 2, t, dur * 0.9, 0.012, 0.004, dest);
         break;
       default:
-        this._osc('sine', f, t, dur, 0.04);
+        this._osc('sine', f, t, dur, 0.04, 0.01, dest);
     }
   }
 
@@ -323,42 +418,78 @@ export class Music {
     this._osc('sine', f, t, dur, 0.08, 0.005);
   }
 
-  _kick(t) {
+  _kick(t, dest = this.bus) {
     const c = this.ctx;
     const o = c.createOscillator();
     const g = c.createGain();
     o.frequency.setValueAtTime(130, t);
     o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
     this._env(g, t, 0.003, 0.2, 0.22);
-    o.connect(g).connect(this.bus);
+    o.connect(g).connect(dest);
     o.start(t);
     o.stop(t + 0.3);
   }
 
-  _tom(t, v) {
+  _tom(t, v, dest = this.bus) {
     const c = this.ctx;
     const o = c.createOscillator();
     const g = c.createGain();
     o.frequency.setValueAtTime(110, t);
     o.frequency.exponentialRampToValueAtTime(60, t + 0.25);
     this._env(g, t, 0.004, 0.16 * v, 0.35);
-    o.connect(g).connect(this.bus);
+    o.connect(g).connect(dest);
     o.start(t);
     o.stop(t + 0.4);
-    this._noise(t, 0.05, 0.04 * v, 'lowpass', 600);
+    this._noise(t, 0.05, 0.04 * v, 'lowpass', 600, 1, 0.002, dest);
   }
 
-  _snare(t) {
-    this._noise(t, 0.16, 0.07, 'bandpass', 1800, 0.8);
-    this._osc('triangle', 190, t, 0.08, 0.04, 0.002);
+  _snare(t, dest = this.bus) {
+    this._noise(t, 0.16, 0.07, 'bandpass', 1800, 0.8, 0.002, dest);
+    this._osc('triangle', 190, t, 0.08, 0.04, 0.002, dest);
   }
 
-  _hat(t, v) {
-    this._noise(t, 0.04, v, 'highpass', 7000);
+  _hat(t, v, dest = this.bus) {
+    this._noise(t, 0.04, v, 'highpass', 7000, 1, 0.002, dest);
   }
 
-  _shaker(t) {
-    this._noise(t, 0.08, 0.025, 'highpass', 5000, 1, 0.03);
+  _shaker(t, dest = this.bus) {
+    this._noise(t, 0.08, 0.025, 'highpass', 5000, 1, 0.03, dest);
+  }
+
+  // ─── Jingles (victoire, panier parfait, échec) ────────────────────────────
+
+  /**
+   * Jingle dans l'instrument et la tonalité du monde, sur le motif du rebond.
+   * @param {'win'|'perfect'|'fail'} kind
+   */
+  stinger(kind, theme = this.theme) {
+    if (!this._ensureBus() || this.ctx.state !== 'running' || this.volume <= 0) return;
+    const S = SONGS[theme] ?? SONGS.city;
+    const key = S.key ?? { root: 72, scale: 'major', inst: 'bell' };
+    const minor = key.scale === 'minor';
+    const c = this.ctx;
+    const t0 = c.currentTime + 0.05;
+    const dest = this.stingBus;
+    if (kind === 'fail') {
+      // Trois notes qui descendent, douces (jamais punitives)
+      [7, 3, 0].forEach((o, i) => this._inst(key.inst, mtof(key.root - 12 + (minor ? o : [7, 4, 0][i])), t0 + i * 0.22, 0.5, dest));
+      this._osc('sine', mtof(key.root - 36), t0 + 0.44, 1.2, 0.08, 0.02, dest);
+      return;
+    }
+    // Victoire : motif du rebond (do mi sol do mi, ou mineur), accord final, cymbale
+    const steps = minor ? [0, 3, 7, 12, 15] : [0, 4, 7, 12, 16];
+    const span = kind === 'perfect' ? 1 : 1.15;
+    BOUNCE_MOTIF.times.forEach((dt, i) => {
+      const t = t0 + dt * span;
+      this._inst(key.inst, mtof(key.root - 12 + steps[i]), t, i === 4 ? 1.2 : 0.4, dest);
+      if (kind === 'perfect') this._inst('bell', mtof(key.root + steps[i]), t, i === 4 ? 1.4 : 0.4, dest);
+    });
+    const tEnd = t0 + BOUNCE_MOTIF.times[4] * span + 0.18;
+    for (const o of minor ? [0, 3, 7, 12] : [0, 4, 7, 12]) this._osc('triangle', mtof(key.root - 12 + o), tEnd, 1.6, 0.03, 0.05, dest);
+    this._osc('sine', mtof(key.root - 36), tEnd, 1.8, 0.12, 0.01, dest);
+    this._kick(tEnd, dest);
+    this._noise(tEnd, 1.4, 0.04, 'highpass', 6500, 1, 0.005, dest);
+    if (kind === 'perfect') for (let i = 0; i < 8; i++) this._osc('sine', mtof(key.root + 12 + steps[i % 5]), tEnd + 0.1 + i * 0.07, 0.4, 0.012, 0.003, dest);
   }
 
   _noise(t, dur, peak, type, freq, q = 1, attack = 0.002, dest = this.bus) {
@@ -568,6 +699,22 @@ const AMBIENT_EVENTS = {
         this._glide('triangle', 980, 700, t + i * 0.9 + 0.45, 0.45, 0.004);
       }
     }],
+    // Terrain de basket au loin : quelques dribbles qui résonnent entre les immeubles, un crissement de basket
+    ['court', 12, 26, function (t) {
+      const n = 3 + ((Math.random() * 4) | 0);
+      let tt = t;
+      for (let i = 0; i < n; i++) {
+        this._glide('sine', 150, 70, tt, 0.12, 0.022);
+        this._noise(tt, 0.03, 0.008, 'bandpass', 1800, 1, 0.001, this.ambBus);
+        tt += rnd(0.38, 0.5);
+      }
+      if (Math.random() < 0.6) this._glide('sine', rnd(2400, 3000), rnd(3200, 3800), tt + 0.1, 0.08, 0.004);
+    }],
+    // Train qui passe au loin : grondement et cliquetis des rails
+    ['train', 35, 70, function (t) {
+      this._sweep(t, 6, 0.03, 160, 220, -0.7, 0.7, 0.7, 'lowpass');
+      for (let i = 0; i < 14; i++) this._noise(t + 1.2 + i * 0.26 + (i % 2) * 0.08, 0.03, 0.006, 'bandpass', 900, 3, 0.002, this.ambBus);
+    }],
     // Grésillement d'un néon
     ['neon', 4, 10, function (t) {
       for (let i = 0; i < 3; i++) this._noise(t + i * 0.05, 0.03, 0.006, 'bandpass', 3200, 4, 0.001, this.ambBus);
@@ -579,6 +726,17 @@ const AMBIENT_EVENTS = {
     }],
     ['chime', 1.5, 4.5, function (t) {
       this._osc('sine', rnd(2600, 4100), t, 0.5, 0.006, 0.003, this.ambBus);
+    }],
+    // Le vent siffle sur les crêtes
+    ['whistle', 7, 15, function (t) {
+      const f = rnd(900, 1300);
+      this._glide('sine', f, f * rnd(1.15, 1.4), t, rnd(1.2, 2), 0.006);
+      this._sweep(t, 2, 0.012, f * 2, f * 2.6, rnd(-0.5, 0.5), rnd(-0.5, 0.5), 8);
+    }],
+    // Avalanche très lointaine
+    ['avalanche', 45, 80, function (t) {
+      this._sweep(t, 4, 0.04, 140, 90, -0.3, 0.3, 0.7, 'lowpass');
+      this.onAmbient?.('rumble', 0.25);
     }],
     // Craquement lointain de la glace
     ['creak', 12, 24, function (t) {
@@ -594,10 +752,17 @@ const AMBIENT_EVENTS = {
     ['bubble', 1.5, 4, function (t) {
       this._glide('sine', rnd(180, 260), rnd(60, 90), t, 0.18, 0.03);
     }],
-    // Éruption lointaine : boum sourd
+    // Lave épaisse qui glougloute
+    ['gloop', 2, 5, function (t) {
+      const n = 1 + ((Math.random() * 3) | 0);
+      for (let i = 0; i < n; i++) this._glide('sine', rnd(90, 140), rnd(45, 60), t + i * rnd(0.12, 0.2), 0.22, 0.04);
+      this._noise(t, 0.2, 0.012, 'lowpass', 400, 2, 0.01, this.ambBus);
+    }],
+    // Éruption lointaine : boum sourd (l'image tremble un peu, des cendres tombent)
     ['boom', 14, 26, function (t) {
       this._glide('sine', 70, 32, t, 1.6, 0.09);
       this._noise(t, 1.4, 0.05, 'lowpass', 180, 1, 0.05, this.ambBus);
+      this.onAmbient?.('rumble', 0.5);
     }],
   ],
   forest: [
@@ -616,6 +781,15 @@ const AMBIENT_EVENTS = {
     ['breeze', 6, 12, function (t) {
       this._sweep(t, rnd(2.5, 4), 0.012, 1800, 3200, -0.5, 0.5, 0.8);
     }],
+    // Grillons : petites trilles aiguës
+    ['crickets', 1.2, 3, function (t) {
+      const f = rnd(4200, 4800);
+      for (let i = 0; i < 4; i++) this._osc('sine', f, t + i * 0.045, 0.025, 0.0035, 0.004, this.ambBus);
+    }],
+    // Grenouille près de la rivière
+    ['frog', 10, 22, function (t) {
+      for (let i = 0; i < 2; i++) this._glide('triangle', rnd(150, 180), rnd(110, 130), t + i * 0.28, 0.16, 0.012);
+    }],
   ],
   space: [
     ['beep', 2.5, 6.5, function (t) {
@@ -628,6 +802,15 @@ const AMBIENT_EVENTS = {
     }],
     ['whoosh', 8, 16, function (t) {
       this._sweep(t, rnd(3, 5), 0.02, 200, 1200, rnd(-0.8, 0.8), rnd(-0.8, 0.8), 2, 'lowpass');
+    }],
+    // Pulsar : battements réguliers qui s'éloignent
+    ['pulsar', 16, 28, function (t) {
+      const f = rnd(300, 500);
+      for (let i = 0; i < 6; i++) this._osc('sine', f, t + i * 0.42, 0.25, 0.012 * (1 - i / 7), 0.02, this.ambBus);
+    }],
+    // Scintillement cosmique : accord de cristal très haut
+    ['shimmer', 7, 14, function (t) {
+      for (const [k, m] of [[0, 1], [0.12, 1.5], [0.24, 2]]) this._osc('sine', 1046.5 * m, t + k, 1.4, 0.004, 0.3, this.ambBus);
     }],
   ],
 };

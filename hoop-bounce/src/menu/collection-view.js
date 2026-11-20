@@ -215,16 +215,18 @@ export class CollectionView {
     const tab = e.target.closest('[data-ctab]');
     if (tab) {
       this.tab = tab.dataset.ctab;
-      for (const b of this.root.querySelectorAll('[data-ctab]')) b.setAttribute('aria-selected', String(b === tab));
-      this.env.sound.tab();
+      const tabs = [...this.root.querySelectorAll('[data-ctab]')];
+      for (const b of tabs) b.setAttribute('aria-selected', String(b === tab));
+      this.env.sound.tab(tabs.indexOf(tab));
       this._renderGrid();
       return;
     }
     const item = e.target.closest('.citem');
     if (item) {
       this.selected = item.dataset.item;
-      for (const c of this.root.querySelectorAll('.citem')) c.classList.toggle('selected', c === item);
-      this.env.sound.tab();
+      const items = [...this.root.querySelectorAll('.citem')];
+      for (const c of items) c.classList.toggle('selected', c === item);
+      this.env.sound.select(items.indexOf(item));
       this._renderDetail();
       this._bump(this.root.querySelector('.cv-stage'));
       return;

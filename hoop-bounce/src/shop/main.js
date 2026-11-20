@@ -91,7 +91,7 @@ $('tabs').addEventListener('click', (e) => {
   tab = b.dataset.tab;
   selected = defaultSelection(tab);
   sfx.unlock();
-  sfx.switchOn();
+  sfx.tab([...$('tabs').querySelectorAll('[data-tab]')].indexOf(b));
   render();
 });
 
@@ -130,7 +130,7 @@ $('grid').addEventListener('click', (e) => {
   if (!el) return;
   selected = el.dataset.id;
   sfx.unlock();
-  sfx.switchOn();
+  sfx.select([...$('grid').children].indexOf(el));
   for (const c of $('grid').querySelectorAll('.item')) c.classList.toggle('selected', c === el);
   renderDetail();
 });
@@ -181,7 +181,7 @@ $('d-action').addEventListener('click', () => {
   if (wallet.owns(it.id)) {
     if (wallet.equipped(it.category) === it.id) return;
     wallet.equip(it.id);
-    sfx.switchOn();
+    sfx.equip();
     vibrate(12);
     render();
     return;
@@ -191,7 +191,7 @@ $('d-action').addEventListener('click', () => {
     $('coins').classList.remove('shake');
     void $('coins').offsetWidth;
     $('coins').classList.add('shake');
-    sfx.powerDown();
+    sfx.denied();
     vibrate([10, 40, 10]);
     return;
   }
@@ -200,9 +200,8 @@ $('d-action').addEventListener('click', () => {
   // Épique : rayons violets. Légendaire : rayons dorés, éclats, son et vibration plus forts.
   wallet.equip(it.id);
   rollCoins(wallet.coins + it.price, wallet.coins);
-  sfx.unlockWorld();
+  sfx.buy(it.rarity);
   const big = it.rarity === 'legendary' || it.rarity === 'epic';
-  if (big) setTimeout(() => sfx.bonus?.(), 250);
   vibrate(it.rarity === 'legendary' ? [30, 50, 30, 50, 60] : [20, 40, 30]);
   const burst = $('burst');
   burst.dataset.rarity = it.rarity;

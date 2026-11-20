@@ -3,7 +3,7 @@
 
 import { createRng } from '../core/math.js';
 
-const MAX_PARTICLES = 256;
+const MAX_PARTICLES = 384; // étape 18 : effets de roulement et de décor en plus
 const MAX_TEXTS = 8;
 
 export class Particles {
@@ -230,6 +230,27 @@ export class Particles {
       p.drag = drag;
       p.rot = r() * Math.PI * 2;
       p.vrot = (r() - 0.5) * 10;
+    }
+  }
+
+  /** Petites lueurs qui flottent (lucioles, poussière d'énergie) ; rgb = « r,g,b ». */
+  glow(x, y, count, rgb, { size = 0.2, life = 1.2, speed = 0.8, up = 0.6 } = {}) {
+    const r = this.rng;
+    for (let i = 0; i < count; i++) {
+      const p = this._spawn();
+      p.alive = true;
+      p.kind = 5;
+      p.x = x + (r() - 0.5) * 0.6;
+      p.y = y + r() * 0.3;
+      p.vx = (r() - 0.5) * 2 * speed;
+      p.vy = up * (0.5 + r());
+      p.size = size * (0.6 + r() * 0.7);
+      p.color = rgb;
+      p.life = p.maxLife = life * (0.6 + r() * 0.8);
+      p.gravity = -0.2;
+      p.drag = 1.2;
+      p.rot = 2; // lueur qui scintille (ni nuage, ni éclair)
+      p.vrot = 0;
     }
   }
 

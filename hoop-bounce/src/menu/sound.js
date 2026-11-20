@@ -1,7 +1,10 @@
 // Sons du menu, synthétisés en temps réel (Web Audio) : aucun fichier à charger.
 //  - sons d'interface : courts, doux, jamais agressifs
 //  - musique d'ambiance : nappes d'accords lentes + notes pincées, dans une réverbération
+// La « voix » de l'interface (timbre, gamme, motif du rebond) est partagée avec la boutique et le jeu.
 // Les navigateurs mobiles exigent un geste du joueur avant tout son : `unlock()` au premier toucher.
+
+import { UiVoice, PENTA, BOUNCE_MOTIF } from '../audio/ui-voice.js';
 
 export class MenuSound {
   constructor() {
@@ -41,6 +44,7 @@ export class MenuSound {
       this.musicDry.connect(this.musicBus);
 
       this._noise = this._noiseBuffer();
+      this.voice = new UiVoice(c, this.sfxBus, this._noise);
       this._applyVolumes();
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
@@ -97,155 +101,28 @@ export class MenuSound {
     return b;
   }
 
-  _tone(freq, endFreq, dur, gain, type = 'sine', delay = 0, bus = this.sfxBus) {
-    const c = this.ctx;
-    const t = c.currentTime + delay;
-    const o = c.createOscillator();
-    const g = c.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t);
-    if (endFreq !== freq) o.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(gain, t + 0.006);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(bus);
-    o.start(t);
-    o.stop(t + dur + 0.03);
-  }
+  // ─── Sons d'interface (voix partagée : src/audio/ui-voice.js) ──────────
 
-  _air(dur, gain, from, to, q = 1.2, delay = 0) {
-    const c = this.ctx;
-    const t = c.currentTime + delay;
-    const s = c.createBufferSource();
-    s.buffer = this._noise;
-    const f = c.createBiquadFilter();
-    f.type = 'bandpass';
-    f.Q.value = q;
-    f.frequency.setValueAtTime(from, t);
-    f.frequency.exponentialRampToValueAtTime(to, t + dur);
-    const g = c.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(gain, t + dur * 0.35);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    s.connect(f).connect(g).connect(this.sfxBus);
-    s.start(t, Math.random() * 0.5);
-    s.stop(t + dur + 0.03);
-  }
-
-  // ─── Sons d'interface ───────────────────────────────────────────────────
-
-  /** Toucher un bouton : « pop » rond et bref. */
-  tap() {
-    if (!this._ok) return;
-    this._tone(540, 820, 0.07, 0.16, 'sine');
-    this._tone(1640, 1640, 0.03, 0.025, 'triangle');
-  }
-
-  /** Ouvrir une page : souffle montant + note claire. */
-  open() {
-    if (!this._ok) return;
-    this._air(0.28, 0.06, 500, 2600, 0.9);
-    this._tone(660, 660, 0.18, 0.06, 'triangle', 0.05);
-    this._tone(990, 990, 0.22, 0.045, 'sine', 0.1);
-  }
-
-  /** Revenir : la même chose, en descendant. */
-  back() {
-    if (!this._ok) return;
-    this._air(0.24, 0.05, 2200, 500, 0.9);
-    this._tone(740, 520, 0.14, 0.08, 'sine');
-  }
-
-  toggle(on) {
-    if (!this._ok) return;
-    this._tone(on ? 700 : 520, on ? 1050 : 400, 0.06, 0.12, 'sine');
-  }
-
-  /** Curseur déplacé : petit tic dont la hauteur suit la valeur. */
-  tick(value) {
-    if (!this._ok) return;
-    const now = this.ctx.currentTime;
-    if (now - this._lastTick < 0.045) return;
-    this._lastTick = now;
-    this._tone(500 + value * 700, 500 + value * 700, 0.03, 0.06, 'triangle');
-  }
-
-  tab() {
-    if (!this._ok) return;
-    this._tone(880, 1100, 0.05, 0.08, 'sine');
-  }
-
-  /** Élément verrouillé : son sourd, sans agressivité. */
-  locked() {
-    if (!this._ok) return;
-    this._tone(220, 160, 0.12, 0.14, 'triangle');
-    this._tone(330, 240, 0.08, 0.05, 'sine', 0.05);
-  }
-
-  /** Article équipé : petit carillon brillant. */
-  equip() {
-    if (!this._ok) return;
-    [880, 1318.5, 1760].forEach((f, i) => this._tone(f, f, 0.22, 0.05, 'triangle', i * 0.05));
-    this._air(0.25, 0.03, 2000, 6000, 1.4);
-  }
-
-  /** Monde débloqué : fanfare cristalline qui monte. */
-  unlockWorld() {
-    if (!this._ok) return;
-    this._air(0.9, 0.07, 400, 5000, 0.8);
-    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => this._tone(f, f, 0.7 - i * 0.06, 0.06, 'triangle', i * 0.08));
-  }
-
-  /** Coffre : il tombe (choc sourd) puis grince en tremblant. */
-  chest() {
-    if (!this._ok) return;
-    this._tone(140, 60, 0.25, 0.22, 'sine', 0.35);
-    this._air(0.18, 0.05, 900, 400, 1.2, 0.35);
-    for (let i = 0; i < 4; i++) this._tone(260 + i * 30, 220 + i * 30, 0.06, 0.06, 'triangle', 0.6 + i * 0.1);
-  }
-
-  /** Récompense : éclat de lumière, accord majeur et scintillement. */
-  reward() {
-    if (!this._ok) return;
-    this._air(0.6, 0.08, 600, 6000, 0.8);
-    [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568].forEach((f, i) => this._tone(f, f, 0.5, 0.06, 'triangle', i * 0.06));
-    this._tone(2093, 2093, 0.6, 0.025, 'sine', 0.4);
-  }
-
-  /** Roue de la chance : élan au départ (souffle qui monte). */
-  spin() {
-    if (!this._ok) return;
-    this._air(0.7, 0.07, 300, 2400, 1);
-    this._tone(220, 440, 0.4, 0.05, 'triangle');
-  }
-
-  /** Roue : petit clic quand le pointeur passe une case (plus grave quand elle ralentit). */
-  wheelTick(speed = 1) {
-    if (!this._ok) return;
-    const f = 900 + Math.min(1, speed) * 700;
-    this._tone(f, f * 0.7, 0.035, 0.07, 'square');
-  }
-
-  /** Coffre amélioré : effet de surprise (roulement qui monte puis éclat). */
-  surprise() {
-    if (!this._ok) return;
-    for (let i = 0; i < 10; i++) this._tone(300 + i * 60, 300 + i * 60, 0.05, 0.04, 'triangle', i * 0.05);
-    this._air(0.5, 0.06, 800, 5000, 0.9, 0.45);
-  }
-
-  /** Pluie de pièces : tintements rapides. */
-  coins() {
-    if (!this._ok) return;
-    for (let i = 0; i < 9; i++) this._tone(1800 + ((i * 377) % 900), 2200 + ((i * 377) % 900), 0.08, 0.04, 'sine', 0.1 + i * 0.07);
-  }
-
-  /** JOUER : accord qui monte et grand souffle. */
-  play() {
-    if (!this._ok) return;
-    this._air(0.7, 0.09, 300, 4000, 0.8);
-    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this._tone(f, f, 0.6 - i * 0.05, 0.07, 'triangle', i * 0.06));
-    this._tone(130.8, 98, 0.5, 0.18, 'sine');
-  }
+  tap() { if (this._ok) this.voice.tap(); }
+  open() { if (this._ok) this.voice.open(); }
+  back() { if (this._ok) this.voice.back(); }
+  toggle(on) { if (this._ok) this.voice.toggle(on); }
+  tick(value) { if (this._ok) this.voice.tick(value); }
+  tab(i = 0) { if (this._ok) this.voice.tab(i); }
+  /** Changement de sélection (article, niveau, option). */
+  select(i = 0) { if (this._ok) this.voice.select(i); }
+  locked() { if (this._ok) this.voice.locked(); }
+  equip() { if (this._ok) this.voice.equip(); }
+  unlockWorld() { if (this._ok) this.voice.unlockWorld(); }
+  chest() { if (this._ok) this.voice.chest(); }
+  reward() { if (this._ok) this.voice.reward(); }
+  spin() { if (this._ok) this.voice.spin(); }
+  wheelTick(speed = 1) { if (this._ok) this.voice.wheelTick(speed); }
+  surprise() { if (this._ok) this.voice.surprise(); }
+  coins() { if (this._ok) this.voice.coins(); }
+  coin(i = 0) { if (this._ok) this.voice.coin(i); }
+  mission() { if (this._ok) this.voice.mission(); }
+  play() { if (this._ok) this.voice.play(); }
 
   // ─── Musique d'ambiance ─────────────────────────────────────────────────
 
@@ -268,6 +145,10 @@ export class MenuSound {
           const note = chord[1 + Math.floor(Math.random() * (chord.length - 1))] + 12;
           this._pluck(note, 0.6 + i * 1.5 + Math.random() * 0.4);
         }
+      }
+      // Signature : toutes les 4 mesures, le motif du rebond, très doux, sur l'accord de do
+      if (this._chord % 4 === 2) {
+        BOUNCE_MOTIF.times.forEach((dt, i) => this._pluckHz(PENTA[BOUNCE_MOTIF.notes[i]], 1.2 + dt * 1.6, i === 4 ? 2.6 : 1.4));
       }
       this._chord++;
     };
@@ -317,6 +198,32 @@ export class MenuSound {
     bass.connect(bg).connect(this.musicDry);
     bass.start(t);
     bass.stop(t + dur + 0.05);
+  }
+
+  /** Note pincée à une fréquence donnée (motif du rebond). */
+  _pluckHz(f, delay, len = 1.8) {
+    const c = this.ctx;
+    const t = c.currentTime + delay;
+    const o = c.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = f;
+    const o2 = c.createOscillator();
+    o2.type = 'triangle';
+    o2.frequency.value = f * 2;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.04, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    const g2 = c.createGain();
+    g2.gain.value = 0.15;
+    o.connect(g);
+    o2.connect(g2).connect(g);
+    g.connect(this.reverb);
+    g.connect(this.musicDry);
+    o.start(t);
+    o2.start(t);
+    o.stop(t + len + 0.05);
+    o2.stop(t + len + 0.05);
   }
 
   _pluck(note, delay) {

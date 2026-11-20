@@ -192,6 +192,7 @@ export class Renderer {
       if (s.trail) drawTrail(ctx, s.trail.id, s.trail.pts, s.time, s.ball.r);
       else if (s.ghost) this._drawGhosts(s);
       this._drawShadow(s);
+      this._drawPowerGlow(s);
       this._drawBall(s);
     }
     if (visible(L.hoop.leftX - 1, L.hoop.board.x + 2)) this._drawHoopFront(L.hoop);
@@ -214,8 +215,23 @@ export class Renderer {
       ctx.fillStyle = `rgba(255,248,230,${0.22 * s.goalFlash * s.goalFlash})`;
       ctx.fillRect(0, 0, this.w, this.h);
     }
+    if (s.glow && s.glow.k > 0.01) this._drawScreenGlow(s.glow);
     this._drawTexts(s);
     if (s.debug) this._drawDebugText(s);
+  }
+
+  /** Halo lumineux sur les bords de l'écran (panier parfait : doré). */
+  _drawScreenGlow(g) {
+    const ctx = this.ctx;
+    const { w, h } = this;
+    const r = Math.hypot(w, h) / 2;
+    const grad = ctx.createRadialGradient(w / 2, h / 2, r * 0.45, w / 2, h / 2, r);
+    grad.addColorStop(0, `rgba(${g.rgb},0)`);
+    grad.addColorStop(1, `rgba(${g.rgb},${0.42 * g.k})`);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'source-over';
   }
 
   _glow(color) {
@@ -619,6 +635,23 @@ export class Renderer {
     const h = ball.r * (0.32 + 0.25 * t) * ball.scale;
     ctx.globalAlpha = 0.62 * (1 - t) * (1 - t);
     ctx.drawImage(this.shadowSprite, ball.x - w, surface - h * 0.55, w * 2, h * 2);
+    // Repère d'atterrissage (étape 18) : quand le ballon est haut, l'ombre pâlit ; un petit anneau
+    // discret marque l'endroit où il va retomber (précision des gros rebonds)
+    if (height > 1.6 && s.state === 'playing') {
+      const k = clamp((height - 1.6) / 2.4, 0, 1) * (1 - clamp((height - 7) / 1, 0, 1));
+      const rr = ball.r * (0.75 + 0.15 * Math.sin(s.time * 6));
+      ctx.globalAlpha = 0.42 * k;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 0.035;
+      ctx.beginPath();
+      ctx.ellipse(ball.x, surface + 0.03, rr, rr * 0.22, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 0.25 * k;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(ball.x, surface + 0.03, 0.05, 0.02, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     // Occlusion de contact : petit noyau sombre quand le ballon touche presque
     if (height < 0.5) {
       const k = 1 - height / 0.5;
@@ -637,6 +670,14 @@ export class Renderer {
       const a = age < 12 ? 1 - age / 12 : 0;
       if (a <= 0) continue;
       ctx.globalAlpha = a;
+      if (t.ice) {
+        // Glace : rayure brillante (trait clair et reflet)
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.fillRect(t.x - t.w, t.y + 0.006, t.w * 2, 0.018);
+        ctx.fillStyle = 'rgba(160,220,255,0.35)';
+        ctx.fillRect(t.x - t.w * 0.6, t.y + 0.026, t.w * 1.2, 0.012);
+        continue;
+      }
       ctx.fillStyle = 'rgba(120,150,200,0.38)';
       ctx.beginPath();
       ctx.ellipse(t.x, t.y - 0.02, t.w, 0.045, 0, 0, Math.PI * 2);
@@ -694,6 +735,18 @@ export class Renderer {
     ctx.restore();
     ctx.globalCompositeOperation = 'source-over';
     this._drawGlow(rgb, g.x, g.y, 2.6 + age, 0.9 * k);
+  }
+
+  /** Puissance 4-5 : le ballon s'entoure d'une lueur ambre puis dorée qui pulse (il est « chargé »). */
+  _drawPowerGlow(s) {
+    const lv = s.power?.level ?? 1;
+    if (lv < 4 || s.state !== 'playing') return;
+    const r = s.ball.r * s.ball.scale;
+    const pulse = 0.75 + 0.25 * Math.sin(s.time * (lv >= 5 ? 11 : 7));
+    const rgb = lv >= 5 ? '255,214,90' : '255,170,70';
+    this.ctx.globalCompositeOperation = 'lighter';
+    this._drawGlow(rgb, s.ball.x, s.ball.y, r * (lv >= 5 ? 3.4 : 2.7), (lv >= 5 ? 0.75 : 0.5) * pulse);
+    this.ctx.globalCompositeOperation = 'source-over';
   }
 
   _drawBall(s) {
@@ -804,6 +857,14 @@ export class Renderer {
           const sz = p.size * (1 + (1 - t) * 1.4);
           ctx.globalAlpha = Math.min(1, t * 1.6) * 0.9;
           ctx.drawImage(g, p.x - sz, p.y - sz, sz * 2, sz * 2);
+        } else if (p.rot === 2) {
+          // Luciole : lueur additive qui scintille, apparaît et s'éteint en douceur
+          const flick = 0.65 + 0.35 * Math.sin(p.life * 17 + p.x * 9);
+          const sz = p.size;
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = Math.min(1, t * 2, (1 - t) * 4) * flick;
+          ctx.drawImage(g, p.x - sz, p.y - sz, sz * 2, sz * 2);
+          ctx.globalCompositeOperation = 'source-over';
         } else {
           // Éclair lumineux additif
           const sz = p.size * (0.7 + 0.5 * (1 - t));

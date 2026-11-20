@@ -161,14 +161,16 @@ export const CONFIG = Object.freeze({
     shakeDecay: 2.6,
   }),
 
+  // Déformations visuelles du ballon (aucun effet sur la physique). Étape 18 : ballon plus élastique —
+  // écrasement plus marqué à l'impact, ressort moins amorti (petite oscillation de caoutchouc).
   feel: Object.freeze({
-    squashPerSpeed: 0.013,
-    squashMax: 0.32,
-    squashStiffness: 520,
-    squashDamping: 24,
-    stretchPerSpeed: 0.005,
-    stretchMax: 0.13,
-    bounceSquash: 0.24,
+    squashPerSpeed: 0.015,
+    squashMax: 0.34,
+    squashStiffness: 540,
+    squashDamping: 19,
+    stretchPerSpeed: 0.0055,
+    stretchMax: 0.14,
+    bounceSquash: 0.28,
     impactShakeSpeed: 18,
     deathDelay: 0.8,
     winSlowMo: 0.3,

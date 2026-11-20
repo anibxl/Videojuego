@@ -3,7 +3,12 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 17 (actuelle) :** **économie de collection**. 51 objets (dont 7 ballons à visage), prix de 6 000 à
+**Étape 18 (actuelle) :** **son et sensations de jeu**. Identité sonore commune (le « motif du rebond »),
+voix de chaque surface, roulement, réverbération et stéréo, musique qui s'intensifie avec l'action, jingles de
+victoire par monde ; panier parfait au ralenti avec halo doré, confettis plein écran, poids des atterrissages,
+effets propres à chaque monde, caméra plus naturelle. Les trajectoires (et donc les 50 niveaux) sont inchangées.
+
+**Étape 17 :** **économie de collection**. 51 objets (dont 7 ballons à visage), prix de 6 000 à
 1 000 000 selon la rareté, gains du jeu inchangés ; Collection en album avec les objets verrouillés visibles,
 animations de déblocage épiques et légendaires.
 
@@ -218,8 +223,8 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 316 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
-                                       # panier, progression, niveaux faisables, menu, publicités
+npm test                               # 326 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+                                       # panier, progression, niveaux faisables, menu, publicités, game feel
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)
 node tools/route-check.mjs 0           # vérification rapide : solutions expertes seulement

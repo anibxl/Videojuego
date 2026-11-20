@@ -352,7 +352,7 @@ document.addEventListener('click', (e) => {
     const key = group.dataset.segmented;
     for (const b of $$('[data-value]', group)) b.setAttribute('aria-checked', String(b === option));
     positionIndicator(group);
-    sound.tab();
+    sound.select([...$$('[data-value]', group)].indexOf(option));
     settings.set(key, option.dataset.value);
     return;
   }

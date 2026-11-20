@@ -17,7 +17,10 @@ import { Camera } from './render/camera.js';
 import { BallVisual } from './render/ball-visual.js';
 import { Particles } from './render/particles.js';
 import { Renderer } from './render/renderer.js';
-import { Sfx } from './audio/sfx.js';
+import { Sfx, surfaceOf } from './audio/sfx.js';
+import { TimeFx } from './core/time-fx.js';
+import { WorldFx } from './render/world-fx.js';
+import { Confetti } from './render/confetti.js';
 import { Music } from './audio/music.js';
 import { Haptics } from './platform/haptics.js';
 import { Settings } from './shared/settings.js';
@@ -139,6 +142,20 @@ const particles = new Particles();
 const sfx = new Sfx();
 const music = new Music(sfx);
 const haptics = new Haptics();
+// Game feel (étape 18) : ralentis progressifs, effets propres à chaque monde, confettis de victoire
+const timeFx = new TimeFx();
+const worldFx = new WorldFx(particles);
+const confetti = new Confetti($('confetti'));
+// Moins d'animations demandées par le système : secousses et coups de zoom très atténués
+const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+camera.motionScale = reducedMotion?.matches ? 0.4 : 1;
+reducedMotion?.addEventListener?.('change', (e) => (camera.motionScale = e.matches ? 0.4 : 1));
+// Grondements d'ambiance (éruption, avalanche) : l'image tremble un peu, de la matière tombe
+music.onAmbient = (kind, k) => {
+  if (kind !== 'rumble' || game.state !== 'playing' || state.paused) return;
+  camera.addTrauma(0.12 * k);
+  worldFx.debris(renderer.themeId, camera, Math.round(6 + k * 10));
+};
 sfx.setVolume(settings.get('sfx'));
 music.setVolume(settings.get('music'));
 haptics.enabled = settings.get('vibration');
@@ -215,33 +232,13 @@ function showNextBanner() {
 }
 
 /** Arrêt sur image très bref : donne du poids aux moments forts (éclatement, étoile). */
-let hitStopTimer = 0;
 function hitStop(ms, scale = 0.05) {
-  if (loop.timeScale < 1 && !hitStopTimer) return; // ralenti du panier en cours
-  clearTimeout(hitStopTimer);
-  loop.timeScale = scale;
-  hitStopTimer = setTimeout(() => {
-    hitStopTimer = 0;
-    loop.timeScale = 1;
-  }, ms);
+  timeFx.hitStop(ms / 1000, scale);
 }
 
-/** Matière soulevée à l'impact, selon le monde (neige, braises, feuilles, étincelles). */
+/** Matière soulevée à l'impact, selon le monde et la surface (voir src/render/world-fx.js). */
 function worldImpact(x, y, strength, tag) {
-  const th = renderer.themeId;
-  if (th === 'snow' || tag === 'snow' || tag === 'ice') {
-    particles.puff(x, y, Math.round(2 + strength * 5), '255,255,255', 0.22 + strength * 0.25, 1.6, 0.8);
-    if (tag === 'ice') particles.bits(x, y, Math.round(2 + strength * 5), ['#ffffff', '#d8f1ff'], { speed: 2.4, up: 2.2, gravity: 9, life: 0.45, size: 0.045, kind: 3 });
-  } else if (th === 'volcano') {
-    particles.bits(x, y, Math.round(2 + strength * 7), ['#ffb35c', '#ff7a2a', '#ffd38a'], { speed: 2.2, up: 3.2, gravity: 3.5, life: 0.9, size: 0.04 });
-    if (strength > 0.4) particles.puff(x, y, 2, '90,70,70', 0.35, 1, 0.9);
-  } else if (th === 'forest') {
-    if (tag === 'ground' || tag === 'block' || tag === 'wood' || tag === 'log' || tag === 'branch') particles.bits(x, y, Math.round(1 + strength * 4), ['#7fb24a', '#a8c75a', '#c99a4a'], { speed: 1.8, up: 2.6, gravity: 3, life: 1.1, size: 0.07, kind: 1, drag: 2.5 });
-  } else if (th === 'space') {
-    particles.bits(x, y, Math.round(2 + strength * 6), ['#9fe8ff', '#c8b6ff', '#ffffff'], { speed: 3, up: 1.6, gravity: 1, life: 0.5, size: 0.05, kind: 3 });
-  } else if (strength > 0.35) {
-    particles.bits(x, y, Math.round(strength * 5), ['#ffd38a', '#ffffff'], { speed: 3, up: 2, gravity: 14, life: 0.35, size: 0.035, kind: 3 });
-  }
+  worldFx.impact(renderer.themeId, surfaceOf(tag, renderer.themeId), x, y, strength);
 }
 
 /** Copie du niveau avec ses textes d'aide traduits. */
@@ -327,8 +324,15 @@ const DUST_TAGS = new Set(['ground', 'block', 'mover', 'snow', 'ice', 'rock', 'w
 game.events.on('impact', (e) => {
   const strength = clamp(e.speed / 18, 0, 1);
   visual.onImpact(e.speed, e.nx, e.ny);
-  sfx.impact(e.speed, e.tag);
+  sfx.impact(e.speed, e.tag, e.x);
   haptics.impact(strength);
+  // Gros atterrissage : l'image encaisse le poids du ballon (elle s'enfonce puis revient)
+  if (e.ny > 0.5 && e.speed > 11 && game.state === 'playing' && DUST_TAGS.has(e.tag)) {
+    const k = clamp((e.speed - 11) / 12, 0, 1);
+    camera.impulse(0, -(0.9 + 2.2 * k));
+    particles.ring(e.x, e.y + 0.02, 0.7 + k * 0.9, `rgba(${worldFx.tint(renderer.themeId)},${0.45 + 0.4 * k})`, 0.35 + 0.15 * k);
+    if (k > 0.55) worldFx.debris(renderer.themeId, camera, Math.round(3 + k * 6));
+  }
   if (e.tag === 'rim' || e.tag === 'backboard') state.lastRimTime = game.time;
   if (e.speed > 5 && DUST_TAGS.has(e.tag)) {
     particles.dust(e.x, e.y, e.nx, e.ny, strength, e.tag === 'snow' || e.tag === 'ice' ? 'rgba(255,255,255,0.85)' : renderer.theme.surface.dust);
@@ -343,9 +347,10 @@ game.events.on('impact', (e) => {
 game.events.on('bounce', (e) => {
   stats.add('bounces', 1, false);
   visual.onBounce();
-  sfx.bounce(e.level);
-  haptics.light();
+  sfx.bounce(e.level, e.x);
+  haptics.bounce(e.level);
   state.sinceBounce = 0;
+  padHit(e.level);
   const color = e.level >= MAX_LEVEL ? 'rgba(255,214,90,0.95)' : e.level >= 4 ? 'rgba(255,181,71,0.9)' : 'rgba(255,255,255,0.8)';
   if (!bounceEffect(fx, look.bounce, e.x, e.y - R * 0.95, e.level)) particles.ring(e.x, e.y - R * 0.95, 0.35 + e.level * 0.1, color, 0.3 + e.level * 0.03);
   particles.dust(e.x, e.y - R, 0, 1, 0.15 + e.level * 0.1);
@@ -355,18 +360,31 @@ game.events.on('bounce', (e) => {
     particles.flash(e.x, e.y - R * 0.9, 0.6 + e.level * 0.25, rgb, 0.16 + e.level * 0.02);
     particles.streaks(e.x, e.y - R * 0.95, 0, 1, 2 + e.level * 2, 5 + e.level * 1.5, `rgba(${rgb},0.95)`);
   }
+  if (e.level === MAX_LEVEL - 1) {
+    camera.kick(-0.02);
+    camera.addTrauma(0.06);
+    camera.impulse(0, -0.8);
+  }
   if (e.level >= MAX_LEVEL) {
-    camera.addTrauma(0.16);
+    // Pleine puissance : onde au sol, matière du monde projetée, secousse, coup de zoom, arrêt bref
+    camera.addTrauma(0.2);
     camera.kick(-0.05);
+    camera.impulse(0, -1.6);
     particles.ring(e.x, e.y - R * 0.95, 1.6, 'rgba(255,214,90,0.6)', 0.45);
+    particles.ring(e.x, e.y - R * 0.95, 2.6, 'rgba(255,214,90,0.28)', 0.6);
+    worldFx.burst(renderer.themeId, e.x, e.y - R * 0.95);
+    hitStop(35, 0.25);
   }
   state.tutoBounces++;
   updateTutorial();
 });
 
-game.events.on('slam', () => {
-  sfx.slam();
+game.events.on('slam', (e) => {
+  sfx.slam(e.x);
   visual.onSlam();
+  haptics.tap();
+  padHit(0);
+  particles.streaks(e.x, e.y + R * 0.6, 0, 1, 3, 3.5, 'rgba(255,255,255,0.55)');
 });
 
 game.events.on('powerDown', () => sfx.powerDown());
@@ -479,9 +497,10 @@ game.events.on('gravityFlip', (e) => {
 });
 
 game.events.on('star', (e) => {
-  sfx.star(e.count);
+  sfx.star(e.count, e.x);
   haptics.success();
   particles.sparkle(e.x, e.y, 18);
+  particles.streaks(e.x, e.y, 0, 1, 8, 6, 'rgba(255,224,120,0.9)');
   particles.ring(e.x, e.y, 0.8, 'rgba(255,214,90,0.9)', 0.4);
   particles.flash(e.x, e.y, 1.6, '255,214,90', 0.3);
   camera.kick(0.025);
@@ -511,6 +530,9 @@ game.events.on('death', (e) => {
 game.events.on('respawn', (e) => {
   visual.reset();
   state.sinceRespawn = 0;
+  sfx.spawn();
+  particles.ring(e.x, e.y, 0.9, 'rgba(255,255,255,0.7)', 0.4);
+  particles.sparkle(e.x, e.y, 8, '#ffffff', 2);
   state.groundY = e.y - R;
   ui.stars.forEach((s) => s.classList.remove('on'));
 });
@@ -528,16 +550,22 @@ game.events.on('win', (e) => {
   particles.text(e.x - 1.2, e.y + 2.2, gt(lang, swish ? 'popup.swish' : 'popup.score'), swish ? '#ffd65a' : '#ffffff', 1.15);
   sfx.win(swish);
   music.setDuck(0.45);
-  haptics.success();
-  // Effet de caméra : ralenti, léger zoom sur le panier, secousse
-  camera.addTrauma(0.35);
+  music.setIntensity(0);
+  haptics.goal(swish);
+  // Effet de caméra : ralenti progressif, zoom sur le panier, secousse.
+  // Panier parfait (sans toucher le cercle) : ralenti plus marqué, zoom plus serré, halo doré.
+  camera.addTrauma(swish ? 0.4 : 0.32);
   camera.focus = { x: h.centerX - 1, y: h.rimY - 0.5 };
-  camera.zoomTarget = 1.14;
-  camera.kick(0.05);
-  clearTimeout(hitStopTimer);
-  hitStopTimer = 0;
-  loop.timeScale = CONFIG.feel.winSlowMo;
-  setTimeout(() => (loop.timeScale = 1), 900);
+  camera.zoomTarget = swish ? 1.24 : 1.13;
+  camera.kick(swish ? 0.07 : 0.05);
+  timeFx.clear();
+  if (swish) timeFx.slowmo(0.2, 0.45, 0.9, 0.08);
+  else timeFx.slowmo(CONFIG.feel.winSlowMo, 0.25, 0.65, 0.06);
+  state.glow = { rgb: swish ? '255,200,80' : '255,240,220', t0: state.time, dur: swish ? 1.6 : 0.9, k: swish ? 1 : 0.5 };
+  if (swish) {
+    particles.sparkle(h.centerX, h.rimY, 26, '#ffe27a', 5);
+    particles.streaks(h.centerX, h.rimY, 0, 1, 14, 9, 'rgba(255,214,90,0.95)');
+  }
   setTimeout(() => showWin(e), 1500);
 });
 
@@ -584,7 +612,7 @@ function showWin(r) {
   const lastOverall = levelIndex >= LEVELS.length - 1;
   const lastInWorld = def.indexInWorld === world.levels.length - 1;
   ui.winLevel.textContent = `${levelLabel(def)} · ${gt(lang, def.nameKey)}`;
-  let title = 'win.title';
+  let title = state.swish ? 'win.perfect' : 'win.title';
   let body = '';
   if (lastOverall) {
     title = 'win.done.title';
@@ -609,8 +637,15 @@ function showWin(r) {
       s.classList.add('on');
       sfx.star(i + 1);
       haptics.light();
+      // Chaque étoile qui se pose lance une petite gerbe de confettis dorés
+      const b = s.getBoundingClientRect();
+      confetti.pop(b.left + b.width / 2, b.top + b.height / 2, 14, ['#ffd65a', '#fff3c4', '#ffb547']);
     }, 380 + i * 260);
   });
+  // Musique de réussite (jingle du monde sur le motif du rebond) et confettis plein écran
+  ui.win.classList.toggle('perfect', !!state.swish);
+  music.stinger(state.swish ? 'perfect' : 'win', world.theme);
+  confetti.celebrate(state.swish ? 1 : 0.7);
   openOverlay('win');
   (lastOverall ? ui.replay : ui.next).focus({ preventScroll: true });
 }
@@ -621,12 +656,13 @@ function countUp(el, total, delay) {
     const t0 = performance.now();
     const dur = 700;
     let lastTick = 0;
+    let coinI = 0;
     const tick = (now) => {
       const k = Math.min(1, (now - t0) / dur);
       const v = Math.round(total * (1 - Math.pow(1 - k, 3)));
       el.textContent = `+${v}`;
-      if (now - lastTick > 70 && k < 1) {
-        sfx.star(1);
+      if (now - lastTick > 60 && k < 1) {
+        sfx.coin(++coinI);
         lastTick = now;
       }
       if (k < 1) requestAnimationFrame(tick);
@@ -751,6 +787,8 @@ game.events.on('failed', (e) => {
   ui.fail.querySelector('.ad-note')?.remove();
   openOverlay('fail');
   music.setDuck(0.45);
+  sfx.fail();
+  music.stinger('fail');
   ads.prepare('checkpoint');
   updateAdButtons();
   ui.btnFailRestart.focus({ preventScroll: true });
@@ -808,7 +846,9 @@ function pause() {
   if (state.paused || game.state === 'won' || game.state === 'failed' || state.overlay || state.intro) return;
   state.paused = true;
   loop.stop();
+  sfx.motion(0, 0); // la boucle s'arrête : on coupe aussi le roulement et le souffle
   music.setDuck(0.35);
+  music.setIntensity(0);
   openOverlay('pause');
   ui.resume.focus({ preventScroll: true });
 }
@@ -831,7 +871,13 @@ function startLevel(index) {
   renderer.setLevel(game.level);
   camera.resetEffects();
   camera.snap(game.body.x, game.body.y, game.level.bounds);
+  camera.establish(0.9); // plan d'ouverture : l'image se resserre doucement sur le ballon
+  timeFx.clear();
   loop.timeScale = 1;
+  confetti.clear();
+  state.glow = null;
+  state.sinceRespawn = 0;
+  state.rollAcc = 0;
   particles.items.forEach((p) => (p.alive = false));
   particles.texts.forEach((t) => (t.alive = false));
   fx.clear();
@@ -1014,11 +1060,78 @@ for (const el of document.querySelectorAll('.overlay')) {
 // Boutons du HUD (pause, recommencer) : même petit son
 for (const b of [ui.pauseBtn, ui.restart]) b.addEventListener('pointerdown', () => sfx.click());
 
+// ─── Sensations continues (étape 18) ────────────────────────────────────────
+
+/** Surface sous le ballon (dernier contact par en dessous). */
+function groundTag(b) {
+  for (let i = 0; i < b.contactCount; i++) {
+    const c = b.contacts[i];
+    if (c.ny * b.gravitySign > 0.5) return c.collider.tag;
+  }
+  return state.groundTag ?? 'ground';
+}
+
+/**
+ * À chaque image : son de roulement et de souffle, position d'écoute (stéréo), intensité de la
+ * musique, particules de roulement propres au monde.
+ */
+function feelUpdate(dt, b, ctrl) {
+  const playing = game.state === 'playing' && !state.paused && !state.intro && !state.overlay;
+  if (b.grounded) state.groundTag = groundTag(b);
+  const surface = surfaceOf(state.groundTag ?? 'ground', renderer.themeId);
+  const rel = Math.abs(b.vx - (b.grounded ? b.groundVx : 0));
+  const speed = Math.hypot(b.vx, b.vy);
+  sfx.listen(camera.x, camera.halfWidth);
+  sfx.motion(playing && b.grounded ? rel : 0, playing && !b.grounded ? speed : 0, surface);
+  // Musique : la couche d'intensité monte avec la puissance et la vitesse
+  state.musicAcc = (state.musicAcc ?? 0) + dt;
+  if (state.musicAcc > 0.4) {
+    state.musicAcc = 0;
+    const k = playing ? Math.max(((ctrl.level - 1) / (MAX_LEVEL - 1)) * 0.9, clamp((speed - 3) / 9, 0, 1) * 0.7, 0.2) : 0;
+    state.intensity = lerp(state.intensity ?? 0, k, 0.5);
+    music.setIntensity(state.intensity);
+  }
+  // Roulement : poussière, neige, braises, brins d'herbe ou poussière d'étoiles derrière le ballon
+  if (playing && b.grounded && rel > 2.2) {
+    state.rollAcc = (state.rollAcc ?? 0) + dt * rel;
+    while (state.rollAcc > 0.9) {
+      state.rollAcc -= 0.9;
+      worldFx.roll(renderer.themeId, surface, b.x, b.y - R * b.gravitySign, b.vx, rel);
+      // Glace : rayures brillantes laissées par le ballon qui file
+      if (surface === 'ice' && rel > 4 && Math.abs(b.x - lastTrackX) > 0.3) {
+        tracks.push({ x: b.x, y: b.y - R, t: state.time, w: 0.35, ice: true });
+        if (tracks.length > 90) tracks.shift();
+        lastTrackX = b.x;
+      }
+    }
+  }
+}
+
+/** Halo plein écran des grands moments (doré pour un panier parfait). */
+function glowAmount() {
+  const g = state.glow;
+  if (!g) return null;
+  const age = state.time - g.t0;
+  if (age > g.dur) return null;
+  const k = age < 0.1 ? age / 0.1 : 1 - (age - 0.1) / (g.dur - 0.1);
+  return { rgb: g.rgb, k: k * g.k };
+}
+
+/** Bouton REBOND : onde lumineuse à chaque appui, couleur selon la puissance. */
+function padHit(level) {
+  const el = ui.padBounce;
+  el.dataset.hit = String(level);
+  el.classList.remove('hit');
+  void el.offsetWidth;
+  el.classList.add('hit');
+}
+
 // ─── Boucle ────────────────────────────────────────────────────────────────
 
 function render(frameDt, alpha) {
   state.time += frameDt;
   music.update();
+  loop.timeScale = timeFx.update(frameDt);
   if (state.intro) {
     state.introTimer += frameDt;
     if (state.introTimer > 4.2) hideIntro();
@@ -1038,7 +1151,8 @@ function render(frameDt, alpha) {
 
   if (b.grounded && game.state !== 'dying') state.groundY = b.y - R;
   const fastFollow = state.sinceRespawn < 0.6 || state.sinceTeleport < 0.8;
-  camera.update(frameDt, { x: state.ball.x, y: state.ball.y, vx: b.vx, groundY: state.groundY }, game.level.bounds, fastFollow ? 0.35 : 1);
+  camera.update(frameDt, { x: state.ball.x, y: state.ball.y, vx: b.vx, vy: b.vy, dir: game.playing ? ctrl.axis : 0, grounded: b.grounded, groundY: state.groundY }, game.level.bounds, fastFollow ? 0.35 : 1);
+  feelUpdate(frameDt, b, ctrl);
   visual.update(frameDt, b);
   particles.update(frameDt * loop.timeScale);
   fx.update(frameDt * loop.timeScale);
@@ -1107,6 +1221,7 @@ function render(frameDt, alpha) {
     tracks,
     goal: state.goal,
     goalFlash: state.goalFlash,
+    glow: glowAmount(),
     power: { level: ctrl.level, max: MAX_LEVEL, alpha: state.gaugeAlpha, warn },
     flash: state.flash,
     debug: state.debug,
@@ -1130,6 +1245,7 @@ document.addEventListener('visibilitychange', () => {
     input.releaseAll();
     sfx.wind(false);
     sfx.suspend();
+    confetti.clear();
     if (state.intro) loop.stop();
     else if (state.overlay !== 'win' && state.overlay !== 'fail') pause();
     else loop.stop();

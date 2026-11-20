@@ -3,8 +3,8 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 19/11/2026 · **Version :** 1.0.0 (build 1) · **Étape en cours :** validation de la
-> nouvelle économie de la boutique (étape 17) par le porteur du projet ; rien n'est publié.
+> **Dernière mise à jour :** 20/11/2026 · **Version :** 1.0.0 (build 1) · **Étape en cours :** validation du
+> nouveau son et des nouvelles sensations de jeu (étape 18, game feel) par le porteur du projet ; rien n'est publié.
 
 ## Sommaire
 
@@ -330,6 +330,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | Fichier | Rôle |
 |---|---|
 | `loop.js` | Boucle à pas fixe (« fix your timestep ») avec interpolation, ralenti (`timeScale`), protection contre les longues pauses. |
+| `time-fx.js` | Effets de temps (étape 18) : ralentis et arrêts sur image à trois phases (entrée, maintien, retour en douceur) ; le plus fort l'emporte. |
 | `math.js` | Outils : `clamp`, `lerp`, lissage critique (`smoothDamp`), amortissement, point le plus proche sur un segment, générateur aléatoire déterministe. |
 | `events.js` | Bus d'événements minimal (logique → présentation). |
 
@@ -369,17 +370,20 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `world-draw.js` | Dessin des surfaces selon le monde (matériaux), des pics et plateformes thématiques, des éléments des mondes et des pièges (plaques, blocs temporisés, scies, boulets, lasers, aimants, canons). |
 | `cosmetics.js` | Cosmétiques de la boutique : petit système de particules préalloué (`Fx` : points, anneaux, étoiles, bulles, étincelles, éclairs, pièces, serpentins, fumée, halos, flammes), 9 effets de rebond, 10 traînées, 10 animations de panier. |
 | `ball-sprite.js` | Textures des 25 ballons (cuir, coutures, motifs, matières, facettes, spirale, veines d'énergie), générées au démarrage ; `drawFace` dessine le visage des ballons amusants (droit, regarde dans le sens du mouvement, cligne des yeux, yeux qui roulent) ; `drawAura` l'aura des légendaires ; `skinInfo` dit ce qu'il faut dessiner. |
-| `camera.js` | Caméra : lissage, anticipation dans le sens de la course, cadrage qui garde le sol au-dessus des commandes, secousses, zoom et cadrage sur le panier à la victoire, recul quand le ballon monte haut, coups de zoom amortis. |
+| `camera.js` | Caméra : lissage, anticipation dans le sens de la course (et de la direction demandée), cadrage qui garde le sol au-dessus des commandes, secousses, zoom et cadrage sur le panier à la victoire, recul quand le ballon monte haut, coups de zoom amortis ; étape 18 : impulsions directionnelles (poids des atterrissages), regard vers le bas en chute, plan d'ouverture, mouvements réduits si le système le demande. |
+| `world-fx.js` | Effets propres à chaque monde (étape 18) : matière soulevée au contact, particules de roulement, gerbe des rebonds à pleine puissance, lucioles, réaction du décor (feuilles, neige, cendres, poussière, poussière d'étoiles qui tombent). |
+| `confetti.js` | Confettis de victoire par-dessus l'écran de victoire (canvas en coordonnées écran ; boucle arrêtée dès qu'il n'y en a plus). |
 | `ball-sprite.js` | Textures du ballon générées au démarrage (cuir et coutures qui tournent, reflet fixe). |
 | `ball-visual.js` | Déformations du ballon (écrasement à l'impact, étirement en vol, détente au rebond, étirement au dribble). |
-| `particles.js` | Particules (poussière, confettis, scintillements, ondes, éclats, traits de vitesse, éclairs, nuages, braises et feuilles) et textes flottants, avec réservoirs préalloués. |
+| `particles.js` | Particules (poussière, confettis, scintillements, ondes, éclats, traits de vitesse, éclairs, nuages, braises et feuilles, lucioles) et textes flottants, avec réservoirs préalloués (384 particules depuis l'étape 18). |
 
 **`src/audio/`, `src/input/`, `src/platform/`**
 
 | Fichier | Rôle |
 |---|---|
-| `audio/sfx.js` | Sons du jeu synthétisés : impacts selon la surface (glace, neige, bois, roche, astéroïde, écho dans l'espace), rebond, dribble, trampoline, téléporteur, interrupteur, porte, vent continu (ventilateur, vent de neige), étoiles, chute (grésillement dans la lave, éclaboussure dans l'eau), victoire, monde débloqué, et les sons des mécaniques (stalactites, plateformes fragiles, geysers, pierres, lianes, champignons, gravité, caisse). |
-| `audio/music.js` | Musique et ambiance de chaque monde, synthétisées (séquenceur à programmation anticipée, fondu enchaîné entre mondes, musique baissée en pause et à la victoire). |
+| `audio/ui-voice.js` | Identité sonore (étape 18) : timbre « pop », gamme pentatonique, motif du rebond ; tous les sons d'interface (boutons, pages, sélection, onglets, équipement, achat par rareté, pièces, récompenses, coffres, roue), partagés par le menu, la boutique et le jeu. |
+| `audio/sfx.js` | Sons du jeu synthétisés. Étape 18 : voix de chaque surface selon le monde (`surfaceOf`), roulement et souffle continus, réverbération par monde, stéréo selon la position à l'écran, rebond en couches, filet, panier parfait, échec, apparition. Avant : impacts selon la surface (glace, neige, bois, roche, astéroïde, écho dans l'espace), rebond, dribble, trampoline, téléporteur, interrupteur, porte, vent continu (ventilateur, vent de neige), étoiles, chute (grésillement dans la lave, éclaboussure dans l'eau), victoire, monde débloqué, et les sons des mécaniques (stalactites, plateformes fragiles, geysers, pierres, lianes, champignons, gravité, caisse). |
+| `audio/music.js` | Musique et ambiance de chaque monde, synthétisées (séquenceur à programmation anticipée, fondu enchaîné entre mondes, musique baissée en pause et à la victoire). Étape 18 : forme A/B en 8 mesures avec roulement, couche d'intensité dynamique, réverbération par monde, jingles de victoire / panier parfait / échec dans la tonalité du monde, ambiances enrichies, grondements signalés au jeu (`onAmbient`). |
 | `worlds/redirect.js` | Ancienne carte des mondes : renvoie vers `index.html#mondes` (garde `?world=` et `?unlock=all`). |
 | `worlds/art.js` | Illustration animée de chaque monde (diorama dessiné avec le vrai décor et les vrais éléments du monde), utilisée par les cartes des mondes du menu. |
 | `input/input.js` | Zones tactiles (moitié gauche = direction, moitié droite = rebond), multi-doigts, clavier. |
@@ -404,7 +408,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `about-page.js` | Page « À propos » (étape 16) : identité du jeu, version, créateur, copyright, crédits, liens (politique de confidentialité, conditions d'utilisation). |
 | `bonus-view.js` | Page Bonus du jour (étape 13) : coffre bonus (gratuit ou amélioré avec une publicité) et roue de la chance (rotation, ralentissement, clics, pointeur). |
 | `rewards-fx.js` | Révélation d'une récompense : coffre qui tombe, tremble et s'ouvre, rayons, butin, pluie de pièces, pièces qui filent vers le compteur. |
-| `sound.js` | Sons d'interface et musique d'ambiance synthétisés. |
+| `sound.js` | Musique d'ambiance du menu (avec le motif du rebond toutes les 4 mesures) ; les sons d'interface viennent de la voix partagée `audio/ui-voice.js`. |
 | `icons.js` | Icônes SVG dessinées à la main. |
 | `i18n.js` | Textes du menu en français, anglais et espagnol. |
 
@@ -815,6 +819,113 @@ décrit l'ancienne page (étapes 7 à 10), conservé pour l'historique :
   sol, **traces du ballon dans la neige** qui s'effacent lentement ; Volcan — **chaleur visible** (colonnes d'air
   chaud qui ondulent au-dessus de l'écran et de chaque bassin de lave) ; Forêt — **papillons** qui voltigent ;
   Espace — **débris qui flottent** en apesanteur et poussières qui remontent lentement.
+
+### Son et sensations — game feel (étape 18)
+
+Objectif : que **chaque action du joueur produise une réaction — son + animation + effet visuel** — et que les
+30 premières secondes donnent envie de continuer. Aucun nouveau mode ; **les trajectoires du ballon n'ont pas
+changé** (voir « Physique » plus bas).
+
+**Identité sonore** (`src/audio/ui-voice.js`, partagée par le menu, la boutique et le jeu)
+- Un **timbre** : le « pop » du ballon (sinus qui grimpe très vite, octave au triangle, souffle bref), sur tous les
+  boutons, onglets et choix.
+- Une **gamme** : do majeur pentatonique — aucune fausse note, tout s'enchaîne avec la musique du menu.
+- Un **motif** : le **motif du rebond**, cinq notes qui montent sur le rythme d'un ballon qui rebondit (les
+  intervalles raccourcissent). On l'entend à l'achat, au déblocage d'un monde, sur JOUER, dans les jingles de
+  victoire de chaque monde et, très doucement, dans la musique du menu toutes les 4 mesures.
+- Petite réverbération de salle commune.
+
+**Menu et boutique**
+
+| Action | Son |
+|---|---|
+| Toucher un bouton | « pop » (légèrement varié à chaque fois) |
+| Ouvrir / fermer une page | souffle qui monte (ou descend) + deux notes |
+| Changer de sélection (article, option, monde du carrousel) | petit « tic » clair dont la note suit la position |
+| Changer d'onglet | glissé + pop |
+| Équiper un objet | « clac » de mise en place + carillon |
+| Acheter | pièces versées, coup grave, motif du rebond ; **rare** : souffle ; **épique** : deuxième voix et nappe ; **légendaire** : sous-basse, chœur de cloches, étincelles |
+| Pas assez de pièces / verrouillé | deux notes sourdes, jamais agressives |
+| Pièces qui défilent | tintement dont la hauteur monte à chaque pièce |
+
+**Jeu**
+- **Rebond** en couches : choc grave, claquement du cuir, « pop » élastique qui **monte d'une note de la gamme à
+  chaque niveau de puissance**, souffle à partir de la puissance 3, coup de sous-basse à 4 et 5, carillon et grand
+  souffle à la puissance maximale.
+- **Surfaces** : chaque contact a sa voix — bitume du terrain (ville), **métal** (plateformes, planches, portes en
+  ville), neige (choc feutré + crissement), glace (tintement), **roche** (graviers), **herbe et terre** (froissement),
+  bois, **plateforme spatiale** (résonance synthétique + écho), astéroïde, cercle (métal qui résonne), planche du
+  panier (plexiglas). Au-delà d'une certaine vitesse, une **couche de poids** (sous-basse) s'ajoute.
+- **Roulement** en continu, qui suit la vitesse et la surface (bitume, métal, neige qui crisse, glace qui siffle,
+  roche, herbe, bois, plateforme spatiale), et **souffle de l'air** quand le ballon file (gros rebonds, chutes).
+- **Espace sonore** : réverbération propre à chaque monde (rue, montagne, caverne, sous-bois, vide spatial) et
+  **position stéréo** de chaque son selon sa place à l'écran (pièges, chocs, étoiles).
+- **Panier** : filet (« swish » de mailles), basse, arpège ; **panier parfait** : souffle aspiré, sous-basse,
+  accord brillant et pluie de cloches. **Niveau terminé** : jingle du monde (son instrument, sa tonalité) sur le
+  motif du rebond — version enrichie pour un panier parfait. **Niveau échoué** : trois notes qui descendent
+  doucement + jingle d'échec du monde. **Étoile** : note qui monte avec le nombre d'étoiles. **Apparition** du
+  ballon : « bloop » qui monte. **Récompenses** : pièces qui tintent.
+
+**Musique et ambiances des mondes** (`src/audio/music.js`)
+- Forme en **8 mesures** : A (thème), puis B (variation de la mélodie, coup de grosse caisse en plus) et un petit
+  **roulement de batterie** à la fin de chaque cycle.
+- **Intensité dynamique** : une couche de percussions et de contre-chant monte quand on joue vite et fort
+  (puissance, vitesse), redescend au calme, disparaît en pause et à la victoire (transitions de plusieurs secondes).
+- Réverbération propre à chaque monde ; l'Espace a maintenant aussi une mélodie (cloches).
+- Ambiances enrichies :
+
+| Monde | Fond | Nouveaux sons ponctuels |
+|---|---|---|
+| Ville | circulation, néons | **dribbles d'un terrain de basket au loin** et crissement de baskets, **train** qui passe |
+| Neige | vent en deux couches | **sifflement du vent sur les crêtes**, **avalanche** très lointaine (l'image tremble à peine) |
+| Volcan | grondement, chaleur | **lave qui glougloute** ; les éruptions lointaines font **trembler l'image et tomber des cendres** |
+| Forêt | feuillage, ruisseau | **grillons**, **grenouille** |
+| Espace | bourdon qui respire | **pulsar** (battements qui s'éloignent), **scintillement cosmique** |
+
+**Sensations**
+
+| Moment | Réaction |
+|---|---|
+| Chaque appui sur REBOND | onde lumineuse sur le bouton (couleur de la puissance), segment de l'anneau qui « claque », vibration (plus franche à 4 et 5), un tic de vibration au dribble en l'air |
+| Puissance 4-5 | le ballon s'entoure d'une **lueur ambre puis dorée** qui pulse |
+| Rebond puissance 4 | léger coup de caméra vers le bas, petit zoom arrière |
+| Rebond puissance 5 | double onde au sol, **gerbe de la matière du monde**, secousse, coup de zoom, **arrêt sur image** de 35 ms, son puissant |
+| Gros atterrissage | **l'image encaisse le poids** (elle s'enfonce puis revient en ressort), onde au sol, matière soulevée, couche grave dans le son, et au-delà d'une certaine force le décor réagit (voir plus bas) |
+| Panier | ralenti **progressif** (plus de retour brutal), zoom sur le panier, secousse, gerbe de rayons, filet |
+| **Panier parfait** (sans toucher le cercle) | ralenti plus marqué (×0,2), **zoom plus serré** (×1,24), **halo doré sur les bords de l'écran**, étincelles et traits dorés, son spécial, vibration plus riche ; carte « **Panier parfait !** » avec halo doré qui respire et titre qui brille |
+| Victoire | **confettis plein écran** (deux canons dans les coins puis pluie), gerbe dorée à chaque étoile qui se pose, jingle de réussite du monde, vibration légère, pièces qui tintent |
+| Étoile | scintillements, onde, traits dorés, arrêt sur image bref, note qui monte |
+| Apparition du ballon | « bloop », onde blanche, scintillements |
+
+**Effets visuels des mondes** (`src/render/world-fx.js`)
+
+| Monde | Au contact du sol | En roulant | Le décor réagit (gros chocs, grondements) |
+|---|---|---|---|
+| Ville | poussière du bitume, étincelles sur le métal, **reflets néon** (magenta / cyan) | poussière, étincelles sur le métal à grande vitesse | poussière des toits |
+| Neige | neige soulevée, flocons ; glace : éclats et éclat lumineux | gerbe de neige ; glace : scintillements et **rayures brillantes** qui s'effacent | neige qui tombe des branches |
+| Volcan | braises, fumée, étincelles | braises et graviers | **cendres et braises** qui retombent |
+| Forêt | brins d'herbe, feuilles, **lucioles qui s'envolent** | brins d'herbe | **feuilles qui tombent des arbres** |
+| Espace | poussière cosmique, anneau d'énergie | étincelles cyan et violettes | poussière d'étoiles |
+
+**Caméra** (`src/render/camera.js`)
+- Suivi plus naturel : l'anticipation suit aussi la **direction demandée** (◀ ▶), pas seulement la vitesse ;
+  **regard vers le bas** pendant une grande chute (jusqu'à 1,1 u) pour voir où l'on va atterrir.
+- **Impulsions directionnelles** amorties (gros atterrissages, rebonds puissants) ; secousses plus rondes.
+- **Plan d'ouverture** : au début de chaque niveau, l'image part 10 % plus large et se resserre en douceur.
+- **Ralentis et arrêts sur image progressifs** (`src/core/time-fx.js`) : entrée, maintien, retour en courbe douce.
+- **Jamais gênante** : tous ces mouvements restent petits, amortis, et sont **réduits de 60 %** quand le téléphone
+  demande moins d'animations (réglage d'accessibilité du système).
+
+**Physique et contrôle**
+- **Les trajectoires n'ont pas changé** (gravité, hauteurs de rebond, accélérations, freinage) : les 50 niveaux ont
+  été équilibrés et vérifiés avec ces valeurs. Un essai de freinage plus franc au sol (3,5 → 4,6 u/s²) rendait 16
+  passages non conformes à leurs solutions vérifiées : il a été abandonné.
+- Le ballon **paraît** plus élastique et plus lourd : écrasement plus marqué à l'impact, ressort de déformation
+  moins amorti (petite oscillation de caoutchouc), étirement un peu plus fort en vol (réglages `CONFIG.feel`,
+  purement visuels), plus le son, la caméra et les vibrations ci-dessus.
+- **Précision** : un **repère d'atterrissage** discret (petit anneau) apparaît sous le ballon quand il est haut,
+  là où l'ombre devient trop pâle pour viser.
+- **Réponse des commandes** : chaque appui a une réaction immédiate (onde sur le bouton, vibration, son).
 
 ---
 
@@ -1354,6 +1465,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Fondu + léger zoom vers le menu, ouverture automatique ; seulement au lancement
 - 🟡 Validation par le porteur du projet
 
+### Phase 6 septies — Son et sensations (game feel) 🟡
+- ✅ Identité sonore partagée (timbre, gamme, motif du rebond) : menu, boutique, jeu
+- ✅ Sons des surfaces, roulement, souffle, réverbération par monde, stéréo ; panier parfait, échec, jingles
+- ✅ Musique A/B avec intensité dynamique ; ambiances enrichies (dont grondements qui font trembler l'image)
+- ✅ Retours des gros rebonds, gros atterrissages, panier parfait, victoire (confettis plein écran)
+- ✅ Effets visuels propres à chaque monde (contact, roulement, décor qui réagit), lueur de puissance
+- ✅ Caméra : impulsions, regard vers le bas, plan d'ouverture, ralentis progressifs, mouvements réduits
+- 🟡 Validation par le porteur du projet ; essai au casque et sur haut-parleur de téléphone
+
 ### Phase 7 — Modes de jeu 🔴
 - 🔴 Trickshot
 - 🔴 Endless
@@ -1405,6 +1525,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Publicités récompensées facultatives (AdMob) : doubler les pièces, reprendre au drapeau, coffre bonus,
   roue de la chance ; page Bonus du jour (étape 13)
 - ✅ Écran de chargement (logo, signature EchoSpeed, ballon, particules, barre, fondu vers le menu) (étape 14)
+- ✅ Son et sensations (étape 18) : identité sonore, sons des surfaces et du roulement, musique dynamique,
+  jingles, ambiances, retours des grands moments, effets des mondes, caméra
 - ✅ Nouvelle économie de la boutique (étape 17) : prix par rareté, 20 nouveaux objets, album de collection
 - ✅ Page « À propos » (étape 16) : version, créateur, copyright, crédits faciles à compléter, liens reliables
 - ✅ Préparation Google Play (étape 15) : icône, feature graphic, captures, textes FR / EN / ES, checklist,
@@ -1412,13 +1534,16 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 Attente des retours du porteur du projet sur la nouvelle économie de la boutique (étape 17)
+- 🟡 Attente des retours du porteur du projet sur le son et les sensations (étape 18)
+- 🟡 Décision en attente (étape 17) : pondérer les objets tirés des coffres et de la roue
 
 ### À faire — court terme 🔴
 - 🔴 Publication (quand le porteur du projet le décide) : suivre `store/CHECKLIST.md` (comptes, AdMob, AAB,
   tests fermés)
 - 🔴 Essayer l'application sur de vrais téléphones (encoche, vibrations, annonces de test, performances)
-- 🔴 Ajuster le ressenti (gravité, hauteurs, dribble, inertie) selon les retours
+- 🔴 Ajuster le ressenti (gravité, hauteurs, dribble, inertie) selon les retours — toute modification de
+  trajectoire demande de revérifier les 50 niveaux (`node tools/route-check.mjs 400 --save`)
+- 🔴 Écouter les sons sur de vrais téléphones (haut-parleur mono, casque) et ajuster les volumes relatifs
 - 🔴 Ajuster la difficulté (notamment la plateforme mobile du niveau 4)
 - 🔴 Faire apparaître le panier du niveau 5 dès le départ (il est hors de l'écran au début)
 - 🔴 Éviter que l'étiquette « Rebondir » du tutoriel recouvre le panier du niveau 1
@@ -1537,6 +1662,17 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   remplacé par la lueur cuite dans la vignette ; il ne reste que de fines ondulations (0,2 ms).
 - Onde au toucher des pages : un élément créé puis retiré, jamais sur les commandes de jeu.
 
+**Son et sensations (étape 18)**
+- Roulement et souffle : **deux sources de bruit en boucle créées une fois**, dont on ne fait que régler le volume
+  et le filtre à chaque image (aucun nœud audio créé en continu).
+- Réverbérations : une seule par contexte audio, régénérée seulement au changement de monde.
+- Particules de roulement émises **à la distance parcourue** (une gerbe tous les 0,9 u), pas à chaque image ;
+  réservoir agrandi à 384, toujours préalloué.
+- Confettis de victoire : canvas séparé dont la boucle **s'arrête dès qu'il n'y a plus de confettis**.
+- Halo doré plein écran : un seul dégradé, dessiné seulement pendant le moment (≈ 1,6 s).
+- Mesure (Chromium sans carte graphique, 844 × 390) : **60 images/s** dans les 5 mondes pendant les nouveaux
+  effets ; aucune erreur dans la console (jeu, menu, boutique).
+
 **Écran de chargement (étape 14)**
 - Aucune image à télécharger : fond en dégradés CSS, ballon en SVG intégré à la page, particules sur un petit
   canvas (≤ 46 points). Il s'affiche donc avant même que le code du menu soit chargé.
@@ -1561,6 +1697,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | Son (étape 18) : réglé au casque dans un navigateur, **pas encore écouté sur le haut-parleur d'un téléphone** (souvent mono et pauvre en graves : la couche de poids et la stéréo y seront moins sensibles). | 🔴 À tester (phase Android) |
+| Info | Physique (étape 18) : les trajectoires sont volontairement inchangées pour garder l'équilibre vérifié des 50 niveaux ; un freinage plus franc au sol a été essayé puis abandonné (16 passages à revérifier). | 🟡 À rediscuter avec les retours des joueurs |
+| ✅ | Boutique (étape 18, en cours de développement) : l'achat d'un objet épique ou légendaire plantait (variable supprimée par erreur). | ✅ Corrigé avant publication |
 | Info | Économie (étape 17) : les coffres et la roue donnent toujours des **objets entiers** tirés au hasard parmi les raretés prévues : coffre épique → épique ou légendaire ; coffre bonus amélioré → rare, épique ou légendaire ; roue → skin épique ou légendaire. Avec les nouveaux prix, un légendaire (500 000+) peut donc tomber d'un coffre. Les gains n'ont pas été réduits, comme demandé. | 🟡 À décider : pondérer les tirages vers les raretés basses, si les légendaires doivent rester rares |
 | ✅ | Boutique entre 920 et 1 100 px de large : le compteur de pièces sortait de l'écran ; sur les cartes légendaires, le prix et « ★ Exclusif » débordaient. | ✅ Corrigé (v1.0.0) |
 | Info | Application Android jamais construite ni lancée sur un appareil (SDK Android indisponible dans l'environnement de développement) : à vérifier dans Android Studio. | 🔴 À tester |
@@ -1593,6 +1732,38 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 20/11/2026 — Étape 18 : son et sensations de jeu (game feel) (v1.0.0)
+- **Ajouté** :
+  - **identité sonore** partagée (`src/audio/ui-voice.js`) : timbre « pop », gamme pentatonique, **motif du rebond** ;
+    sons de menu, de boutique et d'écrans de jeu unifiés (clic, ouverture, sélection, onglet, équipement, achat par
+    rareté, refus, pièces, récompenses) ;
+  - jeu : **voix de chaque surface** selon le monde, **roulement** et **souffle** continus, **réverbération** par
+    monde, **stéréo**, rebond en couches (une note de plus par niveau de puissance), filet, **panier parfait**,
+    échec, apparition du ballon, pièces qui tintent ;
+  - musique : forme **A/B** en 8 mesures avec roulement, **intensité dynamique**, réverbération, **jingles** de
+    victoire / panier parfait / échec dans la tonalité de chaque monde ; ambiances enrichies (terrain de basket et
+    train, sifflement du vent et avalanche, lave qui glougloute, grillons et grenouille, pulsar et scintillements) ;
+  - sensations : **ralentis progressifs** (`src/core/time-fx.js`), retours des rebonds 4 et 5 (gerbe du monde,
+    arrêt sur image), **poids des gros atterrissages** (impulsion de caméra), **panier parfait** (ralenti ×0,2,
+    zoom ×1,24, halo doré, carte « Panier parfait ! »), **confettis plein écran** à la victoire
+    (`src/render/confetti.js`), lueur de puissance autour du ballon, onde sur le bouton REBOND, segments de
+    l'anneau qui claquent, vibrations graduées ;
+  - **effets des mondes** (`src/render/world-fx.js`) : contact, roulement (dont rayures sur la glace), lucioles,
+    décor qui réagit (feuilles, neige, cendres, poussière, poussière d'étoiles) ;
+  - caméra : impulsions directionnelles, regard vers le bas en chute, anticipation de la direction, **plan
+    d'ouverture**, mouvements réduits si le système le demande ;
+  - **repère d'atterrissage** sous le ballon quand il est haut ;
+  - 10 tests (`tests/feel.test.mjs`).
+- **Modifié** :
+  - ballon plus élastique à l'écran (`CONFIG.feel`, purement visuel) ;
+  - le ralenti du panier revient en douceur au lieu de s'arrêter d'un coup ;
+  - réservoir de particules : 256 → 384.
+- **Inchangé** : trajectoires et physique (les 50 niveaux restent vérifiés), aucun nouveau mode.
+- **Reste à faire** :
+  - retours du porteur du projet ;
+  - écoute sur de vrais téléphones (haut-parleur et casque) ;
+  - décision sur la pondération des coffres et de la roue (étape 17).
 
 ### 19/11/2026 — Étape 17 : économie de la boutique (v1.0.0)
 - **Ajouté** :
