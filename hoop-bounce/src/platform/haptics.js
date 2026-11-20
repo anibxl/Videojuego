@@ -1,11 +1,12 @@
-// Vibrations. Utilise l'API Vibration du navigateur (Chrome Android).
-// Une fois le jeu emballé avec Capacitor, il suffira de remplacer l'implémentation ici
-// par le plugin @capacitor/haptics : le reste du code n'appelle que ces méthodes.
+// Vibrations du jeu (rebonds, panier, chocs…). Le motif passe par vibrate.js :
+// navigator.vibrate sur Android, retour haptique natif (@capacitor/haptics) sur iPhone.
+
+import { canVibrate, vibratePattern } from './vibrate.js';
 
 export class Haptics {
   constructor() {
     this.enabled = true;
-    this.supported = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+    this.supported = canVibrate(); // navigator.vibrate (Android) ou retour haptique natif (iPhone)
     this._last = 0;
   }
 
@@ -16,11 +17,7 @@ export class Haptics {
     const now = performance.now();
     if (now - this._last < minGapMs) return;
     this._last = now;
-    try {
-      navigator.vibrate(pattern);
-    } catch {
-      /* ignoré */
-    }
+    vibratePattern(pattern);
   }
 
   light() {

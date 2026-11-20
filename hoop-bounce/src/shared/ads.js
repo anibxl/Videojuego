@@ -28,7 +28,7 @@ import { dayKey, safeLocalStorage } from './stats.js';
 const KEY = 'hoopbounce.ads';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// ─── Fournisseur AdMob (Android, via Capacitor) ─────────────────────────────
+// ─── Fournisseur AdMob (Android et iOS, via Capacitor) ─────────────────────────────
 
 const RATING = { G: 'General', PG: 'ParentalGuidance', T: 'Teen', MA: 'MatureAudience' };
 

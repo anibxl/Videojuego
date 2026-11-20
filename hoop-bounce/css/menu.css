@@ -1449,6 +1449,9 @@ svg {
   .modes-grid { grid-template-columns: 1fr; max-width: 420px; }
 }
 
+html.fit-760 .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html.fit-760 .shop-featured { grid-template-columns: 1fr; }
+
 @media (max-width: 760px) {
   .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .shop-featured { grid-template-columns: 1fr; }

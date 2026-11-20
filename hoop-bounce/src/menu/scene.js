@@ -179,9 +179,15 @@ export class MenuScene {
     // Faisceau de projecteur flouté (une seule fois)
     const sw = 360;
     const sh = 720;
-    const sp = makeCanvas(sw, sh);
+    // Le flou des canvas (ctx.filter) n'existe dans Safari / WebView iOS qu'à partir d'iOS 18 :
+    // sinon, on dessine le faisceau 8 fois plus petit puis on l'agrandit avec lissage (flou équivalent).
+    const out = makeCanvas(sw, sh);
+    const canBlur = 'filter' in out.getContext('2d');
+    const ds = canBlur ? 1 : 1 / 8;
+    const sp = canBlur ? out : makeCanvas(Math.ceil(sw * ds), Math.ceil(sh * ds));
     const s = sp.getContext('2d');
-    s.filter = 'blur(18px)';
+    if (canBlur) s.filter = 'blur(18px)';
+    else s.scale(ds, ds);
     const beam = s.createLinearGradient(0, 0, 0, sh);
     beam.addColorStop(0, 'rgba(255,255,255,0.55)');
     beam.addColorStop(0.6, 'rgba(255,255,255,0.12)');
@@ -194,7 +200,13 @@ export class MenuScene {
     s.lineTo(sw * 0.14, sh - 20);
     s.closePath();
     s.fill();
-    this.spot = sp;
+    if (!canBlur) {
+      const o = out.getContext('2d');
+      o.imageSmoothingEnabled = true;
+      o.imageSmoothingQuality = 'high';
+      o.drawImage(sp, 0, 0, sw, sh);
+    }
+    this.spot = out;
 
     // Les faisceaux sont incrustés une fois pour toutes dans le plan des tribunes : de grandes
     // surfaces en lumière additive redessinées à chaque image coûtent cher sur mobile.
@@ -205,7 +217,7 @@ export class MenuScene {
         g.translate(w * fx + (bgW - w) / 2, -h * 0.05);
         g.rotate(ang);
         g.globalAlpha = a;
-        g.drawImage(sp, -h * 0.42, 0, h * 0.84, h * 1.12);
+        g.drawImage(out, -h * 0.42, 0, h * 0.84, h * 1.12);
         g.restore();
       });
       g.globalCompositeOperation = 'source-over';

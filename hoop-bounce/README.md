@@ -3,7 +3,11 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 20 (actuelle) :** **version de test Android** : `dist/HoopBounce_Test_v1.apk`, à installer à la main
+**Étape 21 (actuelle) :** **version iPhone préparée** : projet Xcode dans `ios/` (Capacitor 8, paysage, plein
+écran, publicités AdMob de test iOS, retour haptique), compatibilité WebKit vérifiée. Guide : `native/ios/README.md`
+(`npm install && npm run ios:sync && npm run ios:open` sur un Mac).
+
+**Étape 20 :** **version de test Android** : `dist/HoopBounce_Test_v1.apk`, à installer à la main
 (guide : `native/test-apk/README.md`, reconstruction : `npm run android:test-apk`). Annonces de test simulées,
 hors ligne.
 
@@ -231,7 +235,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 330 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+npm test                               # 335 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu, publicités, game feel
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)

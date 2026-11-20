@@ -7,21 +7,22 @@ import { Settings } from '../shared/settings.js';
 import { Sfx } from '../audio/sfx.js';
 import { Preview, drawThumb } from './preview.js';
 import { st } from './i18n.js';
+import { vibratePattern } from '../platform/vibrate.js';
+import { watchSafeWidth } from '../shared/safe-width.js';
 
 const $ = (id) => document.getElementById(id);
 const settings = new Settings();
 const lang = settings.get('lang');
 const wallet = new Wallet();
+watchSafeWidth(); // encoche des iPhone : en-tête compact selon la largeur utilisable
 const sfx = new Sfx();
 sfx.setVolume(settings.get('sfx'));
+// iPhone (WebKit) : le son ne peut démarrer que sur un geste « terminé » (doigt levé, clic, touche)
+for (const ev of ['touchend', 'pointerup', 'keydown']) document.addEventListener(ev, () => sfx.unlock(), { passive: true, capture: true });
 const params = new URLSearchParams(location.search);
 const vibrate = (p) => {
   if (!settings.get('vibration') || navigator.userActivation?.hasBeenActive === false) return;
-  try {
-    navigator.vibrate?.(p);
-  } catch {
-    /* ignoré */
-  }
+  vibratePattern(p); // Android : navigator.vibrate ; iPhone : retour haptique natif
 };
 const name = (item) => item.name[lang] ?? item.name.fr;
 // Prix : complets dans le détail (« 25 000 »), abrégés sur les cartes au-delà de 100 000 (« 650 k », « 1 M »)

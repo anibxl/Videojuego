@@ -10,12 +10,16 @@
     "build:web": "node tools/build-web.mjs",
     "android:sync": "node tools/build-web.mjs && npx cap sync android",
     "android:open": "npx cap open android",
-    "android:test-apk": "node tools/build-test-apk.mjs"
+    "android:test-apk": "node tools/build-test-apk.mjs",
+    "ios:sync": "node tools/build-web.mjs && npx cap sync ios",
+    "ios:open": "npx cap open ios"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.4.2",
     "@capacitor/android": "^8.6.2",
-    "@capacitor/core": "^8.6.2"
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.6.2"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.6.2"

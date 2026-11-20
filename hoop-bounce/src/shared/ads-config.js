@@ -11,8 +11,12 @@
 // AVANT LA PUBLICATION (voir PROJECT.md, « Publicités → configuration avant publication ») :
 //   1. créer l'application et les blocs d'annonces « Avec récompense » dans la console AdMob ;
 //   2. remplacer chaque valeur `prod` ci-dessous (les XXXX) par les vrais identifiants ;
-//   3. mettre le même identifiant d'application dans AndroidManifest.xml (native/android/README.md) ;
+//   3. mettre le même identifiant d'application dans AndroidManifest.xml (native/android/README.md)
+//      et, pour l'iPhone, l'identifiant iOS dans ios/App/App/Info.plist (GADApplicationIdentifier,
+//      voir native/ios/README.md) ;
 //   4. passer `useTestAds` à false.
+// Android et iOS ont chacun leur application et leurs blocs dans AdMob : Google refuse un bloc Android
+// dans une application iOS (et inversement). La plateforme est détectée automatiquement.
 // Tant qu'un identifiant `prod` contient encore « XXXX », le jeu reste en mode test (sécurité).
 
 export const ADS_CONFIG = {
@@ -25,6 +29,10 @@ export const ADS_CONFIG = {
       test: 'ca-app-pub-3940256099942544~3347511713', // application de test officielle de Google
       prod: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX',
     },
+    ios: {
+      test: 'ca-app-pub-3940256099942544~1458002511', // application de test officielle de Google (iOS)
+      prod: 'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX',
+    },
   },
 
   /**
@@ -34,6 +42,15 @@ export const ADS_CONFIG = {
   rewarded: {
     android: {
       test: 'ca-app-pub-3940256099942544/5224354917', // bloc « récompensé » de test officiel
+      prod: {
+        doubleCoins: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
+        checkpoint: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
+        bonusChest: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
+        wheelSpin: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
+      },
+    },
+    ios: {
+      test: 'ca-app-pub-3940256099942544/1712485313', // bloc « récompensé » de test officiel (iOS)
       prod: {
         doubleCoins: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
         checkpoint: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
@@ -73,10 +90,16 @@ export const ADS_CONFIG = {
 
 const PLACEHOLDER = /X{4}/;
 
+/** « ios » dans l'application iPhone (Capacitor), sinon « android » (Android et navigateur). */
+export function currentPlatform() {
+  return globalThis.Capacitor?.getPlatform?.() === 'ios' ? 'ios' : 'android';
+}
+
 /** Identifiants réellement utilisés (test tant que la configuration de production n'est pas complète). */
-export function resolveAdIds(config = ADS_CONFIG, platform = 'android') {
-  const app = config.appId[platform];
-  const rw = config.rewarded[platform];
+export function resolveAdIds(config = ADS_CONFIG, platform = currentPlatform()) {
+  const key = config.appId[platform] && config.rewarded[platform] ? platform : 'android';
+  const app = config.appId[key];
+  const rw = config.rewarded[key];
   const prodReady = !config.useTestAds && !PLACEHOLDER.test(app.prod) && Object.values(rw.prod).every((id) => !PLACEHOLDER.test(id));
   if (prodReady) return { testing: false, appId: app.prod, unit: (placement) => rw.prod[placement] ?? Object.values(rw.prod)[0] };
   return { testing: true, appId: app.test, unit: () => rw.test, incomplete: !config.useTestAds };

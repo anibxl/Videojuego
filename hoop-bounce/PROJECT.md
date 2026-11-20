@@ -3,9 +3,10 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 20/11/2026 · **Version :** 1.0.0 (build 1) · **Version de test :**
-> `HoopBounce_Test_v1.apk` (1.0.0-test1) · **Étape en cours :** essais de la version de test Android sur
-> téléphone par le porteur du projet et ses amis (étape 20) ; rien n'est publié sur le Play Store.
+> **Dernière mise à jour :** 20/11/2026 · **Version :** 1.0.0 (build 1) · **Version de test Android :**
+> `HoopBounce_Test_v1.apk` (1.0.0-test1) · **iOS :** projet Xcode prêt (`ios/`) · **Étape en cours :**
+> première compilation iPhone sur un Mac par le porteur du projet (étape 21) et essais de la version de test
+> Android ; rien n'est publié.
 
 ## Sommaire
 
@@ -15,6 +16,7 @@
 4. [Interface](#4-interface)
 5. [Progression](#5-progression)
 5 bis. [Publication Google Play](#5-bis-publication-google-play-version-100)
+5 ter. [Version iPhone (iOS)](#5-ter-version-iphone-ios)
 6. [Roadmap](#6-roadmap)
 7. [Liste des tâches](#7-liste-des-tâches)
 8. [Idées futures](#8-idées-futures)
@@ -388,6 +390,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `audio/music.js` | Musique et ambiance de chaque monde, synthétisées (séquenceur à programmation anticipée, fondu enchaîné entre mondes, musique baissée en pause et à la victoire). Étape 18 : forme A/B en 8 mesures avec roulement, couche d'intensité dynamique, réverbération par monde, jingles de victoire / panier parfait / échec dans la tonalité du monde, ambiances enrichies, grondements signalés au jeu (`onAmbient`). |
 | `worlds/redirect.js` | Ancienne carte des mondes : renvoie vers `index.html#mondes` (garde `?world=` et `?unlock=all`). |
 | `worlds/art.js` | Illustration animée de chaque monde (diorama dessiné avec le vrai décor et les vrais éléments du monde), utilisée par les cartes des mondes du menu. |
+| `platform/vibrate.js` | Vibrations multiplateformes (étape 21) : `navigator.vibrate` sur Android, retour haptique natif (`@capacitor/haptics`) sur iPhone, au même rythme. |
 | `input/input.js` | Zones tactiles (moitié gauche = direction, moitié droite = rebond), multi-doigts, clavier. |
 | `platform/haptics.js` | Vibrations (API Vibration ; à remplacer par Capacitor Haptics). |
 
@@ -432,6 +435,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `bonus.js` | Coffre bonus quotidien et roue de la chance (8 cases pondérées) : disponibilité, tirage, récompenses, sauvegarde. |
 | `ui-polish.js` | Onde lumineuse au point touché sur les éléments interactifs de toutes les pages (sauf commandes de jeu). |
 | `settings.js` | Réglages du joueur (musique, effets, vibrations, langue, qualité), enregistrés et corrigés s'ils sont abîmés. |
+| `safe-width.js` | Largeur réellement utilisable (encoche des iPhone, étape 21) : classes `fit-760` / `fit-1100` sur `<html>` pour les mises en page compactes. |
 | `version.js` | Numéro de version affiché dans les paramètres. |
 
 **Tests et outils**
@@ -1443,6 +1447,75 @@ avec **la même clé de test** (sinon il faut désinstaller, ce qui efface la pr
 4. AAB signé (build 1) → test interne → test fermé (12 testeurs, 14 jours si compte personnel) → production en
    déploiement progressif.
 
+## 5 ter. Version iPhone (iOS)
+
+**Statut : projet Xcode prêt à compiler** (`ios/`, étape 21). Pas encore compilé : Xcode n'existe que sur Mac.
+Guide pas à pas (Mac, Xcode, essai sur son iPhone, TestFlight pour les amis) : **`native/ios/README.md`**.
+
+### Ce qui est identique à Android
+Le gameplay, les 50 niveaux, la physique, la boutique, les récompenses, la sauvegarde et les publicités sont
+**exactement les mêmes fichiers** (`www/`, préparé par `tools/build-web.mjs`). Rien n'a été changé dans
+l'expérience de jeu.
+
+### Projet Xcode (`ios/`, Capacitor 8, Swift Package Manager — pas de CocoaPods)
+
+| Réglage | Valeur |
+|---|---|
+| Identifiant · nom | `com.echospeed.hoopbounce` · **Hoop Bounce** |
+| Version | 1.0.0 (build 1) |
+| iOS minimum | **16.0** (iPhone 8 et plus récents) — nécessaire pour les unités CSS de conteneur de la roue |
+| Appareils | iPhone et iPad (iPad en plein écran) |
+| Orientation | **paysage uniquement** (gauche et droite) |
+| Plein écran | barre d'état masquée, barre d'accueil estompée, gestes des bords à confirmer (`App/MainViewController.swift`) |
+| WebView | sans défilement, sans rebond, sans aperçu des liens ; encoche et barre d'accueil gérées par le CSS (`contentInset: never`) |
+| Publicités | `GADApplicationIdentifier` = application de **test** iOS de Google ; bloc récompensé de **test** iOS choisi automatiquement (`ads-config.js`, `currentPlatform()`) ; SKAdNetwork Google ; texte ATT présent mais **aucune demande de suivi** |
+| Vibrations | `@capacitor/haptics` (retour haptique natif) |
+| Icône · démarrage | icône 1024 sans transparence ; écran de démarrage sombre avec le ballon (fond `#04070F`) |
+| Plugins | `@capacitor-community/admob` 8.4.2 (Google Mobile Ads 13.11, UMP 3.1), `@capacitor/haptics` 8.0.2 — tous deux avec leur version iOS (Swift Package) |
+| Commandes | `npm run ios:sync` (copie le jeu et met à jour les plugins), `npm run ios:open` (ouvre Xcode) |
+
+### Compatibilité vérifiée et corrigée (étape 21)
+Audit du code web pour Safari / la WebView iOS (WebKit), puis **corrections sans effet sur le jeu** :
+- **Son** : WebKit ne démarre l'audio que sur un geste « terminé » (doigt levé, clic, touche), pas au simple
+  contact ; le son est désormais (re)déverrouillé aussi à ces moments-là (jeu, menu, boutique), et repris après
+  une interruption iOS (appel, Siri : état « interrupted »). Sans cela, le jeu risquait d'être muet sur iPhone.
+- **Vibrations** : l'iPhone n'a pas `navigator.vibrate` → module `src/platform/vibrate.js` : Android inchangé
+  (`navigator.vibrate`), iPhone = retour haptique natif au même rythme (léger, moyen, fort selon la durée).
+- **Publicités** : section `ios` dans `ads-config.js` (identifiants de **test** officiels iOS ; Google refuse
+  un bloc Android dans une application iOS), détection automatique de la plateforme. Android inchangé.
+- **Encoche** : en paysage, l'encoche ou la Dynamic Island retire ~59 px de chaque côté. Les boutons du jeu
+  s'en écartaient déjà ; le menu et la boutique passent maintenant en mise en page compacte selon la **largeur
+  réellement utilisable** (`src/shared/safe-width.js`, classes `fit-760` / `fit-1100`) : avant, sur iPhone
+  mini / 15 / 16, les étiquettes du haut chevauchaient le logo et le compteur de pièces de la boutique sortait
+  de l'écran.
+- **Flou des projecteurs du menu** : `ctx.filter` n'existe dans WebKit qu'à partir d'iOS 18 → solution de repli
+  équivalente (dessin réduit puis agrandi avec lissage).
+- **Texte** : pas d'agrandissement automatique en paysage (`-webkit-text-size-adjust`), pas de menu « aperçu »
+  au toucher long (`-webkit-touch-callout`).
+- Déjà compatibles : `webkitAudioContext` en repli, `OffscreenCanvas` et `roundRect` avec repli, panoramique
+  stéréo testé avant usage, marges `env(safe-area-inset-*)` et `viewport-fit=cover` sur toutes les pages,
+  sauvegarde en `localStorage` (conservée par la WebView iOS entre les lancements et les mises à jour).
+
+### Tests dans WebKit (le moteur de Safari et de la WebView iOS)
+Dans l'environnement de développement (Linux), avec **WebKitGTK 2.52** piloté par WebDriver :
+- **parcours complet : 29 contrôles sur 29, 0 erreur JavaScript** — lancement, son déverrouillé par un vrai
+  toucher (menu et jeu), récompense du jour, 9 pages, coffre et roue (dont annonce de test), achat et
+  équipement d'un skin, skin en jeu, panier et pièces, pièces doublées et reprise au drapeau (annonces de test),
+  5 mondes jouables, **sauvegarde** (pièces, skin, progression) retrouvée après fermeture ;
+- **tailles d'iPhone** (paysage) avec encoche simulée : SE (667 × 375), 12/13 mini (812 × 375), 14 Pro / 15 / 16
+  (852 × 393), 15 Pro Max / 16 Plus (932 × 430), iPad Air (1180 × 820) : aucun élément hors écran ; boutons du
+  jeu à 59 px de l'encoche et au-dessus de la barre d'accueil ;
+- **performances** : une image du jeu se calcule en **1 à 2 ms** dans WebKit (budget à 60 images/s : 16,7 ms).
+  Le compteur montre 28 à 44 images/s dans cet environnement **sans carte graphique** (tout le dessin y est fait
+  par le processeur) ; sur iPhone, le canvas est dessiné par le GPU (Metal). Les 60 images/s sur un vrai
+  iPhone restent à confirmer lors du premier essai.
+
+### Reste à faire pour l'iPhone
+- 🔴 Première compilation dans Xcode sur un Mac, essai sur un iPhone (60 images/s, son, vibrations, encoche).
+- 🔴 TestFlight pour les amis : compte Apple Developer (99 $/an), app créée sur App Store Connect, archive envoyée.
+- 🔴 Avant l'App Store : vrais identifiants AdMob iOS, liste SKAdNetwork complète, questionnaire de
+  confidentialité, captures iPhone.
+
 ## 6. Roadmap
 
 Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
@@ -1574,6 +1647,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   🔴 annonces de test AdMob réelles sur appareil (seulement avec la version Capacitor)
 - 🔴 Vibrations natives (Capacitor Haptics), si `navigator.vibrate` ne suffit pas dans la WebView
 
+### Phase 8 bis — iPhone (iOS) 🟡
+- ✅ Projet Xcode Capacitor 8 (`ios/`, Swift Package Manager), paysage, plein écran, iOS 16+ (étape 21)
+- ✅ Publicités AdMob iOS en mode test (identifiants de test officiels, choix automatique de la plateforme)
+- ✅ Retour haptique natif, son compatible WebKit, mises en page adaptées à l'encoche
+- ✅ Parcours complet, sauvegarde et tailles d'iPhone vérifiés dans WebKit
+- 🔴 Compilation dans Xcode sur un Mac, essai sur iPhone, TestFlight
+
 ### Phase 9 — Publication 🟡
 - ✅ Fiche Play Store : icône 512, feature graphic 1024 × 500, 10 captures × 3 langues, textes FR / EN / ES
 - ✅ Checklist complète avant publication (`store/CHECKLIST.md`)
@@ -1610,6 +1690,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Publicités récompensées facultatives (AdMob) : doubler les pièces, reprendre au drapeau, coffre bonus,
   roue de la chance ; page Bonus du jour (étape 13)
 - ✅ Écran de chargement (logo, signature EchoSpeed, ballon, particules, barre, fondu vers le menu) (étape 14)
+- ✅ Version iPhone préparée (étape 21) : projet Xcode, compatibilité WebKit, publicités de test iOS, haptique
 - ✅ Version de test Android (étape 20) : `HoopBounce_Test_v1.apk`, vérifiée avant et après la génération
 - ✅ Page « Modes à venir » (étape 19) : Endless, Course Multijoueur, Créateur de Maps (présentation seulement)
 - ✅ Son et sensations (étape 18) : identité sonore, sons des surfaces et du roulement, musique dynamique,
@@ -1621,6 +1702,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 Première compilation iPhone dans Xcode (Mac) et essai sur iPhone ; TestFlight pour les amis (étape 21)
 - 🟡 Essais de `HoopBounce_Test_v1.apk` sur téléphone par le porteur du projet et ses amis (étape 20) : noter ce
   qui ne va pas (démarrage, performances, son, vibrations, encoche, sauvegarde, confort des commandes)
 - 🟡 Attente des retours du porteur du projet sur la page « Modes à venir » (étape 19) et sur le son et les
@@ -1768,6 +1850,12 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - Mesure (Chromium sans carte graphique, 844 × 390) : **60 images/s** dans les 5 mondes pendant les nouveaux
   effets ; aucune erreur dans la console (jeu, menu, boutique).
 
+**iPhone (étape 21)**
+- Mises en page compactes selon la largeur utilisable : une seule mesure (élément invisible) au chargement et
+  au redimensionnement, aucune écoute pendant le jeu.
+- Repli du flou du menu : un petit canvas agrandi une fois, au lieu d'un filtre (aucun coût par image).
+- WebKit : une image du jeu se calcule en 1 à 2 ms (mesuré dans WebKitGTK).
+
 **Écran de chargement (étape 14)**
 - Aucune image à télécharger : fond en dégradés CSS, ballon en SVG intégré à la page, particules sur un petit
   canvas (≤ 46 points). Il s'affiche donc avant même que le code du menu soit chargé.
@@ -1797,6 +1885,10 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | ✅ | Boutique (étape 18, en cours de développement) : l'achat d'un objet épique ou légendaire plantait (variable supprimée par erreur). | ✅ Corrigé avant publication |
 | Info | Économie (étape 17) : les coffres et la roue donnent toujours des **objets entiers** tirés au hasard parmi les raretés prévues : coffre épique → épique ou légendaire ; coffre bonus amélioré → rare, épique ou légendaire ; roue → skin épique ou légendaire. Avec les nouveaux prix, un légendaire (500 000+) peut donc tomber d'un coffre. Les gains n'ont pas été réduits, comme demandé. | 🟡 À décider : pondérer les tirages vers les raretés basses, si les légendaires doivent rester rares |
 | ✅ | Boutique entre 920 et 1 100 px de large : le compteur de pièces sortait de l'écran ; sur les cartes légendaires, le prix et « ★ Exclusif » débordaient. | ✅ Corrigé (v1.0.0) |
+| Info | iPhone (étape 21) : projet Xcode **jamais compilé** (Xcode n'existe que sur Mac) ; testé dans WebKit (WebKitGTK) sous Linux, pas sur un vrai iPhone. Les 60 images/s sont à confirmer sur appareil. | 🔴 À tester par le porteur du projet |
+| Info | iPhone : sur iOS, le son du jeu suit le bouton silencieux (comme la plupart des jeux) : téléphone en mode silencieux = pas de son. | 🟡 Normal |
+| ✅ | iPhone mini / 15 / 16 (encoche) : étiquettes du haut du menu sur le logo, compteur de pièces de la boutique hors écran. | ✅ Corrigé (étape 21) |
+| ✅ | iPhone : le son pouvait rester muet (déverrouillage au simple contact, refusé par WebKit) ; aucune vibration (`navigator.vibrate` absent). | ✅ Corrigé (étape 21) |
 | Info | Version de test (APK) : construite et vérifiée (signature, contenu, jeu rejoué depuis l'APK), mais **pas encore lancée sur un vrai téléphone** (aucun appareil ni émulateur disponible). Sur un téléphone dont « Android System WebView » n'est pas à jour (avant 2020), le jeu peut ne pas démarrer. | 🔴 À tester par le porteur du projet |
 | Info | Version de test : pas de vraies annonces de test AdMob (SDK absent de l'enveloppe) ; ce sont les annonces de test simulées du jeu. Les vraies annonces de test se vérifient avec la version Capacitor (`android/`). | 🟡 Normal pour cette version |
 | Info | Projet Capacitor (`android/`, version Play Store) jamais construit (SDK Android indisponible dans l'environnement de développement) : à faire dans Android Studio. | 🔴 À tester |
@@ -1829,6 +1921,24 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 20/11/2026 — Étape 21 : préparation de la version iPhone (iOS) (v1.0.0)
+- **Ajouté** :
+  - **projet Xcode** `ios/` (Capacitor 8, Swift Package Manager) : paysage, plein écran, iOS 16+, iPhone et iPad,
+    icône et écran de démarrage, `MainViewController.swift` (barre d'état masquée, barre d'accueil estompée,
+    gestes des bords à confirmer) ;
+  - publicités AdMob iOS en **mode test** : `GADApplicationIdentifier` de test, section `ios` dans
+    `ads-config.js`, détection automatique de la plateforme (`currentPlatform()`), SKAdNetwork Google ;
+  - `@capacitor/haptics` + `src/platform/vibrate.js` (retour haptique natif sur iPhone, Android inchangé) ;
+  - `src/shared/safe-width.js` : mises en page compactes selon la largeur utilisable (encoche) ;
+  - scripts `npm run ios:sync` / `ios:open` ; guide `native/ios/README.md` ; 5 tests (`tests/ios.test.mjs`).
+- **Corrigé** (compatibilité iPhone, sans effet sur le jeu) : son déverrouillé aussi au doigt levé et repris après
+  une interruption iOS ; flou des projecteurs du menu sans `ctx.filter` ; étiquettes du menu sur le logo et
+  compteur de la boutique hors écran avec l'encoche ; texte agrandi en paysage ; menu « aperçu » au toucher long.
+- **Vérifié** dans WebKit (WebKitGTK 2.52) : parcours complet 29/29 sans erreur, sauvegarde, 5 tailles d'iPhone et
+  d'iPad, temps de calcul d'une image 1-2 ms ; non-régression Chromium (30/30) et 335 tests automatiques.
+- **Inchangé** : gameplay, niveaux, publicités (toujours en test), sauvegardes.
+- **Reste à faire** : compilation dans Xcode sur un Mac, essai sur iPhone, TestFlight (compte Apple Developer).
 
 ### 20/11/2026 — Étape 20 : version de test Android (APK) (v1.0.0-test1)
 - **Ajouté** :

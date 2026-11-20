@@ -116,7 +116,7 @@ export class Sfx {
       this.ui = new UiVoice(c, this.master, this._noise);
       this._makeMotion();
     }
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); // « suspended », ou « interrupted » sur iOS (appel, Siri)
   }
 
   suspend() {

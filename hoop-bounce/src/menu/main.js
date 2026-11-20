@@ -2,6 +2,7 @@
 
 import { MenuScene } from './scene.js';
 import { MenuSound } from './sound.js';
+import { watchSafeWidth } from '../shared/safe-width.js';
 import { ICONS } from './icons.js';
 import { STRINGS, t } from './i18n.js';
 import { ballEmblem, modesPage, settingsPage } from './pages.js';
@@ -10,6 +11,7 @@ import { CollectionView } from './collection-view.js';
 import { DailyView, MissionsView, AchievementsView, liveBadges } from './live-views.js';
 import { RewardFx } from './rewards-fx.js';
 import { BonusView } from './bonus-view.js';
+import { vibratePattern } from '../platform/vibrate.js';
 import { aboutPage } from './about-page.js';
 import { DailyReward } from '../shared/daily.js';
 import { dayKey } from '../shared/stats.js';
@@ -29,6 +31,7 @@ const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const app = $('#app');
 const settings = new Settings();
 const sound = new MenuSound();
+watchSafeWidth(); // encoche des iPhone : mises en page compactes selon la largeur utilisable
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const scene = new MenuScene($('#scene'), { quality: settings.get('quality'), reducedMotion });
 
@@ -51,13 +54,9 @@ const lang = () => settings.get('lang');
 // ─── Vibrations ─────────────────────────────────────────────────────────────
 
 function vibrate(ms) {
-  if (!settings.get('vibration') || typeof navigator.vibrate !== 'function') return;
+  if (!settings.get('vibration')) return;
   if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
-  try {
-    navigator.vibrate(ms);
-  } catch {
-    /* ignoré */
-  }
+  vibratePattern(ms); // Android : navigator.vibrate ; iPhone : retour haptique natif
 }
 
 // ─── Textes et icônes ───────────────────────────────────────────────────────
@@ -263,6 +262,9 @@ function toast(text) {
 }
 
 // ─── Effet de pression (tous les boutons) ───────────────────────────────────
+
+// iPhone (WebKit) : le son ne peut démarrer que sur un geste « terminé » (doigt levé, clic, touche)
+for (const ev of ['touchend', 'pointerup', 'click', 'keydown']) document.addEventListener(ev, () => sound.unlock(), { passive: true, capture: true });
 
 document.addEventListener('pointerdown', (e) => {
   sound.unlock();

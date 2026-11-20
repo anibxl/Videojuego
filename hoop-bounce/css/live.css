@@ -53,6 +53,9 @@
   .hub-label { display: none; }
   .hub { padding: 0 9px; }
 }
+/* Même chose quand l'encoche (iPhone) réduit la largeur utilisable : src/shared/safe-width.js */
+html.fit-760 .hub-label { display: none; }
+html.fit-760 .hub { padding: 0 9px; }
 
 /* ── Éléments communs des pages ─────────────────────────────────────────── */
 

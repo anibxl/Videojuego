@@ -966,6 +966,10 @@ function hideIntro() {
   sfx.unlock();
 }
 
+// iPhone (WebKit) : le son ne peut démarrer que sur un geste « terminé » (doigt levé, clic, touche),
+// pas au simple contact du doigt. On (re)déverrouille donc l'audio aussi à ces moments-là.
+for (const ev of ['touchend', 'pointerup', 'click', 'keydown']) window.addEventListener(ev, () => sfx.unlock(), { passive: true, capture: true });
+
 ui.intro.addEventListener('pointerdown', () => {
   sfx.unlock();
   hideIntro();

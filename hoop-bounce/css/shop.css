@@ -504,6 +504,14 @@ html, body, .top { max-width: 100vw; }
   .bar { width: 50px; }
 }
 
+/* Mêmes règles quand l'encoche (iPhone) réduit la largeur utilisable : src/shared/safe-width.js */
+html.fit-1100 .title,
+html.fit-1100 .collection .col-label { display: none; }
+html.fit-1100 .top { gap: 10px; }
+html.fit-760 .tabs button { padding: 0 10px; font-size: 13px; }
+html.fit-760 .tabs button small { display: none; }
+html.fit-760 .bar { width: 50px; }
+
 @media (max-height: 380px) {
   .top { height: calc(52px + var(--safe-top)); }
   .body { height: calc(100% - 52px - var(--safe-top)); }

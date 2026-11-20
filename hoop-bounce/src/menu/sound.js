@@ -47,7 +47,7 @@ export class MenuSound {
       this.voice = new UiVoice(c, this.sfxBus, this._noise);
       this._applyVolumes();
     }
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); // « suspended », ou « interrupted » sur iOS (appel, Siri)
     if (!this._musicTimer) this._startMusic();
   }
 
@@ -60,7 +60,7 @@ export class MenuSound {
 
   resume() {
     if (!this.ctx) return;
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); // « suspended », ou « interrupted » sur iOS (appel, Siri)
     if (!this._musicTimer) this._startMusic();
   }
 
