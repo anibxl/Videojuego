@@ -112,7 +112,7 @@ if (!existsSync(ks)) {
 }
 const out = join(dist, apkName);
 run('apksigner', ['sign', '--ks', ks, '--ks-pass', `pass:${KEY_PASS}`, '--key-pass', `pass:${KEY_PASS}`, '--ks-key-alias', 'hoopbounce-test',
-  '--v1-signing-enabled', 'true', '--v2-signing-enabled', 'true', '--v3-signing-enabled', 'true', '--out', out, aligned]);
+  '--v1-signing-enabled', 'true', '--v2-signing-enabled', 'true', '--v3-signing-enabled', 'true', '--v4-signing-enabled', 'false', '--out', out, aligned]);
 
 // 6. Vérifications
 step('vérifications');
