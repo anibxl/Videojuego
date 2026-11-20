@@ -736,7 +736,7 @@ dans `css/menu.css`, textes `mode.<id>` et `mode.<id>.desc` dans `src/menu/i18n.
 | Carte | Titre | Description | Illustration animée | Couleur |
 |---|---|---|---|---|
 | `endless` | 🌊 Endless | « Un défi sans fin. Va le plus loin possible et bats ton meilleur score. » | ciel de nuit, vagues sur trois plans et plateformes qui **défilent sans fin**, pièces, ballon qui court avec traînée, compteur « 2 480 m », grand ∞ lumineux | bleu |
-| `race` | 🏁 Course Multijoueur | « Affronte tes amis dans des courses folles jusqu'au panier. » | **trois ballons** (orange, cyan, violet) qui **se dépassent** sur une piste qui défile, traits de vitesse, ligne d'arrivée à damier, panier, **classement** en direct (barres qui bougent), projecteurs | rose-rouge |
+| `race` | 🏁 Course Multijoueur | « Affronte tes amis sur les mêmes niveaux et sois le premier à réussir le panier. » | **écran partagé** « J1 / VS / J2 » : **le même niveau** deux fois (plateforme, pics, panier). J2 part plus vite mais **se fait piéger par les pics** (éclatement) et repart du début ; J1 réussit le panier le premier (anneau doré) | rose-rouge |
 | `creator` | 🛠️ Créateur de Maps | « Crée tes propres niveaux et joue avec tes amis. » | plan **quadrillé**, **barre d'outils** (bloc, pics, panier, gomme), **curseur** qui pose une **plateforme** (contour en pointillés puis bloc qui tombe en place), pics, panier, ballon | menthe |
 
 **Style** : carte premium (dégradé de la couleur du mode, bord lumineux, ombre), illustration en haut (cadrage
@@ -744,6 +744,17 @@ dans `css/menu.css`, textes `mode.<id>` et `mode.<id>.desc` dans `src/menu/i18n.
 l'illustration de temps en temps, entrée en cascade à l'ouverture de la page, carte qui se soulève au survol.
 Animations uniquement en `transform` / `opacity`, **mises en pause quand la page est fermée**, coupées si le
 système demande moins d'animations. 3 colonnes en paysage (1 seule sur un écran très étroit).
+
+**Course Multijoueur — fonctionnement prévu** (validé par le porteur du projet, pas encore développé) :
+- tous les joueurs jouent **le même niveau** (les niveaux du mode solo) ;
+- chaque joueur a **son propre ballon** (avec ses cosmétiques) ;
+- **la physique est exactement celle du mode solo** (même moteur déterministe, mêmes réglages) ;
+- **le premier qui marque gagne** ;
+- les erreurs et les pièges (chute, éclatement, retour au drapeau) créent des **retournements de situation**.
+Ce n'est pas une course classique : c'est une **compétition de maîtrise, de rapidité et de précision**.
+Pistes techniques : affichage en écran partagé ou ballons « fantômes » des adversaires sur le même écran,
+comparaison en direct (position, chutes) ; la simulation déterministe permet de rejouer exactement la partie
+d'un adversaire à partir de ses commandes (fantômes asynchrones, vérification des résultats).
 
 **Pour ouvrir un mode dans une future mise à jour** : retirer `data-locked` de sa carte, lui donner une
 destination (page ou `play.html?mode=…`), remplacer la pastille « À venir » par « Jouer ».
@@ -1501,7 +1512,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ### Phase 7 — Modes de jeu 🟡
 - ✅ Page « Modes à venir » : 3 cartes de présentation illustrées et animées, verrouillées (étape 19)
 - 🔴 **Endless** : course infinie (passages générés à la suite), distance et meilleur score
-- 🔴 **Course Multijoueur** : plusieurs ballons sur le même parcours jusqu'au panier, classement (temps réel ou
+- 🔴 **Course Multijoueur** : les joueurs jouent le même niveau, chacun avec son ballon, physique identique au
+  solo ; le premier qui marque gagne ; les erreurs et les pièges créent des retournements (temps réel ou
   fantômes asynchrones ; demande un serveur)
 - 🔴 **Créateur de Maps** : éditeur de niveaux (plateformes, obstacles, panier), essai, partage avec les amis
   (demande un format de niveau partageable et un serveur)
@@ -1608,8 +1620,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 **Modes** (les trois premiers sont annoncés dans le menu depuis l'étape 19)
 - **Endless** : passages générés à l'infini à partir des briques des 50 niveaux, difficulté qui monte, distance et
   meilleur score, pièces en route.
-- **Course Multijoueur** : course au panier contre des amis, en temps réel ou contre leurs fantômes enregistrés ;
-  classement à l'arrivée.
+- **Course Multijoueur** : compétition de maîtrise sur le même niveau ; chacun son ballon, physique du solo ; le
+  premier qui marque gagne ; écran partagé ou fantômes des adversaires ; en temps réel ou contre des parties
+  enregistrées.
 - **Créateur de Maps** : poser plateformes, obstacles et panier sur une grille, tester son niveau, le partager par
   un code ; les niveaux utilisent le même format que les 50 niveaux du jeu (`src/game/levels/`).
 - Idées retirées de la page (gardées pour plus tard) : Trickshot (marquer depuis des positions imposées, avec des
@@ -1764,6 +1777,16 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 20/11/2026 — Étape 19 (suite) : carte « Course Multijoueur » précisée (v1.0.0)
+- **Modifié** :
+  - description : « Affronte tes amis sur les mêmes niveaux et sois le premier à réussir le panier. » (FR / EN / ES) ;
+  - illustration : **écran partagé** J1 / VS / J2 sur le même niveau ; J2 se fait piéger par les pics et repart,
+    J1 marque le premier (étiquettes « P1 / P2 » en anglais).
+- **Ajouté** : le fonctionnement prévu du mode (même niveau, un ballon par joueur, physique du solo, le premier
+  qui marque gagne, retournements dus aux erreurs et aux pièges) dans « Modes à venir » et la roadmap.
+- **Non fait, volontairement** : le mode n'est pas développé.
+- **Reste à faire** : retours du porteur du projet.
 
 ### 20/11/2026 — Étape 19 : page « Modes à venir » (v1.0.0)
 - **Ajouté** :

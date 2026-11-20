@@ -71,24 +71,31 @@ const ART_ENDLESS = () => `<svg viewBox="0 0 320 150" preserveAspectRatio="xMidY
   <g class="m-hud"><rect x="12" y="10" width="78" height="20" rx="10" fill="rgba(4,10,24,.55)" stroke="rgba(160,220,255,.35)"/><text x="51" y="24" text-anchor="middle">2 480 m</text></g>
 </svg>`;
 
-/** Course multijoueur : trois ballons au coude à coude jusqu'au panier, classement en direct. */
-const ART_RACE = () => `<svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-  <defs>
-    <linearGradient id="mr-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a0b2e"/><stop offset=".7" stop-color="#4a1640"/><stop offset="1" stop-color="#7a2440"/></linearGradient>
-    <pattern id="mr-check" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#fff"/><rect width="4" height="4" fill="#111"/><rect x="4" y="4" width="4" height="4" fill="#111"/></pattern>
-  </defs>
-  <rect width="320" height="150" fill="url(#mr-sky)"/>
-  <g class="m-flood" fill="#ffd9a0" opacity=".14"><path d="M40 0 L70 0 L130 150 L20 150Z"/><path d="M250 0 L280 0 L300 150 L190 150Z"/></g>
-  <g stroke="rgba(255,255,255,.18)" stroke-width="1"><path d="M0 92H320M0 112H320M0 132H320"/></g>
-  <g class="m-lanes" stroke="rgba(255,255,255,.45)" stroke-width="2" stroke-dasharray="10 12"><path d="M0 102H660M0 122H660"/></g>
-  <rect x="262" y="88" width="10" height="56" fill="url(#mr-check)" opacity=".9"/>
-  <g transform="translate(286 54)"><rect x="10" y="-6" width="4" height="90" fill="#c8ccd6"/><rect x="2" y="-12" width="22" height="30" rx="2" fill="rgba(255,255,255,.88)" stroke="#e33" stroke-width="1.5"/><rect x="7" y="-3" width="12" height="10" fill="none" stroke="#e33" stroke-width="1.4"/><ellipse cx="-4" cy="14" rx="10" ry="2.6" fill="none" stroke="#ff5a2a" stroke-width="2.4"/><path d="M-13 15 L-9 30 L1 30 L5 15" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1"/></g>
-  <g class="m-racer r1" transform="translate(0 0)"><g class="m-speed" stroke="#ffb26b"><path d="M-34 82h20M-40 88h24" stroke-width="2"/></g><g class="m-hop fast"><g transform="translate(0 84)">${ball(ORANGE, 'mr-b1')}</g></g></g>
-  <g class="m-racer r2"><g class="m-speed" stroke="#7fdcff"><path d="M-34 102h20M-40 108h24" stroke-width="2"/></g><g class="m-hop fast d2"><g transform="translate(0 104)">${ball(CYAN, 'mr-b2')}</g></g></g>
-  <g class="m-racer r3"><g class="m-speed" stroke="#c9a8ff"><path d="M-34 122h20M-40 128h24" stroke-width="2"/></g><g class="m-hop fast d3"><g transform="translate(0 124)">${ball(VIOLET, 'mr-b3')}</g></g></g>
-  <g class="m-board" transform="translate(12 10)"><rect width="74" height="54" rx="9" fill="rgba(10,4,20,.6)" stroke="rgba(255,255,255,.2)"/>
-    <g font-size="9" font-weight="800" fill="#fff"><text x="9" y="17">1</text><text x="9" y="31">2</text><text x="9" y="45">3</text></g>
-    <rect class="m-bar b1" x="20" y="10" width="44" height="8" rx="4" fill="#ff8a3d"/><rect class="m-bar b2" x="20" y="24" width="36" height="8" rx="4" fill="#3fc8ff"/><rect class="m-bar b3" x="20" y="38" width="28" height="8" rx="4" fill="#a87bff"/></g>
+/**
+ * Course multijoueur : écran partagé, deux joueurs sur le MÊME niveau (même plateforme, mêmes pics,
+ * même panier). J2 part plus vite mais se fait piéger par les pics et repart du début : J1 marque le
+ * premier. Une compétition de maîtrise, pas une course de vitesse pure.
+ */
+const RACE_BAND = (y, id, tint, n, prefix) => `<g transform="translate(0 ${y})">
+    <rect width="320" height="73" fill="url(#mr-sky)"/>
+    <g fill="#fff" opacity=".5"><circle cx="60" cy="12" r=".9"/><circle cx="140" cy="8" r=".7"/><circle cx="200" cy="16" r=".9"/></g>
+    <rect x="0" y="58" width="320" height="15" fill="#2b2140"/><rect x="0" y="58" width="320" height="2.5" fill="#6b5a92"/>
+    <rect x="92" y="38" width="40" height="7" rx="2.5" fill="#8f7cc2"/>
+    <path d="M150 58l5-9 5 9zM160 58l5-9 5 9zM170 58l5-9 5 9z" fill="#ff5a6a"/>
+    <rect x="252" y="12" width="3" height="46" fill="#c8ccd6"/><rect x="244" y="10" width="18" height="16" rx="1.5" fill="rgba(255,255,255,.9)" stroke="#ff6c78" stroke-width="1.2"/>
+    <ellipse cx="236" cy="26" rx="8.5" ry="2.2" fill="none" stroke="#ff7a2f" stroke-width="2"/><path d="M228 27 L231 37 L241 37 L244 27" fill="none" stroke="rgba(255,255,255,.65)" stroke-width=".9"/>
+    <g class="m-player ${id}"><g class="m-hop"><g transform="translate(0 50)">${ball(tint, `mr-${id}`)}</g></g></g>
+    <g class="m-pop ${id}"><circle cx="165" cy="48" r="9" fill="none" stroke="#ff9aa4" stroke-width="2"/></g>
+    <rect x="8" y="7" width="26" height="15" rx="7.5" fill="rgba(10,4,20,.65)" stroke="${n === 1 ? '#ff9a52' : '#5fd0ff'}" stroke-width="1.2"/>
+    <text x="21" y="18" text-anchor="middle" class="m-tag">${prefix}${n}</text>
+  </g>`;
+const ART_RACE = (lang) => `<svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs><linearGradient id="mr-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a0b2e"/><stop offset="1" stop-color="#4a1640"/></linearGradient></defs>
+  ${RACE_BAND(0, 'p1', ORANGE, 1, lang === 'en' ? 'P' : 'J')}
+  ${RACE_BAND(77, 'p2', CYAN, 2, lang === 'en' ? 'P' : 'J')}
+  <rect y="73" width="320" height="4" fill="#0a0414"/>
+  <g class="m-goal"><circle cx="236" cy="26" r="14" fill="none" stroke="#ffd65a" stroke-width="2.5"/></g>
+  <g class="m-vs" transform="translate(160 75)"><circle r="13" fill="#140822" stroke="#ff6c78" stroke-width="2"/><text y="4" text-anchor="middle">VS</text></g>
 </svg>`;
 
 /** Créateur de maps : plan quadrillé, outils, une plateforme posée par le curseur, pics et panier. */
@@ -123,7 +130,7 @@ export function modesPage(lang) {
     (m, i) => `
     <div class="fmode-wrap reveal" style="--i:${i + 1}">
       <button class="fmode pressable" data-locked="${m.id}" data-mode="${m.id}" style="--accent:${m.accent}" aria-label="${t(lang, `mode.${m.id}`)} — ${t(lang, `mode.${m.id}.desc`)} — ${t(lang, 'soon')}">
-        <span class="fmode-art">${m.art()}<span class="fmode-shine"></span><span class="fmode-lock">${ICONS.lock}</span></span>
+        <span class="fmode-art">${m.art(lang)}<span class="fmode-shine"></span><span class="fmode-lock">${ICONS.lock}</span></span>
         <span class="fmode-body">
           <span class="fmode-title"><span class="emoji" aria-hidden="true">${m.emoji}</span>${t(lang, `mode.${m.id}`)}</span>
           <span class="fmode-desc">${t(lang, `mode.${m.id}.desc`)}</span>

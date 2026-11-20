@@ -23,7 +23,7 @@ test('textes demandés, traduits dans les 3 langues', () => {
   assert.equal(fr['mode.endless'], 'Endless');
   assert.equal(fr['mode.endless.desc'], 'Un défi sans fin. Va le plus loin possible et bats ton meilleur score.');
   assert.equal(fr['mode.race'], 'Course Multijoueur');
-  assert.equal(fr['mode.race.desc'], "Affronte tes amis dans des courses folles jusqu'au panier.");
+  assert.equal(fr['mode.race.desc'], 'Affronte tes amis sur les mêmes niveaux et sois le premier à réussir le panier.');
   assert.equal(fr['mode.creator'], 'Créateur de Maps');
   assert.equal(fr['mode.creator.desc'], 'Crée tes propres niveaux et joue avec tes amis.');
   for (const lang of ['en', 'es']) {

@@ -116,7 +116,7 @@ export const STRINGS = {
     'mode.endless': 'Endless',
     'mode.endless.desc': 'Un défi sans fin. Va le plus loin possible et bats ton meilleur score.',
     'mode.race': 'Course Multijoueur',
-    'mode.race.desc': 'Affronte tes amis dans des courses folles jusqu\'au panier.',
+    'mode.race.desc': 'Affronte tes amis sur les mêmes niveaux et sois le premier à réussir le panier.',
     'mode.creator': 'Créateur de Maps',
     'mode.creator.desc': 'Crée tes propres niveaux et joue avec tes amis.',
 
@@ -302,7 +302,7 @@ export const STRINGS = {
     'mode.endless': 'Endless',
     'mode.endless.desc': 'A never-ending challenge. Go as far as you can and beat your best score.',
     'mode.race': 'Multiplayer Race',
-    'mode.race.desc': 'Take on your friends in wild races to the hoop.',
+    'mode.race.desc': 'Take on your friends on the same levels and be the first to score.',
     'mode.creator': 'Map Creator',
     'mode.creator.desc': 'Build your own levels and play them with your friends.',
 
@@ -488,7 +488,7 @@ export const STRINGS = {
     'mode.endless': 'Endless',
     'mode.endless.desc': 'Un reto sin fin. Llega lo más lejos posible y supera tu mejor puntuación.',
     'mode.race': 'Carrera multijugador',
-    'mode.race.desc': 'Reta a tus amigos en carreras locas hasta la canasta.',
+    'mode.race.desc': 'Reta a tus amigos en los mismos niveles y sé el primero en encestar.',
     'mode.creator': 'Creador de mapas',
     'mode.creator.desc': 'Crea tus propios niveles y juega con tus amigos.',
 
