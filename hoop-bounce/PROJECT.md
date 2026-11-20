@@ -3,9 +3,9 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 20/11/2026 · **Version :** 1.0.0 (build 1) · **Étape en cours :** validation de la
-> page « Modes à venir » (étape 19 : Endless, Course Multijoueur, Créateur de Maps, présentés seulement) par le
-> porteur du projet ; rien n'est publié.
+> **Dernière mise à jour :** 20/11/2026 · **Version :** 1.0.0 (build 1) · **Version de test :**
+> `HoopBounce_Test_v1.apk` (1.0.0-test1) · **Étape en cours :** essais de la version de test Android sur
+> téléphone par le porteur du projet et ses amis (étape 20) ; rien n'est publié sur le Play Store.
 
 ## Sommaire
 
@@ -1390,6 +1390,50 @@ porte-monnaie.
 - Elle n'a pas pu être faite dans l'environnement de développement : le téléchargement du SDK Android y est
   bloqué. Elle se fait dans Android Studio (`store/CHECKLIST.md` § 10).
 
+### Version de test Android — APK (étape 20)
+
+**Fichier :** `dist/HoopBounce_Test_v1.apk` (≈ 0,5 Mo), à installer à la main pour soi et des amis testeurs.
+Guide complet : `native/test-apk/README.md`.
+
+| | |
+|---|---|
+| Nom affiché | **Hoop Bounce Test** (icône du ballon) |
+| Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
+| Version | `1.0.0-test1` (code 1) ; « 1.0.0 (test 1) » dans Paramètres et À propos |
+| Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
+| Processeurs | tous (aucun code natif) |
+| Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
+| Publicités | **annonces de TEST simulées** par le jeu (aucun identifiant AdMob, aucune vraie publicité, aucune requête réseau) ; `useTestAds: true` vérifié par un test |
+| Signature | clé de **test** (`native/test-apk/keys/`, non versionnée), schémas v2 + v3 ; empreinte SHA-256 `894f0b7d…35bfd8` |
+| Débogage | WebView inspectable depuis un ordinateur (`chrome://inspect`, débogage USB) |
+
+**Comment elle est construite** (`npm run android:test-apk` → `tools/build-test-apk.mjs`) : le projet Capacitor
+(`android/`) a besoin de Gradle, du SDK Android et des bibliothèques Google (dl.google.com), bloqués dans
+l'environnement de développement. La version de test utilise donc une **enveloppe minimale**
+(`native/test-apk/` : une activité Java, une WebView plein écran, les fichiers du jeu servis depuis l'APK sous une
+adresse https locale — les modules JavaScript l'exigent, et la sauvegarde reste attachée à une origine stable),
+assemblée avec les outils Android d'Ubuntu (`aapt2`, `javac`, `dalvik-exchange`, `zipalign`, `apksigner`, API 23
+pour la compilation). Les fichiers du jeu sont exactement ceux de l'application Capacitor (`tools/build-web.mjs`).
+
+**Vérifié avant la génération** (navigateur mobile simulé 844 × 390, tactile) — 30 contrôles, **0 erreur** :
+lancement (écran de chargement → menu), les 9 pages du menu, récompense quotidienne, coffre bonus, roue gratuite
+et roue avec annonce de test, achat et équipement d'un skin dans la boutique, skin visible en jeu, panier et
+pièces gagnées, pièces doublées par annonce de test, échec puis reprise au drapeau par annonce de test, niveau 1
+des 5 mondes jouable (55-60 images/s), sauvegarde (pièces, skin équipé, progression) après fermeture ; plus les
+330 tests automatiques.
+
+**Vérifié après la génération** :
+- les **mêmes 30 contrôles rejoués sur les fichiers extraits de l'APK**, servis exactement comme le fait
+  l'application (même table de types, mêmes en-têtes) : tout passe, 0 erreur ;
+- les 93 fichiers du jeu sont présents ; `apksigner verify` : signature valide d'Android 7 à Android 16 ;
+  `zipalign` correct ; `aapt dump badging` : paquet, versions, permission et activité de lancement conformes.
+
+**Non vérifiable ici** : l'installation et l'exécution sur un vrai téléphone (pas d'appareil ni d'émulateur
+Android dans l'environnement de développement) → premier essai à faire par le porteur du projet.
+
+**Mettre à jour les testeurs** : `node tools/build-test-apk.mjs --build 2` → `HoopBounce_Test_v2.apk`, signée
+avec **la même clé de test** (sinon il faut désinstaller, ce qui efface la progression de test).
+
 ### Avant d'appuyer sur « Publier » (résumé de la checklist)
 
 1. Comptes Play Console et AdMob ; confirmer l'identifiant du paquet.
@@ -1523,8 +1567,11 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Plugin AdMob installé, identifiant d'application (test) dans le manifeste
 - ✅ Verrouillage en paysage, plein écran immersif, vibreur
 - ✅ Icône (adaptative, ronde, classique), écran de démarrage natif assorti, nom de l'application
+- ✅ **Version de test APK** installable à la main : `dist/HoopBounce_Test_v1.apk` (enveloppe WebView minimale,
+  annonces de test simulées, hors ligne) (étape 20)
 - 🟡 AAB signé à construire dans Android Studio (SDK Android indisponible dans l'environnement de développement)
-- 🔴 Tests sur vrais appareils (entrée de gamme, milieu de gamme, haut de gamme), annonces de test sur appareil
+- 🟡 Tests sur vrais appareils avec la version de test (entrée de gamme, milieu de gamme, haut de gamme) ;
+  🔴 annonces de test AdMob réelles sur appareil (seulement avec la version Capacitor)
 - 🔴 Vibrations natives (Capacitor Haptics), si `navigator.vibrate` ne suffit pas dans la WebView
 
 ### Phase 9 — Publication 🟡
@@ -1563,6 +1610,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Publicités récompensées facultatives (AdMob) : doubler les pièces, reprendre au drapeau, coffre bonus,
   roue de la chance ; page Bonus du jour (étape 13)
 - ✅ Écran de chargement (logo, signature EchoSpeed, ballon, particules, barre, fondu vers le menu) (étape 14)
+- ✅ Version de test Android (étape 20) : `HoopBounce_Test_v1.apk`, vérifiée avant et après la génération
 - ✅ Page « Modes à venir » (étape 19) : Endless, Course Multijoueur, Créateur de Maps (présentation seulement)
 - ✅ Son et sensations (étape 18) : identité sonore, sons des surfaces et du roulement, musique dynamique,
   jingles, ambiances, retours des grands moments, effets des mondes, caméra
@@ -1573,6 +1621,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 Essais de `HoopBounce_Test_v1.apk` sur téléphone par le porteur du projet et ses amis (étape 20) : noter ce
+  qui ne va pas (démarrage, performances, son, vibrations, encoche, sauvegarde, confort des commandes)
 - 🟡 Attente des retours du porteur du projet sur la page « Modes à venir » (étape 19) et sur le son et les
   sensations (étape 18)
 - 🟡 Décision en attente (étape 17) : pondérer les objets tirés des coffres et de la roue
@@ -1747,7 +1797,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | ✅ | Boutique (étape 18, en cours de développement) : l'achat d'un objet épique ou légendaire plantait (variable supprimée par erreur). | ✅ Corrigé avant publication |
 | Info | Économie (étape 17) : les coffres et la roue donnent toujours des **objets entiers** tirés au hasard parmi les raretés prévues : coffre épique → épique ou légendaire ; coffre bonus amélioré → rare, épique ou légendaire ; roue → skin épique ou légendaire. Avec les nouveaux prix, un légendaire (500 000+) peut donc tomber d'un coffre. Les gains n'ont pas été réduits, comme demandé. | 🟡 À décider : pondérer les tirages vers les raretés basses, si les légendaires doivent rester rares |
 | ✅ | Boutique entre 920 et 1 100 px de large : le compteur de pièces sortait de l'écran ; sur les cartes légendaires, le prix et « ★ Exclusif » débordaient. | ✅ Corrigé (v1.0.0) |
-| Info | Application Android jamais construite ni lancée sur un appareil (SDK Android indisponible dans l'environnement de développement) : à vérifier dans Android Studio. | 🔴 À tester |
+| Info | Version de test (APK) : construite et vérifiée (signature, contenu, jeu rejoué depuis l'APK), mais **pas encore lancée sur un vrai téléphone** (aucun appareil ni émulateur disponible). Sur un téléphone dont « Android System WebView » n'est pas à jour (avant 2020), le jeu peut ne pas démarrer. | 🔴 À tester par le porteur du projet |
+| Info | Version de test : pas de vraies annonces de test AdMob (SDK absent de l'enveloppe) ; ce sont les annonces de test simulées du jeu. Les vraies annonces de test se vérifient avec la version Capacitor (`android/`). | 🟡 Normal pour cette version |
+| Info | Projet Capacitor (`android/`, version Play Store) jamais construit (SDK Android indisponible dans l'environnement de développement) : à faire dans Android Studio. | 🔴 À tester |
 | Info | Fournisseur AdMob (application Android) écrit d'après la documentation du plugin, **pas encore essayé sur un appareil** : événements de récompense et de fermeture à confirmer avec les annonces de test. | 🔴 À tester (phase Android) |
 | Faible | Écran de victoire sur petit téléphone : la bannière « Mission terminée ! » recouvre quelques secondes le titre « Panier ! ». | 🟡 À améliorer |
 | Info | Les limites de publicités par jour suivent l'heure de l'appareil (comme la récompense quotidienne). | 🟡 Normal hors ligne |
@@ -1777,6 +1829,25 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 20/11/2026 — Étape 20 : version de test Android (APK) (v1.0.0-test1)
+- **Ajouté** :
+  - **`dist/HoopBounce_Test_v1.apk`** (≈ 0,5 Mo) : « Hoop Bounce Test », `com.echospeed.hoopbounce.test`,
+    Android 7.0+, cible Android 14, tous processeurs, hors ligne, vibreur seulement, annonces de **test**
+    simulées, signée (v2 + v3) avec une clé de test ;
+  - enveloppe Android minimale `native/test-apk/` (manifeste, `MainActivity` : WebView plein écran, fichiers du
+    jeu servis depuis l'APK, plein écran immersif, encoche, bouton retour, pause en arrière-plan) et guide
+    d'installation `native/test-apk/README.md` ;
+  - script `tools/build-test-apk.mjs` (`npm run android:test-apk`, `--build N`) ;
+  - 2 tests (`tests/test-build.test.mjs` : identifiants de test, paquet distinct, pas d'Internet) ;
+  - vérification complète avant et après la génération (30 contrôles, 0 erreur ; voir « Version de test
+    Android »).
+- **Modifié** : `.gitignore` (dossier `build/`, clé de test) ; `package.json` (script `android:test-apk`).
+- **Inchangé** : le jeu lui-même ; les publicités restent en mode test (`useTestAds: true`), aucun identifiant
+  AdMob réel.
+- **Reste à faire** :
+  - installer et essayer l'APK sur de vrais téléphones, puis recueillir les retours des amis testeurs ;
+  - version Play Store (AAB, vraies annonces de test AdMob) depuis `android/` dans Android Studio.
 
 ### 20/11/2026 — Étape 19 (suite) : carte « Course Multijoueur » précisée (v1.0.0)
 - **Modifié** :

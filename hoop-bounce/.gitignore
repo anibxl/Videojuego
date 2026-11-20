@@ -1,2 +1,5 @@
 node_modules/
 www/
+build/
+# Clé de signature des versions de TEST (ne pas publier ; à garder pour les mises à jour des testeurs)
+native/test-apk/keys/

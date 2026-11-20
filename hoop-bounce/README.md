@@ -3,7 +3,11 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 19 (actuelle) :** **page « Modes à venir »**. Trois cartes de présentation illustrées et animées,
+**Étape 20 (actuelle) :** **version de test Android** : `dist/HoopBounce_Test_v1.apk`, à installer à la main
+(guide : `native/test-apk/README.md`, reconstruction : `npm run android:test-apk`). Annonces de test simulées,
+hors ligne.
+
+**Étape 19 :** **page « Modes à venir »**. Trois cartes de présentation illustrées et animées,
 verrouillées « 🔒 À venir » : 🌊 Endless, 🏁 Course Multijoueur, 🛠️ Créateur de Maps (interface seulement,
 aucun mode développé).
 
@@ -227,7 +231,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 328 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+npm test                               # 330 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu, publicités, game feel
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)
