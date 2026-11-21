@@ -241,7 +241,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 335 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+npm test                               # 346 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu, publicités, game feel
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)

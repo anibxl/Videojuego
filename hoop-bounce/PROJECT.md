@@ -2126,6 +2126,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   essais, recommencer, pause), ralenti et zoom près du panier, filet, particules, confettis, foule, jingle,
   écrans victoire / échec / pause ; musique « arène » et sons de lancer.
 - `tests/trickshot.test.mjs` (11 tests) ; `trickshot.html` ajouté à la préparation de l'application (`www/`).
+- Vérifié de bout en bout **au doigt** (événements tactiles) : Modes → TRICKSHOT → Jouer → niveau 1 → tir raté
+  → panier (étoiles) → niveau 2 débloqué et sauvegardé ; aucune erreur, 60 images/s. **346 tests** passent ;
+  version en ligne republiée (même lien) pour que le porteur du projet puisse jouer tout de suite.
 
 **Modifié**
 - Page « Modes à venir » renommée « Modes de jeu » (Trickshot jouable + 3 modes à venir) ; test des modes adapté.
