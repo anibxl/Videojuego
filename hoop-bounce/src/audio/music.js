@@ -104,6 +104,21 @@ export const SONGS = {
     verb: { len: 4.5, decay: 1.8, send: 0.42 },
     gain: 0.45,
   },
+  // Mode Trickshot (l'Arène) : groove funk de salle de sport, couche d'intensité discrète
+  arena: {
+    bpm: 96,
+    swing: 0.08,
+    chords: [[50, 53, 57, 60], [55, 58, 62, 65], [53, 57, 60, 64], [52, 55, 59, 62]],
+    bass: [0, null, 0, null, null, 7, null, 0, null, null, 5, null, 7, null, 5, null],
+    keys: { inst: 'epiano', steps: [2, 10] },
+    lead: { inst: 'pluck', steps: [0, 6, 11], pattern: [3, 2, 1] },
+    leadB: { steps: [0, 3, 6, 11, 14], pattern: [3, 1, 2, 3, 0] },
+    drums: { kick: [0, 8, 11], snare: [4, 12], hat: [0, 2, 4, 6, 8, 10, 12, 14] },
+    layer: { shaker: [1, 5, 9, 13], counter: { inst: 'marimba', steps: [3, 7, 15], octave: 12 } },
+    key: { root: 74, scale: 'minor', inst: 'epiano' },
+    verb: { len: 2.4, decay: 2.8, send: 0.24 },
+    gain: 0.42,
+  },
 };
 
 export class Music {
@@ -556,6 +571,11 @@ export class Music {
         // Feuillage + ruisseau qui murmure
         nodes.push(...this._loop(t, 'bandpass', 2400, 0.5, 0.018, 0.2, 400));
         nodes.push(...this._loop(t, 'bandpass', 900, 1.2, 0.022, 0.6, 260));
+        break;
+      case 'arena':
+        // Grande salle : rumeur lointaine du public et bourdonnement des projecteurs
+        nodes.push(...this._loop(t, 'bandpass', 420, 0.7, 0.022, 0.08, 120));
+        nodes.push(...this._hum(t, 100, 0.004, 'sawtooth', 300, 0.2));
         break;
       case 'space':
         // Bourdon spatial, qui respire lentement, et harmoniques aiguës qui scintillent

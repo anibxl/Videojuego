@@ -3,10 +3,10 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 20/11/2026 · **Version :** 1.0.0 (build 1) · **Version de test Android :**
-> `HoopBounce_Test_v1.apk` (1.0.0-test1) · **iOS :** projet Xcode prêt (`ios/`) · **Étape en cours :**
-> première compilation iPhone sur un Mac par le porteur du projet (étape 21) et essais de la version de test
-> Android ; rien n'est publié.
+> **Dernière mise à jour :** 21/11/2026 · **Version :** 1.1.0-dev (nouveau mode TRICKSHOT, non publié ; la
+> version publiable reste 1.0.0, build 1) · **Version de test Android :** `HoopBounce_Test_v1.apk` (1.0.0-test1)
+> · **iOS :** projet Xcode prêt (`ios/`) · **Étape en cours :** validation du mode **TRICKSHOT** (étape 22) par
+> le porteur du projet ; rien n'est publié.
 
 ## Sommaire
 
@@ -14,6 +14,7 @@
 2. [Gameplay](#2-gameplay)
 3. [Architecture](#3-architecture)
 4. [Interface](#4-interface)
+4 bis. [Mode TRICKSHOT](#4-bis-mode-trickshot-étape-22)
 5. [Progression](#5-progression)
 5 bis. [Publication Google Play](#5-bis-publication-google-play-version-100)
 5 ter. [Version iPhone (iOS)](#5-ter-version-iphone-ios)
@@ -250,6 +251,7 @@ hoop-bounce/
 ├── worlds.html             Ancienne carte des mondes : renvoie vers la sélection du menu (index.html#mondes)
 ├── shop.html               Boutique (pièces, ballons, effets, traînées, animations de panier)
 ├── play.html               Écran de jeu (?world=snow&level=1, &intro=1 pour l'introduction du monde)
+├── trickshot.html          ★ Mode TRICKSHOT : écran de jeu du mode (?level=N)
 ├── PROJECT.md              Ce document (documentation officielle, mémoire du projet)
 ├── README.md               Guide rapide : lancer, tester, régler
 ├── package.json            Version et scripts (npm start, npm test)
@@ -270,6 +272,8 @@ hoop-bounce/
 │   ├── menu-views.css      Styles des pages Mondes (cartes, niveaux) et Collection du menu
 │   ├── live.css            Récompense quotidienne, Missions, Succès, Bonus (coffre, roue), révélation des récompenses
 │   ├── shop.css            Styles de la boutique
+│   ├── trickshot.css       Écran du mode TRICKSHOT (HUD, carte d'intro, pause, victoire, échec)
+│   ├── trickshot-menu.css  Pages du menu du mode TRICKSHOT (carte des modes, accueil du mode, 50 niveaux)
 │   ├── polish.css          Finitions communes à toutes les pages (onde au toucher, boutons, transitions,
 │   │                       bouton « Regarder une publicité », annonce de test simulée)
 │   └── style.css           Styles de l'écran de jeu (HUD, commandes, pause, victoire, tutoriel, intro de monde)
@@ -289,13 +293,15 @@ hoop-bounce/
 │   ├── input/              Entrées tactiles et clavier du jeu
 │   ├── platform/           Fonctions propres à l'appareil (vibrations)
 │   ├── menu/               Tout le menu principal
+│   ├── trickshot/          ★ Mode TRICKSHOT : règles, 50 niveaux, visée, rendu de l'arène, progression, textes
 │   └── shared/             Ce que le menu, la boutique et le jeu partagent (réglages, porte-monnaie,
 │                           statistiques, récompenses quotidiennes, missions, succès, coffres,
 │                           publicités récompensées, coffre bonus et roue de la chance)
 ├── tools/build-web.mjs     Prépare www/ (fichiers du jeu seulement) pour l'application Android
 ├── tests/                  Tests automatiques (node --test)
 │   └── fixtures/           Terrain d'essai et solutions enregistrées des niveaux
-└── tools/                  Outils de développement (level design)
+└── tools/                  Outils de développement (level design ; trickshot-check.mjs et trickshot-atlas.html
+                            pour le mode TRICKSHOT)
 ```
 
 ### À quoi sert chaque dossier
@@ -454,6 +460,10 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tests/routes.test.mjs` | Chaque passage de chaque niveau reste faisable (solutions enregistrées + solutions expertes). |
 | `tests/fixtures/test-yard.js` | Terrain d'essai pour les tests de mécanique (indépendant des niveaux). |
 | `tests/fixtures/routes.json` | Solutions enregistrées des passages (générées par l'outil). |
+| `tests/trickshot.test.mjs` | Mode TRICKSHOT : 50 niveaux (textes, chapitres, montée de la difficulté), **chaque niveau gagné en un seul tir** (solution rejouée), difficulté annoncée = mesure à une classe près, 3 essais, étoiles et score, décor conservé entre deux essais, visée, progression séparée, mode principal intact. |
+| `tests/fixtures/trickshot.json` | Une solution en un tir par niveau TRICKSHOT (angle, puissance, instant) et la part de tirs gagnants mesurée. |
+| `tools/trickshot-check.mjs` | Solveur du mode TRICKSHOT : essaie des milliers de tirs par niveau (angles × puissances × instants, 4 processus), mesure la part de tirs gagnants → difficulté, cherche finement autour des tirs les plus proches ; `--quick`, `--save`, `N` ou `N-M`. |
+| `tools/trickshot-atlas.html` | Atlas des cartes TRICKSHOT (`?from=1&to=25`) avec le trajet de la solution enregistrée, pour relire les niveaux d'un coup d'œil. |
 | `tools/route-check.mjs` | Outil de level design : essaie des centaines de séquences de commandes par passage et mesure la difficulté ; « pilote » pour écrire les solutions expertes (rouler jusqu'à, charger, sauter, viser). |
 
 ### Ajouter un niveau ou un élément
@@ -464,6 +474,9 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 - **Élément** : ses données dans le niveau, sa construction dans `game/level.js`, sa logique dans
   `game/world-elements.js` et `game/game.js`, son dessin dans `render/world-draw.js`, ses sons dans
   `audio/sfx.js`, ses effets dans `main.js`, un test dans `tests/mechanics.test.mjs`.
+- **Niveau TRICKSHOT** : l'ajouter dans `src/trickshot/levels.js` (nom et indice en 3 langues, `diff`,
+  `intro`), puis `node tools/trickshot-check.mjs N --save` : il doit trouver une solution en un tir et une
+  difficulté mesurée proche de celle annoncée ; vérifier le dessin dans `tools/trickshot-atlas.html`.
 - **Monde** : son entrée dans `game/worlds.js`, son thème dans `render/themes.js` (et ses formes dans
   `background.js` si besoin), son morceau dans `audio/music.js`, sa scène dans `worlds/art.js`, ses textes.
 
@@ -731,10 +744,12 @@ a deux colonnes, qui restent côte à côte sur téléphone en paysage.
   - un crédit = un bloc à copier (rôle et précision en FR / EN / ES, noms, icône) ;
   - un lien = une adresse dans `LINKS` (`privacy`, `terms`).
 
-### Modes à venir (étape 19)
+### Modes de jeu (étapes 19 et 22)
 
-Page **« Modes à venir »** (tuile *Modes* de l'accueil, `index.html#modes`). Elle **présente** les futurs modes ;
-**aucun n'est développé** ni jouable. Code : `modesPage()` dans `src/menu/pages.js`, styles `.fmode*` et `.m-*`
+Page **« Modes de jeu »** (tuile *Modes* de l'accueil, `index.html#modes`). **En tête, la carte jouable du mode
+TRICKSHOT** (étape 22, badge « Nouveau », pastille ▶ Jouer avec les niveaux terminés et les étoiles) qui ouvre
+l'accueil du mode (voir la section [4 bis](#4-bis-mode-trickshot-étape-22)). Ensuite, les trois futurs modes
+**présentés** seulement ; **aucun n'est développé** ni jouable. Code : `modesPage()` dans `src/menu/pages.js`, styles `.fmode*` et `.m-*`
 dans `css/menu.css`, textes `mode.<id>` et `mode.<id>.desc` dans `src/menu/i18n.js` (FR / EN / ES).
 
 | Carte | Titre | Description | Illustration animée | Couleur |
@@ -964,6 +979,153 @@ changé** (voir « Physique » plus bas).
 - **Précision** : un **repère d'atterrissage** discret (petit anneau) apparaît sous le ballon quand il est haut,
   là où l'ombre devient trop pâle pour viser.
 - **Réponse des commandes** : chaque appui a une réaction immédiate (onde sur le bouton, vibration, son).
+
+## 4 bis. Mode TRICKSHOT (étape 22)
+
+> **« Un tir. Un rebond. Un panier impossible. »** Un deuxième jeu à l'intérieur du jeu : un mode **totalement
+> indépendant** du mode principal (sa progression, ses 50 cartes, son arène, sa musique), qui **ne modifie rien**
+> du mode principal (même moteur, mêmes réglages : `TS_CONFIG` en dérive sans le toucher, test à l'appui).
+> Première version terminée le 21/11/2026, **en attente de validation** avant toute nouvelle mécanique.
+
+### Le principe
+
+- Le ballon est posé sur un **pas de tir**. Le joueur **pose le doigt sur le ballon, tire vers l'arrière** (lance-
+  pierre) : la direction choisit l'**angle**, la longueur choisit la **puissance** (élastique et jauge de
+  couleur), une **trajectoire en pointillés** montre le début de l'arc (elle s'arrête au premier obstacle et ne
+  dévoile jamais les rebonds : simple à comprendre, difficile à maîtriser). On relâche : le ballon part.
+- **3 essais au plus.** Entre deux essais le ballon revient au pas de tir, **le décor reste tel quel** (une caisse
+  cassée, une porte ouverte, un pont tombé le restent : on peut préparer le terrain puis marquer).
+- **Étoiles** : ★★★ au premier essai, ★★ au deuxième, ★ au troisième. Après 3 essais ratés : écran « Raté ! ».
+- **Score** = étoiles × 1 000 + style : rebonds (+100 chacun, 8 au plus), **swish** sans toucher le cercle (+500),
+  planche (+250), portails (+200), propulsions (+100). Meilleur score gardé par niveau.
+- Le tir se termine quand le ballon s'arrête, sort de l'arène, touche un piège mortel ou dure plus de 12 s.
+- Clavier (ordinateur) : flèches pour viser, Espace pour tirer, R pour recommencer, Échap pour la pause.
+
+### Les écrans
+
+1. **Carte du mode** dans « Modes de jeu » (illustration : arène néon, lance-pierre, trajectoire en pointillés,
+   panier) → **accueil du mode** (`index.html#trickshot`) : illustration, description courte, niveaux terminés,
+   étoiles, pourcentage de progression, les 5 chapitres avec leur avancement, bouton **Jouer** (« Continuer :
+   niveau N »).
+2. **Sélection des niveaux** (`index.html#trickshot-niveaux`) : légende des difficultés, 50 tuiles groupées par
+   chapitre ; chacune affiche le **numéro**, les **étoiles**, le **meilleur score**, la **difficulté** (pastille
+   de couleur en haut à gauche) et un **cadenas** si le niveau est verrouillé. Déblocage **séquentiel** (finir un
+   niveau ouvre le suivant) ; la tuile du prochain niveau pulse ; une tuile verrouillée tremble et explique quoi
+   faire. Entrée en cascade, survol, transitions du menu.
+3. **Écran de jeu** (`trickshot.html?level=N`) : l'arène entière à l'écran (cadrage fixe). HUD minimal :
+   **difficulté** en haut à gauche (🟢 Facile, 🟠 Difficile, 🔴 Très difficile, ⚫ Impossible) avec le numéro et
+   le nom du niveau, **essais restants** (3 ballons) au centre, **recommencer** et **pause** à droite. Carte
+   d'introduction (numéro, nom, badge « Nouveau ! » pour une mécanique découverte, indice), petits messages.
+4. **Victoire** : titre « TRICKSHOT ! » doré au premier essai, étoiles qui tombent une à une, score qui défile,
+   bonus de style, « Nouveau record ! », « Niveau N débloqué », Niveau suivant / Rejouer / Niveaux. Sur écran bas
+   (téléphone en paysage) la carte passe sur deux colonnes : tout tient sans défiler.
+5. **Échec** et **pause** : Réessayer, Niveaux, Menu (pause : Reprendre, Recommencer, Niveaux).
+
+### Les sensations
+
+- **Près du panier** (ballon qui arrive vers le cercle en descendant) : **léger ralenti** (×0,4) et **zoom de la
+  caméra** (×1,28) qui se relâchent ensuite ; si le ballon rate, tout revient en douceur.
+- **Panier** : filet animé, gerbe de particules, flash, onde, jingle, **confettis** ; au premier essai, foule qui
+  applaudit et confettis plein écran. Bumpers qui s'illuminent au contact, caisse qui éclate en morceaux, voyants
+  des boutons, vibrations courtes.
+- Son : **lancer** (whoosh selon la puissance, stéréo selon la position), musique propre au mode (« arène », 96
+  bpm, piano électrique), ambiance de salle, réverbération de l'arène, sons du jeu principal pour les surfaces.
+- Arène : grille de plan, projecteurs, grand numéro du niveau en fond, poussières lumineuses, blocs sombres aux
+  arêtes **néon dans la couleur du chapitre**, bumpers roses de flipper, glace, roche, lave.
+
+### Les difficultés
+
+Chaque carte est vérifiée par le **solveur** (`tools/trickshot-check.mjs`) : il essaie des milliers de tirs
+(angles de −30° à 210°, puissances de 0,15 à 1, plusieurs instants de tir quand des éléments bougent) et mesure
+la **part des tirs qui marquent**. Classes : 🟢 Facile ≥ 0,8 % (un tir direct sans obstacle ≈ 1,5 %), 🟠 Difficile
+≥ 0,3 %, 🔴 Très difficile ≥ 0,08 %, ⚫ Impossible en dessous (il faut trouver *le* tir — mais il existe toujours).
+La difficulté affichée est celle mesurée (à une classe près, vérifié par les tests). **Tous les niveaux ont une
+solution en un seul tir** (3 étoiles possibles), enregistrée et rejouée par les tests.
+
+### Les 5 chapitres et les 50 cartes
+
+| Chapitre | Niveaux | Couleur | Ce qu'on y apprend |
+|---|---|---|---|
+| 1 · Les bases | 1–10 | cyan | tir, murs, rebonds au sol, bande sur un mur, tir en cloche, angles |
+| 2 · Les machines | 11–20 | orange | trampolines, ventilateurs, plateformes mobiles, boutons, trappe, pont-levis |
+| 3 · Danger | 21–30 | rose | portails, lasers, sol fragile, scies, pics, plateformes clignotantes, caisse, passage secret |
+| 4 · Le laboratoire | 31–40 | violet | gravité réduite, gravité inversée, glace, lave, aimants, boules de feu, boules de neige |
+| 5 · Le maître | 41–50 | or | tout mélangé : réactions en chaîne, bumpers, flipper, vrais casse-têtes |
+
+Aucune carte n'est reprise du mode principal ; chacune tient sur un écran (24 × 13,5 u) et repose sur **une
+idée**. Éléments **interactifs, jamais décoratifs** : casser une caisse, activer un bouton, ouvrir une porte ou un
+passage secret, faire tomber un pont, ouvrir la trappe d'un trampoline, allumer un ventilateur.
+
+| N° | Nom | Difficulté | Nouveauté | Éléments |
+|---|---|---|---|---|
+| 1 | Premier tir | 🟢 | Le tir |  |
+| 2 | Le mur | 🟢 | Les murs |  |
+| 3 | Sous la dalle | 🟠 | — |  |
+| 4 | Ricochet | 🟢 | Les rebonds |  |
+| 5 | La bande | 🟠 | La bande |  |
+| 6 | Le puits | 🟠 | — |  |
+| 7 | L’escalier | 🟢 | — |  |
+| 8 | La lucarne | 🟠 | — |  |
+| 9 | Angle mort | 🟠 | Le tir en cloche |  |
+| 10 | L’examen | 🟠 | — |  |
+| 11 | Trampoline | 🟢 | Trampoline | trampolines |
+| 12 | Le souffle | 🟢 | Ventilateur | fans |
+| 13 | La herse | 🔴 | Plateforme mobile | movers |
+| 14 | Double saut | 🟢 | — | trampolines |
+| 15 | L’interrupteur | 🟢 | Bouton | fans, switches |
+| 16 | La trappe | 🟠 | Trappe | trampolines, switches, doors |
+| 17 | L’ascenseur | 🔴 | — | movers |
+| 18 | Couloir d’air | 🔴 | — | fans |
+| 19 | Le pont-levis | 🔴 | Pont-levis | switches, doors |
+| 20 | La machine | 🔴 | — | trampolines, fans, movers |
+| 21 | Le portail | 🟠 | Portail | teleporters |
+| 22 | Rideau laser | 🟢 | Laser | lasers |
+| 23 | Sol fragile | 🟠 | Sol fragile | crumbles |
+| 24 | La scie | 🟠 | Scie | saws |
+| 25 | De l’autre côté | 🟢 | — | teleporters |
+| 26 | Clignotants | 🟠 | Plateforme clignotante | blinkers |
+| 27 | La caisse | 🟠 | Caisse cassable | breakables |
+| 28 | Passage secret | 🔴 | Passage secret | switches, doors |
+| 29 | Portail et laser | 🟠 | — | teleporters, lasers |
+| 30 | Couloir des scies | 🔴 | — | saws |
+| 31 | La Lune | 🟢 | Gravité réduite | gravité 0.42 |
+| 32 | Tête en bas | 🟠 | Gravité inversée | gravityZones |
+| 33 | La patinoire | 🔴 | Glace | glace |
+| 34 | Rivière de lave | 🟠 | Lave | lava |
+| 35 | L’aimant | 🔴 | Aimant | magnets |
+| 36 | Boules de feu | 🟠 | Boules de feu | cannons |
+| 37 | Boules de neige | ⚫ | Boules de neige | boulders |
+| 38 | Glace et aimant | 🔴 | — | magnets, glace |
+| 39 | Apesanteur | 🔴 | — | teleporters, gravityZones, gravité 0.3 |
+| 40 | Le laboratoire | 🟠 | — | lava, gravityZones, magnets |
+| 41 | Réaction en chaîne | 🔴 | — | trampolines, fans, switches |
+| 42 | Le coffre | ⚫ | — | teleporters, breakables |
+| 43 | Zigzag | 🔴 | Bumper | bumpers |
+| 44 | Tempête | ⚫ | — | fans, lasers |
+| 45 | Le flipper | 🟠 | — | bumpers |
+| 46 | Le miroir | 🔴 | — | lava, gravityZones |
+| 47 | L’horloge | ⚫ | — | movers |
+| 48 | Aimants jumeaux | 🔴 | — | magnets |
+| 49 | Le grand vide | 🟠 | — | teleporters, saws, gravité 0.4 |
+| 50 | Trickshot ultime | ⚫ | — | trampolines, fans, switches, doors, lasers |
+
+### Le code (`src/trickshot/`)
+
+| Fichier | Rôle |
+|---|---|
+| `config.js` | `TS_CONFIG` (dérivé de `CONFIG` sans le modifier : matériaux `bumper` et `felt`, frein au sol, délai de mort), `TRICKSHOT` (3 essais, vitesse max 30 u/s, tirage max 3,2 u, fin de tir), difficultés, chapitres. |
+| `game.js` | `TrickshotGame` (hérite de `Game`) : états visée → vol → fin de tir → victoire ou échec, `launch(angle, puissance)`, décor conservé entre les essais, caisses cassables (`breakables`), ventilateurs allumés par un bouton (`fans[].target`), gravité du niveau (`gravityScale` : la vitesse de lancement suit sa racine, même portée, vol flottant), score et bonus. `simulateShot()` pour le solveur et les tests. |
+| `levels.js` | Les 50 cartes (données + aides `tee`, `frame`, `wall`, `bumper`, `bramp` pour les rampes-bumpers, `hoop`…). |
+| `aim.js` | Geste → tir (`aimFromDrag`), trajectoire prévue (`trajectory`, arrêtée au premier bloc ou rampe). |
+| `render.js` | `ArenaRenderer` (hérite du rendu du jeu) : fond d'arène, blocs néon, bumpers (et rampes), caisses, pas de tir, élastique et pointillés de la visée ; boules de feu et de neige dessinées avec les thèmes Volcan et Neige. |
+| `progress.js` | Progression séparée (clé `hoopbounce.trickshot` : étoiles, meilleur score, parties par niveau), déblocage séquentiel, résumé. |
+| `i18n.js` | Textes du mode en français, anglais, espagnol (difficultés, chapitres, mécaniques, écrans). |
+| `main.js` | Écran de jeu : caméra, visée tactile et clavier, HUD, effets (ralenti, zoom, confettis, foule), sons, écrans de victoire / échec / pause, enchaînement des niveaux. |
+
+Menu : `src/menu/trickshot-view.js` (accueil du mode et sélection des niveaux, illustration `TRICKSHOT_ART`),
+carte dans `modesPage()` (`src/menu/pages.js`), pages `trickshot` et `trickshot-niveaux` dans `src/menu/main.js`
+(retour : niveaux → accueil du mode → modes). Audio : `SPACES.arena`, `launch()`, `crowd()` dans `sfx.js`,
+morceau `arena` dans `music.js` (ajouts seulement).
 
 ---
 
@@ -1202,7 +1364,8 @@ Dans le navigateur, une annonce de test simulée remplace AdMob ; `?ads=none` si
 
 ### Le déblocage des modes
 
-🔴 **Pas encore défini.** Les 3 modes prévus (Endless, Course Multijoueur, Créateur de Maps) sont affichés
+✅ **TRICKSHOT** est ouvert dès le départ (son propre déblocage, niveau par niveau). 🔴 **Pas encore défini** pour
+les autres : les 3 modes prévus (Endless, Course Multijoueur, Créateur de Maps) sont affichés
 « À venir » dans le menu (étape 19) ; aucun n'est développé. Proposition à valider le moment venu : Endless après
 le monde 2, Course Multijoueur et Créateur de Maps dans des mises à jour dédiées (elles demandent un serveur pour
 jouer et partager entre amis).
@@ -1628,6 +1791,10 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 ### Phase 7 — Modes de jeu 🟡
 - ✅ Page « Modes à venir » : 3 cartes de présentation illustrées et animées, verrouillées (étape 19)
+- ✅ **TRICKSHOT** (étape 22) : mode indépendant, lance-pierre, 3 essais, étoiles, score de style, 50 cartes en
+  5 chapitres, 4 difficultés mesurées par un solveur, accueil du mode et sélection des 50 niveaux, arène néon,
+  ralenti et zoom près du panier, musique propre ; 🟡 validation par le porteur du projet
+- 🔴 TRICKSHOT, suite (après validation) : nouvelles mécaniques, autres chapitres, défis quotidiens, récompenses
 - 🔴 **Endless** : course infinie (passages générés à la suite), distance et meilleur score
 - 🔴 **Course Multijoueur** : les joueurs jouent le même niveau, chacun avec son ballon, physique identique au
   solo ; le premier qui marque gagne ; les erreurs et les pièges créent des retournements (temps réel ou
@@ -1667,6 +1834,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Mode TRICKSHOT** (étape 22) : 50 cartes toutes résolubles en un tir, solveur de difficulté, écran de jeu,
+  accueil et sélection des niveaux dans le menu, progression séparée, tests
 - ✅ Moteur physique, boucle, caméra, rendu, effets, sons
 - ✅ Menu principal complet (5 pages, réglages, 3 langues)
 - ✅ Dribble, puissance, retour de puissance au sol
@@ -1702,6 +1871,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation du mode TRICKSHOT** par le porteur du projet (étape 22) : sensation du lance-pierre, lisibilité
+  des cartes, difficulté réelle de chaque niveau ; aucune nouvelle mécanique avant son accord
 - 🟡 Première compilation iPhone dans Xcode (Mac) et essai sur iPhone ; TestFlight pour les amis (étape 21)
 - 🟡 Essais de `HoopBounce_Test_v1.apk` sur téléphone par le porteur du projet et ses amis (étape 20) : noter ce
   qui ne va pas (démarrage, performances, son, vibrations, encoche, sauvegarde, confort des commandes)
@@ -1710,6 +1881,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 🟡 Décision en attente (étape 17) : pondérer les objets tirés des coffres et de la roue
 
 ### À faire — court terme 🔴
+- 🔴 TRICKSHOT : faire jouer les 50 cartes à de vrais joueurs et réajuster celles qui paraissent injustes (la
+  mesure du solveur ne remplace pas un humain : il vise parfaitement, mais sans voir les rebonds non plus)
 - 🔴 Publication (quand le porteur du projet le décide) : suivre `store/CHECKLIST.md` (comptes, AdMob, AAB,
   tests fermés)
 - 🔴 Essayer l'application sur de vrais téléphones (encoche, vibrations, annonces de test, performances)
@@ -1777,6 +1950,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 9. Optimisations
+
+**Mode TRICKSHOT (étape 22)**
+- Cadrage fixe sur l'arène entière (aucun défilement) ; fond d'arène dessiné avec des traits translucides plutôt
+  que des flous ; trajectoire prévue calculée analytiquement (≈ 25 points, arrêt au premier obstacle) seulement
+  pendant la visée. Mesuré : 60 images/s dans Chromium (1 688 × 780).
+- Le décor tourne pendant la visée mais le ballon ne simule rien tant qu'il n'est pas lancé.
+- Solveur : 4 processus (`worker_threads`) ; grille rapide (`--quick`) pour itérer, grille complète pour
+  enregistrer ; recherche fine seulement autour des tirs les plus proches quand la grille ne trouve rien.
 
 **Simulation**
 - Pas fixe de 1/120 s et rendu interpolé : fluidité identique à 60, 90 ou 120 Hz, sans dépendre de la vitesse
@@ -1880,6 +2061,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | TRICKSHOT (étape 22) : la difficulté est **mesurée par simulation** (part des tirs gagnants sur une grille), pas encore par des joueurs. Un niveau « Impossible » a toujours une solution, mais la fenêtre est très étroite. | 🟡 À éprouver |
+| Info | TRICKSHOT : quelques cartes sont bien plus simples en deux tirs qu'en un (n° 28 Passage secret : ouvrir le passage, puis tirer au travers) ; c'est voulu (le décor reste entre les essais), la difficulté affichée est celle du tir parfait. | 🟡 Voulu |
+| ✅ | TRICKSHOT (en cours de développement) : 10 cartes sans solution ou contournables, ballon qui s'enfonçait dans le sol pendant la visée, carte de victoire qui débordait sur un téléphone en paysage, rampes-bumpers dessinées comme des rectangles. | ✅ Corrigé avant validation |
 | Info | Son (étape 18) : réglé au casque dans un navigateur, **pas encore écouté sur le haut-parleur d'un téléphone** (souvent mono et pauvre en graves : la couche de poids et la stéréo y seront moins sensibles). | 🔴 À tester (phase Android) |
 | Info | Physique (étape 18) : les trajectoires sont volontairement inchangées pour garder l'équilibre vérifié des 50 niveaux ; un freinage plus franc au sol a été essayé puis abandonné (16 passages à revérifier). | 🟡 À rediscuter avec les retours des joueurs |
 | ✅ | Boutique (étape 18, en cours de développement) : l'achat d'un objet épique ou légendaire plantait (variable supprimée par erreur). | ✅ Corrigé avant publication |
@@ -1921,6 +2105,35 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 21/11/2026 — Étape 22 : nouveau mode TRICKSHOT (v1.1.0-dev)
+
+**Ajouté**
+- **Mode TRICKSHOT**, totalement indépendant du mode principal (progression, cartes, arène, musique séparées) :
+  lance-pierre (doigt sur le ballon, tirer vers l'arrière, angle + puissance, trajectoire en pointillés), 3 essais,
+  étoiles selon l'essai, score de style (rebonds, swish, planche, portails, propulsions), meilleur score.
+- **50 cartes uniques** en 5 chapitres (bases ; machines ; danger ; laboratoire ; maître), chacune construite
+  autour d'une idée, **toutes résolubles en un seul tir** (vérifié et rejoué par les tests).
+- Éléments interactifs : caisses cassables, boutons qui ouvrent portes, trappes, ponts et passages secrets ou
+  allument des ventilateurs ; bumpers et rampes-bumpers de flipper ; gravité réduite par niveau ; pics, scies,
+  lasers, plateformes mobiles / fragiles / clignotantes, portails, glace, lave, aimants, boules de feu et de neige.
+- 4 difficultés (🟢 🟠 🔴 ⚫) **mesurées par un solveur** (`tools/trickshot-check.mjs`) ; atlas des cartes
+  (`tools/trickshot-atlas.html`).
+- Menu : carte jouable « TRICKSHOT » en tête de « Modes de jeu », accueil du mode (illustration, description,
+  niveaux terminés, étoiles, pourcentage, chapitres, Jouer), sélection des 50 niveaux (numéro, étoiles, meilleur
+  score, difficulté, cadenas, déblocage séquentiel), légende des difficultés.
+- Écran de jeu `trickshot.html` : arène néon aux couleurs du chapitre, HUD minimal (difficulté en haut à gauche,
+  essais, recommencer, pause), ralenti et zoom près du panier, filet, particules, confettis, foule, jingle,
+  écrans victoire / échec / pause ; musique « arène » et sons de lancer.
+- `tests/trickshot.test.mjs` (11 tests) ; `trickshot.html` ajouté à la préparation de l'application (`www/`).
+
+**Modifié**
+- Page « Modes à venir » renommée « Modes de jeu » (Trickshot jouable + 3 modes à venir) ; test des modes adapté.
+- Audio : ajouts seulement (espace sonore, morceau et sons de l'arène). Rien d'autre du mode principal n'a changé.
+
+**Reste à faire**
+- Validation du porteur du projet (sensation du tir, lisibilité, difficulté de chaque carte) ; essais par de vrais
+  joueurs et sur téléphone ; aucune nouvelle mécanique ni extension du mode avant validation.
 
 ### 20/11/2026 — Étape 21 : préparation de la version iPhone (iOS) (v1.0.0)
 - **Ajouté** :

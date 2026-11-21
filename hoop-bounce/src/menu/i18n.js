@@ -111,8 +111,8 @@ export const STRINGS = {
     'worlds.empty.title': 'De nouveaux terrains arrivent',
     'worlds.empty.body': 'Chaque monde aura ses propres terrains, ses pièges et ses paniers. Ils arrivent très bientôt.',
 
-    'modes.title': 'Modes à venir',
-    'modes.subtitle': 'De nouvelles façons de jouer arrivent avec les prochaines mises à jour.',
+    'modes.title': 'Modes de jeu',
+    'modes.subtitle': 'Trickshot est jouable ! D’autres façons de jouer arrivent avec les prochaines mises à jour.',
     'mode.endless': 'Endless',
     'mode.endless.desc': 'Un défi sans fin. Va le plus loin possible et bats ton meilleur score.',
     'mode.race': 'Course Multijoueur',
@@ -297,8 +297,8 @@ export const STRINGS = {
     'worlds.empty.title': 'New courts are on their way',
     'worlds.empty.body': 'Each world will have its own courts, traps and hoops. They are coming very soon.',
 
-    'modes.title': 'Coming modes',
-    'modes.subtitle': 'New ways to play are coming with the next updates.',
+    'modes.title': 'Game modes',
+    'modes.subtitle': 'Trickshot is playable! More ways to play are coming with the next updates.',
     'mode.endless': 'Endless',
     'mode.endless.desc': 'A never-ending challenge. Go as far as you can and beat your best score.',
     'mode.race': 'Multiplayer Race',
@@ -483,8 +483,8 @@ export const STRINGS = {
     'worlds.empty.title': 'Llegan nuevas canchas',
     'worlds.empty.body': 'Cada mundo tendrá sus propias canchas, trampas y canastas. Llegan muy pronto.',
 
-    'modes.title': 'Próximos modos',
-    'modes.subtitle': 'Nuevas formas de jugar llegarán con las próximas actualizaciones.',
+    'modes.title': 'Modos de juego',
+    'modes.subtitle': '¡Trickshot ya se puede jugar! Más formas de jugar llegarán con las próximas actualizaciones.',
     'mode.endless': 'Endless',
     'mode.endless.desc': 'Un reto sin fin. Llega lo más lejos posible y supera tu mejor puntuación.',
     'mode.race': 'Carrera multijugador',

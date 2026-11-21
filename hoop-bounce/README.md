@@ -3,7 +3,13 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 21 (actuelle) :** **version iPhone préparée** : projet Xcode dans `ios/` (Capacitor 8, paysage, plein
+**Étape 22 (actuelle) :** **nouveau mode TRICKSHOT** (`trickshot.html`, menu *Modes de jeu*), un deuxième jeu
+dans le jeu, indépendant du mode principal : lance-pierre (tirer le ballon vers l'arrière, angle + puissance,
+trajectoire en pointillés), 3 essais, étoiles selon l'essai, score de style, **50 cartes** en 5 chapitres, toutes
+résolubles en un tir, 4 difficultés mesurées par un solveur, arène néon, ralenti et zoom près du panier.
+Détails : section « 4 bis » de `PROJECT.md`. En attente de validation.
+
+**Étape 21 :** **version iPhone préparée** : projet Xcode dans `ios/` (Capacitor 8, paysage, plein
 écran, publicités AdMob de test iOS, retour haptique), compatibilité WebKit vérifiée. Guide : `native/ios/README.md`
 (`npm install && npm run ios:sync && npm run ios:open` sur un Mac).
 
@@ -68,8 +74,8 @@ trous noirs) ; caméra, ombres, effets de rebond et de panier, animations d'inte
   balle qui rebondit lentement (avec ombre et reflet), poussières dans la lumière, parallaxe sur 4 plans.
 - **Accueil** : logo, bouton JOUER, dock de 5 tuiles (Mondes, Modes, Magasin, Collection, Paramètres),
   solde de pièces.
-- **Pages** : Mondes (bientôt), Modes à venir (Endless, Course Multijoueur, Créateur de Maps — verrouillés,
-  « À venir »), Magasin (onglets et emplacements prêts, catalogue dans `src/menu/shop-data.js`),
+- **Pages** : Mondes, Modes de jeu (**TRICKSHOT** jouable : accueil du mode et sélection des 50 niveaux ;
+  Endless, Course Multijoueur, Créateur de Maps — verrouillés, « À venir »), Magasin (onglets et emplacements prêts, catalogue dans `src/menu/shop-data.js`),
   Collection (état vide), Paramètres (musique, effets sonores, vibrations, langue, qualité graphique,
   politique de confidentialité, crédits).
 - **Boutons** : pression avec léger grossissement au relâcher, éclat lumineux au point touché, son et
@@ -184,7 +190,7 @@ python3 -m http.server 8080
 ```
 
 Ordinateur : <http://localhost:8080> (le menu ; `index.html#mondes` la sélection des mondes ; `play.html?world=snow&level=1`
-ouvre directement un niveau). Téléphone Android : même Wi-Fi, `http://<IP-de-l-ordinateur>:8080`
+ouvre directement un niveau ; `trickshot.html?level=1` un niveau du mode TRICKSHOT, `&unlock=1` sans cadenas). Téléphone Android : même Wi-Fi, `http://<IP-de-l-ordinateur>:8080`
 dans Chrome, téléphone tenu à l'horizontale. `?debug` dans l'adresse (ou `²`) affiche les collisions et
 la zone du vent.
 
@@ -241,7 +247,12 @@ node tools/route-check.mjs 400         # difficulté de chaque passage de chaque
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)
 node tools/route-check.mjs 0           # vérification rapide : solutions expertes seulement
 node tools/route-check.mjs 400 --save  # après une modification voulue d'un niveau
+node tools/trickshot-check.mjs --quick # TRICKSHOT : solution en un tir et difficulté mesurée de chaque carte
+node tools/trickshot-check.mjs 12 --save  # après une modification voulue d'une carte (N ou N-M)
 ```
+
+`tools/trickshot-atlas.html?from=1&to=25` (servi par le serveur local) montre les cartes TRICKSHOT avec le trajet
+de leur solution enregistrée.
 
 Les tests de mécanique utilisent un terrain d'essai (`tests/fixtures/test-yard.js`) indépendant des vrais
 niveaux. Le test `routes.test.mjs` rejoue une solution par passage de chaque niveau (les tirs au panier et la

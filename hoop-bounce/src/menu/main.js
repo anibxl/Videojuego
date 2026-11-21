@@ -11,6 +11,7 @@ import { CollectionView } from './collection-view.js';
 import { DailyView, MissionsView, AchievementsView, liveBadges } from './live-views.js';
 import { RewardFx } from './rewards-fx.js';
 import { BonusView } from './bonus-view.js';
+import { TrickshotView } from './trickshot-view.js';
 import { vibratePattern } from '../platform/vibrate.js';
 import { aboutPage } from './about-page.js';
 import { DailyReward } from '../shared/daily.js';
@@ -21,9 +22,9 @@ import { WORLDS } from '../game/worlds.js';
 import { gt } from '../game/i18n.js';
 import { Wallet } from '../shared/wallet.js';
 
-const PAGES = ['mondes', 'modes', 'collection', 'parametres', 'quotidien', 'missions', 'succes', 'bonus', 'apropos'];
+const PAGES = ['mondes', 'modes', 'collection', 'parametres', 'quotidien', 'missions', 'succes', 'bonus', 'apropos', 'trickshot', 'trickshot-niveaux'];
 /** Sous-pages : le retour ramène à la page parente (même ouverte par un lien direct). */
-const PARENT = { apropos: 'parametres' };
+const PARENT = { apropos: 'parametres', trickshot: 'modes', 'trickshot-niveaux': 'trickshot' };
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -91,7 +92,14 @@ const missionsView = new MissionsView($('#page-missions'), viewEnv);
 const achievementsView = new AchievementsView($('#page-succes'), viewEnv);
 // Coffre bonus et roue de la chance (étape 13)
 const bonusView = new BonusView($('#page-bonus'), viewEnv);
-const VIEWS = { mondes: worldsView, collection: collectionView, quotidien: dailyView, missions: missionsView, succes: achievementsView, bonus: bonusView };
+// Mode Trickshot : page de présentation et sélection des 50 niveaux
+viewEnv.showPage = (p) => showPage(p);
+const trickshotView = new TrickshotView($('#page-trickshot'), $('#page-trickshot-niveaux'), viewEnv);
+const VIEWS = {
+  mondes: worldsView, collection: collectionView, quotidien: dailyView, missions: missionsView, succes: achievementsView, bonus: bonusView,
+  trickshot: { onShow: () => trickshotView.onShow('trickshot'), onHide: () => trickshotView.onHide() },
+  'trickshot-niveaux': { onShow: () => trickshotView.onShow('trickshot-niveaux'), onHide: () => trickshotView.onHide() },
+};
 
 function renderPages() {
   const l = lang();
@@ -100,6 +108,7 @@ function renderPages() {
   collectionView.render();
   $('#page-parametres').innerHTML = settingsPage(l, settings.values);
   $('#page-apropos').innerHTML = aboutPage(l);
+  trickshotView.render();
   for (const v of [dailyView, missionsView, achievementsView, bonusView]) if (v.active) v.render(true);
   requestAnimationFrame(() => $$('.segmented').forEach(positionIndicator));
   refreshHome();
@@ -434,6 +443,8 @@ window.addEventListener('pageshow', (e) => {
     // Retour de la boutique ou d'une partie : pièces, progression et collection à jour
     worldsView.render();
     collectionView.render();
+    trickshotView.render();
+    $('#page-modes').innerHTML = modesPage(lang());
     refreshHome();
     if (state.page !== 'home') {
       for (const r of $$(`#page-${state.page} .reveal`)) r.style.animation = 'none';

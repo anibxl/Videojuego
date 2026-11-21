@@ -6,12 +6,13 @@ import { STRINGS } from '../src/menu/i18n.js';
 
 const IDS = ['endless', 'race', 'creator'];
 
-test('exactement 3 modes à venir, tous verrouillés, avec illustration, cadenas et « À venir »', () => {
+test('Trickshot jouable en tête, puis exactement 3 modes à venir verrouillés (illustration, cadenas, « À venir »)', () => {
   const html = modesPage('fr');
   const ids = [...html.matchAll(/data-mode="([a-z]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(ids, IDS);
-  assert.equal((html.match(/data-locked="/g) ?? []).length, 3, 'aucun mode ne peut être lancé');
-  assert.equal((html.match(/class="fmode-art"/g) ?? []).length, 3);
+  assert.deepEqual(ids, ['trickshot', ...IDS]);
+  assert.match(html, /data-nav="trickshot"/);
+  assert.equal((html.match(/data-locked="/g) ?? []).length, 3, 'les modes à venir ne peuvent pas être lancés');
+  assert.equal((html.match(/class="fmode-art"/g) ?? []).length, 4);
   assert.equal((html.match(/class="fmode-lock"/g) ?? []).length, 3);
   assert.equal((html.match(/🔒/g) ?? []).length, 3);
   assert.equal((html.match(/À venir/g) ?? []).length >= 3, true);

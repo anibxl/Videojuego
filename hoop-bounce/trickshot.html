@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#04050d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Hoop Bounce · Trickshot</title>
+  <link rel="preload" href="assets/fonts/unbounded.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/outfit.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/trickshot.css">
+  <link rel="stylesheet" href="css/polish.css">
+</head>
+<body>
+  <!-- Mode TRICKSHOT : écran de jeu (src/trickshot/main.js). Le mode principal est dans play.html. -->
+  <canvas id="game" aria-label="Trickshot"></canvas>
+
+  <!-- Interface minimaliste : difficulté (en haut à gauche), essais, recommencer, pause -->
+  <div class="hud">
+    <div class="hud-left">
+      <div class="diff-chip" id="diff-chip">
+        <span class="diff-dot" aria-hidden="true"></span>
+        <span class="diff-txt"><b id="diff-label"></b><small id="level-label"></small></span>
+      </div>
+    </div>
+    <div class="shots" id="shots" aria-live="polite">
+      <span class="shot-ball"></span><span class="shot-ball"></span><span class="shot-ball"></span>
+    </div>
+    <div class="hud-right">
+      <button class="btn" id="btn-restart" data-label="restart">
+        <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>
+      </button>
+      <button class="btn" id="btn-pause" data-label="pause">
+        <svg viewBox="0 0 24 24"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.4z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Nom du niveau et astuce (au début du niveau) -->
+  <div class="intro-card" id="intro-card">
+    <p class="intro-num" id="intro-num"></p>
+    <h1 class="intro-name" id="intro-name"></h1>
+    <p class="intro-new" id="intro-new" hidden></p>
+    <p class="intro-hint" id="intro-hint" hidden></p>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <!-- Pause -->
+  <div class="overlay hidden" id="pause" role="dialog" aria-labelledby="pause-title">
+    <div class="card">
+      <h2 id="pause-title" data-t="pause"></h2>
+      <div class="actions">
+        <button class="primary" id="btn-resume"><span data-t="resume"></span></button>
+        <button class="secondary" id="btn-pause-restart"><span data-t="restart"></span></button>
+        <div class="row">
+          <a class="secondary" id="btn-pause-levels" href="index.html#trickshot-niveaux"><span data-t="levels"></span></a>
+          <a class="secondary" href="index.html"><span data-t="menu"></span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Victoire -->
+  <div class="overlay hidden" id="win" role="dialog" aria-labelledby="win-title">
+    <div class="card win-card">
+      <p class="eyebrow" id="win-level"></p>
+      <h2 class="win-title" id="win-title"></h2>
+      <p class="win-sub" id="win-sub"></p>
+      <div class="win-stars" id="win-stars"><span class="star"></span><span class="star mid"></span><span class="star"></span></div>
+      <div class="score-box">
+        <p class="score-line"><span data-t="score"></span><b id="win-score">0</b></p>
+        <ul class="bonus-list" id="win-bonus"></ul>
+        <p class="record" id="win-record" hidden></p>
+        <p class="unlocked" id="win-unlocked" hidden></p>
+      </div>
+      <div class="actions">
+        <button class="primary" id="btn-next"><span data-t="next"></span><svg viewBox="0 0 24 24"><path d="M8.6 5.4 10 4l8 8-8 8-1.4-1.4 6.6-6.6z"/></svg></button>
+        <div class="row">
+          <button class="secondary" id="btn-replay"><span data-t="replay"></span></button>
+          <a class="secondary" href="index.html#trickshot-niveaux"><span data-t="levels"></span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Échec (3 essais utilisés) -->
+  <div class="overlay hidden" id="fail" role="dialog" aria-labelledby="fail-title">
+    <div class="card fail-card">
+      <p class="eyebrow" id="fail-level"></p>
+      <h2 id="fail-title" data-t="fail.title"></h2>
+      <p class="fail-body" data-t="fail.body"></p>
+      <div class="actions">
+        <button class="primary" id="btn-retry"><svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg><span data-t="retry"></span></button>
+        <div class="row">
+          <a class="secondary" href="index.html#trickshot-niveaux"><span data-t="levels"></span></a>
+          <a class="secondary" href="index.html"><span data-t="menu"></span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+  <div class="rotate" id="rotate">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 2h-9A1.5 1.5 0 0 0 6 3.5v17A1.5 1.5 0 0 0 7.5 22h9a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 16.5 2zM12 20.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2zM16 17H8V4h8z"/></svg>
+    <p data-t-html="rotate"></p>
+  </div>
+  <div class="fade" id="fade" aria-hidden="true"></div>
+
+  <script type="module" src="src/trickshot/main.js"></script>
+  <script type="module" src="src/shared/ui-polish.js"></script>
+</body>
+</html>

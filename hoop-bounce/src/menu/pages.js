@@ -6,6 +6,9 @@
 import { ICONS } from './icons.js';
 import { LANGUAGE_NAMES, t } from './i18n.js';
 import { APP_VERSION } from '../shared/version.js';
+import { TRICKSHOT_ART } from './trickshot-view.js';
+import { TrickshotProgress } from '../trickshot/progress.js';
+import { tt } from '../trickshot/i18n.js';
 
 let emblemId = 0;
 
@@ -139,10 +142,23 @@ export function modesPage(lang) {
       </button>
     </div>`,
   ).join('');
+  // Mode jouable : Trickshot (étape 22) — en tête, avec sa progression
+  const ts = new TrickshotProgress({ total: 50 }).summary();
+  const trick = `
+    <div class="fmode-wrap reveal" style="--i:0">
+      <button class="fmode fmode-play pressable" data-nav="trickshot" data-mode="trickshot" style="--accent:63,224,255" aria-label="${tt(lang, 'mode')} — ${tt(lang, 'tagline')}">
+        <span class="fmode-art">${TRICKSHOT_ART()}<span class="fmode-shine"></span><span class="fmode-new">${tt(lang, 'new')}</span></span>
+        <span class="fmode-body">
+          <span class="fmode-title"><span class="emoji" aria-hidden="true">🎯</span>${tt(lang, 'mode')}</span>
+          <span class="fmode-desc">${tt(lang, 'tagline')}</span>
+          <span class="fmode-soon fmode-go">${ICONS.play}${tt(lang, 'play')}<small>${ts.done}/${ts.total} · ★ ${ts.stars}</small></span>
+        </span>
+      </button>
+    </div>`;
   return `${head('modes', lang, 'modes.title')}
   <div class="page-body">
     <p class="subtitle reveal" style="--i:0">${t(lang, 'modes.subtitle')}</p>
-    <div class="modes-grid">${cards}</div>
+    <div class="modes-grid">${trick}${cards}</div>
   </div>`;
 }
 

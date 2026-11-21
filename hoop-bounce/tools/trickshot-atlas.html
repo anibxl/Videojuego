@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Atlas Trickshot (outil de conception)</title>
+<style>
+  body { margin: 0; background: #0b0f1e; color: #dfe6ff; font: 12px system-ui, sans-serif; }
+  .grid { display: grid; grid-template-columns: repeat(var(--cols, 5), auto); gap: 8px; padding: 8px; }
+  figure { margin: 0; }
+  figcaption { padding: 2px 0 4px; white-space: nowrap; }
+  canvas { display: block; background: #141a33; border-radius: 4px; }
+  b.d-easy { color: #3fe08a } b.d-hard { color: #ff9a3d } b.d-very { color: #ff4f63 } b.d-impossible { color: #aaa }
+</style>
+</head>
+<body>
+<div class="grid" id="grid"></div>
+<script type="module">
+// Outil de conception : dessine chaque carte Trickshot et la trajectoire de la solution enregistrée
+// (tests/fixtures/trickshot.json). ?from=1&to=25&scale=12&cols=5
+import { TS_LEVELS } from '../src/trickshot/levels.js';
+import { TrickshotGame, DT } from '../src/trickshot/game.js';
+
+const q = new URLSearchParams(location.search);
+const from = +(q.get('from') ?? 1);
+const to = +(q.get('to') ?? 50);
+const S = +(q.get('scale') ?? 12);
+document.getElementById('grid').style.setProperty('--cols', q.get('cols') ?? 5);
+const fixture = await fetch('../tests/fixtures/trickshot.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+
+for (const def of TS_LEVELS.filter((d) => d.n >= from && d.n <= to)) {
+  const g = new TrickshotGame(def);
+  const W = g.width, H = g.height;
+  const fig = document.createElement('figure');
+  const cv = document.createElement('canvas');
+  cv.width = W * S;
+  cv.height = H * S;
+  const sol = fixture[def.n];
+  fig.innerHTML = `<figcaption>${def.n}. ${def.name.fr} · <b class="d-${def.diff}">${def.diff}</b>${sol ? ` · ${sol.angle}° ${sol.power} t=${sol.release} · ${(sol.frac * 100).toFixed(2)} %` : ' · <b style="color:#f55">pas de solution</b>'}</figcaption>`;
+  fig.appendChild(cv);
+  document.getElementById('grid').appendChild(fig);
+  const c = cv.getContext('2d');
+  c.setTransform(S, 0, 0, -S, 0, H * S);
+  const L = g.level;
+  // Trajectoire de la solution (on simule en enregistrant les positions)
+  const path = [];
+  if (sol) {
+    while (g.time + 1e-9 < sol.release) g.fixedUpdate(DT);
+    g.launch((sol.angle * Math.PI) / 180, sol.power);
+    let k = 0;
+    while ((g.state === 'playing' || g.state === 'dying') && k < 1600) {
+      g.fixedUpdate(DT);
+      if (k++ % 3 === 0) path.push([g.body.x, g.body.y]);
+    }
+    path.push([g.body.x, g.body.y]);
+  }
+  const rect = (x, y, w, h, fill) => { c.fillStyle = fill; c.fillRect(x, y, w, h); };
+  for (const z of L.gravityZones) rect(z.x, z.y, z.w, z.h, 'rgba(170,90,255,0.22)');
+  for (const f of L.fans) rect(f.x, f.y, f.w, f.h, f.def.target ? 'rgba(90,170,255,0.12)' : 'rgba(90,170,255,0.28)');
+  for (const m of L.magnets) { c.strokeStyle = m.strength > 0 ? 'rgba(200,120,255,0.8)' : 'rgba(120,255,200,0.8)'; c.lineWidth = 0.05; c.beginPath(); c.arc(m.x, m.y, m.radius, 0, 7); c.stroke(); if (m.core) { c.fillStyle = '#000'; c.beginPath(); c.arc(m.x, m.y, m.core, 0, 7); c.fill(); } }
+  for (const s of L.solids) {
+    const col = { ground: '#3a4466', wall: '#4b5680', ice: '#8fd8ff', rock: '#7a5a48', bumper: '#ff5fb0' }[s.style] ?? '#5b678f';
+    c.fillStyle = col;
+    c.beginPath();
+    s.points.forEach((p, i) => (i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)));
+    c.closePath();
+    c.fill();
+  }
+  for (const l of L.lavas) rect(l.x, -1, l.w, l.y + 1, '#ff5a1a');
+  for (const t of L.trampolines) rect(t.x, t.y, t.w, 0.18, '#3fe0b8');
+  for (const s of L.switches) rect(s.x, s.y, s.w, 0.2, '#ffd65a');
+  for (const d of L.doors) { c.fillStyle = 'rgba(200,140,80,0.9)'; c.fillRect(d.def.x, d.def.y, d.def.w, d.def.h); c.strokeStyle = 'rgba(200,140,80,0.6)'; c.setLineDash([0.2, 0.2]); c.lineWidth = 0.05; c.strokeRect(d.def.x + d.def.open.dx, d.def.y + d.def.open.dy, d.def.w, d.def.h); c.setLineDash([]); }
+  for (const b of L.breakables ?? []) { rect(b.x, b.y, b.w, b.h, '#a8743a'); c.strokeStyle = '#3a2410'; c.lineWidth = 0.06; c.beginPath(); c.moveTo(b.x, b.y); c.lineTo(b.x + b.w, b.y + b.h); c.moveTo(b.x + b.w, b.y); c.lineTo(b.x, b.y + b.h); c.stroke(); }
+  for (const cr of L.crumbles) { c.strokeStyle = '#d8b07a'; c.lineWidth = 0.08; c.setLineDash([0.25, 0.15]); c.strokeRect(cr.x, cr.y, cr.w, cr.h); c.setLineDash([]); }
+  for (const bl of L.blinkers) { c.strokeStyle = '#7fe8ff'; c.lineWidth = 0.08; c.setLineDash([0.1, 0.1]); c.strokeRect(bl.x, bl.y, bl.w, bl.h); c.setLineDash([]); }
+  for (const m of L.movers) { const d = m.path; c.fillStyle = 'rgba(255,170,60,0.85)'; c.fillRect(m.x, m.y, m.w, m.h); c.strokeStyle = 'rgba(255,170,60,0.5)'; c.lineWidth = 0.05; c.strokeRect(m.x + d.dx, m.y + d.dy, m.w, m.h); }
+  for (const t of L.teleporters) { c.strokeStyle = '#b48cff'; c.lineWidth = 0.1; for (const p of [t.a, t.b]) { c.beginPath(); c.arc(p.x, p.y, t.r, 0, 7); c.stroke(); } c.setLineDash([0.2, 0.3]); c.beginPath(); c.moveTo(t.a.x, t.a.y); c.lineTo(t.b.x, t.b.y); c.stroke(); c.setLineDash([]); }
+  for (const l of L.lasers) { c.strokeStyle = '#ff3355'; c.lineWidth = 0.1; c.beginPath(); c.moveTo(l.x1, l.y1); c.lineTo(l.x2, l.y2); c.stroke(); }
+  for (const s of L.saws) { c.strokeStyle = '#ff6b6b'; c.lineWidth = 0.06; c.beginPath(); c.arc(s.x, s.y, s.r, 0, 7); c.stroke(); if (s.path) { c.beginPath(); c.moveTo(s.x, s.y); c.lineTo(s.x + s.path.dx, s.y + s.path.dy); c.stroke(); } }
+  for (const cn of L.cannons) { c.fillStyle = '#ff8844'; c.beginPath(); c.arc(cn.x, cn.y, 0.4, 0, 7); c.fill(); c.strokeStyle = 'rgba(255,136,68,0.4)'; c.beginPath(); c.moveTo(cn.x, cn.y); c.lineTo(cn.x + cn.dx * cn.range, cn.y + cn.dy * cn.range); c.stroke(); }
+  for (const b of L.boulders) { c.strokeStyle = '#eef'; c.lineWidth = 0.05; c.beginPath(); c.moveTo(b.x1, b.y); c.lineTo(b.x2, b.y); c.stroke(); c.beginPath(); c.arc(b.dir > 0 ? b.x1 : b.x2, b.y, b.r, 0, 7); c.stroke(); }
+  // Panier
+  const h = L.hoop;
+  c.strokeStyle = '#ff7a2f'; c.lineWidth = 0.12; c.beginPath(); c.moveTo(h.leftX, h.rimY); c.lineTo(h.rightX, h.rimY); c.stroke();
+  rect(h.board.x, h.board.y, h.board.w, h.board.h, '#e8ecf5');
+  if (h.pole) rect(h.pole.x, h.pole.y, h.pole.w, h.pole.h, '#8a93ad');
+  // Pas de tir
+  c.fillStyle = '#3fe08a'; c.beginPath(); c.arc(def.start.x, def.start.y, 0.4, 0, 7); c.fill();
+  if (path.length) {
+    c.strokeStyle = g.state === 'won' ? 'rgba(120,200,255,0.95)' : 'rgba(255,90,90,0.9)';
+    c.lineWidth = 0.08;
+    c.beginPath();
+    path.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
+    c.stroke();
+  }
+}
+document.title += ' — prêt';
+window.__done = true;
+</script>
+</body>
+</html>

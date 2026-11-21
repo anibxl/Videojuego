@@ -22,6 +22,7 @@ const SPACES = {
   volcano: { len: 2.8, decay: 2.4, tone: 0.45, send: 0.24 },// caverne de roche : grande et sombre
   forest: { len: 1.5, decay: 3.4, tone: 0.32, send: 0.12 }, // sous-bois : doux, absorbé par les feuilles
   space: { len: 4.2, decay: 1.8, tone: 0.6, send: 0.3 },    // vide spatial : longue traîne irréelle
+  arena: { len: 2.4, decay: 2.8, tone: 0.5, send: 0.22 },   // mode Trickshot : grande salle de sport
 };
 
 /**
@@ -549,6 +550,28 @@ export class Sfx {
       this._noiseBurst(0.3, 0.07, 'highpass', 5000, 1, 9000, 0.04);
       this._tone(55, 30, 0.5, 0.25, 'sine', 0.02);
     }
+    this._at(null);
+  }
+
+  /** Mode Trickshot : l'élastique claque et le ballon part (plus aigu et plus ample avec la puissance). */
+  launch(power = 0.5, x = null) {
+    if (!this.ready) return;
+    this._at(x, 0.2);
+    const p = Math.max(0, Math.min(1, power));
+    this._tone(180 + p * 260, 90, 0.12, 0.35, 'triangle');
+    this._noiseBurst(0.05, 0.25, 'bandpass', 2200, 1.2);
+    this._swell(0.22 + p * 0.2, 0.05 + p * 0.07, 'bandpass', 500, 2600 + p * 2000, 1);
+    this._tone(PENTA[5 + Math.round(p * 5)], PENTA[5 + Math.round(p * 5)] * 1.02, 0.12, 0.06, 'sine', 0.02);
+    this._at(null);
+  }
+
+  /** Mode Trickshot : la foule de l'arène s'enthousiasme (clameur + applaudissements). */
+  crowd() {
+    if (!this.ready) return;
+    this._s = 0.45;
+    this._swell(1.6, 0.09, 'bandpass', 500, 900, 0.8);
+    this._swell(1.2, 0.05, 'bandpass', 900, 1600, 1.2, 0.1);
+    for (let i = 0; i < 46; i++) this._noiseBurst(0.03, 0.05 + Math.random() * 0.05, 'bandpass', 1400 + Math.random() * 1600, 1.4, 1400 + Math.random() * 1600, 0.15 + Math.random() * 1.5);
     this._at(null);
   }
 
