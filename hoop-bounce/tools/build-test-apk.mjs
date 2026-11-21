@@ -11,15 +11,26 @@
 // simulées (aucun identifiant AdMob, aucune requête réseau).
 //
 // Usage : node tools/build-test-apk.mjs            (numéro de version de test : TEST_BUILD ci-dessous)
-//         node tools/build-test-apk.mjs --build 2  (version de test n° 2)
+//         node tools/build-test-apk.mjs --build 3  (version de test n° 3)
+//
+// MISE À JOUR SANS PERDRE LES SAUVEGARDES : chaque nouvelle version de test doit garder le même
+// identifiant (com.echospeed.hoopbounce.test, dans native/test-apk/AndroidManifest.xml), être signée avec
+// la MÊME clé (native/test-apk/keys/hoopbounce-test.jks, à ne jamais perdre ni régénérer) et avoir un
+// versionCode plus grand (= numéro de version de test). Android installe alors par-dessus l'ancienne :
+// progression, pièces, skins et récompenses (localStorage de https://appassets.androidplatform.net) restent.
+//   v1 : 1.0.0-test1 (étape 20)   v2 : 1.1.0-test2 (étape 22, mode TRICKSHOT)
 
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const TEST_BUILD = 1;
-const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url))).version; // 1.0.0
+const TEST_BUILD = 2;
+// Nom de version des versions de test : 1.1.0 = le mode TRICKSHOT (la version Play Store, package.json, reste 1.0.0)
+const VERSION = '1.1.0';
+const PACKAGE = 'com.echospeed.hoopbounce.test';
+// Empreinte SHA-256 de la clé de test qui a signé la v1 : une autre clé empêcherait la mise à jour
+const KEY_SHA256 = '894f0b7da38d40fbd7ad33ae73cfe4d3c64659d981e8f94c00d4cba11535bfd8';
 const MIN_SDK = 24; // Android 7.0
 const TARGET_SDK = 34; // Android 14
 const KEY_PASS = 'hoopbounce-test'; // clé de TEST uniquement (jamais la clé de publication)
@@ -104,6 +115,9 @@ const aligned = join(stage, 'aligned.apk');
 run('zipalign', ['-p', '-f', '4', unsigned, aligned]);
 const keyDir = join(shell, 'keys');
 const ks = join(keyDir, 'hoopbounce-test.jks');
+if (!existsSync(ks) && !process.argv.includes('--new-key')) {
+  throw new Error(`clé de test introuvable (${relative(root, ks)}) : sans elle, l'APK ne pourra pas mettre à jour l'application déjà installée.\nRemettez la clé d'origine, ou relancez avec --new-key (il faudra alors désinstaller l'ancienne version).`);
+}
 if (!existsSync(ks)) {
   mkdirSync(keyDir, { recursive: true });
   run('keytool', ['-genkeypair', '-keystore', ks, '-storepass', KEY_PASS, '-keypass', KEY_PASS, '-alias', 'hoopbounce-test',
@@ -120,6 +134,17 @@ const verify = run('apksigner', ['verify', '--verbose', '--min-sdk-version', Str
 run('zipalign', ['-c', '-p', '4', out]);
 const badging = run('aapt', ['dump', 'badging', out]);
 const size = (statSync(out).size / 1024 / 1024).toFixed(2);
+// Garanties de mise à jour : même identifiant, même clé, versionCode plus grand que les APK précédents
+const pkg = badging.match(/package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'/);
+if (!pkg || pkg[1] !== PACKAGE) throw new Error(`identifiant inattendu : ${pkg?.[1]} (attendu ${PACKAGE})`);
+const certs = run('apksigner', ['verify', '--print-certs', out]);
+const sha = certs.match(/certificate SHA-256 digest: ([0-9a-f]+)/)?.[1];
+if (sha !== KEY_SHA256 && !process.argv.includes('--new-key')) throw new Error(`clé de signature différente de la v1 (${sha}) : la mise à jour serait refusée par Android`);
+for (const f of readdirSync(dist)) {
+  const m = f.match(/^HoopBounce_Test_v(\d+)\.apk$/);
+  if (m && f !== apkName && +m[1] >= build) throw new Error(`versionCode ${build} pas plus grand que ${f} : Android refuserait la mise à jour`);
+}
+console.log(`  identifiant ${pkg[1]} · versionCode ${pkg[2]} · versionName ${pkg[3]} · clé SHA-256 ${sha.slice(0, 16)}… (identique à la v1)`);
 console.log(verify.split('\n').filter((l) => /Verifies|v1 scheme|v2 scheme|v3 scheme|Number of signers/.test(l)).map((l) => `  ${l}`).join('\n'));
 console.log(badging.split('\n').filter((l) => /^(package|sdkVersion|targetSdkVersion|application-label:|uses-permission|native-code)/.test(l)).map((l) => `  ${l}`).join('\n'));
 console.log(`\n✅ ${relative(root, out)} (${size} Mo)`);

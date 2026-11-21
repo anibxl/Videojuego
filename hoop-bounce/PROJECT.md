@@ -5,8 +5,8 @@
 >
 > **Dernière mise à jour :** 21/11/2026 · **Version :** 1.1.0-dev (nouveau mode TRICKSHOT, non publié ; la
 > version publiable reste 1.0.0, build 1) · **Version de test Android :** `HoopBounce_Test_v1.apk` (1.0.0-test1)
-> · **iOS :** projet Xcode prêt (`ios/`) · **Étape en cours :** validation du mode **TRICKSHOT** (étape 22) par
-> le porteur du projet ; rien n'est publié.
+> → **`HoopBounce_Test_v2.apk` (1.1.0-test2, mise à jour avec TRICKSHOT)** · **iOS :** projet Xcode prêt (`ios/`)
+> · **Étape en cours :** validation du mode **TRICKSHOT** (étape 22) par le porteur du projet ; rien n'est publié.
 
 ## Sommaire
 
@@ -1559,14 +1559,23 @@ porte-monnaie.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier :** `dist/HoopBounce_Test_v1.apk` (≈ 0,5 Mo), à installer à la main pour soi et des amis testeurs.
-Guide complet : `native/test-apk/README.md`.
+**Fichier actuel :** `dist/HoopBounce_Test_v2.apk` (≈ 0,5 Mo, **1.1.0-test2**, mode TRICKSHOT inclus) — une
+**mise à jour** de `HoopBounce_Test_v1.apk` (même identifiant, même clé, versionCode 2 > 1) : elle s'installe
+par-dessus et garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
+
+**Mise à jour v2 (étape 22) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé ; signature avec la
+même clé (empreinte SHA-256 `894f0b7d…35bfd8` contrôlée par le script de construction, qui refuse toute autre clé) ;
+versionCode 2 ; versionName 1.1.0-test2 ; `apksigner verify` valide (v2 + v3). **Simulation de mise à jour** : jeu
+sur les fichiers extraits de la v1 (récompense du jour, niveau réussi, achat et équipement d'un skin), puis mêmes
+adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue ni modifiée, pièces, skin possédé et
+équipé, progression relus à l'identique ; mode TRICKSHOT présent ; 0 erreur. L'enveloppe désactive le cache
+(`LOAD_NO_CACHE`, `Cache-Control: no-cache`) : la v2 lit forcément ses nouveaux fichiers.
 
 | | |
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | `1.0.0-test1` (code 1) ; « 1.0.0 (test 1) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (code 1) · **v2 : `1.1.0-test2` (code 2)** ; « 1.1.0 (test 2) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -1598,8 +1607,9 @@ des 5 mondes jouable (55-60 images/s), sauvegarde (pièces, skin équipé, progr
 **Non vérifiable ici** : l'installation et l'exécution sur un vrai téléphone (pas d'appareil ni d'émulateur
 Android dans l'environnement de développement) → premier essai à faire par le porteur du projet.
 
-**Mettre à jour les testeurs** : `node tools/build-test-apk.mjs --build 2` → `HoopBounce_Test_v2.apk`, signée
-avec **la même clé de test** (sinon il faut désinstaller, ce qui efface la progression de test).
+**Mettre à jour les testeurs** : `node tools/build-test-apk.mjs --build 3` → `HoopBounce_Test_v3.apk`, signée
+avec **la même clé de test** (sinon il faut désinstaller, ce qui efface la progression de test). Le script refuse
+de construire sans la clé d'origine, avec une autre clé, un autre identifiant ou un versionCode qui n'augmente pas.
 
 ### Avant d'appuyer sur « Publier » (résumé de la checklist)
 
@@ -2134,7 +2144,12 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - Page « Modes à venir » renommée « Modes de jeu » (Trickshot jouable + 3 modes à venir) ; test des modes adapté.
 - Audio : ajouts seulement (espace sonore, morceau et sons de l'arène). Rien d'autre du mode principal n'a changé.
 
+- **Version de test v2** `dist/HoopBounce_Test_v2.apk` (1.1.0-test2, versionCode 2, même identifiant et même clé
+  que la v1) : **mise à jour** de l'application de test déjà installée, sauvegardes conservées (simulation v1 → v2
+  vérifiée) ; garde-fous ajoutés au script de construction (clé, identifiant, versionCode).
+
 **Reste à faire**
+- Installer la v2 par-dessus la v1 sur le téléphone et vérifier que la progression est bien là ;
 - Validation du porteur du projet (sensation du tir, lisibilité, difficulté de chaque carte) ; essais par de vrais
   joueurs et sur téléphone ; aucune nouvelle mécanique ni extension du mode avant validation.
 
