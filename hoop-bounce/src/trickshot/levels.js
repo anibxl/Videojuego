@@ -243,7 +243,7 @@ export const TS_LEVELS = [
     doors: [{ id: 'secret', x: 15, y: 2.2, w: 0.6, h: 3.6, open: { dx: 0, dy: 4 }, duration: 0.5, style: 'wall' }],
   },
   {
-    n: 29, id: 'portail-laser', diff: 'hard',
+    n: 29, id: 'portail-laser', diff: 'very',
     name: T('Portail et laser', 'Portal & Laser', 'Portal y láser'),
     start: tee(3), hoop: hoop(19, 4),
     solids: [...frame(), wall(11, 1, 1, 12.5)],
