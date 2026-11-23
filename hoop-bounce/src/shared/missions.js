@@ -7,6 +7,7 @@
 
 import { dayKey, safeLocalStorage } from './stats.js';
 import { grant } from './rewards.js';
+import { awardPassXp } from './pass.js';
 
 const KEY = 'hoopbounce.missions';
 
@@ -98,6 +99,7 @@ export class Missions {
     this.data.total = (this.data.total ?? 0) + 1;
     this._save();
     stats.add('missions', 1);
+    res.passXp = awardPassXp('mission', {}, this.storage); // Hoop Pass : XP d'une mission réalisée
     return res;
   }
 

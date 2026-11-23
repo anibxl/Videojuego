@@ -3,11 +3,13 @@
 // Un seul interrupteur : SEASON. Mettre `null` à la fin de l'événement remet le menu habituel (salle de
 // basket, musique seule) sans rien toucher d'autre. Pour essayer sans changer le code :
 //   index.html?season=off   (menu habituel)        index.html?season=christmas
-// La saison ne change que la décoration et l'ambiance du MENU : aucune règle de jeu, aucune sauvegarde.
+// La saison change la décoration et l'ambiance du MENU et donne son Hoop Pass (src/shared/pass.js) ;
+// elle ne touche à aucune règle de jeu.
 
-export const SEASONS = Object.freeze({
-  christmas: Object.freeze({ id: 'christmas', number: 1, emoji: '🎄' }),
-});
+import { SEASON_CONFIGS } from './seasons/index.js';
+
+/** Saisons connues (configurations complètes : thème, dates, Hoop Pass) — voir ./seasons/. */
+export const SEASONS = SEASON_CONFIGS;
 
 /** Saison en cours (null : aucune). */
 export const SEASON = 'christmas';

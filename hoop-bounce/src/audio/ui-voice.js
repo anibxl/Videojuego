@@ -104,8 +104,8 @@ export class UiVoice {
   /** Le motif du rebond, joué avec un timbre donné (`bell`, `pop`, `pluck`) et une transposition. */
   motif({ voice = 'bell', gain = 0.07, shift = 0, delay = 0, count = 5 } = {}) {
     const { times, notes } = BOUNCE_MOTIF;
-    for (let i = 0; i < count; i++) {
-      const f = PENTA[Math.min(PENTA.length - 1, notes[i] + shift)];
+    for (let i = 0; i < Math.min(count, notes.length); i++) {
+      const f = PENTA[Math.max(0, Math.min(PENTA.length - 1, notes[i] + shift))];
       const d = delay + times[i];
       const last = i === count - 1;
       if (voice === 'pop') this.pop(f, gain * 1.6, d);
@@ -229,6 +229,29 @@ export class UiVoice {
     this.note(130.81, 0.6, 0.14, { glide: 1.5, send: 0.3 });
     this.motif({ voice: 'bell', gain: 0.07 });
     this.note(PENTA[14], 0.8, 0.02, { delay: 0.55, send: 0.8 });
+  }
+
+  /** Hoop Pass : niveau gagné (la note monte avec le niveau, cloches et souffle lumineux). */
+  passLevel(level = 1) {
+    const shift = Math.min(6, Math.floor(level / 8));
+    this.air(0.9, 0.06, 700, 9000, { q: 0.7 });
+    this.motif({ voice: 'bell', gain: 0.075, shift });
+    this.motif({ voice: 'pluck', gain: 0.035, shift: shift - 5, delay: 0.03 });
+    this.note(PENTA[Math.min(PENTA.length - 1, 12 + shift)], 1.1, 0.03, { delay: 0.5, send: 0.9 });
+  }
+
+  /** Hoop Pass : la barre d'XP se remplit (petit grain ascendant). */
+  passFill(t = 0) {
+    this.note(520 + t * 900, 0.05, 0.018, { type: 'triangle', send: 0.2 });
+  }
+
+  /** Hoop Pass Premium débloqué : grand accord doré. */
+  passPremium() {
+    this.air(1.4, 0.08, 300, 8000, { q: 0.6 });
+    this.note(130.81, 1.2, 0.12, { glide: 1.5, send: 0.4 });
+    this.motif({ voice: 'bell', gain: 0.08 });
+    this.motif({ voice: 'bell', gain: 0.05, shift: 5, delay: 0.25, count: 5 });
+    this.note(PENTA[14], 1.4, 0.03, { delay: 0.8, send: 0.9 });
   }
 
   /** Mission terminée / succès débloqué : motif court et lumineux. */

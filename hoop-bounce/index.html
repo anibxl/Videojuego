@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="css/live.css">
   <link rel="stylesheet" href="css/trickshot-menu.css">
   <link rel="stylesheet" href="css/season-christmas.css">
+  <link rel="stylesheet" href="css/pass.css">
   <link rel="stylesheet" href="css/polish.css">
 </head>
 <body>
@@ -68,6 +69,7 @@
         <p class="tagline" data-i18n="logo.tagline"></p>
       </div>
 
+      <div class="play-row">
       <button class="play pressable" id="btn-play">
         <span class="play-icon" data-icon="play"></span>
         <span class="play-text">
@@ -76,6 +78,18 @@
         </span>
         <span class="play-clip" aria-hidden="true"><span class="play-shine"></span></span>
       </button>
+      <!-- Hoop Pass de la saison en cours (src/menu/pass-view.js) : caché hors saison -->
+      <button class="pass-btn pressable" data-nav="pass" hidden>
+        <span class="pass-btn-clip" aria-hidden="true"><span class="pass-btn-snow"></span><span class="pass-btn-shine"></span></span>
+        <span class="pass-btn-lv"><small data-i18n="pass.lvShort"></small><b>1</b></span>
+        <span class="pass-btn-text">
+          <span class="pass-btn-title">HOOP PASS</span>
+          <span class="pass-btn-sub"></span>
+          <span class="pass-btn-bar" aria-hidden="true"><i></i></span>
+        </span>
+        <span class="pass-btn-badge" hidden></span>
+      </button>
+      </div>
 
       <nav class="dock" aria-label="Menu">
         <button class="tile pressable" data-nav="mondes" style="--accent: 96,190,255; --i: 0"><span class="tile-icon" data-icon="worlds"></span><span class="tile-label" data-i18n="nav.worlds"></span></button>
@@ -100,6 +114,8 @@
     <section class="page live-page" id="page-missions" aria-labelledby="title-missions"></section>
     <section class="page live-page" id="page-succes" aria-labelledby="title-succes"></section>
     <section class="page live-page" id="page-bonus" aria-labelledby="title-bonus"></section>
+    <!-- Hoop Pass (passe de saison) : src/menu/pass-view.js, css/pass.css -->
+    <section class="page" id="page-pass" aria-labelledby="title-pass"></section>
 
     <!-- Fenêtre (confidentialité, crédits) -->
     <div class="sheet-backdrop" id="sheet" hidden>

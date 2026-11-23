@@ -2,7 +2,12 @@
 // Aucun achat avec de l'argent réel.
 //
 // Catégories : ball (ballons), bounce (effets de rebond), trail (traînées), goal (animations de panier).
-// Raretés : common, rare, epic, legendary. Le premier article de chaque catégorie est offert et équipé.
+// Raretés : common, rare, epic, legendary, mythic (Hoop Pass). Le premier article de chaque catégorie est offert.
+//
+// Provenance (champ `exclusive`, absent = vendu en pièces dans la boutique) :
+//   'daily' / 'achievement'  récompense quotidienne, succès
+//   'pass'                   Hoop Pass d'une saison (`season`) : ne s'obtient QUE pendant cette saison
+//   'gems'                   vendu en 💎 gemmes (`gems`) dans l'onglet Gemmes de la boutique
 // `group: 'fun'` : ballons avec un visage (onglet « Visages »), équipés comme des ballons.
 //
 // Économie (étape 17) : des prix de collection à long terme, les gains du jeu restent inchangés.
@@ -13,6 +18,8 @@ export const RARITIES = {
   rare: { color: '#4da3ff', rgb: '77,163,255', order: 1 },
   epic: { color: '#b46bff', rgb: '180,107,255', order: 2 },
   legendary: { color: '#ffc23d', rgb: '255,194,61', order: 3 },
+  // Mythique : objets de fin de Hoop Pass, uniques à une saison (ne s'obtiennent plus ensuite)
+  mythic: { color: '#ff5f8f', rgb: '255,95,143', order: 4 },
 };
 
 export const CATEGORIES = ['ball', 'bounce', 'trail', 'goal'];
@@ -80,6 +87,17 @@ export const CATALOG = [
   { id: 'goal-supernova', category: 'goal', rarity: 'legendary', price: 650000, name: n('Supernova', 'Supernova', 'Supernova'), desc: n('Une explosion d’étoiles et une onde de lumière.', 'An explosion of stars and a wave of light.', 'Una explosión de estrellas y una onda de luz.') },
   { id: 'goal-legend', category: 'goal', rarity: 'legendary', price: 1000000, name: n('Triomphe légendaire', 'Legendary Triumph', 'Triunfo legendario'), desc: n('Couronne d’or, pluie d’or et ondes de lumière.', 'A golden crown, golden rain and waves of light.', 'Corona de oro, lluvia dorada y ondas de luz.') },
   { id: 'goal-constellation', category: 'goal', rarity: 'legendary', price: null, exclusive: 'achievement', name: n('Constellation', 'Constellation', 'Constelación'), desc: n('Les étoiles se relient au-dessus du panier. Succès « Constellation ».', 'Stars join up above the hoop. “Constellation” achievement.', 'Las estrellas se unen sobre la canasta. Logro «Constelación».') },
+  // ── Saison 1 « Noël » : récompenses du Hoop Pass (exclusives à la saison) ──
+  { id: 'ball-xmas', category: 'ball', rarity: 'epic', price: null, exclusive: 'pass', season: 'christmas-1', name: n('Ballon de Noël', 'Christmas Ball', 'Balón de Navidad'), desc: n('Rouge et or, semé de flocons. Hoop Pass, saison de Noël.', 'Red and gold, dotted with snowflakes. Hoop Pass, Christmas season.', 'Rojo y oro, salpicado de copos. Hoop Pass, temporada de Navidad.') },
+  { id: 'ball-santa', category: 'ball', rarity: 'legendary', price: null, exclusive: 'pass', season: 'christmas-1', group: 'fun', name: n('Père Noël', 'Santa', 'Papá Noel'), desc: n('Bonnet, barbe blanche et joues roses. Ho ho ho !', 'Hat, white beard and rosy cheeks. Ho ho ho!', 'Gorro, barba blanca y mejillas rosadas. ¡Jo jo jo!') },
+  { id: 'ball-polaris', category: 'ball', rarity: 'mythic', price: null, exclusive: 'pass', season: 'christmas-1', name: n('Étoile du Nord', 'North Star', 'Estrella del Norte'), desc: n('Mythique. La nuit de Noël dans un ballon. Introuvable après la saison.', 'Mythic. Christmas night inside a ball. Gone after the season.', 'Mítico. La noche de Navidad en un balón. Imposible tras la temporada.') },
+  { id: 'trail-xmas', category: 'trail', rarity: 'epic', price: null, exclusive: 'pass', season: 'christmas-1', name: n('Sucre d’orge', 'Candy Cane', 'Bastón de caramelo'), desc: n('Un ruban rouge et blanc, fil d’or et étincelles.', 'A red and white ribbon, golden thread and sparkles.', 'Una cinta roja y blanca, hilo de oro y destellos.') },
+  { id: 'bounce-snow', category: 'bounce', rarity: 'rare', price: null, exclusive: 'pass', season: 'christmas-1', name: n('Flocons', 'Snowflakes', 'Copos'), desc: n('Une gerbe de flocons à chaque rebond.', 'A burst of snowflakes on every bounce.', 'Un estallido de copos en cada rebote.') },
+  { id: 'goal-xmas', category: 'goal', rarity: 'legendary', price: null, exclusive: 'pass', season: 'christmas-1', name: n('Pluie de cadeaux', 'Gift Shower', 'Lluvia de regalos'), desc: n('Des cadeaux jaillissent du panier sous la neige.', 'Gifts burst out of the hoop in the snow.', 'Los regalos saltan de la canasta bajo la nieve.') },
+  // ── Objets à gemmes (onglet Gemmes de la boutique) ──
+  { id: 'ball-crystal', category: 'ball', rarity: 'legendary', price: null, exclusive: 'gems', gems: 180, name: n('Cristal', 'Crystal', 'Cristal'), desc: n('Taillé dans la glace, il scintille de givre.', 'Cut from ice, it sparkles with frost.', 'Tallado en hielo, brilla de escarcha.') },
+  { id: 'ball-aurora', category: 'ball', rarity: 'legendary', price: null, exclusive: 'gems', gems: 260, name: n('Aurore', 'Aurora', 'Aurora'), desc: n('Des veines d’aurore boréale qui ondulent.', 'Rippling veins of northern lights.', 'Venas de aurora boreal que ondulan.') },
+  { id: 'trail-snow', category: 'trail', rarity: 'epic', price: null, exclusive: 'gems', gems: 120, name: n('Tempête de neige', 'Snowstorm', 'Tormenta de nieve'), desc: n('Un tourbillon de flocons dans ton sillage.', 'A whirl of snowflakes in your wake.', 'Un remolino de copos a tu paso.') },
 ];
 
 export const DEFAULTS = { ball: 'ball-classic', bounce: 'bounce-classic', trail: 'trail-none', goal: 'goal-confetti' };

@@ -1001,3 +1001,7 @@ body.intro-open .controls {
 @media (prefers-reduced-motion: reduce) {
   #win.perfect .win-card, #win.perfect h1 { animation: none; }
 }
+
+/* Hoop Pass : XP gagnée (saison en cours) */
+.pass-xp { margin: -4px 0 10px; text-align: center; font-size: 12.5px; font-weight: 800; letter-spacing: 0.03em; color: #ffd36b; text-shadow: 0 0 10px rgba(255, 200, 90, 0.4); }
+.pass-xp[hidden] { display: none; }

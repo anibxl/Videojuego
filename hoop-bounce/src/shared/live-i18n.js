@@ -70,6 +70,9 @@ const BASE = {
   'reward.cosmetic.rare': A('Article rare', 'Rare item', 'Objeto raro'),
   // Page Bonus (étape 13) : coffre bonus et roue de la chance
   'chest.super': A('Coffre amélioré', 'Upgraded chest', 'Cofre mejorado'),
+  'pass.levelUp': A('niveau {n} !', 'level {n}!', '¡nivel {n}!'),
+  'chest.legendary': A('Coffre légendaire', 'Legendary chest', 'Cofre legendario'),
+  'chest.premium': A('Coffre premium', 'Premium chest', 'Cofre prémium'),
   'bonus.title': A('Bonus du jour', 'Daily bonus', 'Bonus del día'),
   'bonus.chest.title': A('Coffre bonus', 'Bonus chest', 'Cofre bonus'),
   'bonus.chest.sub': A('Un coffre offert chaque jour. Ouvre-le tel quel, ou améliore-le.', 'A free chest every day. Open it as is, or upgrade it.', 'Un cofre gratis cada día. Ábrelo tal cual o mejóralo.'),

@@ -135,6 +135,9 @@ export class MenuSound {
   coins() { if (this._ok) this.voice.coins(); }
   coin(i = 0) { if (this._ok) this.voice.coin(i); }
   mission() { if (this._ok) this.voice.mission(); }
+  passLevel(n) { if (this._ok) this.voice.passLevel(n); }
+  passFill(t) { if (this._ok) this.voice.passFill(t); }
+  passPremium() { if (this._ok) this.voice.passPremium(); }
   play() { if (this._ok) this.voice.play(); }
 
   // ─── Musique d'ambiance ─────────────────────────────────────────────────

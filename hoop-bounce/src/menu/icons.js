@@ -30,6 +30,9 @@ function gearPath() {
 }
 
 export const ICONS = {
+  // Gemme (monnaie rare du Hoop Pass) : facettes en aplats, pas de dégradé (les id de dégradé se
+  // perdent quand la première copie est masquée)
+  gem: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10l4.5 5.6L12 21 2.5 9.1z" fill="#5fd4ff"/><path d="M2.5 9.1h19L12 21z" fill="#2a8fe0"/><path d="M8.2 9.1 12 21l3.8-11.9z" fill="#47b4f5"/><path d="M7 3.5 8.2 9.1h7.6L17 3.5z" fill="#9be8ff"/><path d="M7 3.5 2.5 9.1h5.7zM17 3.5l4.5 5.6h-5.7z" fill="#7ad9ff"/><path d="M9.3 5.2h2.4l-.6 2.2H8.8z" fill="#fff" opacity=".85"/></svg>',
   play: svg('<path d="M8.5 5.8v12.4a1 1 0 0 0 1.5.86l10.1-6.2a1 1 0 0 0 0-1.72L10 4.94a1 1 0 0 0-1.5.86z"/>', { fill: true }),
   back: svg('<path d="M15 5l-7 7 7 7"/>', { stroke: 2.3 }),
   close: svg('<path d="M6 6l12 12M18 6L6 18"/>', { stroke: 2.2 }),

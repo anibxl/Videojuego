@@ -634,6 +634,16 @@ html.fit-760 .hub { padding: 0 9px; }
 .loot.item canvas { width: 100px; height: 64px; }
 .loot.item b { font-size: 16px; font-weight: 800; }
 .loot.item i { font-style: normal; font-size: 11.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: rgb(var(--r)); }
+.loot.gems b { color: #aeeaff; }
+.loot.gems .coin { filter: drop-shadow(0 0 10px rgba(95, 212, 255, 0.7)); }
+.rfx-bigcoin.gem { filter: drop-shadow(0 0 30px rgba(95, 212, 255, 0.85)); }
+/* Plusieurs objets d'un coup (Hoop Pass « Tout récupérer ») : en ligne, plus petits, défilables */
+.rfx.many .rfx-loot { flex-wrap: wrap; max-width: min(92vw, 760px); gap: 10px; max-height: 52vh; overflow-y: auto; scrollbar-width: none; }
+.rfx.many .loot.item { padding: 6px 10px; }
+.rfx.many .loot.item canvas { width: 72px; height: 46px; }
+.rfx.many .loot.item b { font-size: 13px; }
+.rfx.many .loot.item i { font-size: 10px; }
+.rfx.many .loot:nth-child(n+3) { animation-delay: calc(0.15s + var(--k, 0) * 0.06s); }
 
 .rfx-ok {
   height: 48px;
@@ -943,3 +953,9 @@ html.fit-760 .hub { padding: 0 9px; }
 @media (prefers-reduced-motion: reduce) {
   .bv-sparkles i, .chest.super .chest-body b, .wheel.spinning .wheel-rim::before { animation: none !important; }
 }
+
+/* Coffres du Hoop Pass et de la boutique de gemmes */
+.chest.legendary { --c1: #ffd36b; --c2: #b8730f; --band: #fff6d6; --gem: #ff8fb0; }
+.chest.legendary .chest-body b { animation: gem-glint 1.4s ease-in-out infinite; }
+.chest.premium { --c1: #2c4a9a; --c2: #10204f; --band: #ffd36b; --gem: #8ff0ff; }
+.chest.premium .chest-body b { animation: gem-glint 1.6s ease-in-out infinite; }

@@ -1,12 +1,15 @@
 // Porte-monnaie et inventaire du joueur, enregistrés sur l'appareil.
 //
 //  - pièces (clé `hoopbounce.coins`, déjà affichée par le menu) ;
+//  - 💎 gemmes (clé `hoopbounce.gems`) : monnaie rare (Hoop Pass), pour les coffres premium, les skins très
+//    rares, les cosmétiques exclusifs et les offres spéciales. Elles complètent les pièces, sans les remplacer ;
 //  - inventaire (clé `hoopbounce.inventory`) : articles possédés, articles équipés, étoiles déjà
 //    récompensées par niveau (une étoile ne rapporte qu'une fois).
 
 import { CATALOG, DEFAULTS, REWARDS, itemById } from './catalog.js';
 
 const COINS_KEY = 'hoopbounce.coins';
+const GEMS_KEY = 'hoopbounce.gems';
 const INV_KEY = 'hoopbounce.inventory';
 
 /** Familles de la collection (résumé « Skins 8/21 · Traînées 5/10 · Effets 3/20 »). */
@@ -20,6 +23,7 @@ export class Wallet {
   constructor(storage = safeLocalStorage()) {
     this.storage = storage;
     this.coins = this._readCoins();
+    this.gems = this._readGems();
     this.inv = this._readInventory();
   }
 
@@ -84,6 +88,34 @@ export class Wallet {
     this._save();
   }
 
+  // ─── Gemmes ───────────────────────────────────────────────────────────────
+
+  addGems(n) {
+    this.gems += Math.max(0, Math.round(n));
+    this._save();
+  }
+
+  /** Dépense des gemmes. @returns {boolean} false s'il n'y en a pas assez */
+  spendGems(n) {
+    const k = Math.max(0, Math.round(n));
+    if (this.gems < k) return false;
+    this.gems -= k;
+    this._save();
+    return true;
+  }
+
+  /** Achat d'un objet vendu en gemmes. @returns {'ok'|'owned'|'gems'|'unknown'|'notForGems'} */
+  buyWithGems(id) {
+    const it = itemById(id);
+    if (!it) return 'unknown';
+    if (this.owns(id)) return 'owned';
+    if (typeof it.gems !== 'number') return 'notForGems';
+    if (!this.spendGems(it.gems)) return 'gems';
+    this.inv.owned.push(id);
+    this._save();
+    return 'ok';
+  }
+
   /** Articles achetés dans la boutique (sans les articles offerts ni les exclusifs). */
   boughtCount() {
     return this.inv.owned.filter((id) => {
@@ -132,6 +164,14 @@ export class Wallet {
 
   // ─── Stockage ─────────────────────────────────────────────────────────────
 
+  _readGems() {
+    try {
+      return Math.max(0, parseInt(this.storage?.getItem(GEMS_KEY) ?? '0', 10) || 0);
+    } catch {
+      return 0;
+    }
+  }
+
   _readCoins() {
     try {
       return Math.max(0, parseInt(this.storage?.getItem(COINS_KEY) ?? '0', 10) || 0);
@@ -158,6 +198,7 @@ export class Wallet {
   _save() {
     try {
       this.storage?.setItem(COINS_KEY, String(this.coins));
+      this.storage?.setItem(GEMS_KEY, String(this.gems));
       this.storage?.setItem(INV_KEY, JSON.stringify(this.inv));
     } catch {
       /* stockage indisponible : vaut pour cette session */

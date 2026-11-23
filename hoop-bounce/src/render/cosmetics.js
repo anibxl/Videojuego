@@ -99,6 +99,18 @@ export class Fx {
           ctx.stroke();
           break;
         }
+        case 'gift':
+          // Petit cadeau : boîte colorée et ruban doré en croix
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = `rgb(${p.color})`;
+          ctx.fillRect(-s, -s, s * 2, s * 2);
+          ctx.fillStyle = '#ffd36b';
+          ctx.fillRect(-s * 0.18, -s, s * 0.36, s * 2);
+          ctx.fillRect(-s, -s * 0.18, s * 2, s * 0.36);
+          ctx.restore();
+          break;
         case 'coin':
           ctx.save();
           ctx.translate(p.x, p.y);
@@ -181,6 +193,15 @@ const rand = (a, b) => a + Math.random() * (b - a);
 export function bounceEffect(fx, id, x, y, level) {
   const k = 0.6 + level * 0.15;
   switch (id) {
+    case 'bounce-snow':
+      // Flocons : une gerbe de petits flocons et un anneau de givre
+      fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.35, size: 0.12, grow: 4, color: '220,240,255', width: 0.04 });
+      for (let i = 0; i < 7 + level; i++) {
+        const a = rand(0.2, Math.PI - 0.2);
+        const v = rand(1.5, 3.5) * k;
+        fx.spawn({ kind: 'star', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 3, drag: 1.6, vr: rand(-4, 4), life: rand(0.5, 0.9), size: rand(0.07, 0.13), color: i % 3 ? '235,248,255' : '170,215,255' });
+      }
+      return false;
     case 'bounce-sparks':
       for (let i = 0; i < 8 + level * 2; i++) {
         const a = rand(0.15, Math.PI - 0.15);
@@ -270,6 +291,16 @@ export function drawTrail(ctx, id, pts, time, r = 0.4) {
     ctx.stroke();
   };
   switch (id) {
+    case 'trail-xmas':
+      // Sucre d'orge : ruban rouge et blanc qui alternent, fil doré au centre
+      for (let i = 1; i < n; i++) seg(i, r * 1.7 * (i / n), (i + Math.floor(time * 8)) % 2 ? `rgba(226,38,58,${0.85 * (i / n)})` : `rgba(250,252,255,${0.85 * (i / n)})`);
+      for (let i = 1; i < n; i++) seg(i, r * 0.22 * (i / n), `rgba(255,211,107,${0.8 * (i / n)})`);
+      break;
+    case 'trail-snow':
+      // Tempête de neige : voile blanc et bleuté
+      for (let i = 1; i < n; i++) seg(i, r * 2 * (i / n), `rgba(225,240,255,${0.32 * (i / n)})`);
+      for (let i = 1; i < n; i++) seg(i, r * 0.8 * (i / n), `rgba(255,255,255,${0.5 * (i / n)})`);
+      break;
     case 'trail-streak':
       for (let i = 1; i < n; i++) seg(i, r * 1.4 * (i / n), `rgba(255,255,255,${0.35 * (i / n)})`);
       break;
@@ -353,9 +384,11 @@ export function drawTrail(ctx, id, pts, time, r = 0.4) {
 /** Particules émises le long de la traînée (appelé à chaque image). */
 export function emitTrail(fx, id, x, y, speed, dt) {
   if (speed < 1.5) return;
-  const rate = id === 'trail-flame' ? 40 : id === 'trail-frost' ? 22 : id === 'trail-plasma' ? 26 : id === 'trail-hoop' ? 10 : id === 'trail-aurora' ? 18 : id === 'trail-energy' ? 24 : id === 'trail-galaxy' ? 14 : 0;
+  const rate = id === 'trail-xmas' ? 10 : id === 'trail-snow' ? 30 : id === 'trail-flame' ? 40 : id === 'trail-frost' ? 22 : id === 'trail-plasma' ? 26 : id === 'trail-hoop' ? 10 : id === 'trail-aurora' ? 18 : id === 'trail-energy' ? 24 : id === 'trail-galaxy' ? 14 : 0;
   if (!rate || Math.random() > rate * dt) return;
-  if (id === 'trail-flame') fx.spawn({ x: x + rand(-0.15, 0.15), y: y + rand(-0.15, 0.15), vx: rand(-0.4, 0.4), vy: rand(0.6, 1.6), life: rand(0.25, 0.45), size: rand(0.06, 0.12), grow: -0.5, color: Math.random() < 0.5 ? '255,160,50' : '255,230,120' });
+  if (id === 'trail-xmas') fx.spawn({ kind: 'star', x: x + rand(-0.15, 0.15), y: y + rand(-0.15, 0.15), vx: 0, vy: -0.3, vr: 3, life: rand(0.4, 0.7), size: rand(0.05, 0.08), color: Math.random() < 0.5 ? '255,255,255' : '255,211,107' });
+  else if (id === 'trail-snow') fx.spawn({ kind: 'star', x: x + rand(-0.3, 0.3), y: y + rand(-0.3, 0.3), vx: rand(-0.4, 0.4), vy: rand(-0.8, -0.2), vr: rand(-3, 3), life: rand(0.6, 1.1), size: rand(0.05, 0.1), color: Math.random() < 0.7 ? '255,255,255' : '190,225,255' });
+  else if (id === 'trail-flame') fx.spawn({ x: x + rand(-0.15, 0.15), y: y + rand(-0.15, 0.15), vx: rand(-0.4, 0.4), vy: rand(0.6, 1.6), life: rand(0.25, 0.45), size: rand(0.06, 0.12), grow: -0.5, color: Math.random() < 0.5 ? '255,160,50' : '255,230,120' });
   else if (id === 'trail-frost') fx.spawn({ kind: 'star', x: x + rand(-0.2, 0.2), y: y + rand(-0.2, 0.2), vx: 0, vy: -0.4, vr: 3, life: rand(0.4, 0.7), size: rand(0.05, 0.09), color: '235,250,255' });
   else if (id === 'trail-hoop') fx.spawn({ kind: 'coin', x, y, vx: rand(-0.6, 0.6), vy: rand(0.2, 1), g: 2, vr: rand(3, 8), life: 0.6, size: 0.1, color: '255,140,60' });
   else if (id === 'trail-aurora') fx.spawn({ kind: 'star', x: x + rand(-0.2, 0.2), y: y + rand(-0.2, 0.2), vx: 0, vy: 0.3, vr: 2, life: rand(0.4, 0.8), size: rand(0.04, 0.08), color: Math.random() < 0.5 ? '120,255,200' : '200,160,255' });
@@ -369,6 +402,25 @@ export function emitTrail(fx, id, x, y, speed, dt) {
 /** @returns {boolean} true si l'animation remplace les confettis d'origine */
 export function goalEffect(fx, id, x, y) {
   switch (id) {
+    case 'goal-xmas': {
+      // Pluie de cadeaux : des cadeaux jaillissent, la neige tombe, guirlandes rouges, vertes et dorées
+      const COL = ['226,38,58', '47,138,72', '255,211,107', '250,252,255'];
+      fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.5, size: 0.2, grow: 7, color: '255,230,170', width: 0.06 });
+      for (let i = 0; i < 12; i++) {
+        const a = rand(0.4, Math.PI - 0.4);
+        const v = rand(5, 9);
+        fx.spawn({ kind: 'gift', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 12, vr: rand(-6, 6), life: rand(1.3, 1.8), size: rand(0.13, 0.2), color: COL[i % 3], fade: false });
+      }
+      for (let i = 0; i < 24; i++) {
+        const a = rand(0.3, Math.PI - 0.3);
+        const v = rand(4, 9);
+        fx.spawn({ kind: 'streamer', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 9, drag: 1.4, vr: rand(-10, 10), life: rand(1.2, 1.8), size: 0.11, color: COL[i % COL.length], fade: false });
+      }
+      for (let i = 0; i < 30; i++) {
+        fx.spawn({ kind: 'star', x: x + rand(-3.5, 3.5), y: y + rand(2.5, 5), vx: rand(-0.3, 0.3), vy: rand(-1.6, -0.8), vr: rand(-2, 2), life: rand(1.6, 2.4), size: rand(0.06, 0.11), color: '245,250,255' });
+      }
+      return true;
+    }
     case 'goal-streamers':
       for (let i = 0; i < 26; i++) {
         const a = rand(0.3, Math.PI - 0.3);

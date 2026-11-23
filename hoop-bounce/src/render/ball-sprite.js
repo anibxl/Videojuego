@@ -39,6 +39,12 @@ const SKINS = {
   'ball-robot': { base: ['#c9d2de', '#7c8798'], grain: ['rgba(40,50,70,0.12)', 'rgba(255,255,255,0.2)'], seam: '#55606f', face: 'robot', rivets: true },
   'ball-ghost': { base: ['#f4f2ff', '#c9c3ee'], grain: ['rgba(90,80,160,0.06)', 'rgba(255,255,255,0.3)'], seam: '#b7aee6', face: 'ghost', aura: '210,200,255' },
   'ball-googly': { base: ['#f47a2a', '#de5f17'], grain: ['rgba(90,30,0,0.13)', 'rgba(255,190,140,0.10)'], seam: '#2b1206', face: 'googly' },
+  // Saison 1 — Noël (Hoop Pass) et objets à gemmes
+  'ball-xmas': { base: ['#d42a3a', '#8f1424'], grain: ['rgba(60,0,10,0.15)', 'rgba(255,200,200,0.1)'], seam: '#ffd36b', snowflakes: true, shine: true },
+  'ball-santa': { base: ['#d42a3a', '#a01828'], grain: ['rgba(60,0,10,0.15)', 'rgba(255,200,200,0.1)'], seam: '#7a0f1c', face: 'santa' },
+  'ball-polaris': { base: ['#1d2d62', '#060b22'], grain: ['rgba(0,0,0,0.2)', 'rgba(180,210,255,0.08)'], seam: '#ffe9a8', stars: true, snowflakes: true, glow: '#bfe7ff', shine: true, aura: '255,230,160' },
+  'ball-crystal': { base: ['#e9f8ff', '#7fc4ea'], grain: ['rgba(80,140,190,0.05)', 'rgba(255,255,255,0.25)'], seam: '#ffffff', facets: true, frost: true, glow: '#c8f4ff', aura: '180,240,255' },
+  'ball-aurora': { base: ['#0f2a3a', '#06121c'], grain: ['rgba(0,0,0,0.2)', 'rgba(120,255,200,0.06)'], seam: '#7affd0', glow: '#7affd0', veins: ['#6dffc0', '#b48cff'], aura: '120,255,200' },
   'ball-alien': { base: ['#8dff7a', '#1f9e3a'], grain: ['rgba(0,60,10,0.12)', 'rgba(220,255,210,0.14)'], seam: '#0f5a20', glow: '#9dff8a', face: 'alien', aura: '120,255,140' },
 };
 delete SKINS['ball-gold-aura'];
@@ -183,6 +189,29 @@ function createSurface(S) {
         const a = (k * Math.PI) / 3;
         g.moveTo(x - Math.cos(a) * l, y - Math.sin(a) * l);
         g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l);
+      }
+      g.stroke();
+    }
+  }
+  if (S.snowflakes) {
+    // Flocons de neige à six branches
+    g.strokeStyle = 'rgba(255,255,255,0.85)';
+    g.lineWidth = 1.6;
+    g.lineCap = 'round';
+    for (let i = 0; i < 11; i++) {
+      const x = (rng() - 0.5) * SIZE * 0.9;
+      const y = (rng() - 0.5) * SIZE * 0.9;
+      const l = 5 + rng() * 7;
+      g.beginPath();
+      for (let k = 0; k < 6; k++) {
+        const a = (k * Math.PI) / 3;
+        const ex = x + Math.cos(a) * l;
+        const ey = y + Math.sin(a) * l;
+        g.moveTo(x, y);
+        g.lineTo(ex, ey);
+        // petites barbes
+        g.moveTo(x + Math.cos(a) * l * 0.55, y + Math.sin(a) * l * 0.55);
+        g.lineTo(x + Math.cos(a + 0.5) * l * 0.8, y + Math.sin(a + 0.5) * l * 0.8);
       }
       g.stroke();
     }
@@ -510,6 +539,58 @@ export function drawFace(g, face, r, m) {
       }
       smile(r * 0.3, r * 0.22, r * 0.14);
       break;
+    case 'santa': {
+      // Père Noël : bonnet à bordure blanche et pompon, moustache, grande barbe, joues roses
+      g.fillStyle = '#fbfdff';
+      g.beginPath();
+      g.arc(0, 0, r * 1.01, Math.PI * 0.06, Math.PI * 0.94);
+      g.quadraticCurveTo(-r * 0.5, r * 0.12, 0, r * 0.2);
+      g.quadraticCurveTo(r * 0.5, r * 0.12, r * Math.cos(Math.PI * 0.06), r * Math.sin(Math.PI * 0.06));
+      g.fill();
+      g.fillStyle = 'rgba(200,215,235,0.6)';
+      for (const [x, y] of [[-0.4, 0.55], [0.1, 0.72], [0.45, 0.48], [-0.1, 0.42]]) {
+        g.beginPath();
+        g.arc(x * r, y * r, r * 0.07, 0, TAU);
+        g.fill();
+      }
+      // Bordure du bonnet
+      g.save();
+      g.beginPath();
+      g.arc(0, 0, r * 1.02, 0, TAU);
+      g.clip();
+      g.fillStyle = '#fbfdff';
+      g.beginPath();
+      g.moveTo(-r * 1.1, -r * 0.46);
+      g.quadraticCurveTo(0, -r * 0.66, r * 1.1, -r * 0.46);
+      g.lineTo(r * 1.1, -r * 0.7);
+      g.quadraticCurveTo(0, -r * 0.92, -r * 1.1, -r * 0.7);
+      g.closePath();
+      g.fill();
+      g.restore();
+      g.fillStyle = '#fbfdff';
+      g.beginPath();
+      g.arc(r * 0.72, -r * 1.02, r * 0.17, 0, TAU);
+      g.fill();
+      eye(-r * 0.28, -r * 0.2, r * 0.09, r * 0.13);
+      eye(r * 0.28, -r * 0.2, r * 0.09, r * 0.13);
+      g.fillStyle = 'rgba(255,140,150,0.55)';
+      for (const sx of [-1, 1]) {
+        g.beginPath();
+        g.ellipse(sx * r * 0.5, r * 0.02, r * 0.12, r * 0.08, 0, 0, TAU);
+        g.fill();
+      }
+      g.fillStyle = '#f2f5fb';
+      for (const sx of [-1, 1]) {
+        g.beginPath();
+        g.ellipse(sx * r * 0.18, r * 0.16, r * 0.2, r * 0.1, sx * 0.25, 0, TAU);
+        g.fill();
+      }
+      g.fillStyle = '#e8828a';
+      g.beginPath();
+      g.arc(0, r * 0.06, r * 0.08, 0, TAU);
+      g.fill();
+      break;
+    }
     case 'alien':
       // Deux antennes à boule lumineuse, grands yeux noirs en amande
       for (const sx of [-1, 1]) {

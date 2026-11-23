@@ -31,6 +31,7 @@ import { Missions } from './shared/missions.js';
 import { Achievements } from './shared/achievements.js';
 import { lt } from './shared/live-i18n.js';
 import { getAds } from './shared/ads.js';
+import { awardPassXp } from './shared/pass.js';
 
 const R = CONFIG.ball.radius;
 const DT = CONFIG.physics.fixedDt;
@@ -577,11 +578,30 @@ const formatTime = (t) => {
   return `${m}:${s.toFixed(1).padStart(4, '0')}`;
 };
 
+/** Petite pastille « +60 XP · Hoop Pass » sur l'écran de victoire. */
+function showPassXp(res) {
+  let el = document.getElementById('win-pass-xp');
+  if (!res) {
+    if (el) el.hidden = true;
+    return;
+  }
+  if (!el) {
+    el = document.createElement('p');
+    el.id = 'win-pass-xp';
+    el.className = 'pass-xp';
+    ui.winReward.insertAdjacentElement('afterend', el);
+  }
+  el.hidden = false;
+  el.textContent = `+${res.gained} XP · Hoop Pass${res.to > res.from ? ` · ${lt(lang, 'pass.levelUp', { n: res.to })}` : ''}`;
+}
+
 function showWin(r) {
   const def = LEVELS[levelIndex];
   const world = WORLDS[def.worldIndex];
   const res = progress.complete(def.id, r.stars, r.time);
   const earned = wallet.reward(def.id, def.worldIndex, r.stars, !!state.swish);
+  // Hoop Pass (saison en cours) : XP pour un niveau terminé, plus la première fois
+  showPassXp(awardPassXp('level', { first: earned.lines.some(([k]) => k === 'first') }));
   // Statistiques (missions et succès)
   stats.add('goals', 1, false);
   stats.add('clears', 1, false);

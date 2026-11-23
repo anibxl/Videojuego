@@ -113,7 +113,9 @@ export function applySeason(season, env) {
   const play = document.getElementById('btn-play');
   add(play, 'xmas-snowcap', SNOWCAP);
   add(play, 'xmas-holly', HOLLY);
-  add(play, 'xmas-gifts', `<span class="g1">${GIFT('#2f8a48', '#ffd254')}</span><span class="g2">${GIFT('#e2263a', '#fbfdff')}</span>`);
+  // Les cadeaux se posent contre le billet du Hoop Pass s'il est là, sinon à côté de JOUER
+  const passBtn = document.querySelector('.pass-btn:not([hidden])');
+  add(passBtn ?? play, 'xmas-gifts', `<span class="g1">${GIFT('#2f8a48', '#ffd254')}</span><span class="g2">${GIFT('#e2263a', '#fbfdff')}</span>`);
   // Sucre d'orge au bout des tuiles
   add(document.querySelector('.dock'), 'xmas-candy', CANDY);
 }

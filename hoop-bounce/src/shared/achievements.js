@@ -6,6 +6,7 @@
 import { CATALOG } from './catalog.js';
 import { safeLocalStorage } from './stats.js';
 import { grant } from './rewards.js';
+import { awardPassXp } from './pass.js';
 
 const KEY = 'hoopbounce.achievements';
 
@@ -115,6 +116,7 @@ export class Achievements {
     this.data.claimed.push(id);
     if (!this.data.notified.includes(id)) this.data.notified.push(id);
     this._save();
+    res.passXp = awardPassXp('achievement', {}, this.storage); // Hoop Pass : XP d'un succès débloqué
     return res;
   }
 

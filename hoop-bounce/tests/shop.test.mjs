@@ -20,7 +20,9 @@ test('catalogue : 4 catégories, 4 raretés, un article offert par catégorie, i
     assert.equal(items.filter((i) => i.price === 0).length, 1, `${c} : un article offert`);
     assert.equal(DEFAULTS[c], items.find((i) => i.price === 0).id);
   }
-  for (const r of Object.keys(RARITIES)) assert.ok(CATALOG.some((i) => i.rarity === r && i.price > 0), r);
+  // Toutes les raretés sont vendues en pièces, sauf Mythique (fin de Hoop Pass, exclusive à une saison)
+  for (const r of Object.keys(RARITIES).filter((x) => x !== 'mythic')) assert.ok(CATALOG.some((i) => i.rarity === r && i.price > 0), r);
+  assert.ok(CATALOG.filter((i) => i.rarity === 'mythic').every((i) => i.exclusive === 'pass'));
   for (const i of CATALOG) for (const l of ['fr', 'en', 'es']) assert.ok(i.name[l] && i.desc[l], `${i.id} ${l}`);
   // Plus c'est rare, plus c'est cher
   const maxOf = (r) => Math.max(...CATALOG.filter((i) => i.rarity === r).map((i) => i.price));
@@ -108,7 +110,7 @@ test('nouveaux objets : présents, traduits, visages équipés comme des ballons
   const NEW = ['ball-diamond', 'ball-plasma', 'ball-shadow', 'ball-rainbow', 'ball-smile', 'ball-robot', 'ball-alien', 'ball-ghost', 'ball-pirate', 'ball-ninja', 'ball-googly',
     'bounce-flames', 'bounce-smoke', 'bounce-cosmic', 'trail-galaxy', 'trail-energy', 'goal-burst', 'goal-electric', 'goal-space', 'goal-legend'];
   for (const id of NEW) assert.ok(CATALOG.some((i) => i.id === id), id);
-  assert.equal(CATALOG.filter((i) => i.group === 'fun').length, 7);
+  assert.equal(CATALOG.filter((i) => i.group === 'fun' && !i.exclusive).length, 7, '7 visages en vente (+ le Père Noël du Hoop Pass)');
   assert.ok(CATALOG.filter((i) => i.group === 'fun').every((i) => i.category === 'ball'));
   const store = memory();
   const w = new Wallet(store);

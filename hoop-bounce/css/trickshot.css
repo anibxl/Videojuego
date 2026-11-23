@@ -384,3 +384,7 @@ body[data-diff='impossible'] .diff-chip { border-color: rgba(255, 255, 255, 0.45
   .win-card .score-box { grid-area: score; margin: 6px 0 0; align-self: stretch; display: grid; align-content: center; }
   .win-card .actions { grid-area: actions; margin-top: 8px; }
 }
+
+/* Hoop Pass : XP gagnée (saison en cours) */
+.pass-xp { margin: 4px 0 0; font-size: 12.5px; font-weight: 800; letter-spacing: 0.03em; color: #ffd36b; }
+.pass-xp[hidden] { display: none; }

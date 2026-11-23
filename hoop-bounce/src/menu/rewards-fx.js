@@ -42,7 +42,7 @@ export class RewardFx {
   }
 
   /**
-   * @param {{ title:string, coins:number, item:object|null, chest:string|null }} r
+   * @param {{ title:string, coins:number, gems?:number, item:object|null, items?:object[], chest:string|null }} r
    * @param {HTMLElement|null} coinTarget  élément vers lequel les pièces s'envolent (compteur)
    */
   async reveal(r, coinTarget = null) {
@@ -56,8 +56,13 @@ export class RewardFx {
     el.querySelector('.rfx-eyebrow').textContent = r.title ?? '';
     ok.textContent = t(l, 'reward.ok');
     loot.innerHTML = '';
-    el.dataset.rarity = r.item?.rarity ?? (r.chest === 'epic' || r.chest === 'super' ? 'epic' : r.chest === 'rare' ? 'rare' : 'gold');
-    el.style.setProperty('--glow', r.item ? RARITIES[r.item.rarity].rgb : r.chest === 'super' ? '255,150,70' : r.chest === 'epic' ? '180,107,255' : r.chest === 'rare' ? '77,163,255' : '255,201,77');
+    const items = r.items ?? (r.item ? [r.item] : []);
+    const top = items.reduce((a, b) => (!a || RARITIES[b.rarity].order > RARITIES[a.rarity].order ? b : a), null);
+    el.dataset.rarity = top?.rarity ?? (r.chest === 'epic' || r.chest === 'super' ? 'epic' : r.chest === 'rare' ? 'rare' : r.gems && !r.coins ? 'gem' : 'gold');
+    el.style.setProperty('--glow', top ? RARITIES[top.rarity].rgb
+      : r.chest === 'legendary' ? '255,170,60' : r.chest === 'premium' ? '120,210,255' : r.chest === 'super' ? '255,150,70' : r.chest === 'epic' ? '180,107,255' : r.chest === 'rare' ? '77,163,255'
+        : r.gems && !r.coins ? '95,212,255' : '255,201,77');
+    el.classList.toggle('many', items.length > 1);
     el.classList.remove('open', 'is-burst', 'done');
     el.hidden = false;
     void el.offsetWidth;
@@ -73,7 +78,7 @@ export class RewardFx {
       this.env.vibrate([20, 40, 30]);
       await wait(350);
     } else {
-      center.innerHTML = r.item ? '' : `<span class="rfx-bigcoin">${ICONS.coin}</span>`;
+      center.innerHTML = items.length ? '' : r.gems && !r.coins ? `<span class="rfx-bigcoin gem">${ICONS.gem}</span>` : `<span class="rfx-bigcoin">${ICONS.coin}</span>`;
       el.classList.add('is-burst');
       this.env.sound.reward?.();
       this.env.vibrate([20, 40, 30]);
@@ -82,12 +87,13 @@ export class RewardFx {
     // Le butin surgit
     const parts = [];
     if (r.coins) parts.push(`<span class="loot coins"><span class="coin">${ICONS.coin}</span><b>+${r.coins}</b></span>`);
-    if (r.item) {
-      parts.push(`<span class="loot item" style="--r:${RARITIES[r.item.rarity].rgb}"><canvas></canvas><b>${r.item.name[l] ?? r.item.name.fr}</b><i>${t(l, `rarity.${r.item.rarity}`)}${r.item.exclusive ? ` · ${t(l, 'reward.exclusive')}` : ''}</i></span>`);
+    if (r.gems) parts.push(`<span class="loot coins gems"><span class="coin">${ICONS.gem}</span><b>+${r.gems}</b></span>`);
+    for (const it of items) {
+      parts.push(`<span class="loot item" style="--r:${RARITIES[it.rarity].rgb}"><canvas></canvas><b>${it.name[l] ?? it.name.fr}</b><i>${t(l, `rarity.${it.rarity}`)}${it.exclusive && it.exclusive !== 'gems' ? ` · ${t(l, 'reward.exclusive')}` : ''}</i></span>`);
     }
     loot.innerHTML = parts.join('');
-    const cv = loot.querySelector('canvas');
-    if (cv) requestAnimationFrame(() => drawThumb(cv, r.item, Math.min(window.devicePixelRatio || 1, 2)));
+    const cvs = [...loot.querySelectorAll('canvas')];
+    if (cvs.length) requestAnimationFrame(() => cvs.forEach((cv, i) => drawThumb(cv, items[i], Math.min(window.devicePixelRatio || 1, 2))));
     if (r.coins) this.coinRain(Math.min(40, 12 + Math.round(r.coins / 25)));
     await wait(450);
     el.classList.add('done');

@@ -30,6 +30,7 @@ import { aimFromDrag, trajectory } from './aim.js';
 import { TrickshotProgress } from './progress.js';
 import { ArenaRenderer } from './render.js';
 import { tt, pick } from './i18n.js';
+import { awardPassXp } from '../shared/pass.js';
 
 const $ = (id) => document.getElementById(id);
 const settings = new Settings();
@@ -424,7 +425,9 @@ function onWin(e) {
   camera.zoomTarget = perfect ? 1.4 : 1.25;
   timeFx.clear();
   timeFx.slowmo(perfect || spectacular ? 0.18 : 0.3, perfect || spectacular ? 0.5 : 0.3, 0.8, 0.06);
+  const firstWin = !progress.isDone(n);
   const rec = progress.record(n, { stars: r.stars, score: r.score });
+  rec.passXp = awardPassXp('trickshot', { first: firstWin }); // Hoop Pass : XP d'un Trickshot réussi
   setTimeout(() => showWin(r, rec), 1500);
 }
 
@@ -463,6 +466,16 @@ function showWin(r, rec) {
   $('win-unlocked').hidden = !rec.unlocked && !last;
   $('win-unlocked').textContent = last ? t('allDone') : t('unlocked', { n: rec.unlocked });
   $('btn-next').hidden = last;
+  // Hoop Pass : XP gagnée par ce Trickshot
+  let px = document.getElementById('win-pass-xp');
+  if (!px) {
+    px = document.createElement('p');
+    px.id = 'win-pass-xp';
+    px.className = 'pass-xp';
+    $('win-unlocked').insertAdjacentElement('afterend', px);
+  }
+  px.hidden = !rec.passXp;
+  if (rec.passXp) px.textContent = `+${rec.passXp.gained} XP · Hoop Pass${rec.passXp.to > rec.passXp.from ? ` · ${t('passLevel', { n: rec.passXp.to })}` : ''}`;
   music.stinger(r.stars === 3 ? 'perfect' : 'win', 'arena');
   confetti.celebrate(r.stars === 3 ? 1 : 0.6);
   openOverlay('win');

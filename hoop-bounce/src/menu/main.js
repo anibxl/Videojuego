@@ -15,6 +15,8 @@ import { DailyView, MissionsView, AchievementsView, liveBadges } from './live-vi
 import { RewardFx } from './rewards-fx.js';
 import { BonusView } from './bonus-view.js';
 import { TrickshotView } from './trickshot-view.js';
+import { PassView, passHomeState } from './pass-view.js';
+import { seasonConfig } from '../shared/seasons/index.js';
 import { vibratePattern } from '../platform/vibrate.js';
 import { aboutPage } from './about-page.js';
 import { DailyReward } from '../shared/daily.js';
@@ -25,7 +27,7 @@ import { WORLDS } from '../game/worlds.js';
 import { gt } from '../game/i18n.js';
 import { Wallet } from '../shared/wallet.js';
 
-const PAGES = ['mondes', 'modes', 'collection', 'parametres', 'quotidien', 'missions', 'succes', 'bonus', 'apropos', 'trickshot', 'trickshot-niveaux'];
+const PAGES = ['mondes', 'modes', 'collection', 'parametres', 'quotidien', 'missions', 'succes', 'bonus', 'apropos', 'trickshot', 'trickshot-niveaux', 'pass'];
 /** Sous-pages : le retour ramène à la page parente (même ouverte par un lien direct). */
 const PARENT = { apropos: 'parametres', trickshot: 'modes', 'trickshot-niveaux': 'trickshot' };
 
@@ -42,6 +44,9 @@ const season = activeSeason();
 const SceneClass = season?.id === 'christmas' ? ChristmasScene : MenuScene;
 const scene = new SceneClass($('#scene'), { quality: settings.get('quality'), reducedMotion });
 sound.setSeason?.(season?.id ?? null);
+// Hoop Pass de la saison (configuration : src/shared/seasons/) ; pas de saison → pas de bouton
+const passSeason = seasonConfig(season?.id);
+$('.pass-btn').hidden = !passSeason;
 
 const state = {
   page: 'home',
@@ -103,8 +108,11 @@ const bonusView = new BonusView($('#page-bonus'), viewEnv);
 // Mode Trickshot : page de présentation et sélection des 50 niveaux
 viewEnv.showPage = (p) => showPage(p);
 const trickshotView = new TrickshotView($('#page-trickshot'), $('#page-trickshot-niveaux'), viewEnv);
+// Hoop Pass : passe de saison (niveaux, récompenses gratuites et Premium)
+const passView = new PassView($('#page-pass'), viewEnv, passSeason);
 const VIEWS = {
   mondes: worldsView, collection: collectionView, quotidien: dailyView, missions: missionsView, succes: achievementsView, bonus: bonusView,
+  pass: passView,
   trickshot: { onShow: () => trickshotView.onShow('trickshot'), onHide: () => trickshotView.onHide() },
   'trickshot-niveaux': { onShow: () => trickshotView.onShow('trickshot-niveaux'), onHide: () => trickshotView.onHide() },
 };
@@ -117,6 +125,8 @@ function renderPages() {
   $('#page-parametres').innerHTML = settingsPage(l, settings.values);
   $('#page-apropos').innerHTML = aboutPage(l);
   trickshotView.render();
+  passView.render();
+  if (passView.active) passView.onShow();
   for (const v of [dailyView, missionsView, achievementsView, bonusView]) if (v.active) v.render(true);
   requestAnimationFrame(() => $$('.segmented').forEach(positionIndicator));
   refreshHome();
@@ -146,6 +156,27 @@ function refreshHome() {
     setHubBadge('missions', b.missions);
     setHubBadge('succes', b.achievements);
     setHubBadge('bonus', b.bonus);
+  } catch {
+    /* sauvegarde indisponible */
+  }
+  refreshPassButton();
+}
+
+/** Bouton Hoop Pass de l'accueil : niveau, avancement, récompenses à récupérer. */
+function refreshPassButton() {
+  const btn = $('.pass-btn');
+  if (!passSeason) return;
+  try {
+    const st = passHomeState(passSeason);
+    const l = lang();
+    $('.pass-btn-lv b', btn).textContent = String(st.level);
+    $('.pass-btn-bar i', btn).style.setProperty('--p', String(st.ratio));
+    $('.pass-btn-sub', btn).textContent = st.over ? t(l, 'pass.over') : `${t(l, 'pass.home', { n: passSeason.number })} · ${passSeason.name[l] ?? passSeason.name.fr}`;
+    const badge = $('.pass-btn-badge', btn);
+    badge.hidden = !st.claimable;
+    badge.textContent = st.claimable > 9 ? '9+' : String(st.claimable);
+    btn.classList.toggle('has-reward', st.claimable > 0);
+    btn.setAttribute('aria-label', `Hoop Pass · ${t(l, 'pass.lv', { n: st.level })}${st.claimable ? ` · ${t(l, 'pass.ready', { n: st.claimable })}` : ''}`);
   } catch {
     /* sauvegarde indisponible */
   }
@@ -192,6 +223,7 @@ function showPage(page, { fromHistory = false, world = null } = {}) {
   app.dataset.page = page;
   for (const p of PAGES) $(`#page-${p}`).classList.toggle('active', p === page);
   scene.dimTarget = opening ? 1 : 0;
+  if (!opening) refreshPassButton(); // XP ou récompenses du Pass changées depuis une page
   if (opening) {
     const el = $(`#page-${page}`);
     // Relance les animations d'apparition à chaque ouverture
@@ -301,7 +333,7 @@ document.addEventListener('pointerdown', (e) => {
   ripple.style.left = `${e.clientX - r.left}px`;
   ripple.style.top = `${e.clientY - r.top}px`;
   // L'éclat est dessiné dans la zone découpée du bouton (sa lueur extérieure reste visible)
-  const host = el.querySelector('.tile-icon, .play-clip') ?? el;
+  const host = el.querySelector('.tile-icon, .play-clip, .pass-btn-clip') ?? el;
   if (host !== el) {
     const hr = host.getBoundingClientRect();
     ripple.style.left = `${e.clientX - hr.left}px`;
@@ -452,6 +484,7 @@ window.addEventListener('pageshow', (e) => {
     worldsView.render();
     collectionView.render();
     trickshotView.render();
+    passView.render();
     $('#page-modes').innerHTML = modesPage(lang());
     refreshHome();
     if (state.page !== 'home') {
@@ -478,6 +511,7 @@ function resize() {
   $$('.segmented').forEach(positionIndicator);
   worldsView.layout();
   collectionView.layout();
+  passView.layout();
 }
 window.addEventListener('resize', resize);
 
@@ -556,4 +590,4 @@ function autoOpenDaily() {
 }
 
 // Accès pour les tests automatisés
-window.__menu = { scene, settings, sound, showPage, STRINGS, worldsView, collectionView, dailyView, missionsView, achievementsView, refreshHome };
+window.__menu = { scene, settings, sound, showPage, STRINGS, worldsView, collectionView, dailyView, missionsView, achievementsView, passView, refreshHome };
