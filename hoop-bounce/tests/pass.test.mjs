@@ -174,3 +174,22 @@ test('rendu : les nouveaux objets ont une apparence (skins, traînées, effets)'
   }
   assert.match(sprite, /case 'santa'/);
 });
+
+test('offres en gemmes : coffres premium et légendaire, pack de saison (une fois, pendant la saison)', async () => {
+  const { GEM_OFFERS, offerAvailable, buyGemOffer, packValue } = await import('../src/shared/gem-offers.js');
+  const st = memory();
+  const w = new Wallet(st);
+  assert.equal(buyGemOffer('chest-premium', w).status, 'gems', 'sans gemmes : rien');
+  w.addGems(1000);
+  const c = buyGemOffer('chest-legendary', w, { rng: () => 0.5 });
+  assert.equal(c.status, 'ok');
+  assert.equal(c.reward.chest, 'legendary');
+  assert.equal(c.reward.item?.rarity, 'legendary');
+  const pack = GEM_OFFERS.find((o) => o.kind === 'pack');
+  assert.ok(pack.gems < packValue(pack), 'le pack coûte moins cher que ses objets séparés');
+  assert.equal(offerAvailable(pack, w, null), false, 'hors saison : pas de pack');
+  assert.equal(buyGemOffer(pack.id, w, { passId: 'christmas-1' }).status, 'ok');
+  for (const id of pack.items) assert.ok(w.owns(id));
+  assert.equal(buyGemOffer(pack.id, w, { passId: 'christmas-1' }).status, 'unavailable', 'jamais deux fois');
+  assert.equal(w.gems, 1000 - 150 + c.reward.gems - pack.gems);
+});

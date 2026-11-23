@@ -3,7 +3,9 @@
 // n'y figurent pas). Chaque carte montre l'aperçu, le prix et un bouton « Acheter » ; la vitrine montre
 // l'objet choisi en grand. Un objet acheté ne peut jamais être acheté deux fois : il affiche un badge
 // « Possédé », puis quitte la boutique (il est équipé aussitôt et se retrouve dans la Collection).
-// Aucun achat avec de l'argent réel : uniquement les pièces gagnées en jouant.
+// Onglet « Gemmes » (Hoop Pass) : skins très rares et cosmétiques exclusifs vendus en 💎 gemmes, coffres
+// premium et légendaires, offre spéciale de la saison (src/shared/gem-offers.js).
+// Aucun achat avec de l'argent réel : uniquement les pièces et les gemmes gagnées en jouant.
 
 import { CATALOG, RARITIES, itemById } from '../shared/catalog.js';
 import { Wallet } from '../shared/wallet.js';
@@ -13,6 +15,13 @@ import { Preview, drawThumb } from './preview.js';
 import { st } from './i18n.js';
 import { vibratePattern } from '../platform/vibrate.js';
 import { watchSafeWidth } from '../shared/safe-width.js';
+import { GEM_OFFERS, offerAvailable, buyGemOffer, packValue } from '../shared/gem-offers.js';
+import { activeSeason } from '../shared/season.js';
+import { seasonConfig } from '../shared/seasons/index.js';
+import { Stats } from '../shared/stats.js';
+import { RewardFx, chestHtml } from '../menu/rewards-fx.js';
+import { ICONS } from '../menu/icons.js';
+import { lt } from '../shared/live-i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const settings = new Settings();
@@ -34,13 +43,26 @@ const LOCALE = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'fr-FR';
 // (espace insécable classique : l'espace fine n'existe pas dans les polices du jeu)
 const fmt = (n) => n.toLocaleString(LOCALE).replace(/ /g, ' ');
 const short = (n) => (n >= 100000 ? new Intl.NumberFormat(LOCALE, { notation: 'compact', maximumFractionDigits: 1 }).format(n).replace(/ /g, ' ') : fmt(n));
+/** Soldes de l'en-tête : abrégés dès 10 000 (« 125 k ») pour que les deux soldes tiennent sur téléphone. */
+const chipFmt = (n) => (n >= 10000 ? new Intl.NumberFormat(LOCALE, { notation: 'compact', maximumFractionDigits: 1 }).format(n).replace(/ /g, ' ') : fmt(n));
 
-/** En vente : un objet payant, non exclusif, pas encore possédé (règle commune : Wallet.isForSale). */
-const forSale = (it, w) => w.isForSale(it.id);
+/** Objet vendu en gemmes (onglet Gemmes). */
+const isGemItem = (it) => it.exclusive === 'gems' && it.gems > 0;
+/** En vente : un objet payant (pièces, ou gemmes dans l'onglet Gemmes), pas encore possédé. */
+const forSale = (it, w) => w.isForSale(it.id) || (isGemItem(it) && !w.owns(it.id));
+/** Prix d'un objet : en pièces ou en gemmes. */
+const costOf = (it) => (isGemItem(it) ? { gems: true, n: it.gems } : { gems: false, n: it.price });
+const canAfford = (it) => (isGemItem(it) ? wallet.gems >= it.gems : wallet.coins >= it.price);
+const GEM = `<span class="gem-ico" aria-hidden="true">${ICONS.gem}</span>`;
+const priceHtml = (it, n = costOf(it).n, s = fmt) => `${costOf(it).gems ? GEM : '<span class="coin-ico"></span>'}${s(n)}`;
+// Hoop Pass en cours : l'offre spéciale de la saison n'est proposée que pendant celle-ci
+const passId = seasonConfig(activeSeason()?.id)?.passId ?? null;
+const offers = () => GEM_OFFERS.filter((o) => offerAvailable(o, wallet, passId));
 
 /** Onglets : les ballons « amusants » (avec un visage) ont leur propre onglet, mais s'équipent comme des ballons. */
 const TABS = [
-  { id: 'all', has: () => true },
+  { id: 'all', has: (it) => !isGemItem(it) },
+  { id: 'gems', has: (it) => isGemItem(it) },
   { id: 'ball', has: (it) => it.category === 'ball' && it.group !== 'fun' },
   { id: 'fun', has: (it) => it.category === 'ball' && it.group === 'fun' },
   { id: 'bounce', has: (it) => it.category === 'bounce' },
@@ -56,6 +78,7 @@ document.documentElement.lang = lang;
 for (const el of document.querySelectorAll('[data-t]')) el.textContent = st(lang, el.dataset.t);
 for (const el of document.querySelectorAll('[data-t-html]')) el.innerHTML = st(lang, el.dataset.tHtml);
 for (const el of document.querySelectorAll('[data-label]')) el.setAttribute('aria-label', st(lang, el.dataset.label));
+for (const el of document.querySelectorAll('.top .gem-ico')) el.innerHTML = ICONS.gem;
 
 // ─── État ───────────────────────────────────────────────────────────────────
 
@@ -70,16 +93,16 @@ if (wanted && forSale(wanted, wallet)) selected = wanted.id;
 function shelf(tabId = tab) {
   const t = tabOf(tabId);
   return CATALOG.filter((it) => t.has(it) && (forSale(it, wallet) || justBought.has(it.id))).sort(
-    (a, b) => RARITIES[a.rarity].order - RARITIES[b.rarity].order || a.price - b.price,
+    (a, b) => RARITIES[a.rarity].order - RARITIES[b.rarity].order || costOf(a).n - costOf(b).n,
   );
 }
-const forSaleCount = (tabId) => CATALOG.filter((it) => tabOf(tabId).has(it) && forSale(it, wallet)).length;
+const forSaleCount = (tabId) => CATALOG.filter((it) => tabOf(tabId).has(it) && forSale(it, wallet)).length + (tabId === 'gems' ? offers().length : 0);
 
 /** Article montré en vitrine : celui choisi s'il est toujours affiché, sinon le moins cher qu'on peut s'offrir. */
 function pickSelection() {
   const items = shelf();
   if (selected && items.some((it) => it.id === selected)) return selected;
-  const affordable = items.filter((it) => forSale(it, wallet) && it.price <= wallet.coins);
+  const affordable = items.filter((it) => forSale(it, wallet) && canAfford(it));
   const pick = affordable.length ? affordable[affordable.length - 1] : items.find((it) => forSale(it, wallet));
   return pick?.id ?? null;
 }
@@ -96,7 +119,7 @@ function look(overrideItem = null) {
 function renderTabs() {
   $('tabs').innerHTML = TABS.map((t) => {
     const n = forSaleCount(t.id);
-    return `<button role="tab" data-tab="${t.id}" aria-selected="${t.id === tab}" class="${n ? '' : 'empty'}">${st(lang, `tab.${t.id}`)}<small>${n}</small></button>`;
+    return `<button role="tab" data-tab="${t.id}" aria-selected="${t.id === tab}" class="${n ? '' : 'empty'}${t.id === 'gems' ? ' gems-tab' : ''}">${t.id === 'gems' ? GEM : ''}${st(lang, `tab.${t.id}`)}<small>${n}</small></button>`;
   }).join('');
 }
 
@@ -117,19 +140,25 @@ function renderGrid() {
   const items = shelf();
   const grid = $('grid');
   const n = forSaleCount(tab);
-  const exclusives = CATALOG.filter((it) => tabOf(tab).has(it) && it.exclusive && !wallet.owns(it.id)).length;
-  $('shelf-info').innerHTML = n
-    ? `<b>${st(lang, 'forSale', { n })}</b>${exclusives ? `<span>${st(lang, 'exclusiveNote', { n: exclusives })}</span>` : ''}`
-    : '';
-  grid.innerHTML = items
+  // Objets exclusifs gagnés en jouant (quotidien, succès, Hoop Pass) : pas les objets vendus en gemmes
+  const exclusives = CATALOG.filter((it) => tabOf(tab).has(it) && it.exclusive && !isGemItem(it) && !wallet.owns(it.id)).length;
+  const gems = tab === 'gems';
+  $('shelf-info').innerHTML = gems
+    ? `<b>${GEM}${st(lang, 'gems.title')}</b><span>${st(lang, 'gems.note')}</span>`
+    : n
+      ? `<b>${st(lang, 'forSale', { n })}</b>${exclusives ? `<span>${st(lang, 'exclusiveNote', { n: exclusives })}</span>` : ''}`
+      : '';
+  grid.classList.toggle('gems-grid', gems);
+  grid.innerHTML = (gems ? offers().map((o, i) => offerHtml(o, i)).join('') : '') + items
     .map((it, i) => {
       const owned = wallet.owns(it.id);
-      const ok = !owned && wallet.coins >= it.price;
+      const ok = !owned && canAfford(it);
+      const c = costOf(it);
       const foot = owned
         ? `<span class="owned-badge">✓ ${st(lang, 'owned')}</span>`
-        : `<span class="tag ${ok ? 'ok' : 'poor'}"><span class="coin-ico"></span>${short(it.price)}</span>
-           <button class="buy-mini ${ok ? '' : 'poor'}" data-buy="${it.id}" aria-label="${st(lang, 'buy')} ${name(it)} · ${fmt(it.price)}">${st(lang, 'buy')}</button>`;
-      return `<article class="item ${it.rarity} ${owned ? 'is-owned' : ''} ${ok ? 'can' : ''} ${it.id === selected ? 'selected' : ''}" data-id="${it.id}" style="--r:${RARITIES[it.rarity].rgb};animation-delay:${Math.min(i, 14) * 0.035}s" tabindex="0" aria-label="${name(it)} · ${st(lang, `rarity.${it.rarity}`)} · ${owned ? st(lang, 'owned') : fmt(it.price)}">
+        : `<span class="tag ${ok ? 'ok' : 'poor'}${c.gems ? ' gem' : ''}">${priceHtml(it, c.n, short)}</span>
+           <button class="buy-mini ${ok ? '' : 'poor'}" data-buy="${it.id}" aria-label="${st(lang, 'buy')} ${name(it)} · ${fmt(c.n)}">${st(lang, 'buy')}</button>`;
+      return `<article class="item ${it.rarity} ${owned ? 'is-owned' : ''} ${ok ? 'can' : ''} ${it.id === selected ? 'selected' : ''}" data-id="${it.id}" style="--r:${RARITIES[it.rarity].rgb};animation-delay:${Math.min(i, 14) * 0.035}s" tabindex="0" aria-label="${name(it)} · ${st(lang, `rarity.${it.rarity}`)} · ${owned ? st(lang, 'owned') : fmt(c.n)}">
         <span class="rar-ribbon">${st(lang, `rarity.${it.rarity}`)}</span>
         ${ok ? `<span class="can-dot" title="${st(lang, 'affordable')}"></span>` : ''}
         <canvas></canvas>
@@ -139,11 +168,36 @@ function renderGrid() {
     })
     .join('');
   requestAnimationFrame(() => {
-    for (const el of grid.querySelectorAll('.item')) drawThumb(el.querySelector('canvas'), itemById(el.dataset.id), DPR);
+    for (const el of grid.querySelectorAll('.item[data-id]')) drawThumb(el.querySelector('canvas'), itemById(el.dataset.id), DPR);
+    for (const cv of grid.querySelectorAll('.offer canvas[data-item]')) drawThumb(cv, itemById(cv.dataset.item), DPR);
   });
 }
 
+/** Carte d'une offre en gemmes : coffre (premium, légendaire) ou pack de saison. */
+function offerHtml(o, i) {
+  const ok = wallet.gems >= o.gems;
+  const isPack = o.kind === 'pack';
+  const art = isPack
+    ? `<span class="offer-pack">${o.items.map((id) => `<canvas data-item="${id}"></canvas>`).join('')}</span>`
+    : `<span class="offer-chest">${chestHtml(o.chest, 'idle')}</span>`;
+  const title = isPack ? st(lang, `offer.${o.id}`) : lt(lang, `chest.${o.chest}`);
+  const sub = isPack ? `<s>${GEM}${fmt(packValue(o))}</s> ${st(lang, 'offer.limited')}` : st(lang, `offer.${o.id}.sub`);
+  return `<article class="item offer ${isPack ? 'pack' : `chest-${o.chest}`} ${ok ? 'can' : ''}" data-offer="${o.id}" style="animation-delay:${Math.min(i, 14) * 0.035}s">
+    <span class="rar-ribbon">${st(lang, isPack ? 'offer.special' : 'offer.chest')}</span>
+    ${art}
+    <span class="name">${title}</span>
+    <span class="offer-sub">${sub}</span>
+    <span class="foot"><span class="tag gem ${ok ? 'ok' : 'poor'}">${GEM}${fmt(o.gems)}</span>
+      <button class="buy-mini ${ok ? '' : 'poor'}" data-offer-buy="${o.id}" aria-label="${st(lang, isPack ? 'buy' : 'open')} ${title} · ${o.gems}">${st(lang, isPack ? 'buy' : 'open')}</button></span>
+  </article>`;
+}
+
 $('grid').addEventListener('click', (e) => {
+  const ob = e.target.closest('[data-offer-buy], [data-offer]');
+  if (ob) {
+    buyOffer(ob.dataset.offerBuy ?? ob.dataset.offer, ob.closest('.offer'));
+    return;
+  }
   const buy = e.target.closest('[data-buy]');
   if (buy) {
     selected = buy.dataset.buy;
@@ -187,8 +241,11 @@ function renderDetail() {
   $('d-desc').textContent = it.desc[lang] ?? it.desc.fr;
   $('d-rarity').textContent = st(lang, `rarity.${it.rarity}`);
   const owned = wallet.owns(it.id);
+  const c = costOf(it);
+  const have = c.gems ? wallet.gems : wallet.coins;
   $('d-price').hidden = owned;
-  $('d-price').innerHTML = `<span class="coin-ico"></span>${fmt(it.price)}`;
+  $('d-price').classList.toggle('gem', c.gems);
+  $('d-price').innerHTML = priceHtml(it);
   $('d-owned').hidden = !owned;
   $('d-owned').textContent = `✓ ${st(lang, 'owned')}`;
   const btn = $('d-action');
@@ -197,20 +254,22 @@ function renderDetail() {
   const goal = $('d-goal');
   goal.hidden = owned;
   if (!goal.hidden) {
-    const k = Math.min(1, wallet.coins / it.price);
+    const k = Math.min(1, have / c.n);
+    goal.classList.toggle('gem', c.gems);
     $('d-goal-fill').style.width = `${(k * 100).toFixed(1)}%`;
-    $('d-goal-text').textContent = `${fmt(Math.min(wallet.coins, it.price))} / ${fmt(it.price)}`;
+    $('d-goal-text').textContent = `${fmt(Math.min(have, c.n))} / ${fmt(c.n)}`;
   }
   if (owned) {
     // Jamais deux fois : l'objet est à toi, il t'attend dans la Collection
     btn.classList.add('equipped');
     btn.innerHTML = `✓ ${st(lang, 'boughtNote')}`;
-  } else if (wallet.coins >= it.price) {
+  } else if (have >= c.n) {
     btn.classList.add('buy');
-    btn.innerHTML = `${st(lang, 'buy')} · <span class="coin-ico"></span>${fmt(it.price)}`;
+    if (c.gems) btn.classList.add('gem');
+    btn.innerHTML = `${st(lang, 'buy')} · ${priceHtml(it)}`;
   } else {
     btn.classList.add('poor');
-    btn.innerHTML = `<span class="coin-ico"></span>${st(lang, 'missing', { n: fmt(it.price - wallet.coins) })}`;
+    btn.innerHTML = `${c.gems ? GEM : '<span class="coin-ico"></span>'}${st(lang, 'missing', { n: fmt(c.n - have) })}`;
   }
   preview.set(look(it), it.category, rar.rgb);
 }
@@ -224,11 +283,13 @@ function buyItem(id) {
   const it = itemById(id);
   sfx.unlock();
   if (!it || wallet.owns(id)) return; // déjà possédé : jamais deux fois
-  const res = wallet.buy(id);
-  if (res === 'coins') {
-    $('coins').classList.remove('shake');
-    void $('coins').offsetWidth;
-    $('coins').classList.add('shake');
+  const gemItem = isGemItem(it);
+  const res = gemItem ? wallet.buyWithGems(id) : wallet.buy(id);
+  if (res === 'coins' || res === 'gems') {
+    const chip = $(res === 'gems' ? 'gems' : 'coins');
+    chip.classList.remove('shake');
+    void chip.offsetWidth;
+    chip.classList.add('shake');
     const card = $('grid').querySelector(`[data-id="${id}"]`);
     card?.classList.remove('shake');
     void card?.offsetWidth;
@@ -242,7 +303,8 @@ function buyItem(id) {
   // Épique : rayons violets. Légendaire : rayons dorés, éclats, son et vibration plus forts.
   wallet.equip(id);
   justBought.add(id);
-  rollCoins(wallet.coins + it.price, wallet.coins);
+  if (gemItem) rollGems(wallet.gems + it.gems, wallet.gems);
+  else rollCoins(wallet.coins + it.price, wallet.coins);
   sfx.buy(it.rarity);
   const big = it.rarity === 'legendary' || it.rarity === 'epic';
   vibrate(it.rarity === 'legendary' ? [30, 50, 30, 50, 60] : [20, 40, 30]);
@@ -279,6 +341,52 @@ function buyItem(id) {
   }, 1900);
 }
 
+// ─── Offres en gemmes (coffres, pack de saison) ─────────────────────────────
+
+const fx = new RewardFx({
+  lang: () => lang,
+  vibrate,
+  sound: { chest: () => sfx.ui?.chest(), reward: () => sfx.ui?.reward(), coins: () => sfx.ui?.coins(), tick: (v) => sfx.ui?.tick(v) },
+});
+
+async function buyOffer(id, card) {
+  sfx.unlock();
+  const before = wallet.gems;
+  const res = buyGemOffer(id, wallet, { passId, stats: new Stats() });
+  if (res.status === 'gems') {
+    for (const el of [$('gems'), card]) {
+      el?.classList.remove('shake');
+      void el?.offsetWidth;
+      el?.classList.add('shake');
+    }
+    sfx.denied();
+    vibrate([10, 40, 10]);
+    return;
+  }
+  if (res.status !== 'ok') return;
+  rollGems(before, wallet.gems);
+  const r = res.reward;
+  const offer = GEM_OFFERS.find((o) => o.id === id);
+  await fx.reveal({ title: offer.kind === 'pack' ? st(lang, `offer.${id}`) : st(lang, 'offer.opened'), coins: r.coins, gems: r.gems, item: r.item, items: r.items ?? undefined, chest: r.chest }, $('coins'));
+  $('coin-n').textContent = chipFmt(wallet.coins);
+  $('gem-n').textContent = chipFmt(wallet.gems);
+  render(false);
+}
+
+function rollGems(from, to) {
+  const el = $('gem-n');
+  const t0 = performance.now();
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / 650);
+    el.textContent = chipFmt(Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))));
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  $('gems').classList.remove('bump');
+  void $('gems').offsetWidth;
+  $('gems').classList.add('bump');
+}
+
 // ─── Pièces ─────────────────────────────────────────────────────────────────
 
 function rollCoins(from, to) {
@@ -286,7 +394,7 @@ function rollCoins(from, to) {
   const t0 = performance.now();
   const step = (now) => {
     const k = Math.min(1, (now - t0) / 650);
-    el.textContent = fmt(Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))));
+    el.textContent = chipFmt(Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))));
     if (k < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -296,8 +404,12 @@ function rollCoins(from, to) {
 }
 
 function render(coins = true) {
-  if (coins) $('coin-n').textContent = fmt(wallet.coins);
+  if (coins) {
+    $('coin-n').textContent = chipFmt(wallet.coins);
+    $('gem-n').textContent = chipFmt(wallet.gems);
+  }
   selected = pickSelection();
+  document.body.classList.toggle('tab-gems', tab === 'gems');
   renderTabs();
   renderGrid();
   renderDetail();
