@@ -1,307 +1,494 @@
-// MONDE 2 — NEIGE (10 niveaux). Sol glissant, plateformes de glace, vent de neige, stalactites,
-// rampes de glace, planches de bois. Plus exigeant que la Ville : on apprend à garder (ou à maîtriser)
-// son élan sur la glace.
-import { walls, bounds, floor, hoopAt } from './common.js';
+// MONDE 2 — NEIGE : PREMIÈRES COMBINAISONS (refonte phase 2). 30 à 40 s par niveau pour un joueur.
+// Glace (on garde son élan), vent (en rafales), stalactites, plaques qui cèdent, boules de neige,
+// blocs de glace qui s'écrasent. Les premiers niveaux présentent une idée ; les suivants les combinent.
+//
+// 11 Premières glissades  la glace : élan, freinage, piliers glissants, tremplin (détente)
+// 12 Col venteux          vent de face, vent dans le dos, rafales (technique)
+// 13 La grotte de glace   stalactites : passer vite, ou les faire tomber et attendre (observation)
+// 14 Le pont de glace     le pont s'effondre derrière toi (rapide) ★
+// 15 L'avalanche          boules de neige : sauter, ou se cacher dans un creux (rythme) ★
+// 16 Patinoire au vent    glace + vent : freiner à temps (technique)
+// 17 Le glacier           blocs de glace qui s'écrasent sur la glace (précision)
+// 18 Le chalet            le panier est enfermé : tremplin de glace → interrupteur → porte (puzzle)
+// 19 Le sommet            trampolines, plaques qui cèdent et stalactites, en montée (technique)
+// 20 Tempête de neige     vent, avalanche, pont qui cède, stalactites (finale) ★
 
-const S1 = {
-  id: 'snow-1',
-  difficulty: 'hard',
-  number: 1,
-  nameKey: 'level.snow.1',
-  bounds: bounds(48),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(48), floor(-4, 12, 'snow'), floor(12, 30, 'ice'), floor(30, 52, 'snow'), { x: 18, y: 0, w: 2, h: 1.0, style: 'snow' }],
-  // Boule de neige : elle dévale de la bosse et traverse le lac ; on la saute sur place
-  boulders: [{ x1: 20, x2: 34, y: 0, r: 0.6, dir: 1, speed: 5.5, period: 3.4, phase: 0 }],
-  stars: [{ x: 13, y: 2.4 }, { x: 19, y: 3.4 }, { x: 25.5, y: 2.6 }],
-  hoop: hoopAt(41),
-  hints: [{ x: 5, y: 4.3, key: 'hint.ice' }, { x: 26, y: 5.2, key: 'hint.snowball', size: 0.8 }],
-  passages: [
-    { name: 'Neige → lac gelé → bosse', start: [3, 0], goal: ['on', 20.5, 30, 0], plan: [['goTo', 16], ['waitCycle', 3.4, 0.8, 0.9], ['hop', 2, 22.5]] },
-    { name: 'Sauter la boule de neige', start: [24, 0], goal: ['on', 34.6, 48, 0], plan: [['goTo', 24], ['charge', 3], ['waitCycle', 3.4, 1.7, 1.8], ['jump', 0], ['wait', 0.5], ['run', 1, 34.8, 48, 0]] },
-    { name: 'Lac → panier', start: [35, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+import { level } from './kit.js';
 
-const S2 = {
-  id: 'snow-2',
-  difficulty: 'hard',
-  number: 2,
-  nameKey: 'level.snow.2',
-  bounds: bounds(50),
-  spawn: { x: 3, y: 0 },
-  solids: [
-    ...walls(50),
-    floor(-4, 16, 'snow'),
-    { x: 6, y: 0, w: 4, h: 2.0, style: 'snow' },
-    { points: [{ x: 10, y: 0 }, { x: 16, y: 0 }, { x: 10, y: 2.0 }], style: 'ice' },
-    floor(16, 28, 'ice'),
-    floor(32, 54, 'snow'),
-  ],
-  // Bloc de glace suspendu au-dessus de la réception : on choisit le moment de s'élancer
-  crushers: [{ x: 33, w: 2.4, top: 2.8, bottom: 0, period: 2.6, phase: 0 }],
-  stars: [{ x: 8, y: 4.0 }, { x: 30, y: 2.4 }, { x: 34.2, y: 1.2 }],
-  hoop: hoopAt(45),
-  hints: [{ x: 3.4, y: 4.6, key: 'hint.ramp', size: 0.8 }],
-  passages: [
-    { name: 'Départ → butte', start: [3, 0], goal: ['on', 6, 10, 2.0], plan: [['goTo', 4.4], ['hop', 3, 8]] },
-    { name: 'Rampe → crevasse → sous le bloc', start: [8, 2.0], goal: ['on', 35.8, 54, 0], plan: [['goTo', 8.2], ['waitCycle', 2.6, 0.25, 0.35], ['jumpAt', 1, 27.0], ['run', 1, 36, 54, 0]] },
-    { name: 'Neige → panier', start: [38, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+const snow = 'snow';
+const ice = 'ice';
 
-const S3 = {
-  id: 'snow-3',
-  difficulty: 'hard',
-  number: 3,
-  nameKey: 'level.snow.3',
-  bounds: bounds(52),
-  spawn: { x: 3, y: 0 },
-  solids: [
-    ...walls(52),
-    floor(-4, 8, 'snow'),
-    floor(8, 34, 'ice'),
-    floor(34, 56, 'snow'),
-    { x: 10, y: 4.5, w: 22, h: 1, style: 'block' },
-    { x: 21, y: 0, w: 1.5, h: 0.8, style: 'ice' },
-  ],
-  icicles: [{ x: 14, y: 4.5, len: 1.2 }, { x: 18.5, y: 4.5, len: 1.2 }, { x: 25, y: 4.5, len: 1.2 }, { x: 29.5, y: 4.5, len: 1.2 }],
-  // Une boule de neige remonte le couloir sous les stalactites : impossible de s'arrêter pour l'attendre
-  boulders: [{ x1: 23, x2: 34, y: 0, r: 0.55, dir: -1, speed: 5, period: 3.2, phase: 0 }],
-  stars: [{ x: 16.2, y: 1.4 }, { x: 21.7, y: 2.2 }, { x: 27.3, y: 1.4 }],
-  hoop: hoopAt(46),
-  hints: [{ x: 4.5, y: 4.3, key: 'hint.icicles' }],
-  passages: [
-    { name: 'Sous les stalactites', start: [3, 0], goal: ['on', 34.5, 41, 0], plan: [['jumpAt', 1, 19.8], ['jumpBoulder', 0, 2.6], ['run', 1, 34.5, 41, 0]] },
-    { name: 'Neige → panier', start: [37, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 11 — Premières glissades
+const L11 = level({ id: 'snow-1', difficulty: 'easy', number: 1, nameKey: 'lv.snow.1', idea: 'la glace : élan, freinage, piliers, tremplin' }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8, 0, snow);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.ice');
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 0, ice);
+    s.block(12, 0, 4, 1.2, snow);
+    s.star(8, 1.2);
+    s.pass('Le lac gelé → la butte', [-6, 0], ['on', 12.3, 16, 1.2], [['goTo', 9.6], ['hop', 2, 13.6, 1.2]]);
+  });
+  // Piliers de glace au-dessus des pics : on se pose, on freine, on repart
+  c.section(20, (s) => {
+    s.ground(0, 20, 0, snow);
+    s.add('spikes', { x: 0.2, y: 0, w: 14.4, dir: 'up' });
+    s.block(1.8, 0, 2.4, 1.4, ice);
+    s.block(6.4, 0, 2.4, 2.2, ice);
+    s.block(10.8, 0, 2.4, 1.6, ice);
+    s.star(7.6, 4);
+    s.pass('Pilier de glace 1', [-1, 1.2], ['on', 1.9, 4.1, 1.4], [['goTo', -0.8], ['hop', 3, 3, 1.4], ['settle']]);
+    s.pass('Pilier de glace 2', [3, 1.4], ['on', 6.5, 8.7, 2.2], [['goTo', 3], ['hop', 3, 7.6, 2.2], ['settle']]);
+    s.pass('Pilier de glace 3', [7.6, 2.2], ['on', 10.9, 13.1, 1.6], [['goTo', 7.6], ['hop', 3, 12, 1.6], ['settle']]);
+    s.pass('Retour sur la neige', [12, 1.6], ['on', 14.8, 20, 0], [['goTo', 12], ['hop', 3, 16.6, 0]]);
+  });
+  // La pente de glace et le tremplin au-dessus de la crevasse
+  c.section(22, (s) => {
+    s.ground(0, 3, 2.2, snow);
+    s.add('solids', { points: [{ x: 3, y: 2.2 }, { x: 3, y: -6 }, { x: 10, y: -6 }, { x: 10, y: 0 }], style: ice });
+    s.ground(10, 12, 0, ice);
+    s.ground(17, 22, 0, snow);
+    s.checkpoint(1, 2.2);
+    s.star(14.5, 3.4);
+    s.pass('Remonter sur la terrasse', [-2, 0], ['on', 0.3, 3, 2.2], [['goTo', -1.4], ['hop', 3, 1.4, 2.2]]);
+    s.pass('Pente de glace → tremplin', [1.4, 2.2], ['on', 17.2, 22, 0], [['goTo', 1.2], ['jumpAt', 1, 11.4, 19]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 0, snow);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-3, 0], ['win'], 'shot');
+  });
+});
 
-const S4 = {
-  id: 'snow-4',
-  difficulty: 'hard',
-  number: 4,
-  nameKey: 'level.snow.4',
-  bounds: bounds(54),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(54), floor(-4, 12, 'snow'), floor(15, 24, 'snow'), floor(30.5, 58, 'snow')],
-  winds: [
-    { x: 8, y: 0, w: 12, h: 9, force: -7, gust: 2.6 },
-    { x: 21, y: 0, w: 13, h: 9, force: 9, gust: 3 },
-  ],
-  crushers: [{ x: 18.8, w: 2, top: 2.6, bottom: 0, period: 2.9, phase: 0 }],
-  stars: [{ x: 13.5, y: 4.4 }, { x: 27, y: 3.2 }, { x: 33, y: 1.4 }],
-  hoop: hoopAt(46),
-  hints: [{ x: 4.4, y: 4.3, key: 'hint.wind' }],
-  passages: [
-    { name: 'Vent de face', start: [3, 0], goal: ['on', 15, 24, 0], plan: [['goTo', 11.5], ['hop', 5, 16.6]] },
-    { name: 'Vent dans le dos : la grande crevasse', start: [16.6, 0], goal: ['on', 30.5, 42, 0], plan: [['goTo', 17], ['waitCycle', 2.9, 2.75, 2.85], ['dribbleRun', 1, 3, 22.8]] },
-    { name: 'Neige → panier', start: [36, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 12 — Col venteux
+const L12 = level({ id: 'snow-2', difficulty: 'medium', number: 2, nameKey: 'lv.snow.2', idea: 'vent de face, vent dans le dos, rafales' }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8, 0, snow);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.wind');
+  });
+  // Vent de face : chaque marche demande un peu plus de puissance
+  c.section(18, (s) => {
+    s.ground(0, 18, 0, snow);
+    s.add('winds', { x: 0, y: 0, w: 18, h: 10, force: -9, gust: 2.6 });
+    s.block(5, 0, 4, 1.4, snow);
+    s.block(11, 0, 7, 2.8, snow);
+    s.star(10, 4.4);
+    s.pass('Vent de face : première marche', [-6, 0], ['on', 5.3, 9, 1.4], [['goTo', 3.8], ['hop', 3, 6.4, 1.4]]);
+    s.pass('Vent de face : deuxième marche', [6.6, 1.4], ['on', 11.3, 18, 2.8], [['goTo', 8.4], ['hop', 4, 12.4, 2.8]]);
+  });
+  // Vent dans le dos : il porte au-dessus de la grande crevasse
+  c.section(22, (s) => {
+    s.ground(0, 4, 2.8, snow);
+    s.ground(13, 22, 2.8, snow);
+    s.add('winds', { x: 0, y: 0, w: 15, h: 12, force: 10, gust: 3 });
+    s.checkpoint(1, 2.8);
+    s.star(8.5, 7);
+    s.pass('Vent dans le dos : la crevasse', [-3, 2.8], ['on', 13.3, 22, 2.8], [['goTo', -5], ['dribbleRun', 1, 4, 3.3, 16]]);
+  });
+  // Les rafales : trois piliers de neige au-dessus des pics, le vent repousse
+  c.section(20, (s) => {
+    s.ground(0, 20, 0, snow);
+    s.ground(0, 2, 2.8, snow);
+    s.add('spikes', { x: 2, y: 0, w: 14.5, dir: 'up' });
+    s.block(4.5, 0, 2, 2.4, snow);
+    s.block(8.8, 0, 2, 3.2, snow);
+    s.block(13, 0, 2, 2.4, snow);
+    s.add('winds', { x: 2, y: 0, w: 15, h: 10, force: -6, gust: 2.2 });
+    s.star(9.8, 5.8);
+    s.pass('Pilier 1', [-2, 2.8], ['on', 4.6, 6.4, 2.4], [['goTo', 1.2], ['hop', 2, 5.5, 2.4], ['settle']]);
+    s.pass('Pilier 2', [5.5, 2.4], ['on', 8.9, 10.7, 3.2], [['goTo', 5.5], ['hop', 3, 9.8, 3.2], ['settle']]);
+    s.pass('Pilier 3', [9.8, 3.2], ['on', 13.1, 14.9, 2.4], [['goTo', 9.8], ['hop', 2, 14, 2.4], ['settle']]);
+    s.pass('Retour sur la neige', [14, 2.4], ['on', 16.8, 20, 0], [['goTo', 14], ['hop', 2, 18.4, 0]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 0, snow);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const S5 = {
-  id: 'snow-5',
-  difficulty: 'expert',
-  number: 5,
-  nameKey: 'level.snow.5',
-  bounds: bounds(50),
-  spawn: { x: 4, y: 0 },
-  solids: [
-    ...walls(50),
-    floor(-4, 54, 'snow'),
-    { x: 9, y: 1.1, w: 2.5, h: 0.5, style: 'ice' },
-    { x: 13.8, y: 2.1, w: 2.2, h: 0.5, style: 'ice' },
-    { x: 23, y: 2.5, w: 2, h: 0.5, style: 'ice' },
-  ],
-  fallers: [{ x: 18.6, y: 1.4, w: 2, h: 0.4 }],
-  spikes: [{ x: 8, y: 0, w: 19, dir: 'up' }],
-  // Canon à boules de neige : ses tirs traversent le chemin des plateformes
-  cannons: [{ x: 30, y: 4.4, dir: -1, period: 2.2, speed: 6, phase: 0 }],
-  stars: [{ x: 12.6, y: 4.0 }, { x: 17.3, y: 4.4 }, { x: 24, y: 4.8 }],
-  hoop: hoopAt(42),
-  hints: [{ x: 4, y: 4.3, key: 'hint.icyPlatforms' }],
-  passages: [
-    { name: 'Glace 1', start: [4, 0], goal: ['on', 9, 11.5, 1.6], plan: [['goTo', 7.2], ['hop', 3, 10.25]] },
-    { name: 'Glace 2', start: [10.25, 1.6], goal: ['on', 13.8, 16, 2.6], plan: [['hop', 3, 14.9]] },
-    { name: 'Plaque qui tombe → glace 4 (canon)', start: [14.9, 2.6], goal: ['on', 23, 25, 3.0], plan: [['charge', 3], ['waitCycle', 2.2, 1.9, 2.0], ['jump', 1, 19.6], ['jump', 1, 24]] },
-    { name: 'Glace 4 → neige', start: [24, 3.0], goal: ['on', 27, 38, 0], plan: [['charge', 2], ['waitCycle', 2.2, 1.4, 1.5], ['jump', 1, 29.5]] },
-    { name: 'Neige → panier', start: [33, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 13 — La grotte de glace
+const L13 = level({ id: 'snow-3', difficulty: 'medium', number: 3, nameKey: 'lv.snow.3', idea: 'stalactites : vitesse ou patience' }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8, 0, snow);
+    s.spawn(2);
+    s.hint(4.5, 4.3, 'hint.icicles');
+  });
+  // Galerie basse : à pleine vitesse, les stalactites tombent derrière soi
+  c.section(18, (s) => {
+    s.ground(0, 18, 0, snow);
+    s.block(0, 4.6, 18, 3, 'rock');
+    s.add('icicles', { x: 4, y: 4.6, len: 1.3 }, { x: 8, y: 4.6, len: 1.3 }, { x: 12, y: 4.6, len: 1.3 }, { x: 15.5, y: 4.6, len: 1.3 });
+    s.star(10, 1.2);
+    s.pass('La galerie (pleine vitesse)', [-6, 0], ['on', 17, 30, 0], [['goTo', -2], ['run', 1, 17.2, 30, 0]]);
+  });
+  // La marche sous la stalactite : il faut s'arrêter. On la fait tomber, on attend, on passe.
+  c.section(14, (s) => {
+    s.ground(0, 14, 0, snow);
+    s.block(0, 4.8, 14, 3, 'rock');
+    s.block(6, 0, 8, 1.4, ice);
+    s.add('icicles', { x: 7, y: 4.8, len: 1.4 }, { x: 10.6, y: 4.8, len: 1.4 });
+    s.checkpoint(1, 0);
+    s.pass('Faire tomber la stalactite, puis monter', [-1, 0], ['on', 11.8, 14, 1.4], [['goTo', 5.4], ['goTo', 3.4], ['wait', 1.2], ['hop', 2, 7.4, 1.4], ['settle'], ['goTo', 9.4], ['goTo', 7.6], ['wait', 1.2], ['run', 1, 12, 14, 1.4]]);
+  });
+  // Le puits : on descend sous trois stalactites décalées
+  c.section(18, (s) => {
+    s.ground(0, 4, 1.4, snow);
+    s.ground(4, 14, 0, snow);
+    s.ground(14, 18, 1.4, snow);
+    s.block(0, 6, 18, 2, 'rock');
+    s.add('icicles', { x: 6.5, y: 6, len: 1.3 }, { x: 8.5, y: 6, len: 1.3 }, { x: 10.5, y: 6, len: 1.3 });
+    s.star(9, 2);
+    s.pass('Le creux sous les stalactites', [-1, 1.4], ['on', 14.3, 18, 1.4], [['goTo', 1.6], ['hold', 1, 4.6], ['goTo', 12.8], ['hop', 3, 15.5, 1.4]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 1.4, snow);
+    s.hoop(10, 3.4, 1.4);
+    s.pass('Sortie de la grotte → panier', [-2, 1.4], ['win'], 'shot');
+  });
+});
 
-// 6 — Le grand lac : toutes les mécaniques de la neige réunies (ancien niveau de démonstration).
-const S6 = {
-  id: 'snow-6',
-  difficulty: 'hard',
-  number: 6,
-  nameKey: 'level.snow.6',
-  bounds: bounds(62, 11.5),
-  spawn: { x: 3, y: 0 },
-  solids: [
-    ...walls(62),
-    floor(-4, 19, 'snow'),
-    floor(19, 30, 'ice'),
-    floor(34, 66, 'snow'),
-    { x: 9, y: 0, w: 4, h: 2.6, style: 'snow' },
-    { points: [{ x: 13, y: 0 }, { x: 19, y: 0 }, { x: 13, y: 2.6 }], style: 'ice' },
-    { x: 20, y: 6, w: 9, h: 1, style: 'block' },
-    { x: 38, y: 1.6, w: 2.5, h: 0.5, style: 'ice' },
-    { x: 42.5, y: 3.0, w: 2.5, h: 0.5, style: 'ice' },
-    { x: 38.4, y: 0, w: 1.0, h: 0.8, style: 'snow' },
-  ],
-  icicles: [{ x: 22.5, y: 6, len: 1.3 }, { x: 26.5, y: 6, len: 1.3 }],
-  winds: [{ x: 35, y: 0, w: 12, h: 9, force: -10, gust: 2.6 }],
-  // Boules de neige poussées par le vent vers la crevasse : on atterrit entre deux
-  boulders: [{ x1: 39.4, x2: 49.2, y: 0, r: 0.6, dir: -1, speed: 6.5, period: 2.4, phase: 0 }],
-  stars: [{ x: 11, y: 4.4 }, { x: 32, y: 2.6 }, { x: 43.7, y: 4.8 }],
-  hoop: hoopAt(57),
-  passages: [
-    { name: 'Départ → butte enneigée', start: [3, 0], goal: ['on', 9, 13, 2.6], plan: [['goTo', 7.4], ['hop', 4, 11]] },
-    { name: 'Rampe → crevasse', start: [11, 2.6], goal: ['on', 34, 38.2, 0], plan: [['jumpAt', 1, 28.4], ['run', 1, 34.2, 38.2, 0]] },
-    { name: 'Boules de neige', start: [36, 0], goal: ['on', 50.8, 62, 0], plan: [['goTo', 36.4], ['hop', 3, 39.2, 2.1], ['hop', 3, 43.7, 3.5], ['hop', 3, 52.5, 0]] },
-    { name: 'Vent → panier', start: [51.5, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 14 — Le pont de glace : il s'effondre derrière toi
+const L14 = level({ id: 'snow-4', difficulty: 'medium', number: 4, nameKey: 'lv.snow.4', idea: 'le pont s’effondre : ne jamais s’arrêter' }, (c) => {
+  c.section(10, (s) => {
+    s.ground(0, 10, 0, snow);
+    s.spawn(2);
+    s.hint(5.5, 4.3, 'hint.fallers');
+  });
+  c.section(26, (s) => {
+    s.ground(24, 26, 0, snow);
+    for (let i = 0; i < 12; i++) s.add('fallers', { x: i * 2, y: -0.4, w: 2, h: 0.4 });
+    s.star(8, 1.4);
+    s.star(16, 1.4);
+    s.pass('Le pont qui s’effondre', [-6, 0], ['on', 24.2, 40, 0], [['goTo', -3], ['run', 1, 24.4, 40, 0]]);
+  });
+  // Le pont a déjà cédé par endroits : deux trous à sauter sans s'arrêter
+  c.section(28, (s) => {
+    s.ground(0, 2, 0, snow);
+    s.ground(26, 28, 0, snow);
+    for (const x of [2, 4, 6, 12, 14, 16, 22, 24]) s.add('fallers', { x, y: -0.4, w: 2, h: 0.4 });
+    s.checkpoint(1, 0);
+    s.star(10, 2.8);
+    s.pass('Le pont troué', [0.5, 0], ['on', 26.2, 42, 0], [['goTo', 0.5], ['dribbleRun', 1, 2, 7, 12.8], ['dribbleRun', 1, 2, 17, 22.8], ['run', 1, 26.4, 42, 0]]);
+  });
+  // Les plaques suspendues : de plus en plus haut, il faut enchaîner
+  c.section(20, (s) => {
+    s.ground(0, 4, 0, snow);
+    s.ground(16, 20, 2.6, snow);
+    s.add('fallers', { x: 4.6, y: 0.6, w: 2.4, h: 0.4 }, { x: 9, y: 1.4, w: 2.4, h: 0.4 }, { x: 13, y: 2.2, w: 2.4, h: 0.4 });
+    s.star(14.2, 4.4);
+    s.pass('Plaques suspendues', [-2, 0], ['on', 16.2, 20, 2.6], [['goTo', 1.4], ['dribbleRun', 1, 2, 3.4, 5.8], ['jump', 1, 10.2], ['jump', 1, 14.2], ['jump', 1, 17.6]]);
+  });
+  // La descente : trois plaques qui cèdent, de plus en plus bas
+  c.section(18, (s) => {
+    s.ground(0, 3, 2.6, snow);
+    s.ground(14, 18, 0, snow);
+    s.add('fallers', { x: 4, y: 1.8, w: 2.2, h: 0.4 }, { x: 7.6, y: 1.0, w: 2.2, h: 0.4 }, { x: 11.2, y: 0.2, w: 2.2, h: 0.4 });
+    s.checkpoint(1, 2.6);
+    s.star(8.7, 3.6);
+    s.pass('La descente des plaques', [-2, 2.6], ['on', 14.2, 18, 0], [['goTo', 1.2], ['hop', 1, 5.1, 2.2], ['jump', 1, 8.7, 1.4], ['jump', 1, 12.3, 0.6], ['jump', 1, 15.5, 0]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 0, snow);
+    s.hoop(10, 3.4, 0);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const S7 = {
-  id: 'snow-7',
-  difficulty: 'expert',
-  number: 7,
-  nameKey: 'level.snow.7',
-  bounds: bounds(54),
-  spawn: { x: 4, y: 0 },
-  solids: [
-    ...walls(54),
-    floor(-4, 58, 'snow'),
-    { x: 9.5, y: 1.5, w: 2.4, h: 0.5, style: 'ice' },
-    { x: 15, y: 2.7, w: 2.4, h: 0.5, style: 'ice' },
-    { x: 20.5, y: 1.7, w: 2.2, h: 0.5, style: 'ice' },
-    { x: 25.5, y: 2.9, w: 2.2, h: 0.5, style: 'ice' },
-  ],
-  spikes: [{ x: 8, y: 0, w: 22, dir: 'up' }],
-  winds: [{ x: 13, y: 0, w: 16, h: 9, force: -5, gust: 2.2 }],
-  maces: [
-    { x: 18, y: 10, len: 5, r: 0.5, amp: 0.55, period: 3.4, phase: 0 },
-    { x: 30.2, y: 10.4, len: 5.4, r: 0.5, amp: 0.45, period: 3.0, phase: 0.5 },
-  ],
-  stars: [{ x: 13.4, y: 4.6 }, { x: 18.9, y: 3.6 }, { x: 28.5, y: 5.2 }],
-  hoop: hoopAt(46),
-  passages: [
-    { name: 'Glace 1', start: [4, 0], goal: ['on', 9.5, 11.9, 2.0], plan: [['goTo', 7.3], ['hop', 3, 10.7]] },
-    { name: 'Glace 2 (vent)', start: [10.7, 2.0], goal: ['on', 15, 17.4, 3.2], plan: [['hop', 4, 16.2]] },
-    { name: 'Glace 3 (boulet de glace)', start: [16.2, 3.2], goal: ['on', 20.5, 22.7, 2.2], plan: [['charge', 4], ['waitCycle', 3.4, 1.57, 1.68], ['jump', 1, 21.7]] },
-    { name: 'Glace 4', start: [21.6, 2.2], goal: ['on', 25.5, 27.7, 3.4], plan: [['hop', 4, 26.6]] },
-    { name: 'Glace 4 → neige (second boulet)', start: [26.6, 3.4], goal: ['on', 30, 40, 0], plan: [['charge', 3], ['waitCycle', 3.0, 1.78, 1.88], ['jump', 1, 32.5]] },
-    { name: 'Neige → panier', start: [36, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 15 — L'avalanche
+const L15 = level({ id: 'snow-5', difficulty: 'medium', number: 5, nameKey: 'lv.snow.5', idea: 'boules de neige : sauter ou se cacher' }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8, 0, snow);
+    s.spawn(2);
+    s.hint(4.5, 4.3, 'hint.snowball');
+  });
+  c.section(18, (s) => {
+    s.ground(0, 18, 0, snow);
+    s.add('boulders', { x1: 2, x2: 11, y: 0, r: 0.6, dir: -1, speed: 5.5, period: 3.2, phase: 0 });
+    s.star(7, 2.6);
+    s.pass('Sauter la boule de neige', [-6, 0], ['on', 12.2, 30, 0], [['goTo', 0.4], ['waitCycle', 3.2, 0.5, 0.55], ['charge', 2], ['jump', 1, 3.6], ['run', 1, 12.4, 30, 0]]);
+  });
+  // Le creux : on s'y met à l'abri pendant que la boule passe au-dessus, puis on repart
+  c.section(20, (s) => {
+    s.ground(0, 6, 0, snow);
+    s.ground(6, 9, -1.8, snow);
+    s.ground(9, 20, 0, snow);
+    s.add('boulders', { x1: 4.6, x2: 15, y: 0, r: 0.7, dir: -1, speed: 6, period: 5.5, phase: 0.2 });
+    s.checkpoint(1, 0);
+    s.star(7.5, -1);
+    s.pass('Se cacher dans le creux', [-2, 0], ['on', 6.2, 8.8, -1.8], [['goTo', 3], ['waitCycle', 5.5, 3.2, 3.3], ['run', 1, 6.4, 8.8, -1.8], ['goTo', 7.4]]);
+    s.pass('Sortir derrière la boule', [7.4, -1.8], ['on', 10, 19, 0], [['waitCycle', 5.5, 1.0, 1.1], ['hop', 3, 11.5, 0], ['run', 1, 12, 18, 0], ['goTo', 18.4]]);
+  });
+  // La grande avalanche : elle part derrière toi, il faut atteindre le rocher avant elle
+  c.section(24, (s) => {
+    s.ground(0, 24, 0, snow);
+    s.block(18, 0, 6, 1.6, 'rock');
+    s.add('boulders', { x1: 0.5, x2: 17.6, y: 0, r: 0.85, dir: 1, speed: 6.2, period: 6, phase: 0 });
+    s.star(10, 1.4);
+    s.pass('L’avalanche te poursuit', [-2, 0], ['on', 18.3, 24, 1.6], [['goTo', -1.2], ['waitCycle', 6, 5.0, 5.1], ['dribbleRun', 1, 2, 15.4, 19.5]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 1.6, snow);
+    s.hoop(10, 3.4, 1.6);
+    s.pass('Le panier', [-2, 1.6], ['win'], 'shot');
+  });
+});
 
-const S8 = {
-  id: 'snow-8',
-  difficulty: 'hard',
-  number: 8,
-  nameKey: 'level.snow.8',
-  bounds: bounds(60),
-  spawn: { x: 4, y: 0 },
-  solids: [
-    ...walls(60),
-    floor(-4, 8, 'snow'),
-    floor(20, 64, 'snow'),
-    { x: 26, y: 4.8, w: 8, h: 1, style: 'block' },
-  ],
-  movers: [{ x: 8.2, y: -0.5, w: 3.2, h: 0.5, path: { dx: 8.6, dy: 0, period: 5.2, phase: 0 } }],
-  icicles: [{ x: 28, y: 4.8, len: 1.2 }, { x: 31.5, y: 4.8, len: 1.2 }],
-  spikes: [{ x: 40, y: 0, w: 2, dir: 'up' }],
-  // Avalanche : deux boules de neige à la suite dévalent vers les pics
-  boulders: [
-    { x1: 42.4, x2: 50, y: 0, r: 0.55, dir: -1, speed: 6, period: 2.6, phase: 0 },
-    { x1: 42.4, x2: 50, y: 0, r: 0.45, dir: -1, speed: 6, period: 2.6, phase: 0.3 },
-  ],
-  stars: [{ x: 14, y: 2.6 }, { x: 29.8, y: 1.6 }, { x: 46, y: 2.4 }],
-  hoop: hoopAt(56),
-  hints: [{ x: 3.6, y: 4.3, key: 'hint.wood' }],
-  passages: [
-    { name: 'Planche mobile', start: [4, 0], goal: ['on', 20, 26, 0], plan: [['ride', 0, 25], ['goTo', 22.5]] },
-    { name: 'Sous les stalactites', start: [22.5, 0], goal: ['on', 35, 39.6, 0], plan: [['run', 1, 35, 39.6, 0], ['goTo', 37.6]] },
-    { name: 'Pics → avalanche', start: [37.6, 0], goal: ['on', 51, 60, 0], plan: [['goTo', 38.6], ['hop', 3, 43.4], ['dodgeBoulders', 51, 3.6]] },
-    { name: 'Neige → panier', start: [51.5, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 16 — Patinoire au vent
+const L16 = level({ id: 'snow-6', difficulty: 'hard', number: 6, nameKey: 'lv.snow.6', idea: 'glace + vent : freiner à temps' }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8, 0, snow);
+    s.spawn(2);
+  });
+  // Vent dans le dos sur la glace : freiner avant les pics, sauter sur la berge
+  c.section(20, (s) => {
+    s.ground(0, 9, 0, ice);
+    s.ground(9, 20, 0, snow);
+    s.add('spikes', { x: 14, y: 0, w: 3, dir: 'up' });
+    s.block(17, 0, 3, 1.6, snow);
+    s.add('winds', { x: 0, y: 0, w: 17, h: 8, force: 7, gust: 2.4 });
+    s.star(11, 1.2);
+    s.pass('Patinoire, vent dans le dos', [-6, 0], ['on', 17.2, 20, 1.6], [['goTo', 13.2], ['settle'], ['hop', 4, 19, 1.6]]);
+  });
+  // Vent de face sur la glace : il faut garder de l'élan pour atteindre la marche
+  c.section(20, (s) => {
+    s.ground(0, 2, 1.6, snow);
+    s.ground(2, 20, 0, ice);
+    s.block(14, 0, 6, 2.2, snow);
+    s.add('winds', { x: 2, y: 0, w: 18, h: 8, force: -8, gust: 2 });
+    s.checkpoint(0.8, 1.6);
+    s.star(8, 2.6);
+    s.pass('Patinoire, vent de face', [0.6, 1.6], ['on', 14.3, 20, 2.2], [['goTo', 0.8], ['hold', 1, 3], ['goTo', 11.6], ['hop', 3, 15.6, 2.2]]);
+  });
+  // Îlots de glace sur l'eau glacée (pics), vent de travers
+  c.section(22, (s) => {
+    s.ground(0, 22, 0, snow);
+    s.ground(0, 2, 2.2, snow);
+    s.add('spikes', { x: 2, y: 0, w: 17, dir: 'up' });
+    s.block(4.4, 0, 2.6, 1.8, ice);
+    s.block(9.4, 0, 2.6, 2.6, ice);
+    s.block(14.4, 0, 2.6, 1.8, ice);
+    s.add('winds', { x: 2, y: 0, w: 18, h: 9, force: 5, gust: 2.6 });
+    s.star(10.7, 5);
+    s.pass('Îlot 1', [-2, 2.2], ['on', 4.5, 6.9, 1.8], [['goTo', 1.2], ['hop', 2, 5.4, 1.8], ['settle']]);
+    s.pass('Îlot 2', [5.4, 1.8], ['on', 9.5, 11.9, 2.6], [['goTo', 5.4], ['hop', 3, 10.4, 2.6], ['settle']]);
+    s.pass('Îlot 3', [10.4, 2.6], ['on', 14.5, 16.9, 1.8], [['goTo', 10.4], ['hop', 2, 15.2, 1.8], ['settle']]);
+    s.pass('Berge', [15.2, 1.8], ['on', 19.3, 22, 0], [['goTo', 15.2], ['hop', 2, 20.4, 0]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 0, snow);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const S9 = {
-  id: 'snow-9',
-  difficulty: 'expert',
-  number: 9,
-  nameKey: 'level.snow.9',
-  bounds: bounds(62),
-  spawn: { x: 3, y: 0 },
-  solids: [
-    ...walls(62),
-    floor(-4, 11, 'snow'),
-    { x: 5, y: 0, w: 3, h: 1.6, style: 'snow' },
-    { x: 8, y: 0, w: 3, h: 3.2, style: 'snow' },
-    { points: [{ x: 11, y: 0 }, { x: 17, y: 0 }, { x: 11, y: 3.2 }], style: 'ice' },
-    floor(11, 24, 'ice'),
-    floor(28.5, 40, 'ice'),
-    { x: 33.5, y: 0, w: 1.5, h: 0.8, style: 'ice' },
-    floor(44, 66, 'snow'),
-  ],
-  maces: [{ x: 26.2, y: 8.5, len: 6, r: 0.55, amp: 0.8, period: 2.6, phase: 0 }],
-  // Bloc de glace au-dessus de la bosse : on la franchit sous lui, sans perdre son élan
-  crushers: [{ x: 32.8, w: 2.8, top: 3.4, bottom: 0.8, period: 2.5, phase: 0 }],
-  checkpoints: [{ x: 30.4, y: 0 }],
-  stars: [{ x: 9.5, y: 5.2 }, { x: 26.2, y: 2.4 }, { x: 42, y: 2.4 }],
-  hoop: hoopAt(56),
-  passages: [
-    { name: 'Marche 1', start: [3, 0], goal: ['on', 5, 8, 1.6], plan: [['goTo', 3.2], ['hop', 3, 6.5]] },
-    { name: 'Marche 2', start: [6.5, 1.6], goal: ['on', 8, 11, 3.2], plan: [['hop', 3, 9.5]] },
-    { name: 'Grande descente → crevasse', start: [9.5, 3.2], goal: ['on', 28.5, 33, 0], plan: [['waitCycle', 2.6, 1.45, 1.55], ['jumpAt', 1, 23.2], ['run', 1, 28.6, 33.2, 0]] },
-    { name: 'Bosse → deuxième crevasse', start: [29.5, 0], goal: ['on', 44, 52, 0], plan: [['goTo', 29.6], ['waitCycle', 2.5, 1.55, 1.65], ['jumpAt', 1, 32.4], ['jumpAt', 1, 39.2]] },
-    { name: 'Neige → panier', start: [47, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 17 — Le glacier : blocs de glace qui s'écrasent sur un sol glissant
+const L17 = level({ id: 'snow-7', difficulty: 'hard', number: 7, nameKey: 'lv.snow.7', idea: 'blocs de glace sur la glace (précision)' }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8, 0, snow);
+    s.spawn(2);
+    s.hint(4.5, 4.3, 'hint.crusher');
+  });
+  c.section(12, (s) => {
+    s.ground(0, 12, 0, ice);
+    s.ground(8.5, 12, 0, snow);
+    s.add('crushers', { x: 4.4, w: 2.4, top: 3.0, bottom: 0, period: 2.6, phase: 0 });
+    s.pass('Premier bloc', [-4, 0], ['on', 8.6, 12, 0], [['goTo', 2.6], ['waitCycle', 2.6, 1.85, 1.95], ['run', 1, 8.8, 12, 0]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 0, ice);
+    s.ground(6, 8, 0, snow);
+    s.ground(13, 16, 0, snow);
+    s.add('crushers', { x: 2.8, w: 2.2, top: 3.0, bottom: 0, period: 2.4, phase: 0.3 }, { x: 9.6, w: 2.2, top: 3.0, bottom: 0, period: 2.4, phase: 0.8 });
+    s.star(7, 1.4);
+    s.pass('Deuxième bloc → îlot de neige', [-2, 0], ['on', 6.2, 7.8, 0], [['goTo', 1], ['waitCycle', 2.4, 1.0, 1.1], ['run', 1, 6.3, 7.8, 0], ['goTo', 7]]);
+    s.pass('Troisième bloc', [7, 0], ['on', 13.2, 16, 0], [['waitCycle', 2.4, 1.8, 1.9], ['run', 1, 13.3, 16, 0]]);
+  });
+  // Bloc au-dessus d'une marche de glace
+  c.section(16, (s) => {
+    s.ground(0, 16, 0, snow);
+    s.block(5, 0, 11, 1.6, ice);
+    s.add('crushers', { x: 6.4, w: 2.4, top: 4.6, bottom: 1.6, period: 2.8, phase: 0 });
+    s.checkpoint(1, 0);
+    s.star(7.6, 5.6);
+    s.pass('La marche sous le bloc', [-2, 0], ['on', 10, 16, 1.6], [['goTo', 3.2], ['waitCycle', 2.8, 1.35, 1.45], ['charge', 3], ['jump', 1, 11.5, 1.6]]);
+  });
+  c.section(14, (s) => {
+    s.ground(0, 14, 1.6, ice);
+    s.ground(8, 14, 1.6, snow);
+    s.add('crushers', { x: 3, w: 2.2, top: 4.6, bottom: 1.6, period: 2.2, phase: 0 }, { x: 5.6, w: 2.2, top: 4.6, bottom: 1.6, period: 2.2, phase: 0.5 });
+    s.star(11, 3.4);
+    s.pass('Les deux derniers blocs', [-2, 1.6], ['on', 8.2, 14, 1.6], [['goTo', 1], ['waitCycle', 2.2, 1.65, 1.75], ['run', 1, 8.4, 14, 1.6]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 1.6, snow);
+    s.hoop(10, 3.4, 1.6);
+    s.pass('Le panier', [-2, 1.6], ['win'], 'shot');
+  });
+});
 
-const S10 = {
-  id: 'snow-10',
-  difficulty: 'expert',
-  number: 10,
-  nameKey: 'level.snow.10',
-  bounds: bounds(80, 12),
-  spawn: { x: 2, y: 0 },
-  solids: [
-    ...walls(80),
-    floor(-4, 10, 'snow'),
-    { x: 4, y: 0, w: 3, h: 1.8, style: 'snow' },
-    { x: 7, y: 0, w: 3, h: 3.4, style: 'snow' },
-    { points: [{ x: 10, y: 0 }, { x: 16, y: 0 }, { x: 10, y: 3.4 }], style: 'ice' },
-    floor(10, 26, 'ice'),
-    { x: 17, y: 5, w: 8, h: 1, style: 'block' },
-    floor(30, 84, 'snow'),
-    { x: 38.8, y: 1.5, w: 2.2, h: 0.5, style: 'ice' },
-    { x: 48, y: 1.9, w: 2, h: 0.5, style: 'ice' },
-  ],
-  fallers: [{ x: 43.5, y: 2.8, w: 2, h: 0.4 }],
-  checkpoints: [{ x: 33, y: 0 }, { x: 54.2, y: 0 }],
-  icicles: [{ x: 20, y: 5, len: 1.2 }, { x: 23.5, y: 5, len: 1.2 }],
-  spikes: [{ x: 38, y: 0, w: 14.4, dir: 'up' }],
-  winds: [{ x: 38, y: 0, w: 14, h: 9, force: -5, gust: 2.4 }],
-  // Dernière ligne droite : avalanche puis bloc de glace devant le panier
-  boulders: [{ x1: 53, x2: 62.6, y: 0, r: 0.6, dir: -1, speed: 6.5, period: 2.5, phase: 0 }],
-  crushers: [{ x: 65.6, w: 2.2, top: 2.8, bottom: 0, period: 2.6, phase: 0 }],
-  stars: [{ x: 8.5, y: 5.4 }, { x: 28, y: 2.6 }, { x: 46.5, y: 4.8 }],
-  hoop: hoopAt(74, 3.6),
-  passages: [
-    { name: 'Marche 1', start: [2, 0], goal: ['on', 4, 7, 1.8], plan: [['goTo', 2.4], ['hop', 3, 5.5]] },
-    { name: 'Marche 2', start: [5.5, 1.8], goal: ['on', 7, 10, 3.4], plan: [['hop', 3, 8.5]] },
-    { name: 'Rampe, stalactites, crevasse', start: [8.5, 3.4], goal: ['on', 30, 37.6, 0], plan: [['jumpAt', 1, 25.2], ['run', 1, 30.2, 37.4, 0], ['goTo', 35.5]] },
-    { name: 'Glace 1 (vent)', start: [35.5, 0], goal: ['on', 38.8, 41, 2.0], plan: [['goTo', 36.4], ['hop', 3, 39.9]] },
-    { name: 'Plaque qui tombe → glace 3', start: [39.9, 2.0], goal: ['on', 48, 50, 2.4], plan: [['hop', 4, 44.5], ['jump', 1, 49]] },
-    { name: 'Glace 3 → neige', start: [49, 2.4], goal: ['on', 52.6, 56, 0], plan: [['hop', 2, 54.5]] },
-    { name: 'Avalanche', start: [54.5, 0], goal: ['on', 64.2, 65.4, 0], plan: [['dodgeBoulders', 63.5, 3.6], ['goTo', 64.8]] },
-    { name: 'Bloc de glace', start: [64.6, 0], goal: ['on', 68.4, 84, 0], plan: [['goTo', 64.6], ['waitCycle', 2.6, 2.5, 2.6], ['run', 1, 68.6, 84, 0]] },
-    { name: 'Neige → panier', start: [69, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 18 — Le chalet : le panier est enfermé. Le remonte-pente, la pente de glace, le tremplin… et
+// l'interrupteur sur le rocher. Ensuite seulement, la porte du chalet s'ouvre.
+const L18 = level({ id: 'snow-8', difficulty: 'medium', number: 8, nameKey: 'lv.snow.8', idea: 'deux interrupteurs : la barrière du remonte-pente, puis la porte du chalet', maxY: 12 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8, 0, snow);
+    s.spawn(2);
+  });
+  // La barrière du remonte-pente est fermée ; son interrupteur est sur le toit de la cabane
+  c.section(16, (s) => {
+    s.ground(0, 16, 0, snow);
+    s.block(3, 0, 4, 2.6, 'wood');
+    const sw = s.add('switches', { x: 4.4, y: 2.6, w: 1.2, target: 'lift' });
+    s.add('doors', { id: 'lift', x: 12, y: 0, w: 0.8, h: 3.4, open: { dx: 0, dy: 3.4 }, duration: 0.8 });
+    s.block(12, 3.4, 0.8, 8.6, 'wall');
+    s.hint(0.5, 4.4, 'hint.switch');
+    s.star(5, 4.8);
+    s.pass('Toit de la cabane → interrupteur', [-6, 0], ['switch', sw], [['goTo', 1.4], ['hop', 3, 5, 2.6]]);
+    s.pass('La barrière s’ouvre', [5, 2.6], ['on', 13.5, 16, 0], [['hold', 1, 7.4], ['run', 1, 13.6, 16, 0]]);
+  });
+  // Le remonte-pente : une nacelle monte jusqu'au départ de la piste
+  c.section(12, (s) => {
+    s.ground(0, 12, 0, snow);
+    s.block(7, 0, 5, 4.4, snow);
+    const m = s.add('movers', { x: 3.6, y: -0.5, w: 2.4, h: 0.5, path: { dx: 0, dy: 4.4, period: 4.4, phase: 0 } });
+    s.star(4.8, 6);
+    s.pass('Le remonte-pente', [-2, 0], ['on', 7.3, 12, 4.4], [['goTo', 2], ['waitMover', 'movers', m, 'y', '<', 0.05], ['goTo', 4.8], ['waitMover', 'movers', m, 'y', '>', 4.3], ['run', 1, 7.5, 12, 4.4]]);
+  });
+  // La piste de glace et le tremplin qui envoie sur le rocher de l'interrupteur
+  c.section(24, (s) => {
+    s.ground(0, 2, 4.4, snow);
+    s.add('solids', { points: [{ x: 2, y: 4.4 }, { x: 2, y: -6 }, { x: 11, y: -6 }, { x: 11, y: 0 }], style: ice });
+    s.ground(11, 13, 0, ice);
+    s.add('solids', { points: [{ x: 13, y: 0 }, { x: 13, y: -6 }, { x: 15, y: -6 }, { x: 15, y: 1 }], style: ice });
+    s.ground(15, 16, 1, ice);
+    s.ground(16, 18, -2, snow);
+    s.block(18, -2, 6, 5.4, 'rock');
+    const sw = s.add('switches', { x: 20.6, y: 3.4, w: 1.2, target: 'chalet' });
+    s.checkpoint(0.8, 4.4);
+    s.star(17, 7);
+    s.pass('Piste de glace → tremplin → rocher', [0.8, 4.4], ['on', 18.3, 24, 3.4], [['goTo', 0.8], ['dribbleRun', 1, 3, 14.6, 19.8]]);
+    s.pass('Interrupteur', [19.4, 3.4], ['switch', sw], [['goTo', 19], ['hop', 1, 21.2, 3.4]]);
+  });
+  // Redescendre devant le chalet : la porte est ouverte
+  c.section(26, (s) => {
+    s.ground(0, 26, 0, snow);
+    s.add('doors', { id: 'chalet', x: 8, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+    s.block(8, 3.2, 0.8, 9, 'wall');
+    s.block(8, 7.6, 18, 0.6, 'wood');
+    s.hoop(19, 3.4);
+    s.star(14, 2);
+    s.pass('Descendre du rocher', [-3, 3.4], ['on', 1, 7.5, 0], [['hold', 1, 0.5], ['run', 1, 1.5, 7.5, 0], ['goTo', 5]]);
+    s.pass('Dans le chalet → panier', [5, 0], ['win'], [['hold', 1, 11], ['shot']]);
+  });
+});
 
-export const SNOW_LEVELS = [S1, S2, S3, S4, S5, S6, S7, S8, S9, S10];
+// 19 — Le sommet : on monte, encore et encore. Trampoline, plaques qui cèdent, stalactites du sommet.
+const L19 = level({ id: 'snow-9', difficulty: 'hard', number: 9, nameKey: 'lv.snow.9', idea: 'ascension : trampoline, plaques, corniche, stalactites', maxY: 17 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8, 0, snow);
+    s.spawn(2);
+  });
+  c.section(14, (s) => {
+    s.ground(0, 14, 0, snow);
+    s.add('trampolines', { x: 2.5, y: 0, w: 1.6 });
+    s.block(6.5, 0, 7.5, 5, 'rock');
+    s.star(4, 7);
+    s.pass('Trampoline → première corniche', [-6, 0], ['on', 6.8, 14, 5], [['goTo', 1.2], ['hold', 1, 3.3], ['fly', 9]]);
+  });
+  // Plaques suspendues qui cèdent : on enchaîne sans s'arrêter
+  c.section(18, (s) => {
+    s.ground(0, 2, 5, 'rock');
+    s.ground(14, 18, 7.4, 'rock');
+    s.add('fallers', { x: 2.8, y: 5.4, w: 2.4, h: 0.4 }, { x: 6.8, y: 6.2, w: 2.4, h: 0.4 }, { x: 10.6, y: 7.0, w: 2.4, h: 0.4 });
+    s.checkpoint(0.6, 5);
+    s.star(8, 8.4);
+    s.pass('Plaques qui cèdent', [-2, 5], ['on', 14.2, 18, 7.4], [['goTo', 0.6], ['hop', 2, 4, 5.8], ['jump', 1, 8, 6.6], ['jump', 1, 11.8, 7.4], ['jump', 1, 15.5, 7.4]]);
+  });
+  // La corniche venteuse : des plaques qui cèdent, le vent repousse
+  c.section(18, (s) => {
+    s.ground(0, 3, 7.4, 'rock');
+    s.ground(14, 18, 7.4, 'rock');
+    s.add('fallers', { x: 4, y: 7.0, w: 2.2, h: 0.4 }, { x: 7.6, y: 7.0, w: 2.2, h: 0.4 }, { x: 11.2, y: 7.0, w: 2.2, h: 0.4 });
+    s.add('winds', { x: 0, y: 6, w: 18, h: 6, force: -5, gust: 2.4 });
+    s.checkpoint(1, 7.4);
+    s.star(9, 9.4);
+    s.pass('La corniche venteuse', [-2, 7.4], ['on', 14.2, 18, 7.4], [['goTo', 1.4], ['dribbleRun', 1, 2, 2.4, 5.4], ['jump', 1, 9], ['jump', 1, 12.4], ['jump', 1, 15.6]]);
+  });
+  // Deuxième trampoline : le dernier étage avant l'arête
+  c.section(14, (s) => {
+    s.ground(0, 14, 7.4, 'rock');
+    s.add('trampolines', { x: 3, y: 7.4, w: 1.6 });
+    s.block(7, 7.4, 7, 2.4, 'rock');
+    s.star(4.4, 12.6);
+    s.pass('Trampoline → dernier étage', [-2, 7.4], ['on', 7.3, 14, 9.8], [['goTo', 1.6], ['hold', 1, 3.8], ['fly', 9.5]]);
+  });
+  // L'arête et ses stalactites : on les fait tomber avant de passer
+  c.section(18, (s) => {
+    s.ground(0, 18, 9.8, 'rock');
+    s.block(3, 14, 12, 2, 'rock');
+    s.add('icicles', { x: 6, y: 14, len: 1.4 }, { x: 9.5, y: 14, len: 1.4 }, { x: 13, y: 14, len: 1.4 });
+    s.add('winds', { x: 0, y: 9.8, w: 18, h: 6, force: -5, gust: 2.4 });
+    s.star(9.5, 10.8);
+    s.pass('L’arête aux stalactites', [-2, 9.8], ['on', 15, 18, 9.8], [['goTo', 2], ['run', 1, 15.2, 18, 9.8]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 9.8, snow);
+    s.hoop(10, 3.4, 9.8);
+    s.pass('Le panier du sommet', [-2, 9.8], ['win'], 'shot');
+  });
+});
+
+// 20 — Tempête de neige : vent dans le dos, avalanche, pont qui cède sous les stalactites, et le panier.
+const L20 = level({ id: 'snow-10', difficulty: 'hard', number: 10, nameKey: 'lv.snow.10', idea: 'finale : vent, avalanche, pont, stalactites' }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8, 0, snow);
+    s.spawn(2);
+  });
+  c.section(22, (s) => {
+    s.ground(0, 6, 0, snow);
+    s.ground(11.8, 22, 0, snow);
+    s.add('winds', { x: 0, y: 0, w: 14, h: 12, force: 10, gust: 3 });
+    s.star(8.9, 4.6);
+    s.pass('La tempête porte au-dessus de la crevasse', [-6, 0], ['on', 12.1, 22, 0], [['goTo', -6], ['dribbleRun', 1, 3, 5.3, 15]]);
+  });
+  // L'avalanche
+  c.section(22, (s) => {
+    s.ground(0, 22, 0, snow);
+    s.block(17, 0, 5, 1.6, 'rock');
+    s.add('boulders', { x1: 0.5, x2: 16.6, y: 0, r: 0.85, dir: 1, speed: 6.2, period: 6, phase: 0.3 });
+    s.checkpoint(-4, 0);
+    s.star(9, 1.4);
+    s.pass('L’avalanche', [-3, 0], ['on', 17.3, 22, 1.6], [['goTo', -1.2], ['waitCycle', 6, 2.5, 2.6], ['dribbleRun', 1, 2, 14.4, 18.5]]);
+  });
+  // Le tunnel : stalactites et vent de face, à pleine vitesse
+  c.section(20, (s) => {
+    s.ground(0, 20, 1.6, 'rock');
+    s.block(0, 6.2, 20, 2, 'rock');
+    s.add('icicles', { x: 4, y: 6.2, len: 1.4 }, { x: 7.5, y: 6.2, len: 1.4 }, { x: 11, y: 6.2, len: 1.4 }, { x: 14.5, y: 6.2, len: 1.4 });
+    s.add('winds', { x: 0, y: 1.6, w: 20, h: 4.6, force: -6, gust: 2.2 });
+    s.checkpoint(1, 1.6);
+    s.star(9.2, 2.6);
+    s.pass('Le tunnel de glace', [-2, 1.6], ['on', 17, 19.6, 1.6], [['goTo', 0.6], ['run', 1, 17.2, 19.6, 1.6]]);
+  });
+  // Le pont qui cède sous les stalactites
+  c.section(26, (s) => {
+    s.ground(0, 2, 1.6, 'rock');
+    s.ground(24, 26, 1.6, 'rock');
+    for (let i = 0; i < 11; i++) s.add('fallers', { x: 2 + i * 2, y: 1.2, w: 2, h: 0.4 });
+    s.block(4, 7, 18, 2, 'rock');
+    s.add('icicles', { x: 9, y: 7, len: 1.4 }, { x: 15, y: 7, len: 1.4 });
+    s.checkpoint(0.8, 1.6);
+    s.star(12, 3);
+    s.pass('Le pont sous les stalactites', [0.6, 1.6], ['on', 24.2, 40, 1.6], [['goTo', 0.6], ['run', 1, 24.4, 40, 1.6]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16, 1.6, snow);
+    s.hoop(10, 3.4, 1.6);
+    s.pass('Le panier', [-2, 1.6], ['win'], 'shot');
+  });
+});
+
+export const SNOW_LEVELS = [L11, L12, L13, L14, L15, L16, L17, L18, L19, L20];
