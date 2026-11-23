@@ -21,7 +21,16 @@ export const TRICKSHOT = Object.freeze({
   shots: 3,              // essais par niveau
   maxSpeed: 30,          // vitesse de lancement à pleine puissance (u/s) : portée ≈ 26 u, hauteur ≈ 13 u
   minPower: 0.1,         // en dessous, le tir est annulé (le joueur a relâché trop près)
-  maxDrag: 3.2,          // distance de tirage (u) qui donne la pleine puissance
+  maxDrag: 3.2,          // tirage de référence (u) : aimFromDrag() le reçoit déjà ramené à cette échelle
+  // Visée tactile : une fois le ballon touché, le geste continue PARTOUT sur l'écran. La puissance dépend
+  // de la longueur du geste à l'écran (et non de la distance au ballon) : pleine puissance à pullScreen ×
+  // la plus petite dimension de l'écran, quelle que soit la place autour du ballon.
+  pullScreen: 0.36,
+  grabRadiusPx: 90,      // zone du doigt autour du ballon pour le saisir (px) …
+  grabRadius: 1.6,       // … ou en unités du monde (la plus grande des deux)
+  // Aide à la visée volontairement limitée : les pointillés montrent le DÉBUT de l'arc seulement
+  // (longueur fixe, quel que soit le tir), s'arrêtent au premier obstacle et ne prévoient jamais les rebonds.
+  previewLength: 5.2,    // longueur de l'arc montré (u)
   restSpeed: 0.35,       // vitesse sous laquelle le ballon est considéré arrêté (u/s)
   restTime: 0.45,        // … pendant ce temps (s) → fin du tir
   maxShotTime: 12,       // un tir ne dure jamais plus de 12 s
@@ -36,13 +45,13 @@ export const DIFFICULTIES = Object.freeze({
   impossible: { rank: 3, color: '#1c1c22', emoji: '⚫' },
 });
 
-/** Chapitres (10 niveaux chacun) : nom, couleur d'accent de l'arène, mécaniques introduites. */
+/** Chapitres (4 cartes chacun) : couleur d'accent du laboratoire. */
 export const CHAPTERS = Object.freeze([
-  { id: 'basics', accent: '63,224,255', from: 1, to: 10 },
-  { id: 'machines', accent: '255,154,61', from: 11, to: 20 },
-  { id: 'danger', accent: '255,79,140', from: 21, to: 30 },
-  { id: 'lab', accent: '160,120,255', from: 31, to: 40 },
-  { id: 'master', accent: '255,214,90', from: 41, to: 50 },
+  { id: 'basics', accent: '63,224,255', from: 1, to: 4 },
+  { id: 'machines', accent: '255,154,61', from: 5, to: 8 },
+  { id: 'circuits', accent: '120,255,170', from: 9, to: 12 },
+  { id: 'portals', accent: '170,130,255', from: 13, to: 16 },
+  { id: 'master', accent: '255,214,90', from: 17, to: 20 },
 ]);
 
 export const chapterOf = (n) => CHAPTERS.find((c) => n >= c.from && n <= c.to) ?? CHAPTERS[0];

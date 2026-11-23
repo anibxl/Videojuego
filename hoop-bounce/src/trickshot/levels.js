@@ -1,427 +1,192 @@
-// Les 50 cartes du mode TRICKSHOT (aucune n'est reprise du mode principal).
+// Les cartes du mode TRICKSHOT — « le Laboratoire » (v2, étape 23).
 //
-// Chaque carte tient sur un écran (24 × 13,5 u, sol à y = 1) et repose sur UNE idée. Le ballon part de
-// `start` (centre du ballon posé). Toutes les cartes ont au moins une solution en un seul tir
-// (3 étoiles possibles), vérifiée par tools/trickshot-check.mjs et rejouée par tests/trickshot.test.mjs.
+// Moins de cartes, mais chacune est un vrai casse-tête construit autour d'UNE idée, sans grand sol plat :
+// plateformes suspendues, tunnels, cages de verre, puits, chambres fermées ; le ballon part en hauteur,
+// dans un coin ou enfermé ; le panier est à gauche, en hauteur, suspendu, caché derrière un mur...
+// Toutes ont au moins une solution en UN SEUL tir (3 étoiles possibles), trouvée par
+// tools/trickshot-check.mjs et rejouée par tests/trickshot.test.mjs. Chaque mécanique annoncée est
+// indispensable : sans elle, aucun tir ne marque (vérifié en la retirant).
 //
-// Champs : éléments du moteur (solids, trampolines, fans, movers, switches, doors, teleporters, lasers,
-// saws, crumbles, blinkers, lava, gravityZones, magnets, cannons, boulders…) + propres au mode :
-//   breakables  caisses cassables { x, y, w, h, strength (vitesse d'impact minimale) }
-//   fans[].target  ventilateur éteint, allumé par le bouton de même cible
-//   gravityScale   gravité du niveau (gravité réduite)
-//   diff        'easy' | 'hard' | 'very' | 'impossible'
-//   intro       mécaniques découvertes dans ce niveau (badge « Nouveau ! »)
-//   name, hint  textes FR / EN / ES
+// Champs : éléments du moteur (solids, trampolines, fans, movers, switches, doors, teleporters, lasers…)
+// + propres au mode : breakables (caisses), fans[].target (ventilateur allumé par un bouton),
+// hoop.hang (panier suspendu), solids[].hang (plateforme suspendue), diff, intro, name, hint.
+// Outils de construction : ./kit.js.
 
-const W = 24;
-const H = 13.5;
-const F = 1; // dessus du sol
-const R = 0.4;
-
-const tee = (x, y = F) => ({ x, y: y + R });
-const ground = (x0 = -1, x1 = W + 1, style = 'ground') => ({ x: x0, y: -1, w: x1 - x0, h: F + 1, style });
-const wallL = () => ({ x: -1, y: -1, w: 1, h: H + 2, style: 'wall' });
-const wallR = () => ({ x: W, y: -1, w: 1, h: H + 2, style: 'wall' });
-const ceil = (x0 = -1, x1 = W + 1) => ({ x: x0, y: H, w: x1 - x0, h: 1, style: 'wall' });
-const frame = (floor = [ground()]) => [wallL(), wallR(), ceil(), ...floor];
-const block = (x, y, w, h, style = 'block') => ({ x, y, w, h, style });
-const wall = (x, y, w, h) => ({ x, y, w, h, style: 'wall' });
-const bumper = (x, y, w, h) => ({ x, y, w, h, style: 'bumper', material: 'bumper' });
-const ice = (x, y, w, h) => ({ x, y, w, h, style: 'ice' });
-const rock = (x, y, w, h) => ({ x, y, w, h, style: 'rock' });
-const ramp = (pts, style = 'block') => ({ points: pts.map(([x, y]) => ({ x, y })), style });
-const bramp = (pts) => ({ ...ramp(pts, 'bumper'), material: 'bumper' }); // rampe-bumper (flipper)
-const hoop = (x, y, o = {}) => ({ x, y, facing: -1, mount: 'pole', floorY: F, ...o });
-const T = (fr, en, es) => ({ fr, en, es });
+import { tee, frame, floor, plat, wall, block, glass, bumper, bramp, hoopPole, hoopWall, hoopHang, T } from './kit.js';
 
 export const TS_LEVELS = [
-  // ═══════════════ CHAPITRE 1 — LES BASES : rebonds, murs, angles ═══════════════
+  // ═══════════════ CHAPITRE 1 — CALIBRATION : le tir, les rebonds, la bande ═══════════════
   {
     n: 1, id: 'premier-tir', diff: 'easy', intro: ['aim'],
     name: T('Premier tir', 'First Shot', 'Primer tiro'),
-    hint: T('Pose ton doigt sur le ballon, tire vers l’arrière, relâche !', 'Touch the ball, pull back, release!', '¡Toca el balón, tira hacia atrás y suelta!'),
-    start: tee(3), hoop: hoop(12, 3.5), solids: frame(),
+    hint: T('Touche le ballon, puis tire vers l’arrière n’importe où sur l’écran. Relâche !', 'Touch the ball, then pull back anywhere on the screen. Release!', '¡Toca el balón y tira hacia atrás en cualquier parte de la pantalla. Suelta!'),
+    start: tee(3, 5), hoop: hoopPole(17.5, 4, 1),
+    solids: [...frame(), plat(-1, 5, 6, { h: 0.6 }), floor(13, 25)],
   },
   {
-    n: 2, id: 'le-mur', diff: 'easy', intro: ['wall'],
-    name: T('Le mur', 'The Wall', 'El muro'),
-    hint: T('Plus tu tires loin, plus le tir est puissant.', 'The further you pull, the stronger the shot.', 'Cuanto más tiras, más potente es el tiro.'),
-    start: tee(3), hoop: hoop(15, 3.5), solids: [...frame(), wall(8.5, 1, 1, 4.5)],
+    n: 2, id: 'rebond', diff: 'easy', intro: ['bounce'],
+    name: T('Rebond', 'Bounce', 'Rebote'),
+    hint: T('Le panier est sous une dalle : fais rebondir le ballon sur la plaque du milieu.', 'The hoop is under a slab: bounce the ball off the middle plate.', 'El aro está bajo una losa: rebota el balón en la placa del medio.'),
+    start: tee(3, 3.5), hoop: hoopPole(18.5, 2.2, 1),
+    solids: [...frame(), plat(-1, 3.5, 6), plat(8, 1.2, 6), floor(16, 25), plat(15.5, 4.8, 8.5, { h: 0.6, hang: true })],
   },
   {
-    n: 3, id: 'sous-la-dalle', diff: 'hard',
-    name: T('Sous la dalle', 'Under the Slab', 'Bajo la losa'),
-    hint: T('Par-dessus ou par-dessous ? À toi de choisir.', 'Over or under? Your call.', '¿Por encima o por debajo? Tú eliges.'),
-    start: tee(3), hoop: hoop(19.5, 3), solids: [...frame(), block(7, 5.6, 9, 1)],
-  },
-  {
-    n: 4, id: 'ricochet', diff: 'easy', intro: ['bounce'],
-    name: T('Ricochet', 'Ricochet', 'Rebote'),
-    hint: T('Le panier est sous la dalle : fais rebondir le ballon au sol.', 'The hoop is under the slab: bounce the ball off the floor.', 'El aro está bajo la losa: rebota el balón en el suelo.'),
-    start: tee(3), hoop: hoop(17.5, 2), solids: [...frame(), block(14, 4.6, 10, 1)],
-  },
-  {
-    n: 5, id: 'la-bande', diff: 'hard', intro: ['bank'],
+    n: 3, id: 'la-bande', diff: 'easy', intro: ['bank'],
     name: T('La bande', 'Bank Shot', 'La banda'),
-    hint: T('Le panier tourne le dos : fais rebondir le ballon sur le mur de gauche.', 'The hoop faces away: bounce the ball off the left wall.', 'El aro está de espaldas: rebota el balón en la pared izquierda.'),
-    start: tee(16), hoop: hoop(1.4, 4.5, { mount: 'wall' }), solids: [...frame(), block(5, 8.5, 8, 5)],
+    hint: T('Le panier tourne le dos : renvoie le ballon contre le mur de gauche.', 'The hoop faces away: bounce the ball off the left wall.', 'El aro está de espaldas: rebota el balón en la pared izquierda.'),
+    start: tee(19, 4), hoop: hoopWall(1.4, 4.2),
+    solids: [...frame(), plat(16.5, 4, 7.5), floor(-1, 5, 1), block(4.5, 7.6, 9.5, 0.6)],
   },
   {
-    n: 6, id: 'le-puits', diff: 'hard',
-    name: T('Le puits', 'The Well', 'El pozo'),
-    start: tee(3), hoop: hoop(15.15, 4.5, { mount: 'wall' }), solids: [...frame(), wall(14, 1, 1, 8), wall(17.2, 1, 1, 8)],
-  },
-  {
-    n: 7, id: 'escalier', diff: 'easy',
-    name: T('L’escalier', 'The Stairs', 'La escalera'),
-    start: tee(2.5, 7), hoop: hoop(19.5, 3.4),
-    solids: [...frame(), block(-1, 1, 7, 6), block(6, 1, 3, 4.5), block(9, 1, 3, 3), block(12, 1, 3, 1.5)],
-  },
-  {
-    n: 8, id: 'la-lucarne', diff: 'hard',
-    name: T('La lucarne', 'The Window', 'El tragaluz'),
-    start: tee(3), hoop: hoop(19.6, 6.6, { mount: 'wall' }),
-    solids: [...frame(), block(16.5, 1, 8.5, 3.6), wall(16.5, 10, 1, 3.5)],
-  },
-  {
-    n: 9, id: 'angle-mort', diff: 'hard', intro: ['lob'],
-    name: T('Angle mort', 'Blind Spot', 'Ángulo muerto'),
-    hint: T('Un tir en cloche retombe presque à la verticale.', 'A high lob drops almost straight down.', 'Un tiro bombeado cae casi en vertical.'),
-    start: tee(3), hoop: hoop(16.4, 3), solids: [...frame(), wall(14.5, 1, 1, 6)],
-  },
-  {
-    n: 10, id: 'examen', diff: 'hard',
-    name: T('L’examen', 'The Exam', 'El examen'),
-    start: tee(3), hoop: hoop(19, 3.2),
-    solids: [...frame(), wall(10, 1, 1, 7), block(10, 11, 15, 2.5)],
+    n: 4, id: 'le-tunnel', diff: 'hard',
+    name: T('Le tunnel', 'The Tunnel', 'El túnel'),
+    hint: T('Le seul passage est un tunnel bas : enchaîne les rebonds.', 'The only way is a low tunnel: chain the bounces.', 'El único paso es un túnel bajo: encadena los rebotes.'),
+    start: tee(2.5, 1), hoop: hoopPole(21.1, 2, 1),
+    solids: [...frame(), floor(-1, 25), wall(4.5, 4.6, 8.6, 8.9), plat(18.6, 6.1, 6.4, { h: 0.6, hang: true })],
   },
 
-  // ═══════════════ CHAPITRE 2 — MACHINES : trampolines, ventilateurs, plateformes mobiles ═══════════════
+  // ═══════════════ CHAPITRE 2 — LES MACHINES : trampoline, ventilateur, ascenseur ═══════════════
   {
-    n: 11, id: 'trampoline', diff: 'easy', intro: ['trampoline'],
+    n: 5, id: 'trampoline', diff: 'easy', intro: ['trampoline'],
     name: T('Trampoline', 'Trampoline', 'Trampolín'),
-    hint: T('Le trampoline propulse le ballon vers le haut.', 'The trampoline launches the ball upward.', 'El trampolín lanza el balón hacia arriba.'),
-    start: tee(3), hoop: hoop(19, 5.5, { mount: 'wall' }),
-    solids: [...frame(), block(-1, 5, 13, 1)], trampolines: [{ x: 13, y: F, w: 3 }],
+    hint: T('Tu es dans une cage basse : le trampoline te fera passer le mur.', 'You are in a low cage: the trampoline will get you over the wall.', 'Estás en una jaula baja: el trampolín te hará pasar el muro.'),
+    start: tee(2.5, 1), hoop: hoopHang(14, 5.6),
+    solids: [...frame(), floor(-1, 10), glass(-1, 3.6, 6, 0.3), wall(10, -2, 1, 7), floor(11, 25)],
+    trampolines: [{ x: 6.4, y: 1, w: 2.4 }],
   },
   {
-    n: 12, id: 'souffle', diff: 'easy', intro: ['fan'],
-    name: T('Le souffle', 'Updraft', 'La corriente'),
-    hint: T('Le ventilateur fait flotter le ballon.', 'The fan makes the ball float.', 'El ventilador hace flotar el balón.'),
-    start: tee(3), hoop: hoop(13.4, 7, { mount: 'wall' }),
-    solids: [...frame(), block(5, 4.4, 4.6, 9.1)], fans: [{ x: 10, y: F, w: 2.2, h: 8, strength: 95 }],
+    n: 6, id: 'colonne-d-air', diff: 'easy', intro: ['fan'],
+    name: T('Colonne d’air', 'Air Column', 'Columna de aire'),
+    hint: T('Le plafond est bas : seul le souffle du ventilateur monte jusqu’au panier.', 'The ceiling is low: only the fan’s blast reaches the hoop.', 'El techo es bajo: solo el soplo del ventilador llega al aro.'),
+    start: tee(20, 1), hoop: hoopWall(5.3, 8.3, 1),
+    solids: [...frame(), floor(8.5, 25), block(9.1, 7, 14.9, 0.6), floor(-1, 6.2)],
+    fans: [{ x: 6.2, y: 1, w: 2.3, h: 10.6, strength: 98 }],
   },
   {
-    n: 13, id: 'la-herse', diff: 'very', intro: ['mover'],
-    name: T('La herse', 'The Portcullis', 'El rastrillo'),
-    hint: T('La grille monte et descend : tire au bon moment.', 'The gate goes up and down: shoot at the right time.', 'La reja sube y baja: tira en el momento justo.'),
-    start: tee(3), hoop: hoop(16, 3.5),
-    solids: [...frame(), wall(11, 1, 1, 1.5), wall(11, 7.5, 1, 6)],
-    movers: [{ x: 11, y: 2.5, w: 1, h: 5, path: { dx: 0, dy: 5, period: 3.4, phase: 0 } }],
-  },
-  {
-    n: 14, id: 'double-saut', diff: 'easy',
-    name: T('Double saut', 'Double Jump', 'Doble salto'),
-    start: tee(2.5), hoop: hoop(20, 10.5, { mount: 'wall' }),
-    solids: [...frame(), block(11, 1, 3.5, 5)], trampolines: [{ x: 6, y: F, w: 2.5 }, { x: 11.5, y: 6, w: 2.5 }],
-  },
-  {
-    n: 15, id: 'interrupteur', diff: 'easy', intro: ['switch'],
-    name: T('L’interrupteur', 'The Switch', 'El interruptor'),
-    hint: T('Le bouton allume le ventilateur.', 'The button turns on the fan.', 'El botón enciende el ventilador.'),
-    start: tee(3), hoop: hoop(16.3, 6.2, { mount: 'wall' }),
-    solids: [...frame(), wall(12.4, 3.6, 1, 9.9)],
-    switches: [{ x: 7.5, y: F, w: 1.4, target: 'fan' }],
-    fans: [{ x: 14, y: F, w: 2.2, h: 9, strength: 95, target: 'fan' }],
-  },
-  {
-    n: 16, id: 'la-trappe', diff: 'hard', intro: ['hatch'],
-    name: T('La trappe', 'The Hatch', 'La trampilla'),
-    hint: T('Passe sur le bouton pour ouvrir la trappe du trampoline.', 'Roll over the button to open the trampoline hatch.', 'Pasa por el botón para abrir la trampilla del trampolín.'),
-    start: tee(2.5), hoop: hoop(18.5, 6.2, { mount: 'wall' }),
-    solids: [...frame(), block(-1, 4.4, 11.5, 1), wall(15.6, 1, 0.6, 4.8)],
-    switches: [{ x: 6.5, y: F, w: 1.4, target: 'hatch' }],
-    trampolines: [{ x: 11, y: F, w: 2.4 }],
-    doors: [{ id: 'hatch', x: 10.8, y: F, w: 2.8, h: 0.5, open: { dx: 0, dy: -1.2 }, duration: 0.35 }],
-  },
-  {
-    n: 17, id: 'ascenseur', diff: 'very',
-    name: T('L’ascenseur', 'The Elevator', 'El ascensor'),
-    hint: T('Le panier est derrière toi : rebondis sur la plateforme mobile.', 'The hoop is behind you: bounce off the moving platform.', 'El aro está detrás de ti: rebota en la plataforma móvil.'),
-    start: tee(20), hoop: hoop(4.5, 5.2, { facing: 1, mount: 'wall' }),
-    solids: [...frame(), block(-1, 9, 13, 4.5)],
-    movers: [{ x: 8.5, y: 2, w: 5, h: 0.5, path: { dx: 0, dy: 3.5, period: 4, phase: 0 } }],
-  },
-  {
-    n: 18, id: 'couloir-d-air', diff: 'very',
-    name: T('Couloir d’air', 'Air Corridor', 'Pasillo de aire'),
-    start: tee(2.5), hoop: hoop(17.4, 9, { floorY: 7 }),
-    solids: [...frame(), block(16.4, 1, 8.6, 6)],
-    fans: [{ x: 8.6, y: F, w: 2.2, h: 8, strength: 92 }, { x: 13.2, y: F, w: 2.2, h: 12, strength: 100 }],
-  },
-  {
-    n: 19, id: 'pont-levis', diff: 'very', intro: ['bridge'],
-    name: T('Le pont-levis', 'The Drawbridge', 'El puente levadizo'),
-    hint: T('Touche le bouton : le pont tombe au-dessus du vide.', 'Hit the button: the bridge drops over the pit.', 'Toca el botón: el puente cae sobre el vacío.'),
-    start: tee(2.5), hoop: hoop(20.5, 3.2),
-    solids: [...frame([ground(-1, 5.5), ground(18.5, W + 1)]), block(5.5, 5.4, 13, 8.1), block(2.4, 2.6, 2, 0.5)],
-    switches: [{ x: 2.8, y: 3.1, w: 1.2, target: 'bridge' }],
-    doors: [{ id: 'bridge', x: 5.5, y: 4.9, w: 13, h: 0.5, open: { dx: 0, dy: -4.4 }, duration: 0.6 }],
-  },
-  {
-    n: 20, id: 'la-machine', diff: 'very',
+    n: 7, id: 'la-machine', diff: 'easy',
     name: T('La machine', 'The Machine', 'La máquina'),
-    start: tee(2.5), hoop: hoop(20.8, 9.5, { mount: 'wall' }),
-    solids: [...frame(), block(16.5, 1, 7.5, 3), wall(9, 6.5, 1, 7)],
-    trampolines: [{ x: 5.5, y: F, w: 2.4 }],
-    fans: [{ x: 17.5, y: 4, w: 2.2, h: 8, strength: 95 }],
-    movers: [{ x: 11, y: 3, w: 3.2, h: 0.5, path: { dx: 0, dy: 3.5, period: 3.5, phase: 0 } }],
+    hint: T('Trampoline, puis ventilateur : deux machines, un seul tir.', 'Trampoline, then fan: two machines, one shot.', 'Trampolín y luego ventilador: dos máquinas, un solo tiro.'),
+    start: tee(20.5, 5), hoop: hoopHang(3, 8.1, 1),
+    solids: [...frame(), plat(17, 5, 7, { h: 0.6 }), block(16, 6.4, 8, 0.6), floor(7.8, 12.8), wall(7, -2, 0.8, 7.1), floor(-1, 7)],
+    trampolines: [{ x: 9.3, y: 1, w: 2.4 }],
+    fans: [{ x: 4.2, y: 1, w: 2.6, h: 10.6, strength: 97 }],
+  },
+  {
+    n: 8, id: 'l-ascenseur', diff: 'hard', intro: ['mover'],
+    name: T('L’ascenseur', 'The Elevator', 'El ascensor'),
+    hint: T('Attends le bon moment : l’ascenseur renvoie le ballon vers le panier.', 'Wait for the right moment: the elevator sends the ball to the hoop.', 'Espera el momento justo: el ascensor envía el balón al aro.'),
+    start: tee(2.5, 3.4), hoop: hoopPole(19.2, 5.2, 4.1),
+    solids: [...frame(), plat(-1, 3.4, 5.5, { h: 0.6 }), wall(7.3, 7.5, 6.6, 6), plat(17.2, 4.1, 6.8, { h: 0.6 })],
+    movers: [{ x: 11.4, y: 2.2, w: 3.6, h: 0.5, path: { dx: 0, dy: 3.9, period: 2.5, phase: 0 } }],
   },
 
-  // ═══════════════ CHAPITRE 3 — DANGER : téléporteurs, lasers, plateformes qui disparaissent, scies ═══════════════
+  // ═══════════════ CHAPITRE 3 — LES CIRCUITS : caisses, boutons, ponts, portes ═══════════════
   {
-    n: 21, id: 'portail', diff: 'hard', intro: ['teleporter'],
+    n: 9, id: 'le-couvercle', diff: 'easy', intro: ['crate'],
+    name: T('Le couvercle', 'The Lid', 'La tapa'),
+    hint: T('Le panier est dans une fosse fermée par une caisse : arrive assez vite pour la briser.', 'The hoop is in a pit closed by a crate: come in fast enough to smash it.', 'El aro está en un foso cerrado por una caja: llega lo bastante rápido para romperla.'),
+    start: tee(20.5, 8), hoop: hoopPole(7.6, 3, 1),
+    solids: [...frame(), plat(17, 8, 7, { h: 0.6 }), floor(5, 12), wall(5, 1, 0.6, 5), wall(11.4, 1, 0.6, 5)],
+    breakables: [{ x: 5.6, y: 5.4, w: 5.8, h: 0.6, strength: 8 }],
+  },
+  {
+    n: 10, id: 'le-pont', diff: 'easy', intro: ['switch', 'bridge'],
+    name: T('Le pont', 'The Bridge', 'El puente'),
+    hint: T('Passe sur le bouton : le pont descend dans le tunnel, au-dessus du vide.', 'Roll over the button: the bridge drops into the tunnel, over the void.', 'Pasa por el botón: el puente baja en el túnel, sobre el vacío.'),
+    start: tee(2.5, 5.7), hoop: hoopPole(18.4, 2.2, 1),
+    solids: [...frame(), plat(-1, 5.7, 7.2, { h: 0.6 }), wall(8.5, 5.8, 9.4, 7.7), floor(16.9, 25)],
+    switches: [{ x: 4.4, y: 5.7, w: 1.4, target: 'bridge' }],
+    doors: [{ id: 'bridge', x: 8.2, y: 5.38, w: 9.7, h: 0.4, open: { dx: 0, dy: -1.78 }, duration: 0.4 }],
+  },
+  {
+    n: 11, id: 'la-porte', diff: 'hard',
+    name: T('La porte', 'The Gate', 'La puerta'),
+    hint: T('Touche le bouton : le volet s’ouvre… pendant que le ballon roule encore.', 'Hit the button: the gate opens… while the ball is still rolling.', 'Toca el botón: la compuerta se abre… mientras el balón sigue rodando.'),
+    start: tee(2.5, 4), hoop: hoopPole(19.2, 2.1, 1),
+    solids: [...frame(), plat(-1, 4, 5.5, { h: 0.6 }), floor(10.1, 25), wall(10.1, 1, 1.4, 2.9), wall(15.4, 5.5, 0.5, 8), block(15.9, 7.3, 8.1, 0.6)],
+    switches: [{ x: 10.2, y: 3.9, w: 1.2, target: 'gate' }],
+    doors: [{ id: 'gate', x: 15.4, y: 1, w: 0.5, h: 4.5, open: { dx: 0, dy: -4.6 }, duration: 0.3 }],
+  },
+  {
+    n: 12, id: 'le-souffleur', diff: 'very',
+    name: T('Le souffleur', 'The Blower', 'El soplador'),
+    hint: T('Le ventilateur est éteint : un bouton l’allume.', 'The fan is off: a button switches it on.', 'El ventilador está apagado: un botón lo enciende.'),
+    start: tee(2.5, 3.5), hoop: hoopHang(17.5, 9.7, -1),
+    solids: [...frame(), plat(-1, 3.5, 5, { h: 0.6 }), plat(7.7, 2.8, 3.6, { h: 0.5 }), floor(13, 17.6), block(-1, 7.5, 14.8, 0.6), block(16.8, 7.5, 8, 0.6)],
+    switches: [{ x: 8.9, y: 2.8, w: 1.2, target: 'air' }],
+    fans: [{ x: 14, y: 1, w: 2.6, h: 11.5, strength: 104, target: 'air' }],
+  },
+
+  // ═══════════════ CHAPITRE 4 — LES PORTAILS : téléporteurs, lasers ═══════════════
+  {
+    n: 13, id: 'le-portail', diff: 'easy', intro: ['teleporter'],
     name: T('Le portail', 'The Portal', 'El portal'),
-    hint: T('Entre dans le portail : tu ressors de l’autre, à la même vitesse.', 'Enter one portal, exit the other at the same speed.', 'Entra en un portal y sal por el otro a la misma velocidad.'),
-    start: tee(3), hoop: hoop(18.6, 3.6, { mount: 'wall' }),
-    solids: [...frame(), wall(15, 1, 0.6, 7), wall(15, 8, 9, 0.6), wall(21.2, 1, 2.8, 2.6)],
-    teleporters: [{ a: { x: 9, y: 6 }, b: { x: 19.2, y: 6.6 }, r: 1.1 }],
+    hint: T('Tu es enfermé : le portail est la seule sortie. On en ressort à la même vitesse.', 'You are locked in: the portal is the only way out. You exit at the same speed.', 'Estás encerrado: el portal es la única salida. Sales a la misma velocidad.'),
+    start: tee(2, 1.5), hoop: hoopPole(19, 3.8, 1),
+    solids: [...frame(), plat(-1, 1.5, 8.2, { h: 0.6 }), glass(7, 1.5, 0.3, 5.2), glass(-1, 6.4, 8.3, 0.3), floor(15.5, 25)],
+    teleporters: [{ a: { x: 4.2, y: 3.5 }, b: { x: 13.6, y: 8.7 }, r: 0.9 }],
   },
   {
-    n: 22, id: 'rideau-laser', diff: 'easy', intro: ['laser'],
+    n: 14, id: 'double-portail', diff: 'hard',
+    name: T('Double portail', 'Double Portal', 'Doble portal'),
+    hint: T('Trois salles fermées : le premier portail mène à droite, le second jusqu’au panier.', 'Three closed rooms: the first portal leads right, the second to the hoop.', 'Tres salas cerradas: el primer portal lleva a la derecha, el segundo hasta el aro.'),
+    start: tee(2, 1.5), hoop: hoopPole(5.2, 9.2, 7.8, -1),
+    solids: [...frame(), plat(-1, 1.5, 10.2, { h: 0.6 }), wall(9.2, -2, 0.5, 15.5), glass(-1, 7.5, 10.2, 0.3), floor(9.7, 25)],
+    teleporters: [{ a: { x: 6.9, y: 2.8 }, b: { x: 12.5, y: 5.9 }, r: 0.8 }, { a: { x: 20.7, y: 3 }, b: { x: 4.3, y: 10.6 }, r: 0.8 }],
+  },
+  {
+    n: 15, id: 'rideau-laser', diff: 'hard', intro: ['laser'],
     name: T('Rideau laser', 'Laser Curtain', 'Cortina láser'),
-    hint: T('Attends que le laser s’éteigne.', 'Wait for the laser to switch off.', 'Espera a que el láser se apague.'),
-    start: tee(3), hoop: hoop(15.5, 4), solids: frame(),
-    lasers: [{ x1: 11, y1: F, x2: 11, y2: H, period: 3, on: 1.1, phase: 0 }],
+    hint: T('Le laser garde l’entrée du portail : attends qu’il s’éteigne.', 'The laser guards the portal: wait for it to switch off.', 'El láser vigila el portal: espera a que se apague.'),
+    start: tee(2.5, 4), hoop: hoopHang(20.2, 5.5, -1),
+    solids: [...frame(), plat(-1, 4, 5.5, { h: 0.6 }), block(-1, 8.2, 14.5, 0.6), wall(13.5, -2, 0.6, 10.2)],
+    teleporters: [{ a: { x: 9.8, y: 4.6 }, b: { x: 14.2, y: 10.2 }, r: 0.9 }],
+    lasers: [{ x1: 7.9, y1: -1, x2: 7.9, y2: 8.2, period: 2.6, on: 1.3, phase: 0 }],
   },
   {
-    n: 23, id: 'sol-fragile', diff: 'hard', intro: ['crumble'],
-    name: T('Sol fragile', 'Fragile Floor', 'Suelo frágil'),
-    hint: T('Ces dalles s’effondrent après un rebond.', 'These tiles collapse after one bounce.', 'Estas losas se hunden tras un rebote.'),
-    start: tee(2.5), hoop: hoop(19, 3.4),
-    solids: [...frame([ground(-1, 5), ground(17.5, W + 1)]), block(4.5, 7.4, 11.5, 6.1)],
-    crumbles: [{ x: 7.5, y: 2.2, w: 2.4 }, { x: 12, y: 2.8, w: 2.4 }],
-  },
-  {
-    n: 24, id: 'la-scie', diff: 'hard', intro: ['saw', 'spikes'],
-    name: T('La scie', 'The Saw', 'La sierra'),
-    start: tee(3), hoop: hoop(17.5, 3.5),
-    solids: [...frame(), wall(11.5, 1, 1, 3), wall(11.5, 7, 1, 6.5)],
-    saws: [{ x: 12, y: 2, r: 0.6, path: { dx: 0, dy: 8, period: 2.6, phase: 0 } }],
-    spikes: [{ x: 13.2, y: F, w: 3.4, dir: 'up' }],
-  },
-  {
-    n: 25, id: 'de-l-autre-cote', diff: 'easy',
-    name: T('De l’autre côté', 'Other Side', 'Al otro lado'),
-    start: tee(3), hoop: hoop(20, 4),
-    solids: [...frame(), wall(10, 1, 1, 12.5)],
-    teleporters: [{ a: { x: 6, y: 5 }, b: { x: 13.5, y: 10.5 }, r: 0.75 }],
-  },
-  {
-    n: 26, id: 'clignotants', diff: 'hard', intro: ['blinker'],
-    name: T('Clignotants', 'Blinkers', 'Intermitentes'),
-    hint: T('Ces plateformes apparaissent et disparaissent.', 'These platforms appear and vanish.', 'Estas plataformas aparecen y desaparecen.'),
-    start: tee(2.5), hoop: hoop(21, 3.4),
-    solids: [...frame([ground(-1, 5), ground(19.5, W + 1)]), block(4.5, 7.2, 13, 6.3)],
-    blinkers: [{ x: 8, y: 2.2, w: 2.6, h: 0.45, period: 3, on: 1.7, phase: 0 }, { x: 13, y: 2.8, w: 2.6, h: 0.45, period: 3, on: 1.7, phase: 0.45 }],
-  },
-  {
-    n: 27, id: 'la-caisse', diff: 'hard', intro: ['crate'],
-    name: T('La caisse', 'The Crate', 'La caja'),
-    hint: T('Un tir puissant casse la caisse.', 'A powerful shot breaks the crate.', 'Un tiro potente rompe la caja.'),
-    start: tee(3), hoop: hoop(18.5, 2.4, { mount: 'wall' }),
-    solids: [...frame(), wall(15.5, 5.6, 8.5, 0.6)],
-    breakables: [{ x: 15.5, y: 1, w: 1, h: 4.6, strength: 4 }],
-  },
-  {
-    n: 28, id: 'passage-secret', diff: 'very', intro: ['secret'],
-    name: T('Passage secret', 'Secret Passage', 'Pasadizo secreto'),
-    hint: T('Un bouton ouvre un passage dans le mur…', 'A button opens a way through the wall…', 'Un botón abre un paso en el muro…'),
-    start: tee(3), hoop: hoop(19, 3.2, { mount: 'wall' }),
-    solids: [...frame(), wall(15, 1, 0.6, 1.2), wall(15, 5.8, 0.6, 4.2), wall(15, 10, 9, 0.6), block(9, 1, 1.4, 5)],
-    switches: [{ x: 9.1, y: 6, w: 1.2, target: 'secret' }],
-    doors: [{ id: 'secret', x: 15, y: 2.2, w: 0.6, h: 3.6, open: { dx: 0, dy: 4 }, duration: 0.5, style: 'wall' }],
-  },
-  {
-    n: 29, id: 'portail-laser', diff: 'very',
-    name: T('Portail et laser', 'Portal & Laser', 'Portal y láser'),
-    start: tee(3), hoop: hoop(19, 4),
-    solids: [...frame(), wall(11, 1, 1, 12.5)],
-    teleporters: [{ a: { x: 7, y: 7 }, b: { x: 14.5, y: 10 }, r: 0.75 }],
-    lasers: [{ x1: 12, y1: 6.5, x2: W, y2: 6.5, period: 2.6, on: 1.2, phase: 0 }],
-  },
-  {
-    n: 30, id: 'couloir-des-scies', diff: 'very',
-    name: T('Couloir des scies', 'Saw Corridor', 'Pasillo de sierras'),
-    start: tee(2.5), hoop: hoop(20, 4.5),
-    solids: [...frame(), block(5, 7.5, 19, 6)],
-    saws: [
-      { x: 9, y: 1.8, r: 0.6, path: { dx: 0, dy: 4.8, period: 2.2, phase: 0 } },
-      { x: 14, y: 1.8, r: 0.6, path: { dx: 0, dy: 4.8, period: 2.2, phase: 0.5 } },
-    ],
-    spikes: [{ x: 15.6, y: F, w: 3, dir: 'up' }],
+    n: 16, id: 'portail-et-bande', diff: 'hard',
+    name: T('Portail et bande', 'Portal Bank', 'Portal y banda'),
+    hint: T('À la sortie du portail, il faudra encore rebondir sur le mur.', 'Out of the portal, you still need to bank off the wall.', 'Al salir del portal, todavía hay que rebotar en el muro.'),
+    start: tee(2.5, 5), hoop: hoopWall(19, 3.2, 1),
+    solids: [...frame(), plat(-1, 5, 5, { h: 0.6 }), wall(13, -2, 0.6, 15.5), block(13.6, 7.2, 4, 0.5), floor(13.6, 25, 0.6)],
+    teleporters: [{ a: { x: 9.8, y: 2.5 }, b: { x: 16.5, y: 6.9 }, r: 0.85 }],
   },
 
-  // ═══════════════ CHAPITRE 4 — LABORATOIRE : gravité, glace, lave, aimants ═══════════════
+  // ═══════════════ CHAPITRE 5 — LES TRICKSHOTS : tout s'enchaîne ═══════════════
   {
-    n: 31, id: 'la-lune', diff: 'easy', intro: ['lowGravity'], gravityScale: 0.42,
-    name: T('La Lune', 'The Moon', 'La Luna'),
-    hint: T('Gravité réduite : le ballon flotte longtemps.', 'Low gravity: the ball floats for a long time.', 'Gravedad reducida: el balón flota mucho tiempo.'),
-    start: tee(2.5), hoop: hoop(14, 4.2), solids: [...frame(), wall(8, 1, 1, 4.4)],
-  },
-  {
-    n: 32, id: 'tete-en-bas', diff: 'hard', intro: ['gravityFlip'],
-    name: T('Tête en bas', 'Upside Down', 'Al revés'),
-    hint: T('Dans la zone violette, la gravité s’inverse.', 'In the purple zone, gravity flips.', 'En la zona violeta, la gravedad se invierte.'),
-    start: tee(3), hoop: hoop(19.5, 4), solids: [...frame(), wall(14, 1, 1, 10.5)],
-    gravityZones: [{ x: 7, y: 1, w: 5, h: 12.5 }],
-  },
-  {
-    n: 33, id: 'patinoire', diff: 'very', intro: ['ice'],
-    name: T('La patinoire', 'The Rink', 'La pista de hielo'),
-    hint: T('Sur la glace, le ballon glisse sans s’arrêter.', 'On ice, the ball slides without stopping.', 'Sobre el hielo, el balón se desliza sin parar.'),
-    start: tee(2.5), hoop: hoop(21, 4.4, { mount: 'wall' }),
-    solids: [...frame([ground(-1, W + 1, 'ice')]), block(-1, 3.6, 13, 9.9), ramp([[13, 1], [18.5, 1], [18.5, 3]], 'ice')],
-  },
-  {
-    n: 34, id: 'riviere-de-lave', diff: 'hard', intro: ['lava'],
-    name: T('Rivière de lave', 'Lava River', 'Río de lava'),
-    hint: T('La lave fait éclater le ballon : rebondis sur les rochers.', 'Lava pops the ball: bounce on the rocks.', 'La lava revienta el balón: rebota en las rocas.'),
-    start: tee(2.5), hoop: hoop(19, 3.4),
-    solids: [...frame([ground(-1, 5), ground(17.5, W + 1)]), rock(8.2, -1, 1.6, 3.6), rock(12.4, -1, 1.6, 4.2), block(4.5, 7.4, 11.5, 6.1)],
-    lava: [{ x: 5, y: 0.7, w: 12.5 }],
-  },
-  {
-    n: 35, id: 'l-aimant', diff: 'very', intro: ['magnet'],
-    name: T('L’aimant', 'The Magnet', 'El imán'),
-    hint: T('L’aimant attire le ballon : évite son cœur.', 'The magnet pulls the ball: avoid its core.', 'El imán atrae el balón: evita su núcleo.'),
-    start: tee(3), hoop: hoop(19, 4), solids: [...frame(), wall(11, 1, 1, 9)],
-    magnets: [{ x: 16.5, y: 9, radius: 4, strength: 28, core: 0.55 }],
-  },
-  {
-    n: 36, id: 'boules-de-feu', diff: 'hard', intro: ['fireball'],
-    name: T('Boules de feu', 'Fireballs', 'Bolas de fuego'),
-    start: tee(3), hoop: hoop(18, 3.5), solids: [...frame(), wall(10, 1, 1, 5)],
-    cannons: [
-      { x: 23.4, y: 5, dir: -1, period: 2, speed: 7, phase: 0, style: 'fire' },
-      { x: 23.4, y: 8.5, dir: -1, period: 2, speed: 7, phase: 0.5, style: 'fire' },
-    ],
-  },
-  {
-    n: 37, id: 'boules-de-neige', diff: 'impossible', intro: ['snowball'],
-    name: T('Boules de neige', 'Snowballs', 'Bolas de nieve'),
-    start: tee(3), hoop: hoop(19.6, 3.4), solids: [...frame(), block(5, 4.8, 12.5, 8.7)],
-    boulders: [{ x1: 5, x2: 22, y: F, r: 0.55, dir: -1, speed: 6, period: 2.6, phase: 0, style: 'snow' }],
-  },
-  {
-    n: 38, id: 'glace-et-aimant', diff: 'very',
-    name: T('Glace et aimant', 'Ice & Magnet', 'Hielo e imán'),
-    hint: T('Le tremplin de glace ne suffit pas : laisse l’aimant courber ta trajectoire.', 'The ice ramp is not enough: let the magnet bend your path.', 'La rampa de hielo no basta: deja que el imán curve tu trayectoria.'),
-    start: tee(2.5), hoop: hoop(20.8, 6, { mount: 'wall' }),
-    solids: [...frame([ground(-1, W + 1, 'ice')]), block(-1, 4, 11, 9.5), ramp([[11, 1], [15, 1], [15, 2.6]], 'ice')],
-    magnets: [{ x: 12.6, y: 6.1, radius: 5.5, strength: 38, core: 0.5 }],
-  },
-  {
-    n: 39, id: 'apesanteur', diff: 'very', gravityScale: 0.3,
-    name: T('Apesanteur', 'Zero G', 'Ingravidez'),
-    start: tee(2.5), hoop: hoop(21, 4, { mount: 'wall' }),
-    solids: [...frame(), wall(9, 1, 1, 8), wall(15, 5.5, 1, 8)],
-    gravityZones: [{ x: 10, y: 1, w: 5, h: 5 }],
-    teleporters: [{ a: { x: 12.5, y: 10 }, b: { x: 18.5, y: 9 }, r: 0.75 }],
-  },
-  {
-    n: 40, id: 'le-laboratoire', diff: 'hard',
-    name: T('Le laboratoire', 'The Lab', 'El laboratorio'),
-    start: tee(2.5), hoop: hoop(21.4, 8, { mount: 'wall' }),
-    solids: [...frame([ground(-1, 5), ground(19, W + 1)]), rock(10, -1, 1.2, 3.5), wall(16, 1, 1, 6.5)],
-    lava: [{ x: 5, y: 0.7, w: 14 }],
-    gravityZones: [{ x: 12, y: 1, w: 3.5, h: 12.5 }],
-    magnets: [{ x: 19.5, y: 11, radius: 3.5, strength: 24, core: 0.5 }],
-  },
-
-  // ═══════════════ CHAPITRE 5 — MAÎTRE : toutes les mécaniques, de vrais casse-têtes ═══════════════
-  {
-    n: 41, id: 'reaction-en-chaine', diff: 'very',
+    n: 17, id: 'reaction-en-chaine', diff: 'hard', intro: ['hatch'],
     name: T('Réaction en chaîne', 'Chain Reaction', 'Reacción en cadena'),
-    hint: T('Bouton, trampoline, ventilateur : tout s’enchaîne en un seul tir.', 'Button, trampoline, fan: it all chains in one shot.', 'Botón, trampolín, ventilador: todo se encadena en un solo tiro.'),
-    start: tee(2.5), hoop: hoop(20.9, 9.4, { mount: 'wall' }),
-    solids: [...frame(), wall(8, 3.4, 1, 10.1), block(15, 1, 3.4, 3)],
-    switches: [{ x: 5, y: F, w: 1.4, target: 'air' }],
-    trampolines: [{ x: 11, y: F, w: 2 }],
-    fans: [{ x: 18.5, y: F, w: 2.2, h: 12, strength: 100, target: 'air' }],
+    hint: T('Bande sur le mur, bouton, trappe, trampoline, fenêtre : tout s’enchaîne.', 'Bank off the wall, button, hatch, trampoline, window: it all chains.', 'Banda en el muro, botón, trampilla, trampolín, ventana: todo se encadena.'),
+    start: tee(21.5, 8.3), hoop: hoopPole(17.5, 6.3, 5.2),
+    solids: [...frame(), floor(-1, 25), plat(15.8, 8.3, 9.2, { h: 0.6 }), wall(15.8, 1, 0.6, 4.2), plat(16.4, 5.2, 8.6, { h: 0.4 })],
+    switches: [{ x: 7.4, y: 1, w: 1.4, target: 'hatch' }],
+    trampolines: [{ x: 11.5, y: 1, w: 2.4 }],
+    doors: [{ id: 'hatch', x: 11.3, y: 1, w: 2.8, h: 0.5, open: { dx: 0, dy: -1.2 }, duration: 0.3 }],
   },
   {
-    n: 42, id: 'le-coffre', diff: 'impossible',
-    name: T('Le coffre', 'The Vault', 'La caja fuerte'),
-    start: tee(3), hoop: hoop(19.5, 3.4, { mount: 'wall' }),
-    solids: [...frame(), wall(16, 1, 0.6, 7), wall(16, 8, 8, 0.6), block(7, 1, 1.2, 6)],
-    breakables: [{ x: 10.5, y: 1, w: 1.2, h: 2.4, strength: 4 }],
-    teleporters: [{ a: { x: 13, y: 1.8 }, b: { x: 18, y: 7 }, r: 0.75 }],
-  },
-  {
-    n: 43, id: 'zigzag', diff: 'very', intro: ['bumper'],
+    n: 18, id: 'zigzag', diff: 'very', intro: ['bumper'],
     name: T('Zigzag', 'Zigzag', 'Zigzag'),
-    hint: T('Les bumpers renvoient toute l’énergie : à droite, puis redescends à gauche.', 'Bumpers give back all the energy: go right, then drop down on the left.', 'Los bumpers devuelven toda la energía: a la derecha y luego baja por la izquierda.'),
-    start: tee(2.5, 9.6), hoop: hoop(3.4, 3.8, { facing: 1, mount: 'wall' }),
-    solids: [...frame(), block(-1, 9, 17, 0.6), block(10, 5, 15, 0.6), bumper(23.2, 5.6, 0.8, 7.9)],
+    hint: T('Les bumpers rendent toute l’énergie : va à droite, puis redescends à gauche.', 'Bumpers give back all the energy: go right, then drop down on the left.', 'Los bumpers devuelven toda la energía: a la derecha y luego baja por la izquierda.'),
+    start: tee(2.5, 9.6), hoop: hoopWall(3.4, 3.8, 1),
+    solids: [...frame(), floor(-1, 25), block(-1, 9, 17, 0.6), block(10, 5, 15, 0.6), bumper(23.2, 5.6, 0.8, 7.9)],
   },
   {
-    n: 44, id: 'tempete', diff: 'impossible',
-    name: T('Tempête', 'Storm', 'Tormenta'),
-    hint: T('Deux souffles, un laser : le bon moment, la bonne force.', 'Two gusts, one laser: right moment, right power.', 'Dos ráfagas, un láser: el momento justo, la fuerza justa.'),
-    start: tee(2.5), hoop: hoop(20.4, 2.8),
-    solids: [...frame(), wall(6.5, 1, 1, 4.4), wall(16.5, 7.7, 1, 5.8)],
-    fans: [{ x: 9, y: F, w: 2.2, h: 5.6, strength: 97 }, { x: 13, y: F, w: 2.2, h: 8.2, strength: 58 }],
-    lasers: [{ x1: 17, y1: 1, x2: 17, y2: 7.7, period: 2.8, on: 1.2, phase: 0 }],
-  },
-  {
-    n: 45, id: 'flipper', diff: 'hard',
+    n: 19, id: 'flipper', diff: 'hard',
     name: T('Le flipper', 'Pinball', 'El pinball'),
-    hint: T('Les rampes-bumpers font faire le tour de l’arène au ballon.', 'The bumper ramps send the ball around the arena.', 'Las rampas-bumper hacen que el balón dé la vuelta a la arena.'),
-    start: tee(3), hoop: hoop(7, 6.6, { facing: 1, mount: 'pole', floorY: 5.4 }),
-    solids: [...frame(), block(-1, 4.8, 16, 0.6), bramp([[19, 1], [24, 1], [24, 6]]), bramp([[24, 8], [24, 12], [20, 12]])],
+    hint: T('Les rampes-bumpers font faire le tour de la salle au ballon.', 'The bumper ramps send the ball around the room.', 'Las rampas-bumper hacen que el balón dé la vuelta a la sala.'),
+    start: tee(3, 1), hoop: hoopPole(7, 6.6, 5.4, 1),
+    solids: [...frame(), floor(-1, 25), block(-1, 4.8, 16, 0.6), bramp([[19, 1], [24, 1], [24, 6]]), bramp([[24, 8], [24, 12], [20, 12]])],
   },
   {
-    n: 46, id: 'miroir', diff: 'very',
-    name: T('Le miroir', 'The Mirror', 'El espejo'),
-    start: tee(21.5), hoop: hoop(3, 4, { facing: 1, mount: 'wall' }),
-    solids: [...frame([ground(-1, 6.5), ground(17.5, W + 1)]), wall(12, 6.5, 1, 7)],
-    lava: [{ x: 6.5, y: 0.7, w: 11 }],
-    gravityZones: [{ x: 8, y: 1, w: 3.5, h: 5 }],
-  },
-  {
-    n: 47, id: 'l-horloge', diff: 'impossible',
-    name: T('L’horloge', 'The Clock', 'El reloj'),
-    start: tee(2.5), hoop: hoop(20.5, 4),
-    solids: [...frame(), wall(8, 1, 1, 2.5), wall(8, 7, 1, 6.5), wall(14.5, 1, 1, 2.5), wall(14.5, 7, 1, 6.5)],
-    movers: [
-      { x: 8, y: 3.5, w: 1, h: 3.5, path: { dx: 0, dy: 3.5, period: 3, phase: 0 } },
-      { x: 14.5, y: 3.5, w: 1, h: 3.5, path: { dx: 0, dy: 3.5, period: 3, phase: 0.1 } },
-    ],
-  },
-  {
-    n: 48, id: 'aimants-jumeaux', diff: 'very',
-    name: T('Aimants jumeaux', 'Twin Magnets', 'Imanes gemelos'),
-    start: tee(2.5), hoop: hoop(20.5, 4), solids: [...frame(), wall(11.5, 1, 1, 7.5)],
-    magnets: [{ x: 8.5, y: 10, radius: 3.2, strength: -26, core: 0 }, { x: 16, y: 10.5, radius: 3.6, strength: 26, core: 0.5 }],
-  },
-  {
-    n: 49, id: 'le-grand-vide', diff: 'hard', gravityScale: 0.4,
-    name: T('Le grand vide', 'The Void', 'El gran vacío'),
-    start: tee(2.5, 6), hoop: hoop(21, 7, { mount: 'wall' }),
-    solids: [...frame([]), block(-1, -1, 5, 7), block(19, -1, 6, 4)],
-    saws: [{ x: 11, y: 4, r: 0.6, path: { dx: 0, dy: 6, period: 3, phase: 0 } }],
-    teleporters: [{ a: { x: 8, y: 2.5 }, b: { x: 15, y: 11.5 }, r: 0.75 }],
-  },
-  {
-    n: 50, id: 'trickshot-ultime', diff: 'impossible',
-    name: T('Trickshot ultime', 'Ultimate Trickshot', 'Trickshot definitivo'),
-    start: tee(2.5), hoop: hoop(20.9, 8.4, { mount: 'wall' }),
-    solids: [...frame(), wall(7.5, 1, 1, 3.5), wall(7.5, 7.5, 1, 6), block(16, 1, 2.2, 3)],
-    switches: [{ x: 4.5, y: F, w: 1.2, target: 'final' }],
-    doors: [{ id: 'final', x: 7.5, y: 4.5, w: 1, h: 3, open: { dx: 0, dy: 3 }, duration: 0.5 }],
-    trampolines: [{ x: 10.5, y: F, w: 2.4 }],
-    fans: [{ x: 18.5, y: F, w: 2.2, h: 12, strength: 100, target: 'final' }],
-    lasers: [{ x1: 14, y1: 4.4, x2: 14, y2: 13.5, period: 2.6, on: 1, phase: 0 }],
+    n: 20, id: 'le-grand-trickshot', diff: 'very',
+    name: T('Le grand trickshot', 'The Grand Trickshot', 'El gran trickshot'),
+    hint: T('Rebond, portail, bouton, porte, ventilateur, bumper… panier.', 'Bounce, portal, button, gate, fan, bumper… basket.', 'Rebote, portal, botón, puerta, ventilador, bumper… canasta.'),
+    start: tee(2.5, 5.3), hoop: hoopHang(17.2, 10.8, 1),
+    solids: [...frame(), floor(-1, 17.1), floor(17.1, 18.3, 0.86), floor(18.3, 25), plat(-1, 5.3, 5.5, { h: 0.6 }), block(11, 4.5, 2.3, 0.5),
+      wall(13.3, 1, 0.5, 7.2), block(13.3, 8.2, 7.1, 0.6), wall(13.5, 8.8, 0.6, 4.7), wall(20.4, 4.6, 0.6, 4.9), bramp([[24, 10.1], [24, 13.5], [20.6, 13.5]])],
+    teleporters: [{ a: { x: 12.15, y: 1.9 }, b: { x: 15.4, y: 3.5 }, r: 0.75 }],
+    switches: [{ x: 17.1, y: 0.86, w: 1.2, target: 'gate' }],
+    doors: [{ id: 'gate', x: 20.4, y: 1, w: 0.6, h: 3.6, open: { dx: 0, dy: -3.7 }, duration: 0.3 }],
+    fans: [{ x: 21.1, y: 1, w: 2.8, h: 12.2, strength: 198 }],
   },
 ];

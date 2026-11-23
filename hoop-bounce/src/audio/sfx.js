@@ -575,6 +575,48 @@ export class Sfx {
     this._at(null);
   }
 
+  /** Mode Trickshot (laboratoire) : décharge électrique d'un bumper. */
+  labZap(x = null) {
+    if (!this.ready || !this._throttle('labZap', 0.06)) return;
+    this._at(x, 0.25);
+    this._tone(1900, 320, 0.09, 0.12, 'sawtooth');
+    this._tone(2600, 900, 0.06, 0.05, 'square', 0.01);
+    this._noiseBurst(0.07, 0.12, 'highpass', 4500, 0.9);
+    this._at(null);
+  }
+
+  /** Mode Trickshot : pleine puissance atteinte pendant la visée (petite charge électrique qui monte). */
+  labCharge() {
+    if (!this.ready || !this._throttle('labCharge', 0.3)) return;
+    this._tone(PENTA[8], PENTA[13], 0.14, 0.05, 'triangle');
+    this._tone(PENTA[13], PENTA[13], 0.12, 0.03, 'sine', 0.12);
+  }
+
+  /** Mode Trickshot : le ballon arrive vers le panier sur un beau tir (aspiration qui monte, suspense). */
+  labTrick(level = 1) {
+    if (!this.ready) return;
+    this._s = 0.35;
+    this._swell(0.55, 0.05 + 0.04 * level, 'bandpass', 300, 3800, 1.1);
+    this._tone(PENTA[3], PENTA[10], 0.5, 0.035 * level, 'sine', 0.02);
+    this._at(null);
+  }
+
+  /** Mode Trickshot : panier dans le laboratoire (accord de synthé, sous-basse, filet). spectacular : plus ample. */
+  labGoal(spectacular = false) {
+    if (!this.ready) return;
+    this._s = spectacular ? 0.5 : 0.35;
+    this.net(spectacular ? 1.3 : 1);
+    this._tone(110, 40, 0.5, 0.45, 'sine', 0.01);
+    const arp = spectacular ? [5, 8, 10, 12, 13, 14] : [5, 8, 10, 12];
+    arp.forEach((n, i) => this._tone(PENTA[n], PENTA[n] * 1.002, 0.35, 0.07, 'sawtooth', 0.04 + i * 0.06));
+    this._tone(PENTA[12], PENTA[12], 1.2, 0.05, 'triangle', 0.3);
+    if (spectacular) {
+      this._swell(0.9, 0.08, 'bandpass', 600, 6000, 0.8, 0.05);
+      for (let i = 0; i < 8; i++) this._tone(PENTA[10 + (i % 5)] * 2, PENTA[10 + (i % 5)] * 2, 0.25, 0.02, 'sine', 0.45 + i * 0.06);
+    }
+    this._at(null);
+  }
+
   /** Dribble en l'air : le ballon est renvoyé vers le sol (souffle descendant bref). */
   slam(x = null) {
     if (!this.ready || !this._throttle('slam', 0.05)) return;

@@ -8,7 +8,7 @@
 import { clamp } from '../core/math.js';
 import { TRICKSHOT } from './config.js';
 
-/** Geste → tir. dx, dy : tirage (doigt − ballon), en unités du monde. */
+/** Geste → tir. dx, dy : tirage en unités de référence (TRICKSHOT.maxDrag = pleine puissance). */
 export function aimFromDrag(dx, dy) {
   const len = Math.hypot(dx, dy);
   const power = clamp(len / TRICKSHOT.maxDrag, 0, 1);
@@ -38,7 +38,7 @@ function inPoly(x, y, pts) {
  * @param {{maxTime?:number, step?:number, gravitySign?:number}} [o]
  * @returns {{x:number,y:number}[]}
  */
-export function trajectory(level, from, angle, power, { maxTime = 0.75, step = 1 / 30, gravitySign = 1 } = {}) {
+export function trajectory(level, from, angle, power, { maxTime = 0.75, step = 1 / 30, gravitySign = 1, maxLength = Infinity } = {}) {
   const v = TRICKSHOT.maxSpeed * power * Math.sqrt(level.gravityScale ?? 1);
   const vx = Math.cos(angle) * v;
   const vy = Math.sin(angle) * v;
@@ -47,9 +47,16 @@ export function trajectory(level, from, angle, power, { maxTime = 0.75, step = 1
   const boxes = level.solids.filter((s) => s.box);
   const polys = level.solids.filter((s) => !s.box && s.points);
   const B = level.bounds;
+  let len = 0;
+  let px = from.x;
+  let py = from.y;
   for (let t = step; t <= maxTime + 1e-9; t += step) {
     const x = from.x + vx * t;
     const y = from.y + vy * t - 0.5 * g * t * t;
+    len += Math.hypot(x - px, y - py);
+    px = x;
+    py = y;
+    if (len > maxLength) break;
     if (x < B.minX - 1 || x > B.maxX + 1 || y < B.minY - 1) break;
     if (boxes.some((b) => inside(x, y, b))) break;
     if (polys.some((p) => inside(x, y, p) && inPoly(x, y, p.points))) break;

@@ -3,10 +3,10 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 21/11/2026 · **Version :** 1.1.0-dev (nouveau mode TRICKSHOT, non publié ; la
-> version publiable reste 1.0.0, build 1) · **Version de test Android :** `HoopBounce_Test_v1.apk` (1.0.0-test1)
-> → **`HoopBounce_Test_v2.apk` (1.1.0-test2, mise à jour avec TRICKSHOT)** · **iOS :** projet Xcode prêt (`ios/`)
-> · **Étape en cours :** validation du mode **TRICKSHOT** (étape 22) par le porteur du projet ; rien n'est publié.
+> **Dernière mise à jour :** 23/11/2026 · **Version :** 1.2.0-dev (mode TRICKSHOT refondu « laboratoire », non
+> publié ; la version publiable reste 1.0.0, build 1) · **Version de test Android :** **`HoopBounce_Test_v3.apk`
+> (1.2.0-test3, mise à jour des v1 et v2)** · **iOS :** projet Xcode prêt (`ios/`) · **Étape en cours :** validation
+> du mode TRICKSHOT refondu (étape 23) par le porteur du projet ; rien n'est publié.
 
 ## Sommaire
 
@@ -14,7 +14,7 @@
 2. [Gameplay](#2-gameplay)
 3. [Architecture](#3-architecture)
 4. [Interface](#4-interface)
-4 bis. [Mode TRICKSHOT](#4-bis-mode-trickshot-étape-22)
+4 bis. [Mode TRICKSHOT](#4-bis-mode-trickshot-étapes-22-et-23)
 5. [Progression](#5-progression)
 5 bis. [Publication Google Play](#5-bis-publication-google-play-version-100)
 5 ter. [Version iPhone (iOS)](#5-ter-version-iphone-ios)
@@ -460,7 +460,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tests/routes.test.mjs` | Chaque passage de chaque niveau reste faisable (solutions enregistrées + solutions expertes). |
 | `tests/fixtures/test-yard.js` | Terrain d'essai pour les tests de mécanique (indépendant des niveaux). |
 | `tests/fixtures/routes.json` | Solutions enregistrées des passages (générées par l'outil). |
-| `tests/trickshot.test.mjs` | Mode TRICKSHOT : 50 niveaux (textes, chapitres, montée de la difficulté), **chaque niveau gagné en un seul tir** (solution rejouée), difficulté annoncée = mesure à une classe près, 3 essais, étoiles et score, décor conservé entre deux essais, visée, progression séparée, mode principal intact. |
+| `tests/trickshot.test.mjs` | Mode TRICKSHOT : 20 cartes (textes, chapitres, montée de la difficulté, cartes variées), **chaque carte gagnée en un seul tir** (solution rejouée), **chaque mécanique indispensable** (solution rejouée sans elle), difficulté annoncée = mesure à une classe près, 3 essais, étoiles et score, décor conservé, visée et **pointillés limités**, progression séparée et **migration v1 → v2**, mode principal intact. |
 | `tests/fixtures/trickshot.json` | Une solution en un tir par niveau TRICKSHOT (angle, puissance, instant) et la part de tirs gagnants mesurée. |
 | `tools/trickshot-check.mjs` | Solveur du mode TRICKSHOT : essaie des milliers de tirs par niveau (angles × puissances × instants, 4 processus), mesure la part de tirs gagnants → difficulté, cherche finement autour des tirs les plus proches ; `--quick`, `--save`, `N` ou `N-M`. |
 | `tools/trickshot-atlas.html` | Atlas des cartes TRICKSHOT (`?from=1&to=25`) avec le trajet de la solution enregistrée, pour relire les niveaux d'un coup d'œil. |
@@ -748,7 +748,7 @@ a deux colonnes, qui restent côte à côte sur téléphone en paysage.
 
 Page **« Modes de jeu »** (tuile *Modes* de l'accueil, `index.html#modes`). **En tête, la carte jouable du mode
 TRICKSHOT** (étape 22, badge « Nouveau », pastille ▶ Jouer avec les niveaux terminés et les étoiles) qui ouvre
-l'accueil du mode (voir la section [4 bis](#4-bis-mode-trickshot-étape-22)). Ensuite, les trois futurs modes
+l'accueil du mode (voir la section [4 bis](#4-bis-mode-trickshot-étapes-22-et-23)). Ensuite, les trois futurs modes
 **présentés** seulement ; **aucun n'est développé** ni jouable. Code : `modesPage()` dans `src/menu/pages.js`, styles `.fmode*` et `.m-*`
 dans `css/menu.css`, textes `mode.<id>` et `mode.<id>.desc` dans `src/menu/i18n.js` (FR / EN / ES).
 
@@ -980,134 +980,134 @@ changé** (voir « Physique » plus bas).
   là où l'ombre devient trop pâle pour viser.
 - **Réponse des commandes** : chaque appui a une réaction immédiate (onde sur le bouton, vibration, son).
 
-## 4 bis. Mode TRICKSHOT (étape 22)
+## 4 bis. Mode TRICKSHOT (étapes 22 et 23)
 
 > **« Un tir. Un rebond. Un panier impossible. »** Un deuxième jeu à l'intérieur du jeu : un mode **totalement
-> indépendant** du mode principal (sa progression, ses 50 cartes, son arène, sa musique), qui **ne modifie rien**
+> indépendant** du mode principal (sa progression, ses cartes, son décor, sa musique), qui **ne modifie rien**
 > du mode principal (même moteur, mêmes réglages : `TS_CONFIG` en dérive sans le toucher, test à l'appui).
-> Première version terminée le 21/11/2026, **en attente de validation** avant toute nouvelle mécanique.
+> Étape 22 : première version (50 cartes). **Étape 23 : refonte complète** — nouvelle visée, identité
+> « laboratoire de trickshots », **20 cartes** entièrement nouvelles et beaucoup plus travaillées (moins de
+> cartes, mais chacune est un vrai casse-tête). En attente de validation.
+
+### La visée (étape 23)
+
+- Le joueur **touche le ballon** (zone généreuse : 90 px ou 1,6 u), puis **continue son geste n'importe où sur
+  l'écran** : au milieu, en haut, en bas, sur les côtés. Le ballon reste sélectionné jusqu'au relâchement ; le
+  doigt ne cache plus le ballon et la place ne manque jamais, même si le ballon est en bas de l'écran.
+- **Direction opposée au geste = angle ; longueur du geste = puissance.** La longueur se mesure **à l'écran**
+  (pleine puissance à 36 % de la plus petite dimension de l'écran, `TRICKSHOT.pullScreen`), pas en distance au
+  ballon. Au-delà, la puissance reste au maximum (vitesse maximale 30 u/s inchangée).
+- Repère du geste là où est le doigt : cercle de pleine puissance en pointillés, trait du geste, jauge de
+  puissance (blanc → orange → rouge), petite charge sonore à 100 %. Toucher ailleurs que sur le ballon affiche
+  « Touche le ballon, puis tire vers l'arrière n'importe où sur l'écran ».
+- **L'aide reste une aide** : les pointillés montrent seulement le **début de l'arc** (5,2 u d'arc au plus,
+  `TRICKSHOT.previewLength`, quel que soit le tir), s'arrêtent au premier obstacle et **ne prévoient jamais les
+  rebonds** ni les mécanismes. On ne peut donc jamais « poser » la trajectoire dans le panier : il faut doser
+  l'angle, la puissance et les rebonds.
 
 ### Le principe
 
-- Le ballon est posé sur un **pas de tir**. Le joueur **pose le doigt sur le ballon, tire vers l'arrière** (lance-
-  pierre) : la direction choisit l'**angle**, la longueur choisit la **puissance** (élastique et jauge de
-  couleur), une **trajectoire en pointillés** montre le début de l'arc (elle s'arrête au premier obstacle et ne
-  dévoile jamais les rebonds : simple à comprendre, difficile à maîtriser). On relâche : le ballon part.
-- **3 essais au plus.** Entre deux essais le ballon revient au pas de tir, **le décor reste tel quel** (une caisse
-  cassée, une porte ouverte, un pont tombé le restent : on peut préparer le terrain puis marquer).
+- **3 essais au plus.** Entre deux essais le ballon revient au pas de tir, **le décor reste tel quel** (caisse
+  cassée, porte ouverte, pont tombé, ventilateur allumé restent : on peut préparer le terrain puis marquer).
 - **Étoiles** : ★★★ au premier essai, ★★ au deuxième, ★ au troisième. Après 3 essais ratés : écran « Raté ! ».
-- **Score** = étoiles × 1 000 + style : rebonds (+100 chacun, 8 au plus), **swish** sans toucher le cercle (+500),
-  planche (+250), portails (+200), propulsions (+100). Meilleur score gardé par niveau.
-- Le tir se termine quand le ballon s'arrête, sort de l'arène, touche un piège mortel ou dure plus de 12 s.
-- Clavier (ordinateur) : flèches pour viser, Espace pour tirer, R pour recommencer, Échap pour la pause.
+- **Score** = étoiles × 1 000 + style : rebonds (+100, 8 au plus), **swish** (+500), planche (+250), portails
+  (+200), propulsions (+100), **combo** (+150 par mécanisme déclenché pendant le tir gagnant : bouton, caisse).
+- Le tir se termine quand le ballon s'arrête, **tombe dans le vide du bas de la salle**, sort, touche un piège
+  ou dure plus de 12 s. Clavier (ordinateur) : flèches, Espace, R, Échap.
+
+### Le laboratoire (identité visuelle, étape 23)
+
+Un décor qui n'a rien à voir avec le mode principal : **un laboratoire de trickshots futuriste**.
+- **Fond** (précalculé, peu contrasté pour ne pas gêner la lecture) : mur de panneaux de métal rivetés avec
+  grilles d'aération, tuyaux horizontaux et verticaux à brides, câbles qui pendent, bande de danger, rampe de
+  néon dans la couleur du chapitre, lampes de plafond et leurs cônes de lumière, plaque « TEST 07 ». Animés :
+  **grand engrenage** qui tourne, **écrans de contrôle** (courbes), **gyrophares**. La disposition change à
+  chaque carte (aucune salle identique).
+- **Premier plan** (net et lumineux : tout ce qui sert au jeu se lit d'un coup d'œil) : plateformes d'acier
+  brossé avec **liseré lumineux** sur la face de rebond et bandes de danger aux extrémités, plateformes
+  **suspendues par des câbles**, murs techniques, **murs inclinés** à arête néon, **cages de verre** blindé,
+  **ascenseurs** jaunes et noirs sur rails, volets d'acier à **voyant rouge / vert**, caisses orange « fragiles »,
+  bumpers roses. En bas : **pas de sol continu**, un **vide** (champ d'énergie rose) où le ballon est perdu.
+- **Panier néon** : cercle orange lumineux, planche de verre au cadre néon, panier posé sur un poteau, fixé au
+  mur ou **suspendu** au plafond ; le **filet s'illumine** au moment du panier.
 
 ### Les écrans
 
-1. **Carte du mode** dans « Modes de jeu » (illustration : arène néon, lance-pierre, trajectoire en pointillés,
-   panier) → **accueil du mode** (`index.html#trickshot`) : illustration, description courte, niveaux terminés,
-   étoiles, pourcentage de progression, les 5 chapitres avec leur avancement, bouton **Jouer** (« Continuer :
-   niveau N »).
-2. **Sélection des niveaux** (`index.html#trickshot-niveaux`) : légende des difficultés, 50 tuiles groupées par
-   chapitre ; chacune affiche le **numéro**, les **étoiles**, le **meilleur score**, la **difficulté** (pastille
-   de couleur en haut à gauche) et un **cadenas** si le niveau est verrouillé. Déblocage **séquentiel** (finir un
-   niveau ouvre le suivant) ; la tuile du prochain niveau pulse ; une tuile verrouillée tremble et explique quoi
-   faire. Entrée en cascade, survol, transitions du menu.
-3. **Écran de jeu** (`trickshot.html?level=N`) : l'arène entière à l'écran (cadrage fixe). HUD minimal :
-   **difficulté** en haut à gauche (🟢 Facile, 🟠 Difficile, 🔴 Très difficile, ⚫ Impossible) avec le numéro et
-   le nom du niveau, **essais restants** (3 ballons) au centre, **recommencer** et **pause** à droite. Carte
-   d'introduction (numéro, nom, badge « Nouveau ! » pour une mécanique découverte, indice), petits messages.
-4. **Victoire** : titre « TRICKSHOT ! » doré au premier essai, étoiles qui tombent une à une, score qui défile,
-   bonus de style, « Nouveau record ! », « Niveau N débloqué », Niveau suivant / Rejouer / Niveaux. Sur écran bas
-   (téléphone en paysage) la carte passe sur deux colonnes : tout tient sans défiler.
-5. **Échec** et **pause** : Réessayer, Niveaux, Menu (pause : Reprendre, Recommencer, Niveaux).
+1. **Carte du mode** dans « Modes de jeu » → **accueil du mode** (`index.html#trickshot`) : illustration,
+   description, cartes terminées, étoiles, pourcentage, les 5 chapitres et leur avancement, **Jouer**.
+2. **Sélection des cartes** (`index.html#trickshot-niveaux`) : légende des difficultés, les 5 chapitres côte à
+   côte (4 cartes chacun) ; chaque tuile : **numéro, étoiles, meilleur score, difficulté** (pastille), **cadenas**
+   si verrouillée. Déblocage **séquentiel** ; la prochaine carte pulse ; une tuile verrouillée tremble.
+3. **Écran de jeu** (`trickshot.html?level=N`) : la salle entière à l'écran. HUD minimal : **difficulté** en
+   haut à gauche (🟢 Facile, 🟠 Difficile, 🔴 Très difficile, ⚫ Impossible), **essais restants** au centre,
+   **recommencer** et **pause** à droite. Carte d'introduction (nom, nouveauté, indice).
+4. **Victoire** (étoiles, score qui défile, bonus, record, carte débloquée ; deux colonnes sur écran bas),
+   **échec** et **pause**.
 
-### Les sensations
+### Les sensations (polish de l'étape 23)
 
-- **Près du panier** (ballon qui arrive vers le cercle en descendant) : **léger ralenti** (×0,4) et **zoom de la
-  caméra** (×1,28) qui se relâchent ensuite ; si le ballon rate, tout revient en douceur.
-- **Panier** : filet animé, gerbe de particules, flash, onde, jingle, **confettis** ; au premier essai, foule qui
-  applaudit et confettis plein écran. Bumpers qui s'illuminent au contact, caisse qui éclate en morceaux, voyants
-  des boutons, vibrations courtes.
-- Son : **lancer** (whoosh selon la puissance, stéréo selon la position), musique propre au mode (« arène », 96
-  bpm, piano électrique), ambiance de salle, réverbération de l'arène, sons du jeu principal pour les surfaces.
-- Arène : grille de plan, projecteurs, grand numéro du niveau en fond, poussières lumineuses, blocs sombres aux
-  arêtes **néon dans la couleur du chapitre**, bumpers roses de flipper, glace, roche, lave.
+- **Ralenti et zoom avant le panier, proportionnés au tir** : le jeu mesure le « spectacle » du tir en cours
+  (rebonds + 2 × portails, boutons, caisses + propulsions). Tir direct : ralenti léger (×0,6) et petit zoom
+  (×1,12). Beau tir : ×0,4 et zoom ×1,3. **Trickshot spectaculaire** (3 ou plus) : ralenti marqué (×0,22),
+  **zoom ×1,5**, légère secousse et son d'aspiration qui monte.
+- **Panier** : filet qui s'illumine, onde de choc à la couleur du chapitre, étincelles électriques, rayons
+  (trickshot), confettis, « TRICKSHOT ! » (sous le panier s'il est près du plafond), cadrage qui ne sort jamais
+  de la salle. Son de laboratoire : accord de synthé, sous-basse, filet (plus ample pour un trickshot), foule
+  au premier essai.
+- **Bumpers** : éclat et **décharge électrique** sonore. Caisse qui éclate, voyants des portes, vibrations.
 
 ### Les difficultés
 
-Chaque carte est vérifiée par le **solveur** (`tools/trickshot-check.mjs`) : il essaie des milliers de tirs
-(angles de −30° à 210°, puissances de 0,15 à 1, plusieurs instants de tir quand des éléments bougent) et mesure
-la **part des tirs qui marquent**. Classes : 🟢 Facile ≥ 0,8 % (un tir direct sans obstacle ≈ 1,5 %), 🟠 Difficile
-≥ 0,3 %, 🔴 Très difficile ≥ 0,08 %, ⚫ Impossible en dessous (il faut trouver *le* tir — mais il existe toujours).
-La difficulté affichée est celle mesurée (à une classe près, vérifié par les tests). **Tous les niveaux ont une
-solution en un seul tir** (3 étoiles possibles), enregistrée et rejouée par les tests.
+Chaque carte est vérifiée par le **solveur** (`tools/trickshot-check.mjs`) : il essaie des milliers de tirs et
+mesure la **part des tirs qui marquent**. 🟢 Facile ≥ 0,8 % · 🟠 Difficile ≥ 0,3 % · 🔴 Très difficile ≥ 0,08 % ·
+⚫ Impossible en dessous. La difficulté affichée est celle mesurée (à une classe près, vérifié par les tests).
+**Toutes les cartes ont une solution en un seul tir** (3 étoiles possibles), enregistrée et rejouée par les tests,
+et **chaque mécanique est indispensable** : un test rejoue la solution sans le trampoline, le ventilateur,
+l'ascenseur, le bouton, les portails, la caisse ou les bumpers, et vérifie qu'elle ne marque plus.
+Pendant la conception, une **recherche automatique de réglages** (positions, forces) qui rejette toute variante
+où la carte se gagne sans sa mécanique a servi à régler les cartes à mécanismes enchaînés.
 
-### Les 5 chapitres et les 50 cartes
+### Les 5 chapitres et les 20 cartes
 
-| Chapitre | Niveaux | Couleur | Ce qu'on y apprend |
+| Chapitre | Cartes | Couleur | Idée |
 |---|---|---|---|
-| 1 · Les bases | 1–10 | cyan | tir, murs, rebonds au sol, bande sur un mur, tir en cloche, angles |
-| 2 · Les machines | 11–20 | orange | trampolines, ventilateurs, plateformes mobiles, boutons, trappe, pont-levis |
-| 3 · Danger | 21–30 | rose | portails, lasers, sol fragile, scies, pics, plateformes clignotantes, caisse, passage secret |
-| 4 · Le laboratoire | 31–40 | violet | gravité réduite, gravité inversée, glace, lave, aimants, boules de feu, boules de neige |
-| 5 · Le maître | 41–50 | or | tout mélangé : réactions en chaîne, bumpers, flipper, vrais casse-têtes |
+| 1 · Calibration | 1–4 | cyan | le tir, le rebond, la bande, le tunnel (plusieurs rebonds) |
+| 2 · Les machines | 5–8 | orange | trampoline, colonne d'air, deux machines enchaînées, ascenseur (le bon moment) |
+| 3 · Les circuits | 9–12 | vert | caisse-couvercle, pont qui tombe, porte à bouton, ventilateur à allumer |
+| 4 · Les portails | 13–16 | violet | portail (sortir d'une cage), deux portails et trois salles, laser + portail, portail + bande |
+| 5 · Les trickshots | 17–20 | or | réaction en chaîne, zigzag de bumpers, flipper, **le grand trickshot** |
 
-Aucune carte n'est reprise du mode principal ; chacune tient sur un écran (24 × 13,5 u) et repose sur **une
-idée**. Éléments **interactifs, jamais décoratifs** : casser une caisse, activer un bouton, ouvrir une porte ou un
-passage secret, faire tomber un pont, ouvrir la trappe d'un trampoline, allumer un ventilateur.
+**Le grand trickshot (carte 20)** : rebond au sol → entrée dans le tunnel → **portail** → atterrissage sur le
+**bouton** (encastré dans le sol) → la **porte** du puits s'ouvre → le **ventilateur** propulse le ballon tout en
+haut → **rebond sur une rampe-bumper** → chute dans le **panier suspendu**, dans une chambre fermée accessible
+seulement par le haut du puits. Sans un seul de ces éléments, aucun tir ne marque.
 
-| N° | Nom | Difficulté | Nouveauté | Éléments |
+| N° | Carte | Difficulté | Idée (indice affiché) | Éléments |
 |---|---|---|---|---|
-| 1 | Premier tir | 🟢 | Le tir |  |
-| 2 | Le mur | 🟢 | Les murs |  |
-| 3 | Sous la dalle | 🟠 | — |  |
-| 4 | Ricochet | 🟢 | Les rebonds |  |
-| 5 | La bande | 🟠 | La bande |  |
-| 6 | Le puits | 🟠 | — |  |
-| 7 | L’escalier | 🟢 | — |  |
-| 8 | La lucarne | 🟠 | — |  |
-| 9 | Angle mort | 🟠 | Le tir en cloche |  |
-| 10 | L’examen | 🟠 | — |  |
-| 11 | Trampoline | 🟢 | Trampoline | trampolines |
-| 12 | Le souffle | 🟢 | Ventilateur | fans |
-| 13 | La herse | 🔴 | Plateforme mobile | movers |
-| 14 | Double saut | 🟢 | — | trampolines |
-| 15 | L’interrupteur | 🟢 | Bouton | fans, switches |
-| 16 | La trappe | 🟠 | Trappe | trampolines, switches, doors |
-| 17 | L’ascenseur | 🔴 | — | movers |
-| 18 | Couloir d’air | 🔴 | — | fans |
-| 19 | Le pont-levis | 🔴 | Pont-levis | switches, doors |
-| 20 | La machine | 🔴 | — | trampolines, fans, movers |
-| 21 | Le portail | 🟠 | Portail | teleporters |
-| 22 | Rideau laser | 🟢 | Laser | lasers |
-| 23 | Sol fragile | 🟠 | Sol fragile | crumbles |
-| 24 | La scie | 🟠 | Scie | saws |
-| 25 | De l’autre côté | 🟢 | — | teleporters |
-| 26 | Clignotants | 🟠 | Plateforme clignotante | blinkers |
-| 27 | La caisse | 🟠 | Caisse cassable | breakables |
-| 28 | Passage secret | 🔴 | Passage secret | switches, doors |
-| 29 | Portail et laser | 🟠 | — | teleporters, lasers |
-| 30 | Couloir des scies | 🔴 | — | saws |
-| 31 | La Lune | 🟢 | Gravité réduite | gravité 0.42 |
-| 32 | Tête en bas | 🟠 | Gravité inversée | gravityZones |
-| 33 | La patinoire | 🔴 | Glace | glace |
-| 34 | Rivière de lave | 🟠 | Lave | lava |
-| 35 | L’aimant | 🔴 | Aimant | magnets |
-| 36 | Boules de feu | 🟠 | Boules de feu | cannons |
-| 37 | Boules de neige | ⚫ | Boules de neige | boulders |
-| 38 | Glace et aimant | 🔴 | — | magnets, glace |
-| 39 | Apesanteur | 🔴 | — | teleporters, gravityZones, gravité 0.3 |
-| 40 | Le laboratoire | 🟠 | — | lava, gravityZones, magnets |
-| 41 | Réaction en chaîne | 🔴 | — | trampolines, fans, switches |
-| 42 | Le coffre | ⚫ | — | teleporters, breakables |
-| 43 | Zigzag | 🔴 | Bumper | bumpers |
-| 44 | Tempête | ⚫ | — | fans, lasers |
-| 45 | Le flipper | 🟠 | — | bumpers |
-| 46 | Le miroir | 🔴 | — | lava, gravityZones |
-| 47 | L’horloge | ⚫ | — | movers |
-| 48 | Aimants jumeaux | 🔴 | — | magnets |
-| 49 | Le grand vide | 🟠 | — | teleporters, saws, gravité 0.4 |
-| 50 | Trickshot ultime | ⚫ | — | trampolines, fans, switches, doors, lasers |
+| 1 | Premier tir | 🟢 | Touche le ballon, puis tire vers l’arrière n’importe où sur l’écran. Relâche ! | rebonds |
+| 2 | Rebond | 🟢 | Le panier est sous une dalle : fais rebondir le ballon sur la plaque du milieu. | suspendu |
+| 3 | La bande | 🟢 | Le panier tourne le dos : renvoie le ballon contre le mur de gauche. | rebonds |
+| 4 | Le tunnel | 🟠 | Le seul passage est un tunnel bas : enchaîne les rebonds. | suspendu |
+| 5 | Trampoline | 🟢 | Tu es dans une cage basse : le trampoline te fera passer le mur. | trampoline, cage de verre, suspendu |
+| 6 | Colonne d’air | 🟢 | Le plafond est bas : seul le souffle du ventilateur monte jusqu’au panier. | ventilateur |
+| 7 | La machine | 🟢 | Trampoline, puis ventilateur : deux machines, un seul tir. | trampoline, ventilateur, suspendu |
+| 8 | L’ascenseur | 🟠 | Attends le bon moment : l’ascenseur renvoie le ballon vers le panier. | ascenseur |
+| 9 | Le couvercle | 🟢 | Le panier est dans une fosse fermée par une caisse : arrive assez vite pour la briser. | caisse |
+| 10 | Le pont | 🟢 | Passe sur le bouton : le pont descend dans le tunnel, au-dessus du vide. | bouton, porte/pont/trappe |
+| 11 | La porte | 🟠 | Touche le bouton : le volet s’ouvre… pendant que le ballon roule encore. | bouton, porte/pont/trappe |
+| 12 | Le souffleur | 🔴 | Le ventilateur est éteint : un bouton l’allume. | ventilateur, bouton, suspendu |
+| 13 | Le portail | 🟢 | Tu es enfermé : le portail est la seule sortie. On en ressort à la même vitesse. | portails, cage de verre |
+| 14 | Double portail | 🟠 | Trois salles fermées : le premier portail mène à droite, le second jusqu’au panier. | portails, cage de verre |
+| 15 | Rideau laser | 🟠 | Le laser garde l’entrée du portail : attends qu’il s’éteigne. | portails, laser, suspendu |
+| 16 | Portail et bande | 🟠 | À la sortie du portail, il faudra encore rebondir sur le mur. | portails |
+| 17 | Réaction en chaîne | 🟠 | Bande sur le mur, bouton, trappe, trampoline, fenêtre : tout s’enchaîne. | trampoline, bouton, porte/pont/trappe |
+| 18 | Zigzag | 🔴 | Les bumpers rendent toute l’énergie : va à droite, puis redescends à gauche. | bumpers |
+| 19 | Le flipper | 🟠 | Les rampes-bumpers font faire le tour de la salle au ballon. | bumpers |
+| 20 | Le grand trickshot | 🔴 | Rebond, portail, bouton, porte, ventilateur, bumper… panier. | ventilateur, bouton, porte/pont/trappe, portails, bumpers, suspendu |
+
+**Sauvegarde** : les cartes de l'étape 22 n'existent plus ; la progression Trickshot passe au format v2. Avoir
+réussi N anciennes cartes ouvre d'office les N+1 premières nouvelles ; l'ancienne sauvegarde est gardée telle
+quelle (`legacy`). Le mode principal, les pièces, les skins et les récompenses ne sont pas touchés.
 
 ### Le code (`src/trickshot/`)
 
@@ -1115,10 +1115,11 @@ passage secret, faire tomber un pont, ouvrir la trappe d'un trampoline, allumer 
 |---|---|
 | `config.js` | `TS_CONFIG` (dérivé de `CONFIG` sans le modifier : matériaux `bumper` et `felt`, frein au sol, délai de mort), `TRICKSHOT` (3 essais, vitesse max 30 u/s, tirage max 3,2 u, fin de tir), difficultés, chapitres. |
 | `game.js` | `TrickshotGame` (hérite de `Game`) : états visée → vol → fin de tir → victoire ou échec, `launch(angle, puissance)`, décor conservé entre les essais, caisses cassables (`breakables`), ventilateurs allumés par un bouton (`fans[].target`), gravité du niveau (`gravityScale` : la vitesse de lancement suit sa racine, même portée, vol flottant), score et bonus. `simulateShot()` pour le solveur et les tests. |
-| `levels.js` | Les 50 cartes (données + aides `tee`, `frame`, `wall`, `bumper`, `bramp` pour les rampes-bumpers, `hoop`…). |
-| `aim.js` | Geste → tir (`aimFromDrag`), trajectoire prévue (`trajectory`, arrêtée au premier bloc ou rampe). |
-| `render.js` | `ArenaRenderer` (hérite du rendu du jeu) : fond d'arène, blocs néon, bumpers (et rampes), caisses, pas de tir, élastique et pointillés de la visée ; boules de feu et de neige dessinées avec les thèmes Volcan et Neige. |
-| `progress.js` | Progression séparée (clé `hoopbounce.trickshot` : étoiles, meilleur score, parties par niveau), déblocage séquentiel, résumé. |
+| `kit.js` | Boîte à outils des cartes : salle sans sol (`frame`), sols partiels (`floor`), plateformes posées ou **suspendues** (`plat`, `hang`), murs, verre (`glass`), murs inclinés (`slope`), bumpers et rampes-bumpers, paniers posés / au mur / **suspendus** (`hoopPole`, `hoopWall`, `hoopHang`). |
+| `levels.js` | Les 20 cartes du laboratoire. |
+| `aim.js` | Geste → tir (`aimFromDrag`), trajectoire prévue (`trajectory` : longueur d'arc limitée `maxLength`, arrêtée au premier bloc ou rampe). |
+| `render.js` | `ArenaRenderer` (hérite du rendu du jeu) : **laboratoire** (fond précalculé de panneaux rivetés, tuyaux, câbles, lampes, néon ; engrenage, écrans et gyrophares animés ; vide du bas), acier à liseré lumineux, verre, murs inclinés, câbles des plateformes et paniers suspendus, volets à voyant, ascenseurs, caisses, panier néon à planche de verre et filet qui s'illumine, pas de tir, élastique, pointillés et repère du geste. |
+| `progress.js` | Progression séparée (clé `hoopbounce.trickshot`, format v2 : étoiles, meilleur score, parties par carte ; migration de la v1), déblocage séquentiel, résumé. |
 | `i18n.js` | Textes du mode en français, anglais, espagnol (difficultés, chapitres, mécaniques, écrans). |
 | `main.js` | Écran de jeu : caméra, visée tactile et clavier, HUD, effets (ralenti, zoom, confettis, foule), sons, écrans de victoire / échec / pause, enchaînement des niveaux. |
 
@@ -1559,9 +1560,15 @@ porte-monnaie.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v2.apk` (≈ 0,5 Mo, **1.1.0-test2**, mode TRICKSHOT inclus) — une
-**mise à jour** de `HoopBounce_Test_v1.apk` (même identifiant, même clé, versionCode 2 > 1) : elle s'installe
-par-dessus et garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
+**Fichier actuel :** `dist/HoopBounce_Test_v3.apk` (≈ 0,5 Mo, **1.2.0-test3**, TRICKSHOT refondu) — une
+**mise à jour** des v1 et v2 (même identifiant, même clé, versionCode 3 > 2 > 1) : elle s'installe par-dessus et
+garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
+
+**Mise à jour v3 (étape 23) — vérifié :** identifiant inchangé, clé identique (empreinte contrôlée par le script),
+versionCode 3, versionName 1.2.0-test3, signature valide. Simulation v2 → v3 (fichiers extraits des deux APK,
+même adresse et même stockage, sans cache comme dans l'application) : pièces, skin possédé et équipé,
+progression du mode principal, missions et récompenses relus à l'identique ; seule la sauvegarde Trickshot
+change (migration v2 : 2 cartes réussies → 3 cartes ouvertes, ancienne sauvegarde gardée) ; 0 erreur.
 
 **Mise à jour v2 (étape 22) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé ; signature avec la
 même clé (empreinte SHA-256 `894f0b7d…35bfd8` contrôlée par le script de construction, qui refuse toute autre clé) ;
@@ -1575,7 +1582,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (code 1) · **v2 : `1.1.0-test2` (code 2)** ; « 1.1.0 (test 2) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (code 1) · v2 : `1.1.0-test2` (code 2) · **v3 : `1.2.0-test3` (code 3)** ; « 1.2.0 (test 3) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -1607,7 +1614,7 @@ des 5 mondes jouable (55-60 images/s), sauvegarde (pièces, skin équipé, progr
 **Non vérifiable ici** : l'installation et l'exécution sur un vrai téléphone (pas d'appareil ni d'émulateur
 Android dans l'environnement de développement) → premier essai à faire par le porteur du projet.
 
-**Mettre à jour les testeurs** : `node tools/build-test-apk.mjs --build 3` → `HoopBounce_Test_v3.apk`, signée
+**Mettre à jour les testeurs** : `node tools/build-test-apk.mjs --build 4` → `HoopBounce_Test_v4.apk`, signée
 avec **la même clé de test** (sinon il faut désinstaller, ce qui efface la progression de test). Le script refuse
 de construire sans la clé d'origine, avec une autre clé, un autre identifiant ou un versionCode qui n'augmente pas.
 
@@ -1803,7 +1810,11 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Page « Modes à venir » : 3 cartes de présentation illustrées et animées, verrouillées (étape 19)
 - ✅ **TRICKSHOT** (étape 22) : mode indépendant, lance-pierre, 3 essais, étoiles, score de style, 50 cartes en
   5 chapitres, 4 difficultés mesurées par un solveur, accueil du mode et sélection des 50 niveaux, arène néon,
-  ralenti et zoom près du panier, musique propre ; 🟡 validation par le porteur du projet
+  ralenti et zoom près du panier, musique propre
+- ✅ **TRICKSHOT refondu** (étape 23) : visée n'importe où sur l'écran après avoir touché le ballon, pointillés
+  limités au début de l'arc, identité « laboratoire » (métal, néons, machines), **20 cartes** nouvelles (plateformes
+  suspendues, tunnels, cages, puits, paniers suspendus ou cachés, chaînes de mécanismes), chaque mécanique
+  indispensable, ralenti et zoom selon le spectacle du tir, sons du laboratoire ; 🟡 validation par le porteur du projet
 - 🔴 TRICKSHOT, suite (après validation) : nouvelles mécaniques, autres chapitres, défis quotidiens, récompenses
 - 🔴 **Endless** : course infinie (passages générés à la suite), distance et meilleur score
 - 🔴 **Course Multijoueur** : les joueurs jouent le même niveau, chacun avec son ballon, physique identique au
@@ -1844,6 +1855,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Mode TRICKSHOT refondu** (étape 23) : visée confortable, laboratoire, 20 cartes-casse-têtes, polish,
+  version de test v3
 - ✅ **Mode TRICKSHOT** (étape 22) : 50 cartes toutes résolubles en un tir, solveur de difficulté, écran de jeu,
   accueil et sélection des niveaux dans le menu, progression séparée, tests
 - ✅ Moteur physique, boucle, caméra, rendu, effets, sons
@@ -1881,8 +1894,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 **Validation du mode TRICKSHOT** par le porteur du projet (étape 22) : sensation du lance-pierre, lisibilité
-  des cartes, difficulté réelle de chaque niveau ; aucune nouvelle mécanique avant son accord
+- 🟡 **Validation du mode TRICKSHOT refondu** par le porteur du projet (étape 23) avec `HoopBounce_Test_v3.apk` :
+  confort de la visée, force du geste, longueur des pointillés, lisibilité du laboratoire, difficulté des 20 cartes
 - 🟡 Première compilation iPhone dans Xcode (Mac) et essai sur iPhone ; TestFlight pour les amis (étape 21)
 - 🟡 Essais de `HoopBounce_Test_v1.apk` sur téléphone par le porteur du projet et ses amis (étape 20) : noter ce
   qui ne va pas (démarrage, performances, son, vibrations, encoche, sauvegarde, confort des commandes)
@@ -1961,7 +1974,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 ## 9. Optimisations
 
-**Mode TRICKSHOT (étape 22)**
+**Mode TRICKSHOT (étapes 22-23)**
+- Laboratoire : tout le décor fixe (panneaux, tuyaux, câbles, lampes, néon) est précalculé une fois par taille
+  d'écran ; seuls l'engrenage, deux écrans et deux gyrophares sont redessinés ; les secousses décalent l'image.
 - Cadrage fixe sur l'arène entière (aucun défilement) ; fond d'arène dessiné avec des traits translucides plutôt
   que des flous ; trajectoire prévue calculée analytiquement (≈ 25 points, arrêt au premier obstacle) seulement
   pendant la visée. Mesuré : 60 images/s dans Chromium (1 688 × 780).
@@ -2071,6 +2086,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | TRICKSHOT (étape 23) : progression Trickshot de l'étape 22 convertie (les anciennes cartes n'existent plus) : les déblocages sont gardés, pas les étoiles ni les records des anciennes cartes. | 🟡 Voulu |
+| ✅ | TRICKSHOT (étape 23, en développement) : cartes 10, 12, 14 et 20 gagnables sans leur mécanique (tir en cloche ou ricochet), bouton en relief qui freinait le ballon, texte « TRICKSHOT ! » hors écran pour un panier près du plafond. | ✅ Corrigé avant validation |
 | Info | TRICKSHOT (étape 22) : la difficulté est **mesurée par simulation** (part des tirs gagnants sur une grille), pas encore par des joueurs. Un niveau « Impossible » a toujours une solution, mais la fenêtre est très étroite. | 🟡 À éprouver |
 | Info | TRICKSHOT : quelques cartes sont bien plus simples en deux tirs qu'en un (n° 28 Passage secret : ouvrir le passage, puis tirer au travers) ; c'est voulu (le décor reste entre les essais), la difficulté affichée est celle du tir parfait. | 🟡 Voulu |
 | ✅ | TRICKSHOT (en cours de développement) : 10 cartes sans solution ou contournables, ballon qui s'enfonçait dans le sol pendant la visée, carte de victoire qui débordait sur un téléphone en paysage, rampes-bumpers dessinées comme des rectangles. | ✅ Corrigé avant validation |
@@ -2115,6 +2132,33 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 23/11/2026 — Étape 23 : refonte complète du mode TRICKSHOT (v1.2.0-dev, APK de test v3)
+
+**Ajouté**
+- **Nouvelle visée** : on touche le ballon, puis on vise **n'importe où sur l'écran** jusqu'au relâchement ;
+  puissance = longueur du geste à l'écran ; repère du geste sous le doigt (cercle, trait, jauge), charge sonore à
+  100 %. **Aide limitée** : pointillés réduits au début de l'arc (5,2 u), jamais les rebonds.
+- **Identité « laboratoire de trickshots »** : fond de métal riveté, tuyaux, câbles, lampes, néons, engrenage,
+  écrans et gyrophares animés ; acier à liseré lumineux, plateformes suspendues, murs inclinés, cages de verre,
+  ascenseurs, volets à voyant, vide en bas de la salle ; panier néon à planche de verre, filet qui s'illumine.
+- **20 cartes entièrement nouvelles** (au lieu de 50) en 5 chapitres de 4 : Calibration, Machines, Circuits,
+  Portails, Trickshots. Départs en hauteur, dans une cage, dans un coin ; paniers à gauche, en hauteur, suspendus,
+  enfermés ; chaînes de mécanismes jusqu'au **grand trickshot** (rebond → portail → bouton → porte → ventilateur
+  → bumper → panier). Chaque carte : une idée, une solution en un tir, chaque mécanique indispensable.
+- `src/trickshot/kit.js` (outils de construction des cartes) ; bonus de score **combo** ; « spectacle » du tir
+  (ralenti et zoom proportionnés : jusqu'à ×0,22 et zoom ×1,5) ; sons du laboratoire (bumper électrique, charge,
+  aspiration avant le panier, accord de victoire) — ajoutés à `sfx.js` sans rien changer aux sons existants.
+- Tests : chaque mécanique indispensable, pointillés limités, cartes variées, migration de la sauvegarde (348 tests).
+- **`dist/HoopBounce_Test_v3.apk`** (1.2.0-test3) : mise à jour par-dessus les v1 / v2, sauvegardes conservées.
+
+**Modifié**
+- Sauvegarde Trickshot v1 → v2 (déblocages gardés). Menu : sélection des cartes en chapitres côte à côte.
+- `Hoop` garde sa définition (`hoop.def`) pour le rendu (aucun effet sur le jeu principal).
+
+**Reste à faire**
+- Essayer la v3 sur le téléphone (confort de la visée, force du geste, lisibilité) ; ajuster les cartes selon
+  les retours ; aucune nouvelle mécanique ni nouvelle carte avant validation.
 
 ### 21/11/2026 — Étape 22 : nouveau mode TRICKSHOT (v1.1.0-dev)
 

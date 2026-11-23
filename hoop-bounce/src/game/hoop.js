@@ -19,6 +19,7 @@ export class Hoop {
     const span = 2 * ballRadius * cfg.innerWidthFactor + 2 * rr;
 
     this.facing = def.facing;
+    this.def = def;
     this.rimY = def.y;
     this.rimRadius = rr;
     this.frontX = def.x;

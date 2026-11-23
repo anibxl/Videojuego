@@ -1,7 +1,8 @@
 // Mode TRICKSHOT — écran de jeu : trickshot.html?level=N
 //
-// Le ballon est posé sur le pas de tir. Le joueur pose le doigt sur le ballon, tire vers l'arrière
-// (angle + puissance, élastique et pointillés), relâche : le ballon part. 3 essais pour marquer.
+// Le ballon est posé sur le pas de tir. Le joueur touche le ballon, puis tire vers l'arrière en continuant
+// son geste N'IMPORTE OÙ sur l'écran (le doigt ne cache plus le ballon, la place ne manque jamais) :
+// direction opposée = angle, longueur du geste = puissance. Relâcher : le ballon part. 3 essais pour marquer.
 // Près du panier : léger ralenti, zoom, filet, particules, son. Réussite : étoiles, score, confettis.
 //
 // Réutilise le moteur et les systèmes du jeu (physique, rendu du ballon et des skins, particules,
@@ -156,6 +157,10 @@ function toast(text, warn = false) {
 }
 
 // ─── Visée (lance-pierre) ───────────────────────────────────────────────────
+function screenToWorld(p) {
+  return { x: camera.x + (p.x - camera.width / 2) / camera.scale, y: camera.y - (p.y - camera.height / 2) / camera.scale };
+}
+
 function toWorld(e) {
   const r = canvas.getBoundingClientRect();
   const sx = e.clientX - r.left;
@@ -163,21 +168,32 @@ function toWorld(e) {
   return { x: camera.x + (sx - camera.width / 2) / camera.scale, y: camera.y - (sy - camera.height / 2) / camera.scale };
 }
 
+const screenPoint = (e) => {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+};
+/** Longueur du geste (px) qui donne la pleine puissance : une part fixe de l'écran. */
+const pullPx = () => TRICKSHOT.pullScreen * Math.min(camera.width, camera.height);
+
 canvas.addEventListener('pointerdown', (e) => {
   sfx.unlock();
   if (state.overlay || state.paused || game.state !== 'aiming' || state.aim) return;
   const p = toWorld(e);
   const tee = game.tee;
-  // Doigt sur le ballon (zone généreuse : 2,2 u ou 70 px)
-  const reach = Math.max(2.2, 70 / camera.scale);
-  if (Math.hypot(p.x - tee.x, p.y - tee.y) > reach) return;
+  // Saisir le ballon (zone généreuse autour de lui)
+  const reach = Math.max(TRICKSHOT.grabRadius, TRICKSHOT.grabRadiusPx / camera.scale);
+  if (Math.hypot(p.x - tee.x, p.y - tee.y) > reach) {
+    toast(t('aim.grab'));
+    return;
+  }
   e.preventDefault();
   try {
     canvas.setPointerCapture(e.pointerId);
   } catch {
     /* sans importance */
   }
-  state.aim = { pointerId: e.pointerId, dx: 0, dy: 0, angle: 0, power: 0, valid: false };
+  // Le geste part de l'endroit touché : seul le déplacement du doigt compte ensuite
+  state.aim = { pointerId: e.pointerId, start: screenPoint(e), finger: screenPoint(e), dx: 0, dy: 0, angle: 0, power: 0, valid: false };
   sfx.ui?.select(0);
   haptics.tap();
 });
@@ -185,15 +201,20 @@ canvas.addEventListener('pointerdown', (e) => {
 canvas.addEventListener('pointermove', (e) => {
   const a = state.aim;
   if (!a || e.pointerId !== a.pointerId) return;
-  const p = toWorld(e);
-  const tee = game.tee;
-  Object.assign(a, { dx: p.x - tee.x, dy: p.y - tee.y }, aimFromDrag(p.x - tee.x, p.y - tee.y));
+  // Déplacement du doigt depuis le point de départ (écran, y vers le bas) → tirage en unités de référence
+  const f = screenPoint(e);
+  a.finger = f;
+  const k = TRICKSHOT.maxDrag / pullPx();
+  const dx = (f.x - a.start.x) * k;
+  const dy = -(f.y - a.start.y) * k;
+  Object.assign(a, { dx, dy }, aimFromDrag(dx, dy));
   // Tension de l'élastique : un « tic » par palier de 10 % de puissance
   const step = Math.floor(a.power * 10);
   if (step !== state.lastTick) {
     state.lastTick = step;
     if (step > 0) sfx.ui?.tick(a.power);
     if (step >= 9) haptics.tap();
+    if (step >= 10) sfx.labCharge?.();
   }
 });
 
@@ -263,6 +284,7 @@ function bindGame() {
     const solid = game.level.solids.find((s) => s.style === 'bumper' && e.x > s.x0 - 0.5 && e.x < s.x1 + 0.5 && e.y > s.y0 - 0.5 && e.y < s.y1 + 0.5);
     if (solid) {
       renderer.flashBumper(e.x, e.y);
+      sfx.labZap?.(e.x);
       particles.sparkle(e.x, e.y, 10, '#ff8ad0', 3);
       camera.addTrauma(0.08);
     }
@@ -343,20 +365,41 @@ function nearGoalCheck() {
   const h = game.level.hoop;
   const dx = b.x - h.centerX;
   const dy = b.y - h.rimY;
-  // Le ballon arrive au-dessus du cercle en descendant : léger ralenti et zoom sur le panier
+  // Le ballon arrive au-dessus du cercle en descendant : ralenti et zoom sur le panier, d'autant plus
+  // marqués que le tir est spectaculaire (rebonds, portails, boutons, caisses enchaînés)
   if (Math.abs(dx) < 2.2 && dy > -0.2 && dy < 2.6 && b.vy * b.gravitySign < 0) {
     state.nearGoal = true;
-    timeFx.slowmo(0.4, 0.3, 0.5, 0.08);
-    camera.focus = { x: h.centerX, y: h.rimY + 0.4 };
-    camera.zoomTarget = 1.28;
-    sfx.ui?.select(3);
+    const sp = game.spectacle();
+    camera.focus = goalFocus(h, 0.4);
+    if (sp >= 3) {
+      timeFx.slowmo(0.22, 0.4, 0.7, 0.06);
+      camera.zoomTarget = 1.5;
+      camera.addTrauma(0.05);
+      sfx.labTrick?.(2);
+    } else if (sp >= 1) {
+      timeFx.slowmo(0.4, 0.3, 0.5, 0.08);
+      camera.zoomTarget = 1.3;
+      sfx.labTrick?.(1);
+    } else {
+      timeFx.slowmo(0.6, 0.2, 0.35, 0.08);
+      camera.zoomTarget = 1.12;
+      sfx.ui?.select(3);
+    }
   }
+}
+
+/** Cadrage du zoom sur le panier, sans faire sortir le haut ou le bas de la salle de l'écran. */
+function goalFocus(h, dy) {
+  const half = (game.height + 1.4) / 2 / 1.5;
+  return { x: h.centerX, y: clamp(h.rimY + dy, half - 0.6, game.height - half + 0.6) };
 }
 
 function onWin(e) {
   const r = game.result;
   const perfect = r.stars === 3;
+  const spectacular = r.spectacle >= 3;
   const h = game.level.hoop;
+  renderer.flashNet?.(1);
   state.goal = { x: h.centerX, y: h.rimY - 0.2, t0: state.time, swish: r.swish };
   state.goalFlash = 1;
   state.glow = { rgb: perfect ? '255,200,80' : chapterOf(n).accent, t0: state.time, dur: perfect ? 1.6 : 1, k: perfect ? 1 : 0.6 };
@@ -364,17 +407,23 @@ function onWin(e) {
   particles.ring(h.centerX, h.rimY, 1.4, 'rgba(255,214,90,0.95)', 0.5);
   particles.ring(h.centerX, h.rimY, 2.6, 'rgba(255,214,90,0.5)', 0.7);
   particles.sparkle(h.centerX, h.rimY, perfect ? 30 : 16, '#ffe27a', 5);
-  particles.text(h.centerX - 1.2, h.rimY + 2.2, perfect ? 'TRICKSHOT!' : r.swish ? 'SWISH!' : 'NICE!', perfect ? '#ffd65a' : '#ffffff', 1.1);
-  sfx.win(perfect || r.swish);
+  // Laboratoire : onde de choc à la couleur du chapitre, étincelles électriques
+  particles.ring(h.centerX, h.rimY, 3.6, `rgba(${chapterOf(n).accent},0.55)`, 0.8);
+  particles.sparkle(h.centerX, h.rimY - 0.3, spectacular ? 26 : 12, `rgb(${chapterOf(n).accent})`, 6);
+  if (spectacular) particles.streaks(h.centerX, h.rimY, 0, 1, 14, 9, 'rgba(255,240,200,0.85)');
+  const high = h.rimY > game.height - 4.2; // panier près du plafond : le texte s'affiche dessous
+  particles.text(h.centerX - 1.2, high ? h.rimY - 2.2 : h.rimY + 2.2, spectacular || perfect ? 'TRICKSHOT!' : r.swish ? 'SWISH!' : 'NICE!', spectacular || perfect ? '#ffd65a' : '#ffffff', 1.1);
+  if (sfx.labGoal) sfx.labGoal(spectacular || perfect);
+  else sfx.win(perfect || r.swish);
   if (perfect) sfx.crowd?.();
   music.setDuck(0.45);
   haptics.goal(perfect);
   camera.addTrauma(perfect ? 0.45 : 0.32);
   camera.kick(perfect ? 0.08 : 0.05);
-  camera.focus = { x: h.centerX, y: h.rimY + 0.3 };
+  camera.focus = goalFocus(h, 0.3);
   camera.zoomTarget = perfect ? 1.4 : 1.25;
   timeFx.clear();
-  timeFx.slowmo(perfect ? 0.18 : 0.3, perfect ? 0.5 : 0.3, 0.8, 0.06);
+  timeFx.slowmo(perfect || spectacular ? 0.18 : 0.3, perfect || spectacular ? 0.5 : 0.3, 0.8, 0.06);
   const rec = progress.record(n, { stars: r.stars, score: r.score });
   setTimeout(() => showWin(r, rec), 1500);
 }
@@ -567,8 +616,12 @@ function render(frameDt, alpha) {
     const pull = { x: tee.x + (a.dx / len) * pullLen, y: Math.max(tee.y - 0.25, tee.y + (a.dy / len) * pullLen) };
     ball.x = pull.x;
     ball.y = pull.y;
-    const slow = 1 / Math.sqrt(game.level.gravityScale ?? 1); // gravité réduite : vol plus lent, pointillés plus longs
-    aim = { from: tee, pull, power: a.power, pts: a.valid ? trajectory(game.level, tee, a.angle, a.power, { maxTime: (0.55 + 0.25 * (1 - a.power)) * slow, step: slow / 30 }) : [] };
+    const slow = 1 / Math.sqrt(game.level.gravityScale ?? 1); // gravité réduite : vol plus lent
+    // Pointillés : seulement le début de l'arc (longueur fixe), jamais les rebonds → une aide, pas une garantie
+    const pts = a.valid ? trajectory(game.level, tee, a.angle, a.power, { maxTime: 2 * slow, step: slow / 40, maxLength: TRICKSHOT.previewLength }) : [];
+    // Repère du geste à l'écran (là où est le doigt, loin du ballon) : point de départ et doigt
+    const touch = a.start ? { start: screenToWorld(a.start), finger: screenToWorld(a.finger), radius: pullPx() / camera.scale } : null;
+    aim = { from: tee, pull, power: a.power, angle: a.angle, valid: a.valid, pts, touch };
   }
 
   nearGoalCheck();

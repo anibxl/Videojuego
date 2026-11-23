@@ -116,7 +116,7 @@ export class TrickshotGame extends Game {
     b.timeSinceGrounded = Infinity;
     b.grounded = false;
     this.shotsUsed++;
-    this.shot = { index: this.shotsUsed, angle, power: p, bounces: 0, rim: false, board: false, portals: 0, boosts: 0, t0: this.time };
+    this.shot = { index: this.shotsUsed, angle, power: p, bounces: 0, rim: false, board: false, portals: 0, boosts: 0, switches: 0, breaks: 0, t0: this.time };
     this.state = 'playing';
     this.shotTime = 0;
     this._rest = 0;
@@ -170,6 +170,7 @@ export class TrickshotGame extends Game {
         const e = this.cfg.materials.crate.restitution;
         b.vx = (b.vx - c.nx * c.impactSpeed * (1 + e)) * 0.7;
         b.vy = (b.vy - c.ny * c.impactSpeed * (1 + e)) * 0.7;
+        if (this.shot) this.shot.breaks++;
         this.events.emit('break', { x: box.x + box.w / 2, y: box.y + box.h / 2, w: box.w, h: box.h });
       }
     }
@@ -180,7 +181,8 @@ export class TrickshotGame extends Game {
     const resting = speed < TRICKSHOT.restSpeed && b.timeSinceGrounded < 0.1;
     this._rest = resting ? this._rest + dt : 0;
     const m = TRICKSHOT.outMargin;
-    const out = b.x < -m || b.x > this.width + m || b.y > this.height + m * 3;
+    // Sortie : par les côtés, par le haut, ou chute dans le vide du bas de la salle (pas de sol continu)
+    const out = b.x < -m || b.x > this.width + m || b.y > this.height + m * 3 || b.y < -1.2;
     if (this._rest > TRICKSHOT.restTime) this._endShot('rest');
     else if (out) this._endShot('out');
     else if (this.shotTime > TRICKSHOT.maxShotTime) this._endShot('timeout');
@@ -189,8 +191,16 @@ export class TrickshotGame extends Game {
   /** Un bouton ouvre aussi les ventilateurs qui lui sont reliés (en plus des portes). */
   _pressSwitch(s) {
     if (!s || s.pressed) return;
+    if (this.shot && this.state === 'playing') this.shot.switches++;
     super._pressSwitch(s);
     for (const f of this.level.fans) if (f.def.target && f.def.target === s.target) f.on = true;
+  }
+
+  /** « Spectacle » du tir en cours : rebonds et mécanismes enchaînés (0 = tir direct). */
+  spectacle() {
+    const s = this.shot;
+    if (!s) return 0;
+    return Math.min(8, s.bounces) + 2 * (s.portals + s.switches + s.breaks) + s.boosts;
   }
 
   _endShot(reason) {
@@ -206,7 +216,7 @@ export class TrickshotGame extends Game {
 
   _win() {
     const L = this.level;
-    const s = this.shot ?? { bounces: 0, rim: false, board: false, portals: 0, boosts: 0 };
+    const s = this.shot ?? { bounces: 0, rim: false, board: false, portals: 0, boosts: 0, switches: 0, breaks: 0 };
     const stars = Math.max(1, TRICKSHOT.shots + 1 - this.shotsUsed);
     const bonus = {
       bounces: Math.min(8, s.bounces) * 100,
@@ -214,11 +224,12 @@ export class TrickshotGame extends Game {
       bank: s.board ? 250 : 0,
       portals: Math.min(3, s.portals) * 200,
       boosts: Math.min(3, s.boosts) * 100,
+      combo: Math.min(4, s.switches + s.breaks) * 150, // mécanismes déclenchés pendant le tir gagnant
     };
     const score = stars * 1000 + Object.values(bonus).reduce((a, v) => a + v, 0);
     this.state = 'won';
     this.controller.enabled = false;
-    this.result = { stars, shots: this.shotsUsed, score, bonus, swish: !s.rim, bounces: s.bounces, time: this.time };
+    this.result = { stars, shots: this.shotsUsed, score, bonus, swish: !s.rim, bounces: s.bounces, time: this.time, spectacle: this.spectacle() };
     this.events.emit('win', { ...this.result, x: L.hoop.centerX, y: L.hoop.rimY });
   }
 }

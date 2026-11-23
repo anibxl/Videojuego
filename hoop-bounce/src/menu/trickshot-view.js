@@ -1,7 +1,7 @@
 // Menu du mode TRICKSHOT : deux pages.
 //  - « trickshot » : présentation du mode (illustration animée, description, niveaux terminés, étoiles,
 //    progression, bouton Jouer) ;
-//  - « trickshot-niveaux » : les 50 niveaux, par chapitre (numéro, étoiles, meilleur score, difficulté
+//  - « trickshot-niveaux » : les cartes, par chapitre (numéro, étoiles, meilleur score, difficulté
 //    dans le coin supérieur gauche, cadenas si verrouillé). Le niveau suivant se débloque en terminant
 //    le précédent.
 // La progression est celle du mode (src/trickshot/progress.js), indépendante du mode principal.
@@ -24,7 +24,7 @@ export const TRICKSHOT_ART = () => `<svg viewBox="0 0 320 160" preserveAspectRat
     <radialGradient id="tsa-ball" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffb26b"/><stop offset=".5" stop-color="#ff7a2f"/><stop offset="1" stop-color="#c8430f"/></radialGradient>
   </defs>
   <rect width="320" height="160" fill="url(#tsa-bg)"/><rect width="320" height="160" fill="url(#tsa-grid)"/><rect width="320" height="160" fill="url(#tsa-glow)"/>
-  <text x="300" y="132" text-anchor="end" class="tsa-num">50</text>
+  <text x="300" y="132" text-anchor="end" class="tsa-num">20</text>
   <rect x="0" y="136" width="320" height="24" fill="#141a36"/><rect x="0" y="136" width="320" height="2" fill="rgba(63,224,255,.8)"/>
   <rect x="150" y="62" width="14" height="74" rx="2" fill="#1d2448" stroke="rgba(63,224,255,.7)" stroke-width="1.5"/>
   <path class="tsa-arc" d="M52 118 Q 120 10 158 60 Q 196 22 252 74" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 9"/>
@@ -72,7 +72,7 @@ export class TrickshotView {
     const chapters = CHAPTERS.map((c, i) => {
       let done = 0;
       for (let n = c.from; n <= c.to; n++) if (P.isDone(n)) done++;
-      return `<li class="tsh-ch reveal" style="--i:${i + 4};--a:${c.accent};--p:${done / 10}"><span class="tsh-ch-n">${i + 1}</span><b>${t(`chapter.${c.id}`)}</b><span class="tsh-ch-bar"><i></i></span><em>${done}/10</em></li>`;
+      return `<li class="tsh-ch reveal" style="--i:${i + 4};--a:${c.accent};--p:${done / (c.to - c.from + 1)}"><span class="tsh-ch-n">${i + 1}</span><b>${t(`chapter.${c.id}`)}</b><span class="tsh-ch-bar"><i></i></span><em>${done}/${c.to - c.from + 1}</em></li>`;
     }).join('');
     this.hub.innerHTML = `
       <header class="page-head">
@@ -115,7 +115,7 @@ export class TrickshotView {
         const cls = [open ? '' : 'locked', lv.stars ? 'done' : '', open && d.n === next && !lv.stars ? 'next' : ''].join(' ');
         const stars = [0, 1, 2].map((k) => `<span class="${k < lv.stars ? 'on' : ''}">${STAR}</span>`).join('');
         const label = `${t('level', { n: d.n })} · ${pick(d.name, l)} · ${t(`diff.${d.diff}`)}`;
-        return `<button class="tsl pressable ${cls}" data-ts-level="${d.n}" style="--i:${i++ % 10};--d:${DIFFICULTIES[d.diff].color}" aria-label="${open ? label : `${label} — ${t('locked', { n: d.n - 1 })}`}" title="${pick(d.name, l)}">
+        return `<button class="tsl pressable ${cls}" data-ts-level="${d.n}" style="--i:${i++ % 4};--d:${DIFFICULTIES[d.diff].color}" aria-label="${open ? label : `${label} — ${t('locked', { n: d.n - 1 })}`}" title="${pick(d.name, l)}">
           <span class="tsl-diff d-${d.diff}" title="${t(`diff.${d.diff}`)}"><i></i>${t(`diff.${d.diff}`)}</span>
           <span class="tsl-num">${d.n}</span>
           ${open ? `<span class="tsl-stars">${stars}</span><span class="tsl-best">${lv.best ? `${t('best')} ${lv.best.toLocaleString(l)}` : '—'}</span>` : `<span class="tsl-lock">${ICONS.lock}</span>`}

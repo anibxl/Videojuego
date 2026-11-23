@@ -18,16 +18,16 @@
 // la MÊME clé (native/test-apk/keys/hoopbounce-test.jks, à ne jamais perdre ni régénérer) et avoir un
 // versionCode plus grand (= numéro de version de test). Android installe alors par-dessus l'ancienne :
 // progression, pièces, skins et récompenses (localStorage de https://appassets.androidplatform.net) restent.
-//   v1 : 1.0.0-test1 (étape 20)   v2 : 1.1.0-test2 (étape 22, mode TRICKSHOT)
+//   v1 : 1.0.0-test1 (étape 20)   v2 : 1.1.0-test2 (étape 22, mode TRICKSHOT)   v3 : 1.2.0-test3 (étape 23, laboratoire)
 
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const TEST_BUILD = 2;
-// Nom de version des versions de test : 1.1.0 = le mode TRICKSHOT (la version Play Store, package.json, reste 1.0.0)
-const VERSION = '1.1.0';
+const TEST_BUILD = 3;
+// Nom de version des versions de test : 1.1.0 = mode TRICKSHOT, 1.2.0 = TRICKSHOT « laboratoire » (Play Store : 1.0.0)
+const VERSION = '1.2.0';
 const PACKAGE = 'com.echospeed.hoopbounce.test';
 // Empreinte SHA-256 de la clé de test qui a signé la v1 : une autre clé empêcherait la mise à jour
 const KEY_SHA256 = '894f0b7da38d40fbd7ad33ae73cfe4d3c64659d981e8f94c00d4cba11535bfd8';

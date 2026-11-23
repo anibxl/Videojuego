@@ -3,7 +3,11 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 22 (actuelle) :** **nouveau mode TRICKSHOT** (`trickshot.html`, menu *Modes de jeu*), un deuxième jeu
+**Étape 23 (actuelle) :** **TRICKSHOT refondu** : visée n'importe où sur l'écran après avoir touché le ballon
+(pointillés limités au début de l'arc), identité « laboratoire de trickshots », **20 cartes** nouvelles, chacune
+un casse-tête où chaque mécanique est indispensable. Version de test : `dist/HoopBounce_Test_v3.apk` (mise à jour).
+
+**Étape 22 :** **nouveau mode TRICKSHOT** (`trickshot.html`, menu *Modes de jeu*), un deuxième jeu
 dans le jeu, indépendant du mode principal : lance-pierre (tirer le ballon vers l'arrière, angle + puissance,
 trajectoire en pointillés), 3 essais, étoiles selon l'essai, score de style, **50 cartes** en 5 chapitres, toutes
 résolubles en un tir, 4 difficultés mesurées par un solveur, arène néon, ralenti et zoom près du panier.
@@ -241,7 +245,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 346 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+npm test                               # 348 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu, publicités, game feel
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)
