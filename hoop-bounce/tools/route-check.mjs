@@ -40,14 +40,20 @@ function expertShot(make) {
   return false;
 }
 
-function shotAttempt(g, h, standOff, taps, isWon) {
+export function shotAttempt(g, h, standOff, taps, isWon, quick = false) {
   const targetX = h.centerX - standOff;
   let n = 0;
   let was = true;
   let t = 0;
+  let flew = 0;
   for (let i = 0; i < 120 * 9 && !isWon(); i++) {
     t += DT;
     const b = g.body;
+    // Tir manqué (mode rapide) : on s'arrête dès que le ballon retombe après le tir
+    if (quick && n >= taps) {
+      if (!b.grounded) flew += DT;
+      else if (flew > 0.4) return false;
+    }
     if (n < taps) {
       // Approche puis dribble sur place pour charger
       const dx = targetX - b.x;
@@ -217,6 +223,7 @@ export class Pilot {
 //   ['jumpBoulder', i, d?, aimX?]    rouler et sauter par-dessus le rocher n° i quand il arrive à d devant
 //   ['dodgeBoulders', x, d?, hopAt?] rouler vers x en sautant chaque rocher qui arrive à d devant
 //                                    (et rebondir en passant hopAt : marche au bout de la piste)
+//   ['float', x, s]                  flotter dans un souffle en restant au-dessus de x pendant s secondes
 //   ['shot']                         tir au panier (solution « experte » de tir)
 
 const GOALS = {
@@ -405,6 +412,34 @@ const STEPS = {
     });
   },
 };
+
+// Flotter dans un souffle (ventilateur…) en restant au-dessus de x pendant `sec` secondes
+STEPS.float = (p, x, sec) => {
+  const t0 = p.g.time;
+  const ok = p.until((g) => g.time - t0 >= sec, sec + 1, (g) => {
+    const d = x - (g.body.x + g.body.vx * 0.35);
+    p.hold(Math.abs(d) < 0.15 ? 0 : Math.sign(d));
+  });
+  p.hold(0);
+  return ok || !p.dead;
+};
+
+// Tir au panier dans une partie en cours (vérification d'un niveau entier : tools/level-run.mjs)
+STEPS.shot = (p) => {
+  for (const [standOff, taps] of [[3.5, 4], [4.5, 5], [3, 4], [5, 5], [5.5, 4], [6.5, 5], [4, 5], [2.5, 3]]) {
+    {
+      // Comme un joueur : s'arrêter au point de tir avant de dribbler
+      const h = p.g.level.hoop;
+      if (!p.goTo(h.centerX - standOff, 0.3, 4) && p.dead) return false;
+      if (shotAttempt(p.g, h, standOff, taps, () => p.won, true)) return true;
+      if (p.dead) return false;
+    }
+  }
+  return p.won;
+};
+
+/** Objectif d'un passage, à partir de sa description (['on', x1, x2, y], ['win']…). */
+export const GOAL_OF = (goal) => GOALS[goal[0]](...goal.slice(1));
 
 export function runPlan(p, plan) {
   for (const [name, ...args] of plan) {
