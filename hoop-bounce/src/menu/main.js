@@ -1,6 +1,9 @@
 // Menu principal : assemble le décor, l'interface, la navigation, les sons et les réglages.
 
 import { MenuScene } from './scene.js';
+import { ChristmasScene } from './scene-christmas.js';
+import { applySeason } from './season-decor.js';
+import { activeSeason } from '../shared/season.js';
 import { MenuSound } from './sound.js';
 import { watchSafeWidth } from '../shared/safe-width.js';
 import { ICONS } from './icons.js';
@@ -34,7 +37,11 @@ const settings = new Settings();
 const sound = new MenuSound();
 watchSafeWidth(); // encoche des iPhone : mises en page compactes selon la largeur utilisable
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const scene = new MenuScene($('#scene'), { quality: settings.get('quality'), reducedMotion });
+// Saison en cours (Noël : décor enneigé, décorations, ambiance d'hiver) — src/shared/season.js
+const season = activeSeason();
+const SceneClass = season?.id === 'christmas' ? ChristmasScene : MenuScene;
+const scene = new SceneClass($('#scene'), { quality: settings.get('quality'), reducedMotion });
+sound.setSeason?.(season?.id ?? null);
 
 const state = {
   page: 'home',
@@ -73,6 +80,7 @@ function injectIcons(root = document) {
 
 function applyStaticTexts() {
   const l = lang();
+  applySeason(season, { text: (k) => t(l, k) });
   document.documentElement.lang = l;
   for (const el of $$('[data-i18n]')) el.textContent = t(l, el.dataset.i18n);
   for (const el of $$('[data-i18n-html]')) el.innerHTML = t(l, el.dataset.i18nHtml);

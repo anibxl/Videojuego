@@ -1,26 +1,26 @@
 # Hoop Bounce — version de test Android (APK)
 
-Fichier prêt à installer : **`dist/HoopBounce_Test_v4.apk`** (≈ 0,5 Mo) — version **1.3.0-test4** : Boutique et
-Collection refaites, mode **TRICKSHOT refondu** (laboratoire, 20 cartes). C'est une **mise à jour** des v1, v2 et v3 : elle
+Fichier prêt à installer : **`dist/HoopBounce_Test_v5.apk`** (≈ 0,5 Mo) — version **1.4.0-test5** : **menu de Noël**,
+Boutique et Collection refaites, mode **TRICKSHOT refondu**. C'est une **mise à jour** des v1 à v4 : elle
 s'installe par-dessus, sans deuxième application, et garde progression, pièces, skins, récompenses et sauvegardes.
 
-| | v1 (étape 20) | **v2 (étape 22) → v3 (étape 23) → v4 (étape 24)** |
+| | v1 (étape 20) | **v2 → v3 → v4 → v5 (saison de Noël)** |
 |---|---|---|
 | Identifiant | `com.echospeed.hoopbounce.test` | `com.echospeed.hoopbounce.test` (identique) |
-| versionCode | 1 | 2 → 3 → **4** (v4, étape 24) |
-| versionName | 1.0.0-test1 | 1.1.0-test2 → 1.2.0-test3 → **1.3.0-test4** (« 1.3.0 (test 4) » dans Paramètres et À propos) |
+| versionCode | 1 | 2 → 3 → 4 → **5** (v5, saison de Noël) |
+| versionName | 1.0.0-test1 | … → 1.3.0-test4 → **1.4.0-test5** (« 1.4.0 (test 5) » dans Paramètres et À propos) |
 | Clé (SHA-256) | `894f0b7d…35bfd8` | `894f0b7d…35bfd8` (identique) |
 
 ## Mettre à jour (une version précédente est déjà sur le téléphone)
 
-1. Envoyer `HoopBounce_Test_v4.apk` sur le téléphone et le toucher, comme pour la v1.
+1. Envoyer `HoopBounce_Test_v5.apk` sur le téléphone et le toucher, comme pour la v1.
 2. Android affiche **« Voulez-vous installer une mise à jour de cette application ? »** → **Mettre à jour**
    (ou Installer). **Ne pas désinstaller la v1 avant** : la désinstallation effacerait les sauvegardes.
 3. Ouvrir **Hoop Bounce Test** : même icône, même progression ; le mode TRICKSHOT est dans *Modes*.
 
 ## Installer sur un téléphone Android (7.0 ou plus récent)
 
-1. Envoyer le fichier `HoopBounce_Test_v4.apk` sur le téléphone (e-mail, WhatsApp, Google Drive, câble USB…).
+1. Envoyer le fichier `HoopBounce_Test_v5.apk` sur le téléphone (e-mail, WhatsApp, Google Drive, câble USB…).
 2. Toucher le fichier dans le téléphone (notification de téléchargement, ou application **Fichiers › Téléchargements**).
 3. Android demande d'autoriser cette source (« Installer des applications inconnues ») : **Paramètres › Autoriser
    depuis cette source**, puis revenir en arrière.
@@ -40,7 +40,7 @@ Si l'installation échoue :
   **TRICKSHOT** (laboratoire, 20 cartes), **hors ligne**.
 - Identifiant **`com.echospeed.hoopbounce.test`**, nom « Hoop Bounce Test » : elle coexiste avec la future version
   du Play Store.
-- Version `1.3.0-test4` (affichée « 1.3.0 (test 4) » dans Paramètres et À propos), Android 7.0 minimum, cible
+- Version `1.4.0-test5` (affichée « 1.4.0 (test 5) » dans Paramètres et À propos), Android 7.0 minimum, cible
   Android 14, aucune permission Internet (seulement le vibreur).
 - **Publicités : annonces de TEST simulées par le jeu** (aucun identifiant AdMob, aucune vraie publicité).
 - Débogage possible depuis un ordinateur : téléphone branché en USB (débogage USB activé), puis `chrome://inspect`
@@ -50,8 +50,8 @@ Si l'installation échoue :
 
 ```bash
 sudo apt-get install aapt apksigner zipalign dalvik-exchange android-sdk-platform-23   # une seule fois
-npm run android:test-apk                       # → dist/HoopBounce_Test_v4.apk (TEST_BUILD = 4)
-node tools/build-test-apk.mjs --build 5        # version de test suivante → dist/HoopBounce_Test_v5.apk
+npm run android:test-apk                       # → dist/HoopBounce_Test_v5.apk (TEST_BUILD = 5)
+node tools/build-test-apk.mjs --build 6        # version de test suivante → dist/HoopBounce_Test_v6.apk
 ```
 
 La clé de signature de test est dans `native/test-apk/keys/` (non versionnée). Pour que les testeurs puissent

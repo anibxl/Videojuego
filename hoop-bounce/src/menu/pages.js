@@ -8,6 +8,7 @@ import { LANGUAGE_NAMES, t } from './i18n.js';
 import { APP_VERSION } from '../shared/version.js';
 import { TRICKSHOT_ART } from './trickshot-view.js';
 import { TrickshotProgress } from '../trickshot/progress.js';
+import { TS_LEVELS } from '../trickshot/levels.js';
 import { tt } from '../trickshot/i18n.js';
 
 let emblemId = 0;
@@ -143,7 +144,7 @@ export function modesPage(lang) {
     </div>`,
   ).join('');
   // Mode jouable : Trickshot (étape 22) — en tête, avec sa progression
-  const ts = new TrickshotProgress({ total: 50 }).summary();
+  const ts = new TrickshotProgress({ total: TS_LEVELS.length }).summary();
   const trick = `
     <div class="fmode-wrap reveal" style="--i:0">
       <button class="fmode fmode-play pressable" data-nav="trickshot" data-mode="trickshot" style="--accent:63,224,255" aria-label="${tt(lang, 'mode')} — ${tt(lang, 'tagline')}">

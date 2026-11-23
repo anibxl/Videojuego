@@ -3,7 +3,11 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Étape 24 (actuelle) :** **Boutique et Collection refaites** : la Boutique ne montre que les objets à acheter
+**Saison 1 — 🎄 Noël, étape 1 (actuelle) :** le **menu principal** passe à l'heure de Noël : soir d'hiver à la
+montagne, neige qui tombe, guirlande lumineuse, bonnet sur le logo, cadeaux, ambiance sonore d'hiver (le jeu ne
+change pas). Interrupteur : `src/shared/season.js` (`?season=off` pour comparer). APK : `dist/HoopBounce_Test_v5.apk`.
+
+**Étape 24 :** **Boutique et Collection refaites** : la Boutique ne montre que les objets à acheter
 (bouton Acheter sur chaque carte, jamais deux fois), la Collection que les objets possédés (aucun prix), avec le
 résumé Skins / Traînées / Effets. Version de test : `dist/HoopBounce_Test_v4.apk` (mise à jour).
 
@@ -249,7 +253,7 @@ sa logique dans `game/world-elements.js` et `game/game.js`, son dessin dans `ren
 
 ```bash
 cd hoop-bounce
-npm test                               # 350 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
+npm test                               # 352 tests : physique, dribble, éléments, pièges, mécaniques des mondes, boutique,
                                        # panier, progression, niveaux faisables, menu, publicités, game feel
 node tools/route-check.mjs 400         # difficulté de chaque passage de chaque niveau
 node tools/route-check.mjs 400 snow-3  # un seul niveau (identifiant ou numéro 1..50)

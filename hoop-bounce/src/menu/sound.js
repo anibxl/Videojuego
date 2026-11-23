@@ -49,12 +49,24 @@ export class MenuSound {
     }
     if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); // « suspended », ou « interrupted » sur iOS (appel, Siri)
     if (!this._musicTimer) this._startMusic();
+    if (this.season && !this._winter) this._startWinter();
+  }
+
+  /**
+   * Saison du menu (src/shared/season.js). Noël : on AJOUTE à la musique habituelle un léger vent d'hiver,
+   * des grelots très discrets de temps en temps et parfois une note de cloche — la musique reste la même.
+   */
+  setSeason(id) {
+    this.season = id;
+    if (this.ctx && id && !this._winter) this._startWinter();
   }
 
   /** Application en arrière-plan : on coupe tout (et on arrête de programmer la musique). */
   suspend() {
     clearInterval(this._musicTimer);
     this._musicTimer = null;
+    clearTimeout(this._bellTimer);
+    this._bellTimer = null;
     this.ctx?.suspend();
   }
 
@@ -62,6 +74,7 @@ export class MenuSound {
     if (!this.ctx) return;
     if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); // « suspended », ou « interrupted » sur iOS (appel, Siri)
     if (!this._musicTimer) this._startMusic();
+    if (this._winter && !this._bellTimer) this._scheduleBells();
   }
 
   setVolumes(music, sfx) {
@@ -146,6 +159,11 @@ export class MenuSound {
           this._pluck(note, 0.6 + i * 1.5 + Math.random() * 0.4);
         }
       }
+      // Noël : une note de cloche (célesta) sur l'accord, une mesure sur deux
+      if (this.season === 'christmas' && this._chord % 2 === 1) {
+        const top = chord[chord.length - 1] + 12;
+        this._bell(440 * 2 ** ((top - 69) / 12), 2.2 + Math.random() * 1.2, 0.05);
+      }
       // Signature : toutes les 4 mesures, le motif du rebond, très doux, sur l'accord de do
       if (this._chord % 4 === 2) {
         BOUNCE_MOTIF.times.forEach((dt, i) => this._pluckHz(PENTA[BOUNCE_MOTIF.notes[i]], 1.2 + dt * 1.6, i === 4 ? 2.6 : 1.4));
@@ -154,6 +172,95 @@ export class MenuSound {
     };
     play();
     this._musicTimer = setInterval(play, barSeconds * 1000);
+  }
+
+  // ─── Ambiance d'hiver (saison de Noël) ─────────────────────────────────
+
+  _startWinter() {
+    const c = this.ctx;
+    this._winter = true;
+    // Vent : bruit filtré dont la couleur et le volume ondulent très lentement
+    const src = c.createBufferSource();
+    src.buffer = this._noise;
+    src.loop = true;
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 420;
+    bp.Q.value = 0.8;
+    const lfo = c.createOscillator();
+    lfo.frequency.value = 0.06;
+    const lfoAmt = c.createGain();
+    lfoAmt.gain.value = 180;
+    lfo.connect(lfoAmt).connect(bp.frequency);
+    const g = c.createGain();
+    g.gain.value = 0.045;
+    const lfo2 = c.createOscillator();
+    lfo2.frequency.value = 0.11;
+    const lfo2Amt = c.createGain();
+    lfo2Amt.gain.value = 0.025;
+    lfo2.connect(lfo2Amt).connect(g.gain);
+    src.connect(bp).connect(g).connect(this.musicBus);
+    src.start();
+    lfo.start();
+    lfo2.start();
+    this._scheduleBells();
+  }
+
+  /** Grelots : un petit tintement très discret toutes les 9 à 16 secondes. */
+  _scheduleBells() {
+    clearTimeout(this._bellTimer);
+    this._bellTimer = setTimeout(() => {
+      if (!this.ctx || this.ctx.state !== 'running') return this._scheduleBells();
+      const hits = 5 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < hits; i++) this._jingle(i * (0.07 + Math.random() * 0.05));
+      this._scheduleBells();
+    }, 9000 + Math.random() * 7000);
+  }
+
+  /** Un coup de grelot : trois partiels métalliques aigus qui s'éteignent vite. */
+  _jingle(delay) {
+    const c = this.ctx;
+    const t0 = c.currentTime + delay;
+    const f0 = 2300 + Math.random() * 700;
+    const pan = c.createStereoPanner ? c.createStereoPanner() : null;
+    if (pan) pan.pan.value = Math.random() * 1.2 - 0.6;
+    const out = c.createGain();
+    out.gain.value = 1;
+    if (pan) out.connect(pan).connect(this.musicDry);
+    else out.connect(this.musicDry);
+    out.connect(this.reverb);
+    for (const [ratio, amp] of [[1, 0.012], [1.51, 0.008], [2.34, 0.005]]) {
+      const o = c.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f0 * ratio;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(amp, t0 + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+      o.connect(g).connect(out);
+      o.start(t0);
+      o.stop(t0 + 0.2);
+    }
+  }
+
+  /** Cloche douce (célesta) : partiels inharmoniques, longue résonance dans la réverbération. */
+  _bell(freq, delay, amp = 0.05) {
+    const c = this.ctx;
+    const t0 = c.currentTime + delay;
+    for (const [ratio, a, len] of [[1, amp, 2.4], [2.76, amp * 0.35, 1.2], [5.4, amp * 0.12, 0.6]]) {
+      const o = c.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = freq * ratio;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(a, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+      o.connect(g);
+      g.connect(this.reverb);
+      g.connect(this.musicDry);
+      o.start(t0);
+      o.stop(t0 + len + 0.05);
+    }
   }
 
   _pad(notes, dur) {

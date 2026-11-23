@@ -4,9 +4,9 @@
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
 > **Dernière mise à jour :** 23/11/2026 · **Version :** 1.2.0-dev (non publiée ; la version publiable reste
-> 1.0.0, build 1) · **Version de test Android :** **`HoopBounce_Test_v4.apk` (1.3.0-test4, mise à jour)** ·
-> **iOS :** projet Xcode prêt (`ios/`) · **Étape en cours :** validation de la nouvelle Boutique et de la nouvelle
-> Collection (étape 24) et du mode TRICKSHOT refondu (étape 23) ; rien n'est publié.
+> 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1, étape 1 : menu décoré) · **Version de test
+> Android :** **`HoopBounce_Test_v5.apk` (1.4.0-test5, mise à jour)** · **iOS :** projet Xcode prêt (`ios/`) ·
+> **Étape en cours :** validation du menu de Noël ; rien n'est publié.
 
 ## Sommaire
 
@@ -15,6 +15,7 @@
 3. [Architecture](#3-architecture)
 4. [Interface](#4-interface)
 4 bis. [Mode TRICKSHOT](#4-bis-mode-trickshot-étapes-22-et-23)
+4 ter. [Saisons — Saison 1 : Noël](#4-ter-saisons--saison-1--noël)
 5. [Progression](#5-progression)
 5 bis. [Publication Google Play](#5-bis-publication-google-play-version-100)
 5 ter. [Version iPhone (iOS)](#5-ter-version-iphone-ios)
@@ -272,6 +273,7 @@ hoop-bounce/
 │   ├── menu-views.css      Styles des pages Mondes (cartes, niveaux) et Collection du menu
 │   ├── live.css            Récompense quotidienne, Missions, Succès, Bonus (coffre, roue), révélation des récompenses
 │   ├── shop.css            Styles de la boutique
+│   ├── season-christmas.css  Saison de Noël : décorations du menu (guirlande, bonnet, houx, cadeaux, neige)
 │   ├── trickshot.css       Écran du mode TRICKSHOT (HUD, carte d'intro, pause, victoire, échec)
 │   ├── trickshot-menu.css  Pages du menu du mode TRICKSHOT (carte des modes, accueil du mode, 50 niveaux)
 │   ├── polish.css          Finitions communes à toutes les pages (onde au toucher, boutons, transitions,
@@ -292,7 +294,7 @@ hoop-bounce/
 │   ├── shop/               Boutique (grille, aperçu animé, achats, textes)
 │   ├── input/              Entrées tactiles et clavier du jeu
 │   ├── platform/           Fonctions propres à l'appareil (vibrations)
-│   ├── menu/               Tout le menu principal
+│   ├── menu/               Tout le menu principal (dont scene-christmas.js et season-decor.js : Saison de Noël)
 │   ├── trickshot/          ★ Mode TRICKSHOT : règles, 50 niveaux, visée, rendu de l'arène, progression, textes
 │   └── shared/             Ce que le menu, la boutique et le jeu partagent (réglages, porte-monnaie,
 │                           statistiques, récompenses quotidiennes, missions, succès, coffres,
@@ -1115,6 +1117,64 @@ carte dans `modesPage()` (`src/menu/pages.js`), pages `trickshot` et `trickshot-
 (retour : niveaux → accueil du mode → modes). Audio : `SPACES.arena`, `launch()`, `crowd()` dans `sfx.js`,
 morceau `arena` dans `music.js` (ajouts seulement).
 
+## 4 ter. Saisons — Saison 1 : Noël
+
+> Les **saisons** sont des événements limités dans le temps qui changent l'ambiance du jeu. **Saison 1 : 🎄 Noël.**
+> **Étape 1 (23/11/2026) : seulement le menu principal** — décor, neige, décorations, logo, effets, ambiance
+> sonore, style des boutons. **Le gameplay n'est pas touché** (aucune page de jeu ne charge la saison, test à
+> l'appui), les boutons restent exactement les mêmes, aucune sauvegarde ne change.
+
+### L'interrupteur (`src/shared/season.js`)
+
+- `SEASON = 'christmas'` : saison en cours. **Mettre `null` à la fin de l'événement** remet le menu habituel
+  (salle de basket, musique seule) sans rien toucher d'autre.
+- Essai sans changer le code : `index.html?season=off` (menu habituel) ou `?season=christmas`.
+- Quand la saison est active : `<html data-season="christmas">` (styles), décor `ChristmasScene` au lieu de la
+  salle de basket, décorations ajoutées à l'accueil, couche sonore d'hiver.
+
+### Le décor enneigé (`src/menu/scene-christmas.js`)
+
+Même interface que la salle de basket (`MenuScene`, dont il hérite) ; un **soir d'hiver à la montagne** :
+- **ciel du soir** (bleu nuit → lueur rose et pêche à l'horizon), **étoiles** qui scintillent, **lune** ;
+- deux chaînes de **montagnes enneigées** (sommets blancs, versants ombrés) ; **brume légère** qui dérive ;
+- collines et **forêt de sapins** enneigés ; **chalet** aux fenêtres chaudes qui rayonnent, **guirlande** qui
+  clignote sur le toit, **fumée** de cheminée ;
+- champ de neige avec congères et **paillettes de givre** qui scintillent ;
+- deux **grands sapins décorés** à droite : boules, **guirlandes d'ampoules** qui scintillent, **étoile** dorée ;
+- **l'identité du jeu reste là** : le panier, couvert de neige, et la balle qui rebondit dans la poudreuse
+  (petites gerbes de neige à chaque rebond) ;
+- **neige** qui tombe en permanence : petits flocons sur trois profondeurs, balancement doux, très transparents
+  (40 / 90 / 150 selon la qualité graphique) ;
+- côté gauche voilé et bas de l'écran assombri : le logo, JOUER et les tuiles restent parfaitement lisibles.
+Optimisations : ciel et montagnes dans un seul calque précalculé, sapins dans un calque recadré, flocons
+lointains en petits carrés, un halo sur deux pour les ampoules → 60 images/s comme le menu habituel.
+
+### Les décorations (`src/menu/season-decor.js`, `css/season-christmas.css`)
+
+Élégantes et peu nombreuses, toutes décoratives (aucun clic) ; elles s'effacent quand une page s'ouvre :
+- **guirlande lumineuse** en haut de l'écran (ampoules de 5 couleurs qui scintillent à des rythmes différents,
+  lueurs) et deux **boules de Noël** suspendues qui se balancent ;
+- **logo** : un **bonnet de Père Noël** posé sur le ballon (il suit son flottement), quelques **étincelles** et
+  un **flocon** autour, un **reflet brillant** qui balaie le mot BOUNCE de temps en temps ;
+- ruban **« 🎄 Saison de Noël ❄ »** sous le slogan (FR / EN / ES) : on comprend tout de suite l'événement ;
+- bouton **JOUER** : **neige** sur le dessus, **brin de houx**, **lueur dorée** qui respire ;
+- deux **cadeaux** à côté de JOUER (petit sursaut de temps en temps), un **sucre d'orge** au bout des tuiles ;
+- **tuiles** et boutons du haut : un peu de neige sur le dessus, **lueur dorée** au survol et à l'appui.
+« Mouvements réduits » du système : toutes ces animations s'arrêtent.
+
+### L'ambiance sonore (`src/menu/sound.js`)
+
+La musique habituelle du menu est **conservée** ; la saison lui **ajoute** (bus de musique : le réglage
+« Musique » s'applique) :
+- un **léger vent d'hiver** (bruit filtré dont la couleur et le volume ondulent très lentement) ;
+- de **petits grelots** très discrets toutes les 9 à 16 secondes (tintements métalliques, stéréo, réverbération) ;
+- une **note de cloche** (célesta) sur l'accord, une mesure sur deux.
+
+### Suite prévue (étapes suivantes, à valider)
+
+🔴 Contenus de la saison : objets de Noël dans la boutique, récompenses de l'événement, niveaux ou carte
+Trickshot enneigés, effets de neige en jeu… — rien n'est fait avant validation de l'étape 1.
+
 ---
 
 ## 5. Progression
@@ -1547,8 +1607,8 @@ porte-monnaie.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v4.apk` (≈ 0,5 Mo, **1.3.0-test4**, Boutique et Collection refaites) —
-une **mise à jour** des v1, v2 et v3 (même identifiant, même clé, versionCode 4 > 3 > 2 > 1) : elle s'installe par-dessus et
+**Fichier actuel :** `dist/HoopBounce_Test_v5.apk` (≈ 0,5 Mo, **1.4.0-test5**, menu de Noël) —
+une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
 
 **Mise à jour v3 (étape 23) — vérifié :** identifiant inchangé, clé identique (empreinte contrôlée par le script),
@@ -1569,7 +1629,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · **v4 : `1.3.0-test4` (4)** ; « 1.3.0 (test 4) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · **v5 : `1.4.0-test5` (5)** ; « 1.4.0 (test 5) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -1601,7 +1661,7 @@ des 5 mondes jouable (55-60 images/s), sauvegarde (pièces, skin équipé, progr
 **Non vérifiable ici** : l'installation et l'exécution sur un vrai téléphone (pas d'appareil ni d'émulateur
 Android dans l'environnement de développement) → premier essai à faire par le porteur du projet.
 
-**Mettre à jour les testeurs** : `node tools/build-test-apk.mjs --build 5` → `HoopBounce_Test_v5.apk`, signée
+**Mettre à jour les testeurs** : `node tools/build-test-apk.mjs --build 6` → `HoopBounce_Test_v6.apk`, signée
 avec **la même clé de test** (sinon il faut désinstaller, ce qui efface la progression de test). Le script refuse
 de construire sans la clé d'origine, avec une autre clé, un autre identifiant ou un versionCode qui n'augmente pas.
 
@@ -1793,6 +1853,10 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Caméra : impulsions, regard vers le bas, plan d'ouverture, ralentis progressifs, mouvements réduits
 - 🟡 Validation par le porteur du projet ; essai au casque et sur haut-parleur de téléphone
 
+### Phase 7 bis — Saisons 🟡
+- ✅ Interrupteur de saison ; **Saison 1 — Noël, étape 1** : menu principal décoré et ambiance d'hiver
+- 🔴 Noël, étapes suivantes (à valider) : objets et récompenses de l'événement, contenu enneigé en jeu
+
 ### Phase 7 — Modes de jeu 🟡
 - ✅ Page « Modes à venir » : 3 cartes de présentation illustrées et animées, verrouillées (étape 19)
 - ✅ **TRICKSHOT** (étape 22) : mode indépendant, lance-pierre, 3 essais, étoiles, score de style, 50 cartes en
@@ -1842,6 +1906,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Saison de Noël — étape 1** : menu principal décoré (décor enneigé, neige, guirlande, bonnet, cadeaux,
+  ambiance sonore d'hiver), désactivable d'un mot à la fin de l'événement
 - ✅ **Boutique et Collection refaites** (étape 24) : la boutique vend (objets achetables seulement, Acheter
   sur chaque carte), la collection montre (objets possédés seulement, résumé Skins / Traînées / Effets)
 - ✅ **Mode TRICKSHOT refondu** (étape 23) : visée confortable, laboratoire, 20 cartes-casse-têtes, polish,
@@ -1883,6 +1949,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation du menu de Noël** (saison 1, étape 1) avec `HoopBounce_Test_v5.apk`
 - 🟡 **Validation de la Boutique et de la Collection** (étape 24) avec `HoopBounce_Test_v4.apk`
 - 🟡 **Validation du mode TRICKSHOT refondu** par le porteur du projet (étape 23) avec `HoopBounce_Test_v3.apk` :
   confort de la visée, force du geste, longueur des pointillés, lisibilité du laboratoire, difficulté des 20 cartes
@@ -2122,6 +2189,27 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 23/11/2026 — Saison 1 « Noël », étape 1 : le menu principal décoré (APK de test v5)
+
+**Ajouté**
+- **Interrupteur de saison** `src/shared/season.js` (`SEASON = 'christmas'`, essai `?season=off`).
+- **Décor enneigé** `ChristmasScene` : ciel du soir, lune, étoiles, montagnes enneigées, brume, forêt, chalet
+  (fenêtres chaudes, guirlande, fumée), champ de neige qui scintille, deux grands sapins décorés, panier enneigé,
+  balle qui rebondit dans la poudreuse, **neige qui tombe en permanence** (discrète, 3 profondeurs).
+- **Décorations** : guirlande lumineuse et boules en haut, bonnet de Père Noël sur le logo, étincelles, reflet
+  brillant, ruban « Saison de Noël », neige + houx + lueur dorée sur JOUER, cadeaux, sucre d'orge, neige sur les
+  tuiles et les boutons du haut, lueur au survol.
+- **Ambiance sonore** ajoutée à la musique (conservée) : vent d'hiver léger, grelots discrets, note de cloche.
+- `tests/season.test.mjs` (2 tests, 352 au total) ; menu à 60 images/s ; aucune erreur.
+- `dist/HoopBounce_Test_v5.apk` (1.4.0-test5) : mise à jour par-dessus les versions précédentes.
+
+**Modifié**
+- Carte Trickshot du menu « Modes de jeu » : affichait encore « x/50 » (corrigé en « x/20 »).
+- Le jeu, les boutons, les sauvegardes : **inchangés**.
+
+**Reste à faire**
+- Avis du porteur du projet sur le menu de Noël ; étapes suivantes de la saison seulement après validation.
 
 ### 23/11/2026 — Étape 24 : Boutique et Collection refaites, chacune avec son rôle (APK de test v4)
 
