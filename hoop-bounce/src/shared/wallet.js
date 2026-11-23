@@ -14,9 +14,9 @@ const INV_KEY = 'hoopbounce.inventory';
 
 /** Familles de la collection (résumé « Skins 8/21 · Traînées 5/10 · Effets 3/20 »). */
 export const COLLECTION_GROUPS = Object.freeze([
-  Object.freeze({ id: 'skins', icon: '🏀', categories: Object.freeze(['ball']) }),
-  Object.freeze({ id: 'trails', icon: '✨', categories: Object.freeze(['trail']) }),
-  Object.freeze({ id: 'effects', icon: '💥', categories: Object.freeze(['bounce', 'goal']) }),
+  Object.freeze({ id: 'skins', icon: 'ball', categories: Object.freeze(['ball']) }),
+  Object.freeze({ id: 'trails', icon: 'sparkle', categories: Object.freeze(['trail']) }),
+  Object.freeze({ id: 'effects', icon: 'burst', categories: Object.freeze(['bounce', 'goal']) }),
 ]);
 
 export class Wallet {

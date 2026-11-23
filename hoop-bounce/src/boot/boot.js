@@ -71,7 +71,7 @@
 
   // Polices : le texte n'apparaît qu'une fois la police chargée (pas de changement de police visible)
   var fontsReady = document.fonts && document.fonts.load
-    ? Promise.all([document.fonts.load('800 40px "Unbounded"'), document.fonts.load('600 14px "Outfit"')])
+    ? Promise.all([document.fonts.load('800 40px "Outfit"'), document.fonts.load('600 14px "Outfit"')])
     : Promise.resolve();
   var fontTimer = new Promise(function (r) { setTimeout(r, 1500); });
   Promise.race([fontsReady, fontTimer]).then(function () {

@@ -28,6 +28,15 @@ function makeCanvas(w, h) {
   return c;
 }
 
+/** Mélange deux couleurs #rrggbb (t = part de la seconde). Autres formats : inchangés. */
+function mixHex(a, b, t) {
+  const re = /^#([0-9a-f]{6})$/i;
+  if (!re.test(a ?? '') || !re.test(b ?? '')) return a;
+  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+  return `#${pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, '0')).join('')}`;
+}
+
 function hashString(s) {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
@@ -48,10 +57,18 @@ export class Background {
     const span = maxX - minX;
     const density = options.particles ?? 1;
 
-    this.layers = T.layers.map((def) => ({
-      ...def,
-      shapes: makeShapes(def, rng, minX * def.parallax - 25, minX * def.parallax + span * def.parallax + 35),
-    }));
+    // Perspective atmosphérique (précalculée, aucun coût par image) : la silhouette des plans lointains
+    // tire légèrement vers la couleur de l'horizon ; les plans proches gardent leur contraste.
+    const horizon = T.sky?.stops?.[T.sky.stops.length - 1]?.[1];
+    const n = T.layers.length;
+    this.layers = T.layers.map((def, i) => {
+      const k = n > 1 ? 1 - i / (n - 1) : 0;
+      return {
+        ...def,
+        color: horizon && k > 0 ? mixHex(def.color, horizon, 0.2 * k) : def.color,
+        shapes: makeShapes(def, rng, minX * def.parallax - 25, minX * def.parallax + span * def.parallax + 35),
+      };
+    });
 
     this.bokeh = (T.bokeh ?? []).length
       ? Array.from({ length: 12 }, () => ({

@@ -1,5 +1,6 @@
 // Étape 19 — « Modes à venir » : trois cartes de présentation, verrouillées, rien de jouable.
 import { test } from 'node:test';
+import { ICONS } from '../src/menu/icons.js';
 import assert from 'node:assert/strict';
 import { modesPage } from '../src/menu/pages.js';
 import { STRINGS } from '../src/menu/i18n.js';
@@ -14,9 +15,9 @@ test('Trickshot jouable en tête, puis exactement 3 modes à venir verrouillés 
   assert.equal((html.match(/data-locked="/g) ?? []).length, 3, 'les modes à venir ne peuvent pas être lancés');
   assert.equal((html.match(/class="fmode-art"/g) ?? []).length, 4);
   assert.equal((html.match(/class="fmode-lock"/g) ?? []).length, 3);
-  assert.equal((html.match(/🔒/g) ?? []).length, 3);
+  assert.equal(html.split(`<span class="fmode-soon"><span class="ico" aria-hidden="true">${ICONS.lock}`).length - 1, 3, 'un cadenas (icône) par mode à venir');
   assert.equal((html.match(/À venir/g) ?? []).length >= 3, true);
-  for (const e of ['🌊', '🏁', '🛠️']) assert.ok(html.includes(e), e);
+  for (const e of ['wave', 'race', 'tools']) assert.ok(html.includes(ICONS[e]), e);
 });
 
 test('textes demandés, traduits dans les 3 langues', () => {

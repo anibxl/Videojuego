@@ -6,21 +6,38 @@
 //   → chalet aux fenêtres chaudes, guirlande sur le toit, fumée de cheminée
 //   → champ de neige, grands sapins décorés (boules, guirlandes qui scintillent, étoile)
 //   → le panier enneigé et la balle qui rebondit dans la neige (l'identité du jeu reste là)
-//   → neige qui tombe en permanence (petits flocons discrets, trois profondeurs).
+//   → neige qui tombe en permanence (src/menu/snowfall.js : flocons lointains derrière les sapins,
+//     cristaux qui tournent, grands flocons flous au premier plan).
 //
 // Même interface que la salle de basket (MenuScene) : seuls le décor et ses animations changent.
 // Le côté gauche (logo, JOUER, tuiles) reste calme et voilé : la lecture des boutons n'est jamais gênée.
 
 import { MenuScene } from './scene.js';
 import { createRng, clamp } from '../core/math.js';
+import { Snowfall } from './snowfall.js';
 
-const SNOW = { low: 40, medium: 90, high: 150 };
 const BULBS = ['255,92,92', '255,206,84', '120,220,140', '110,180,255', '255,150,220'];
 
 function makeCanvas(w, h) {
   const c = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(Math.max(1, w), Math.max(1, h)) : document.createElement('canvas');
   c.width = Math.max(1, Math.round(w));
   c.height = Math.max(1, Math.round(h));
+  return c;
+}
+
+/** Ampoule ronde (cœur blanc, verre coloré, bord doux), précalculée par couleur. */
+function bulbSprite(rgb) {
+  const c = makeCanvas(24, 24);
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(10, 9, 0, 12, 12, 11);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.3, `rgba(${rgb},1)`);
+  grad.addColorStop(0.75, `rgba(${rgb},0.85)`);
+  grad.addColorStop(1, `rgba(${rgb},0)`);
+  g.fillStyle = grad;
+  g.beginPath();
+  g.arc(12, 12, 11, 0, Math.PI * 2);
+  g.fill();
   return c;
 }
 
@@ -61,16 +78,9 @@ export class ChristmasScene extends MenuScene {
     // La neige ne reflète pas comme un parquet verni
     this.q = { ...this.q, reflections: false };
     const rng = createRng(25);
-    const n = SNOW[this.qualityName] ?? SNOW.high;
-    this.flakes = Array.from({ length: n }, (_, i) => ({
-      x: rng(),
-      y: rng(),
-      layer: i % 3, // 0 loin (petits, lents), 1 milieu, 2 près (un peu plus grands, très transparents)
-      r: 0.6 + rng() * 0.9,
-      speed: 0.018 + rng() * 0.02,
-      sway: 0.5 + rng() * 1.2,
-      phase: rng() * Math.PI * 2,
-    }));
+    this.bulbs ??= Object.fromEntries(BULBS.map((c) => [c, bulbSprite(c)]));
+    if (!this.snow) this.snow = new Snowfall(this.qualityName, rng);
+    else this.snow.setQuality(this.qualityName);
     this.puffs = [];
     this.smoke = [];
     if (this.w > 1) this.resize(this.w, this.h);
@@ -432,6 +442,10 @@ export class ChristmasScene extends MenuScene {
     }
     ctx.globalAlpha = 1;
 
+    // Neige lointaine : derrière le champ et les grands sapins (profondeur)
+    this.snow.update(dt, motion);
+    this.snow.draw(ctx, 'far', { w, h, camX, camY });
+
     // 5. Champ de neige et paillettes de givre
     const floorX = -(this.floorW - w) / 2 - camX * 0.6;
     const floorY = this.horizon - camY * 0.5;
@@ -468,8 +482,8 @@ export class ChristmasScene extends MenuScene {
       const x = L.x - camX * 0.7;
       const y = L.y - camY * 0.55;
       ctx.globalAlpha = 0.35 + 0.65 * on;
-      ctx.fillStyle = `rgb(${L.c})`;
-      ctx.fillRect(x - L.r, y - L.r, L.r * 2, L.r * 2);
+      const b = this.bulbs[L.c];
+      if (b) ctx.drawImage(b, x - L.r * 1.5, y - L.r * 1.5, L.r * 3, L.r * 3);
       if (i % 2) continue; // un halo sur deux : même effet, moitié moins de calcul
       ctx.globalAlpha = 0.3 * on;
       ctx.drawImage(this.glow, x - L.r * 7, y - L.r * 7, L.r * 14, L.r * 14);
@@ -518,27 +532,8 @@ export class ChristmasScene extends MenuScene {
     }
     ctx.globalAlpha = 1;
 
-    // 9. Neige qui tombe : petits flocons, trois profondeurs, balancement doux
-    ctx.fillStyle = '#ffffff';
-    for (const f of this.flakes) {
-      const sp = [0.55, 0.8, 1.15][f.layer];
-      f.y += f.speed * sp * dt * motion;
-      if (f.y > 1.02) {
-        f.y = -0.02;
-        f.x = Math.random();
-      }
-      const x = ((f.x * w + Math.sin(t * 0.7 * f.sway + f.phase) * 14 * sp - camX * sp * 0.6) % w + w) % w;
-      const y = f.y * h;
-      const rr = f.r * [0.6, 0.85, 1.3][f.layer];
-      ctx.globalAlpha = [0.45, 0.55, 0.32][f.layer];
-      if (f.layer < 2) ctx.fillRect(x - rr, y - rr, rr * 2, rr * 2); // minuscules : un carré suffit
-      else {
-        ctx.beginPath();
-        ctx.arc(x, y, rr, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    ctx.globalAlpha = 1;
+    // 9. Cristaux de neige qui tournent lentement, devant le décor
+    this.snow.draw(ctx, 'mid', { w, h, camX, camY });
 
     // 10. Voile de lisibilité et vignette
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -547,6 +542,8 @@ export class ChristmasScene extends MenuScene {
       ctx.fillStyle = `rgba(3,6,14,${0.8 * this.dim})`;
       ctx.fillRect(0, 0, w, h);
     }
+    // Grands flocons flous au premier plan (restent visibles, atténués, quand une page est ouverte)
+    this.snow.draw(ctx, 'near', { w, h, camX, camY, alpha: 1 - 0.5 * this.dim });
     if (this.flash > 0) {
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha = this.flash * 0.5;

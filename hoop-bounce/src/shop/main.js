@@ -79,6 +79,7 @@ for (const el of document.querySelectorAll('[data-t]')) el.textContent = st(lang
 for (const el of document.querySelectorAll('[data-t-html]')) el.innerHTML = st(lang, el.dataset.tHtml);
 for (const el of document.querySelectorAll('[data-label]')) el.setAttribute('aria-label', st(lang, el.dataset.label));
 for (const el of document.querySelectorAll('.top .gem-ico')) el.innerHTML = ICONS.gem;
+for (const el of document.querySelectorAll('[data-ico]')) el.innerHTML = ICONS[el.dataset.ico] ?? '';
 
 // ─── État ───────────────────────────────────────────────────────────────────
 

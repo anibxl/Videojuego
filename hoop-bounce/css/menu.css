@@ -20,15 +20,13 @@
   --orange-rgb: 255, 122, 47;
   --gold: #ffc94d;
   --mint: #3fe0b8;
-  --radius-lg: 24px;
-  --radius-md: 18px;
-  --radius-sm: 12px;
-  --shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
-  --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.35);
+  --radius-lg: var(--r-xl);
+  --radius-md: var(--r-lg);
+  --radius-sm: var(--r-sm);
+  --shadow: var(--sh-3);
+  --shadow-soft: var(--sh-2);
   --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
   --ease-spring: cubic-bezier(0.3, 1.6, 0.45, 1);
-  --font-display: "Unbounded", system-ui, sans-serif;
-  --font-ui: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -71,7 +69,7 @@ button {
 
 button:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid rgba(var(--orange-rgb), 0.9);
+  outline: 2px solid rgba(255, 255, 255, 0.55);
   outline-offset: 3px;
 }
 
@@ -152,7 +150,7 @@ svg {
   gap: 8px;
   height: 38px;
   padding: 0 16px 0 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--surface);
   border: 1px solid var(--hairline);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), var(--shadow-soft);
@@ -166,7 +164,6 @@ svg {
   width: 26px;
   height: 26px;
   color: var(--gold);
-  filter: drop-shadow(0 0 6px rgba(255, 201, 77, 0.35));
 }
 
 /* ── Accueil ─────────────────────────────────────────────────────────────── */
@@ -210,7 +207,7 @@ svg {
   display: flex;
   flex-direction: column;
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   line-height: 0.92;
   letter-spacing: -0.015em;
   font-size: clamp(26px, 9.2vh, 54px);
@@ -247,13 +244,13 @@ svg {
   min-width: clamp(232px, 31vw, 320px);
   height: clamp(58px, 17vh, 76px);
   padding: 0 28px 0 clamp(8px, 1.6vh, 11px);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: linear-gradient(180deg, #ff9b52 0%, #ff7a2f 45%, #ff5d1d 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     inset 0 -3px 0 rgba(150, 40, 0, 0.35),
     0 12px 28px rgba(255, 96, 28, 0.32),
-    0 3px 8px rgba(0, 0, 0, 0.35);
+    0 3px 8px rgba(2, 6, 20, 0.35);
   isolation: isolate;
   text-align: left;
 }
@@ -292,7 +289,7 @@ svg {
   padding: clamp(11px, 3.4vh, 15px) clamp(10px, 3vh, 14px) clamp(11px, 3.4vh, 15px) clamp(13px, 3.8vh, 17px);
   border-radius: 50%;
   background: rgba(120, 30, 0, 0.28);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25), inset 0 -1px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 2px rgba(2, 6, 20, 0.25), inset 0 -1px 0 rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
@@ -304,7 +301,7 @@ svg {
 
 .play-label {
   font-family: var(--font-display);
-  font-weight: 750;
+  font-weight: 700;
   font-size: clamp(19px, 6vh, 26px);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -350,7 +347,7 @@ svg {
   width: clamp(56px, 16vh, 72px);
   height: clamp(56px, 16vh, 72px);
   padding: clamp(15px, 4.4vh, 20px);
-  border-radius: 22px;
+  border-radius: var(--r-lg);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)) padding-box,
     var(--surface);
@@ -524,7 +521,7 @@ svg {
   width: 84px;
   height: 84px;
   padding: 22px;
-  border-radius: 28px;
+  border-radius: var(--r-xl);
   color: var(--ink-2);
   background: var(--surface-2);
   border: 1px solid var(--hairline);
@@ -607,7 +604,7 @@ svg {
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
     var(--surface);
   border: 1px solid rgba(var(--accent), 0.28);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 18px 40px rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(var(--accent), 0);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 18px 40px rgba(2, 6, 20, 0.35), 0 0 0 0 rgba(var(--accent), 0);
   transition: transform 0.35s var(--ease-spring), box-shadow 0.35s ease, border-color 0.35s ease;
 }
 
@@ -615,7 +612,7 @@ svg {
   .fmode:hover {
     transform: translateY(-4px);
     border-color: rgba(var(--accent), 0.55);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 24px 50px rgba(0, 0, 0, 0.4), 0 0 34px rgba(var(--accent), 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 24px 50px rgba(2, 6, 20, 0.4), 0 0 34px rgba(var(--accent), 0.22);
   }
   .fmode:hover .fmode-art svg { transform: scale(1.04); }
   .fmode:hover .fmode-lock { animation: lock-wiggle 0.6s ease; }
@@ -679,7 +676,7 @@ svg {
   color: #fff;
   background: rgba(6, 10, 22, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), 0 0 0 4px rgba(var(--accent), 0.12);
+  box-shadow: 0 6px 16px rgba(2, 6, 20, 0.35), 0 0 0 4px rgba(var(--accent), 0.12);
 }
 
 .fmode.shake .fmode-lock { animation: lock-wiggle 0.5s ease; }
@@ -725,9 +722,9 @@ svg {
   gap: 6px;
   height: 26px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 11.5px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: rgb(var(--accent));
@@ -892,7 +889,7 @@ svg {
   height: 38px;
   flex: none;
   padding: 9px;
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   background: rgba(255, 255, 255, 0.05);
   color: var(--ink-2);
 }
@@ -969,13 +966,13 @@ svg {
 
 .slider::-webkit-slider-runnable-track {
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: linear-gradient(90deg, var(--orange) 0 var(--fill), rgba(255, 255, 255, 0.1) var(--fill) 100%);
 }
 
 .slider::-moz-range-track {
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: linear-gradient(90deg, var(--orange) 0 var(--fill), rgba(255, 255, 255, 0.1) var(--fill) 100%);
 }
 
@@ -986,7 +983,7 @@ svg {
   margin-top: -9px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), 0 0 0 5px rgba(var(--orange-rgb), 0.18);
+  box-shadow: 0 2px 8px rgba(2, 6, 20, 0.45), 0 0 0 5px rgba(var(--orange-rgb), 0.18);
   transition: transform 0.15s ease;
 }
 
@@ -996,7 +993,7 @@ svg {
   border: 0;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), 0 0 0 5px rgba(var(--orange-rgb), 0.18);
+  box-shadow: 0 2px 8px rgba(2, 6, 20, 0.45), 0 0 0 5px rgba(var(--orange-rgb), 0.18);
 }
 
 .slider:active::-webkit-slider-thumb {
@@ -1017,7 +1014,7 @@ svg {
   width: 54px;
   height: 32px;
   flex: none;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(255, 255, 255, 0.12);
   transition: background-color 0.25s ease;
 }
@@ -1031,7 +1028,7 @@ svg {
   height: 26px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 6px rgba(2, 6, 20, 0.4);
   transition: transform 0.32s var(--ease-spring);
 }
 
@@ -1050,7 +1047,7 @@ svg {
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
   padding: 4px;
-  border-radius: 14px;
+  border-radius: var(--r-md);
   background: rgba(0, 0, 0, 0.28);
   border: 1px solid var(--hairline);
 }
@@ -1060,10 +1057,10 @@ svg {
   top: 4px;
   bottom: 4px;
   left: 4px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   background: var(--surface-2);
   border: 1px solid var(--hairline-strong);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 12px rgba(2, 6, 20, 0.35);
   transition: transform 0.38s var(--ease-out), width 0.38s var(--ease-out);
 }
 
@@ -1072,7 +1069,7 @@ svg {
   z-index: 1;
   height: 38px;
   padding: 0 12px;
-  border-radius: 10px;
+  border-radius: var(--r-sm);
   font-size: 14px;
   font-weight: 600;
   color: var(--ink-3);
@@ -1188,7 +1185,7 @@ svg {
 .skeleton-line {
   width: 70%;
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(255, 255, 255, 0.06);
   position: relative;
   overflow: hidden;
@@ -1225,7 +1222,7 @@ svg {
 .buy {
   width: 100%;
   height: 36px;
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1255,7 +1252,7 @@ svg {
 .filter {
   height: 34px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 13.5px;
   font-weight: 600;
   color: var(--ink-3);
@@ -1330,7 +1327,7 @@ svg {
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, #16223f, #0e172c);
   border: 1px solid var(--hairline-strong);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 30px 80px rgba(2, 6, 20, 0.6);
   transform: translateY(18px) scale(0.97);
   transition: transform 0.45s var(--ease-out);
 }
@@ -1386,7 +1383,7 @@ svg {
   bottom: calc(22px + var(--safe-bottom));
   z-index: 30;
   padding: 12px 18px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(14, 22, 42, 0.94);
   border: 1px solid var(--hairline-strong);
   box-shadow: var(--shadow);

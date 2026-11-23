@@ -211,7 +211,7 @@ class LabBackground {
 
     // Numéro du test, discret, sous le premier écran
     g.save();
-    g.font = `800 ${Math.round(0.45 * S)}px Unbounded, system-ui, sans-serif`;
+    g.font = `800 ${Math.round(0.45 * S)}px Outfit, system-ui, sans-serif`;
     g.textAlign = 'left';
     g.textBaseline = 'middle';
     const sx = this.screens[0];

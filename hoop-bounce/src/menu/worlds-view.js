@@ -13,7 +13,8 @@ import { WorldArt } from '../worlds/art.js';
 import { ICONS } from './icons.js';
 import { t } from './i18n.js';
 
-const EMOJI = { city: '🏙️', snow: '❄️', volcano: '🌋', forest: '🌲', space: '🌌' };
+/** Icône de chaque monde (src/menu/icons.js). */
+const WORLD_ICON = { city: 'city', snow: 'snow', volcano: 'volcano', forest: 'forest', space: 'space' };
 const hexToRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ');
 const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z"/></svg>';
 const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
@@ -113,7 +114,7 @@ export class WorldsView {
           <span class="unlocked-flag">${t(l, 'worlds.unlocked')}</span>
         </span>
         <span class="wcard-info">
-          <span class="wcard-title"><span class="emoji" aria-hidden="true">${EMOJI[w.id]}</span><b>${gt(l, w.nameKey)}</b><em>${t(l, 'worlds.levels', { n: s.total })}</em></span>
+          <span class="wcard-title"><span class="emoji ico" aria-hidden="true">${ICONS[WORLD_ICON[w.id]] ?? ''}</span><b>${gt(l, w.nameKey)}</b><em>${t(l, 'worlds.levels', { n: s.total })}</em></span>
           <span class="wcard-tag">${gt(l, w.taglineKey)}</span>
           <span class="wcard-bar"><i style="--w:${s.percent}%"></i></span>
           <span class="wcard-meta"><span class="wv-star"></span>${s.stars}/${s.maxStars}<span class="dot">·</span>${t(l, 'worlds.progress', { done: s.done, total: s.total })}</span>
@@ -262,7 +263,7 @@ export class WorldsView {
     this.levelsEl.innerHTML = `
       <aside class="wl-side">
         <span class="wl-art"><canvas></canvas></span>
-        <h2><span class="emoji" aria-hidden="true">${EMOJI[w.id]}</span>${gt(l, w.nameKey)}</h2>
+        <h2><span class="emoji ico" aria-hidden="true">${ICONS[WORLD_ICON[w.id]] ?? ''}</span>${gt(l, w.nameKey)}</h2>
         <p class="wl-tag">${gt(l, w.taglineKey)}</p>
         <span class="wcard-bar"><i style="--w:${s.percent}%"></i></span>
         <p class="wl-meta"><span class="wv-star"></span>${t(l, 'worlds.stars', { n: s.stars, max: s.maxStars })}<span class="dot">·</span>${t(l, 'worlds.progress', { done: s.done, total: s.total })}</p>

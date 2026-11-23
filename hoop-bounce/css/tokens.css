@@ -1,0 +1,144 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   HOOP BOUNCE — SYSTÈME DE DESIGN (chargé en premier sur toutes les pages)
+
+   Une seule direction artistique : « terrain de nuit ». Bleu nuit profond, un accent chaud (orange ballon),
+   l'or pour les récompenses, une seule lumière qui vient d'en haut à gauche. Tout ce qui s'affiche
+   (cartes, panneaux, fenêtres, boutons, pièces, gemmes, coffres, icônes) partage ces valeurs.
+
+   TYPOGRAPHIE — une seule famille : Outfit (variable, 100 → 900, chiffres tabulaires).
+     Grand titre   --t-display   logo, « Panier ! », grands moments
+     Titre         --t-h1        titre de page
+     Sous-titre    --t-h2        titre de carte, de section
+     Texte         --t-body      texte courant
+     Petit texte   --t-small     légendes, états
+     Étiquette     --t-label     petites capitales (rareté, catégorie)
+   Les pages utilisent ces variables ; les tailles s'adaptent à la hauteur de l'écran (paysage).
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Police */
+  --font-family: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-family);
+  --font-ui: var(--font-family);
+
+  /* Échelle typographique */
+  --t-display: clamp(28px, 9vh, 46px);
+  --t-h1: clamp(20px, 5.6vh, 26px);
+  --t-h2: clamp(15px, 4.2vh, 18px);
+  --t-body: clamp(13px, 3.6vh, 15px);
+  --t-small: clamp(11px, 3.1vh, 12.5px);
+  --t-label: clamp(9.5px, 2.7vh, 10.5px);
+  --w-display: 800;
+  --w-title: 700;
+  --w-strong: 650;
+  --w-body: 500;
+  --track-display: -0.02em;
+  --track-title: -0.01em;
+  --track-label: 0.12em;
+  --lh-tight: 1.1;
+  --lh-body: 1.45;
+
+  /* Espacements (multiples de 4) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px;
+
+  /* Arrondis : un seul jeu pour tout le jeu */
+  --r-xs: 8px;    /* étiquettes, pastilles carrées */
+  --r-sm: 12px;   /* petits boutons, champs */
+  --r-md: 16px;   /* boutons, tuiles */
+  --r-lg: 20px;   /* cartes */
+  --r-xl: 26px;   /* panneaux, fenêtres */
+  --r-pill: 999px;
+
+  /* Lumière et ombres : lumière en haut à gauche, ombres bleu nuit (jamais noir pur) */
+  --edge-light: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --edge-light-strong: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --sh-1: 0 2px 6px rgba(2, 6, 20, 0.28);
+  --sh-2: 0 6px 16px rgba(2, 6, 20, 0.32), 0 1px 3px rgba(2, 6, 20, 0.24);
+  --sh-3: 0 14px 34px rgba(2, 6, 20, 0.42), 0 3px 8px rgba(2, 6, 20, 0.26);
+  --sh-4: 0 24px 60px rgba(2, 6, 20, 0.55), 0 6px 14px rgba(2, 6, 20, 0.3);
+
+  /* Surfaces (verre sombre) */
+  --panel: rgba(13, 21, 42, 0.78);
+  --panel-2: rgba(20, 31, 58, 0.84);
+  --panel-line: rgba(255, 255, 255, 0.07);
+  --panel-line-strong: rgba(255, 255, 255, 0.13);
+
+  /* Couleurs de la marque */
+  --c-ink: #f2f5ff;
+  --c-ink-2: #b6c1dc;
+  --c-ink-3: #74809f;
+  --c-orange: #ff7a2f;
+  --c-orange-rgb: 255, 122, 47;
+  --c-gold: #ffc94d;
+  --c-gold-rgb: 255, 201, 77;
+  --c-gem: #5fd4ff;
+  --c-gem-rgb: 95, 212, 255;
+  --c-mint: #3fe0b8;
+
+  /* Mouvement */
+  --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --ease-soft: cubic-bezier(0.25, 0.8, 0.3, 1);
+  --ease-spring: cubic-bezier(0.3, 1.6, 0.45, 1);
+  --dur-fast: 0.18s;
+  --dur: 0.32s;
+  --dur-slow: 0.6s;
+}
+
+/* Texte : rendu net, chiffres alignés dans les compteurs */
+html { font-family: var(--font-family); font-optical-sizing: auto; text-rendering: optimizeLegibility; }
+b, strong { font-weight: var(--w-strong); }
+
+/* Focus clavier discret (plus d'anneau orange épais sur les boutons touchés au doigt) */
+:focus { outline: none; }
+:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.55); outline-offset: 3px; }
+
+/* ── Pièce, gemme : illustrations communes (assets/ui/), utilisables partout ───────────────── */
+.hb-coin,
+.hb-gem {
+  position: relative;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  vertical-align: -0.14em;
+  background: center / contain no-repeat;
+}
+.hb-coin { background-image: url("../assets/ui/coin.svg"); }
+.hb-gem { background-image: url("../assets/ui/gem.svg"); }
+/* Éclat discret : une petite étoile à quatre branches scintille de temps en temps (transform/opacity
+   uniquement : aucun recalcul de dessin) */
+.hb-coin::after,
+.hb-gem::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  top: 4%;
+  width: 46%;
+  height: 46%;
+  background:
+    radial-gradient(closest-side, rgba(255, 255, 255, 0.95), transparent) center / 100% 18% no-repeat,
+    radial-gradient(closest-side, rgba(255, 255, 255, 0.95), transparent) center / 18% 100% no-repeat,
+    radial-gradient(closest-side, rgba(255, 255, 255, 0.7), transparent 70%) center / 40% 40% no-repeat;
+  transform: scale(0);
+  opacity: 0;
+  animation: hb-twinkle 4.8s ease-in-out infinite;
+  animation-delay: var(--glint-delay, 0s);
+  pointer-events: none;
+}
+.hb-gem::after { left: 46%; top: 2%; animation-duration: 3.6s; }
+@keyframes hb-twinkle { 0%, 82%, 100% { transform: scale(0) rotate(0); opacity: 0; } 90% { transform: scale(1) rotate(45deg); opacity: 1; } }
+/* Légère rotation (pièce posée qui pivote doucement) */
+.hb-coin.spin { animation: hb-coin-spin 6s ease-in-out infinite; transform-style: preserve-3d; }
+@keyframes hb-coin-spin { 0%, 100% { transform: rotateY(-22deg); } 50% { transform: rotateY(22deg); } }
+/* Apparition d'un montant (pièce qui fait un tour) */
+.hb-coin.pop { animation: hb-coin-pop 0.9s var(--ease-out) both; }
+@keyframes hb-coin-pop { from { transform: rotateY(-360deg) scale(0.6); } }
+.hb-gem.shine { animation: hb-gem-float 3.6s ease-in-out infinite; }
+@keyframes hb-gem-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hb-coin, .hb-gem, .hb-coin::after, .hb-gem::after { animation: none !important; }
+}
+.hb-coin.fill, .hb-gem.fill { display: block; width: 100%; height: 100%; vertical-align: 0; }
+/* Ancien emplacement de pièce (boutique, écran de jeu) : même illustration */
+.coin-ico { background: url("../assets/ui/coin.svg") center / contain no-repeat !important; box-shadow: none !important; border-radius: 0 !important; }

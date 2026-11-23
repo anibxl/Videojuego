@@ -30,9 +30,29 @@ function gearPath() {
 }
 
 export const ICONS = {
-  // Gemme (monnaie rare du Hoop Pass) : facettes en aplats, pas de dégradé (les id de dégradé se
-  // perdent quand la première copie est masquée)
-  gem: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10l4.5 5.6L12 21 2.5 9.1z" fill="#5fd4ff"/><path d="M2.5 9.1h19L12 21z" fill="#2a8fe0"/><path d="M8.2 9.1 12 21l3.8-11.9z" fill="#47b4f5"/><path d="M7 3.5 8.2 9.1h7.6L17 3.5z" fill="#9be8ff"/><path d="M7 3.5 2.5 9.1h5.7zM17 3.5l4.5 5.6h-5.7z" fill="#7ad9ff"/><path d="M9.3 5.2h2.4l-.6 2.2H8.8z" fill="#fff" opacity=".85"/></svg>',
+  // ── Icônes de contenu (missions, succès, mondes, modes, sources d'XP) : même trait, même grille ──
+  ball: svg('<circle cx="12" cy="12" r="8.6"/><path d="M12 3.4v17.2M3.4 12h17.2"/><path d="M6.4 5.7c2.2 1.8 3.3 3.9 3.3 6.3s-1.1 4.5-3.3 6.3M17.6 5.7c-2.2 1.8-3.3 3.9-3.3 6.3s1.1 4.5 3.3 6.3"/>'),
+  flag: svg('<path d="M5.5 21V4"/><path d="M5.5 4.5h11l-2.2 3.8 2.2 3.7h-11"/>'),
+  hoop: svg('<path d="M12 4v4.5"/><path d="M4.5 8.5h15"/><path d="M6.2 8.5l1.5 10h8.6l1.5-10"/><path d="M9.2 8.5l.9 10M14.8 8.5l-.9 10M7 13.2h10"/>'),
+  star: svg('<path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z"/>'),
+  clock: svg('<circle cx="12" cy="13" r="7.8"/><path d="M12 9v4.3l2.8 1.7M9.5 2.8h5"/>'),
+  burst: svg('<path d="M12 3v3.8M12 17.2V21M3 12h3.8M17.2 12H21M5.6 5.6l2.7 2.7M15.7 15.7l2.7 2.7M18.4 5.6l-2.7 2.7M8.3 15.7l-2.7 2.7"/><circle cx="12" cy="12" r="2.3"/>'),
+  city: svg('<path d="M3.5 20.5h17"/><path d="M5 20.5v-11h5v11M10 20.5V5h5.5v15.5M15.5 20.5V11H19v9.5"/><path d="M7 12.5h1M7 15.5h1M12.3 8h1M12.3 11h1M12.3 14h1M17 14h.5"/>'),
+  snow: svg('<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/><path d="M9.6 4.6 12 7l2.4-2.4M9.6 19.4 12 17l2.4 2.4M4.5 10.6l3.3-.9-.9-3.3M19.5 13.4l-3.3.9.9 3.3M4.5 13.4l3.3.9-.9 3.3M19.5 10.6l-3.3-.9.9-3.3"/>', { stroke: 1.7 }),
+  volcano: svg('<path d="M3 20.5h18l-5.5-10h-7z"/><path d="M8.5 10.5l1.8 2.4 1.7-1.4 1.7 1.4 1.8-2.4"/><path d="M10 6.6c.4-1.6 1.6-2.6 3-2.6M14.6 7.2c.8-1 1.9-1.5 3-1.3"/>'),
+  forest: svg('<path d="M12 3l5 6.4h-2.6L18 14h-3l3.5 4.5h-13L9 14H6l3.6-4.6H7z"/><path d="M12 18.5v3"/>'),
+  space: svg('<circle cx="12" cy="12" r="5.6"/><path d="M5.2 14.6c-2.6 2-2.4 3.7.6 3.6 2.4-.1 5.6-1.2 8.7-3 3.1-1.8 5.4-3.9 6.3-5.7.9-1.8-.4-2.8-3.3-2.5"/>'),
+  skull: svg('<path d="M12 3.5c-4.3 0-7.5 3-7.5 7 0 2.5 1.2 4.3 3 5.3V19a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5v-3.2c1.8-1 3-2.8 3-5.3 0-4-3.2-7-7.5-7z"/><circle cx="9" cy="11" r="1.5"/><circle cx="15" cy="11" r="1.5"/><path d="M10.5 20.5v-2.4M13.5 20.5v-2.4"/>'),
+  chest: svg('<path d="M3.8 11h16.4v8.2a1.3 1.3 0 0 1-1.3 1.3H5.1a1.3 1.3 0 0 1-1.3-1.3z"/><path d="M3.8 11V9a5 5 0 0 1 5-5h6.4a5 5 0 0 1 5 5v2"/><path d="M10.5 11v3.2h3V11"/>'),
+  crown: svg('<path d="M3.5 8l4.3 3.6L12 5l4.2 6.6L20.5 8l-1.7 10.5H5.2z"/><path d="M5.2 21h13.6"/>'),
+  coinline: svg('<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="5.4"/><path d="M12 9.4v5.2"/>'),
+  gemline: svg('<path d="M7 4h10l4 5.5-9 11-9-11z"/><path d="M3 9.5h18M9.6 4 8 9.5l4 11 4-11L14.4 4"/>'),
+  wave: svg('<path d="M3 15.5c2.2 0 2.2-2 4.5-2s2.3 2 4.5 2 2.2-2 4.5-2 2.3 2 4.5 2"/><path d="M3 19.5c2.2 0 2.2-2 4.5-2s2.3 2 4.5 2 2.2-2 4.5-2 2.3 2 4.5 2"/><path d="M5.5 11c1-3.8 3.9-6.4 7.5-6.4 2.6 0 4.7 1.4 5.4 3.5-1.8-.9-4.4-.4-5.5 1.5"/>'),
+  race: svg('<path d="M5 21V4"/><path d="M5 4.5h13.5v8.5H5"/><path d="M9.5 4.5v8.5M14 4.5v8.5M5 8.75h13.5"/>', { stroke: 1.7 }),
+  tools: svg('<path d="M14.6 6.4a4.2 4.2 0 0 0 5.1 5.1l-7.6 7.6a2.1 2.1 0 0 1-3-3z"/><path d="M4.5 4.5l4.6 4.6"/><path d="M3.6 6.9 6.9 3.6l2.6 2.6-3.3 3.3z"/>'),
+  tv: svg('<rect x="3.5" y="5.5" width="17" height="12.5" rx="2.4"/><path d="M8.5 21h7"/><path d="M10.5 9.4l4.2 2.35-4.2 2.35z"/>'),
+  tree: svg('<path d="M12 3l5.2 7h-2.8l3.8 5.5H5.8L9.6 10H6.8z"/><path d="M12 15.5V20M9.5 20.5h5"/>'),
+  gem: '<span class="hb-gem fill" aria-hidden="true"></span>',
   play: svg('<path d="M8.5 5.8v12.4a1 1 0 0 0 1.5.86l10.1-6.2a1 1 0 0 0 0-1.72L10 4.94a1 1 0 0 0-1.5.86z"/>', { fill: true }),
   back: svg('<path d="M15 5l-7 7 7 7"/>', { stroke: 2.3 }),
   close: svg('<path d="M6 6l12 12M18 6L6 18"/>', { stroke: 2.2 }),
@@ -43,7 +63,8 @@ export const ICONS = {
   collection: svg('<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><path d="M5.6 5.6a12 12 0 0 1 0 12.8M18.4 5.6a12 12 0 0 0 0 12.8"/>'),
   settings: svg(`<path d="${gearPath()}"/><circle cx="12" cy="12" r="3"/>`),
   lock: svg('<rect x="5" y="10.5" width="14" height="10" rx="2.6"/><path d="M8.3 10.5V7.6a3.7 3.7 0 0 1 7.4 0v2.9"/><path d="M12 14.5v2.2"/>'),
-  coin: svg('<circle cx="12" cy="12" r="9.5" fill="currentColor"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="rgba(120,70,0,.35)" stroke-width="1.6"/><circle cx="12" cy="12" r="2.2" fill="rgba(120,70,0,.3)"/><path d="M7.4 9.2a5.4 5.4 0 0 1 4-3" fill="none" stroke="rgba(255,255,255,.65)" stroke-width="1.5" stroke-linecap="round"/>', { fill: true }),
+  // Pièce et gemme : illustrations communes (assets/ui/, css/tokens.css)
+  coin: '<span class="hb-coin fill" aria-hidden="true"></span>',
   music: svg('<path d="M9 18V6.2l10-2v11.6"/><circle cx="6.8" cy="18" r="2.4"/><circle cx="16.8" cy="15.8" r="2.4"/>'),
   sound: svg('<path d="M4.5 9.5h3.2L12 5.8v12.4l-4.3-3.7H4.5z"/><path d="M15.6 9a4.2 4.2 0 0 1 0 6M18.3 6.5a7.8 7.8 0 0 1 0 11"/>'),
   vibration: svg('<rect x="8" y="3.8" width="8" height="16.4" rx="2.2"/><path d="M4.5 8.5v7M19.5 8.5v7M2 10.5v3M22 10.5v3"/>'),

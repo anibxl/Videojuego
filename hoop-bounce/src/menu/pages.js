@@ -124,9 +124,9 @@ const ART_CREATOR = () => `<svg viewBox="0 0 320 150" preserveAspectRatio="xMidY
 </svg>`;
 
 const MODES = [
-  { id: 'endless', emoji: '🌊', accent: '96,190,255', art: ART_ENDLESS },
-  { id: 'race', emoji: '🏁', accent: '255,108,120', art: ART_RACE },
-  { id: 'creator', emoji: '🛠️', accent: '63,224,184', art: ART_CREATOR },
+  { id: 'endless', icon: 'wave', accent: '96,190,255', art: ART_ENDLESS },
+  { id: 'race', icon: 'race', accent: '255,108,120', art: ART_RACE },
+  { id: 'creator', icon: 'tools', accent: '63,224,184', art: ART_CREATOR },
 ];
 
 export function modesPage(lang) {
@@ -136,9 +136,9 @@ export function modesPage(lang) {
       <button class="fmode pressable" data-locked="${m.id}" data-mode="${m.id}" style="--accent:${m.accent}" aria-label="${t(lang, `mode.${m.id}`)} — ${t(lang, `mode.${m.id}.desc`)} — ${t(lang, 'soon')}">
         <span class="fmode-art">${m.art(lang)}<span class="fmode-shine"></span><span class="fmode-lock">${ICONS.lock}</span></span>
         <span class="fmode-body">
-          <span class="fmode-title"><span class="emoji" aria-hidden="true">${m.emoji}</span>${t(lang, `mode.${m.id}`)}</span>
+          <span class="fmode-title"><span class="emoji ico" aria-hidden="true">${ICONS[m.icon]}</span>${t(lang, `mode.${m.id}`)}</span>
           <span class="fmode-desc">${t(lang, `mode.${m.id}.desc`)}</span>
-          <span class="fmode-soon"><span aria-hidden="true">🔒</span>${t(lang, 'soon')}</span>
+          <span class="fmode-soon"><span class="ico" aria-hidden="true">${ICONS.lock}</span>${t(lang, 'soon')}</span>
         </span>
       </button>
     </div>`,
@@ -150,7 +150,7 @@ export function modesPage(lang) {
       <button class="fmode fmode-play pressable" data-nav="trickshot" data-mode="trickshot" style="--accent:63,224,255" aria-label="${tt(lang, 'mode')} — ${tt(lang, 'tagline')}">
         <span class="fmode-art">${TRICKSHOT_ART()}<span class="fmode-shine"></span><span class="fmode-new">${tt(lang, 'new')}</span></span>
         <span class="fmode-body">
-          <span class="fmode-title"><span class="emoji" aria-hidden="true">🎯</span>${tt(lang, 'mode')}</span>
+          <span class="fmode-title"><span class="emoji ico" aria-hidden="true">${ICONS.target}</span>${tt(lang, 'mode')}</span>
           <span class="fmode-desc">${tt(lang, 'tagline')}</span>
           <span class="fmode-soon fmode-go">${ICONS.play}${tt(lang, 'play')}<small>${ts.done}/${ts.total} · ★ ${ts.stars}</small></span>
         </span>

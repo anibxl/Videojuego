@@ -27,7 +27,7 @@ html[data-season="christmas"] { --xmas-red: #e2263a; --xmas-green: #2f8a48; --xm
 @keyframes xb-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 @keyframes xb-glow { 0%, 100% { opacity: 0.28; } 50% { opacity: 0.06; } }
 .xmas-bauble { position: absolute; top: 4px; width: clamp(18px, 5vh, 26px); transform-origin: 50% 0; animation: xmas-swing 4.8s ease-in-out infinite; }
-.xmas-bauble svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35)); }
+.xmas-bauble svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 4px 8px rgba(2, 6, 20, 0.35)); }
 .xmas-bauble.b1 { left: 33.3%; }
 .xmas-bauble.b2 { left: 66.6%; animation-delay: -2.1s; }
 @keyframes xmas-swing { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
@@ -41,7 +41,7 @@ html[data-season="christmas"] .logo-ball { position: relative; }
   top: -40%;
   width: 92%;
   transform: rotate(-14deg);
-  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 3px 5px rgba(2, 6, 20, 0.35));
 }
 .xmas-hat svg { display: block; width: 100%; height: auto; }
 .xmas-sparks { position: absolute; inset: -14px -24px -10px -10px; }
@@ -76,7 +76,7 @@ html[data-season="christmas"] .wordmark .w2 {
   gap: 8px;
   margin: 8px 0 0;
   padding: 4px 14px;
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   background: linear-gradient(90deg, rgba(226, 38, 58, 0.9), rgba(190, 24, 44, 0.9));
   border: 1px solid rgba(255, 210, 84, 0.55);
   box-shadow: 0 6px 18px rgba(226, 38, 58, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -94,9 +94,9 @@ html[data-season="christmas"] .play::before { box-shadow: 0 0 34px 6px rgba(255,
 .xmas-snowcap { position: absolute; left: 18px; right: 18px; top: -4px; height: 13px; z-index: 1; filter: drop-shadow(0 2px 2px rgba(60, 80, 120, 0.35)); }
 .xmas-snowcap svg { display: block; width: 100%; height: 100%; }
 .xmas-holly { position: absolute; left: clamp(26px, 7vh, 40px); top: -14px; width: clamp(30px, 8.5vh, 40px); z-index: 2; transform: rotate(-8deg); }
-.xmas-holly svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3)); }
+.xmas-holly svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 2px 3px rgba(2, 6, 20, 0.3)); }
 .xmas-gifts { position: absolute; left: calc(100% + 12px); bottom: -4px; display: flex; align-items: flex-end; gap: 4px; }
-.xmas-gifts span { display: block; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.4)); }
+.xmas-gifts span { display: block; filter: drop-shadow(0 6px 10px rgba(2, 6, 20, 0.4)); }
 .xmas-gifts svg { display: block; width: 100%; height: auto; }
 .xmas-gifts .g1 { width: clamp(30px, 9vh, 42px); animation: xmas-gift 3.6s ease-in-out infinite; }
 .xmas-gifts .g2 { width: clamp(22px, 6.5vh, 30px); animation: xmas-gift 3.6s ease-in-out -1.8s infinite; }
@@ -137,7 +137,7 @@ html[data-season="christmas"] .hub::after {
 
 /* Sucre d'orge au bout des tuiles */
 html[data-season="christmas"] .dock { position: relative; }
-.xmas-candy { position: absolute; left: calc(100% + 10px); bottom: clamp(18px, 6vh, 26px); width: clamp(16px, 4.5vh, 22px); transform: rotate(12deg); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4)); }
+.xmas-candy { position: absolute; left: calc(100% + 10px); bottom: clamp(18px, 6vh, 26px); width: clamp(16px, 4.5vh, 22px); transform: rotate(12deg); filter: drop-shadow(0 4px 6px rgba(2, 6, 20, 0.4)); }
 .xmas-candy svg { display: block; width: 100%; height: auto; }
 
 /* Petits écrans : on garde l'essentiel */

@@ -15,7 +15,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Coffre dessiné en CSS (corps, couvercle, ferrures, serrure) — couleur selon le type. */
 export function chestHtml(kind = 'common', extra = '') {
-  return `<span class="chest ${kind} ${extra}"><span class="chest-glow"></span><span class="chest-lid"><i></i></span><span class="chest-body"><i></i><b></b></span></span>`;
+  return `<span class="chest ${kind} ${extra}" aria-hidden="true"><span class="chest-glow"></span><span class="chest-body"></span><span class="chest-lid"></span><span class="chest-seam"></span></span>`;
 }
 
 export class RewardFx {
@@ -63,20 +63,28 @@ export class RewardFx {
       : r.chest === 'legendary' ? '255,170,60' : r.chest === 'premium' ? '120,210,255' : r.chest === 'super' ? '255,150,70' : r.chest === 'epic' ? '180,107,255' : r.chest === 'rare' ? '77,163,255'
         : r.gems && !r.coins ? '95,212,255' : '255,201,77');
     el.classList.toggle('many', items.length > 1);
-    el.classList.remove('open', 'is-burst', 'done');
+    el.classList.remove('open', 'is-burst', 'is-charge', 'done', 'from-chest');
+    el.classList.toggle('from-chest', !!r.chest);
     el.hidden = false;
     void el.offsetWidth;
     el.classList.add('open');
     this.env.vibrate(15);
 
     if (r.chest) {
-      center.innerHTML = `${chestHtml(r.chest, 'drop')}<span class="rfx-chest-name">${lt(l, `chest.${r.chest}`)}</span>`;
+      // Ouverture d'un coffre : il apparaît au centre, tremble de plus en plus fort pendant que la
+      // lumière s'échappe par la fente, s'ouvre dans un éclair et une gerbe de particules, puis la
+      // récompense sort du coffre.
+      center.innerHTML = `<span class="rfx-halo"></span>${chestHtml(r.chest, 'enter')}<span class="rfx-sparks" aria-hidden="true"></span><span class="rfx-chest-name">${lt(l, `chest.${r.chest}`)}</span>`;
       this.env.sound.chest?.();
-      await wait(1100); // le coffre tombe puis tremble
+      await wait(520);
+      el.classList.add('is-charge');
+      this.env.vibrate([6, 90, 8, 70, 12]);
+      await wait(1050);
       el.classList.add('is-burst');
+      this.sparks(center.querySelector('.rfx-sparks'), 30);
       this.env.sound.reward?.();
-      this.env.vibrate([20, 40, 30]);
-      await wait(350);
+      this.env.vibrate([25, 40, 35]);
+      await wait(420);
     } else {
       center.innerHTML = items.length ? '' : r.gems && !r.coins ? `<span class="rfx-bigcoin gem">${ICONS.gem}</span>` : `<span class="rfx-bigcoin">${ICONS.coin}</span>`;
       el.classList.add('is-burst');
@@ -113,6 +121,21 @@ export class RewardFx {
     await wait(380);
     el.hidden = true;
     this.busy = false;
+  }
+
+  /** Gerbe de particules qui jaillit du coffre à l'ouverture (transform / opacity seulement). */
+  sparks(host, n = 28) {
+    if (!host || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    host.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement('i');
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.7;
+      const d = 70 + Math.random() * 130;
+      p.style.cssText = `--dx:${(Math.cos(a) * d).toFixed(0)}px;--dy:${(Math.sin(a) * d).toFixed(0)}px;--s:${(0.5 + Math.random() * 0.9).toFixed(2)};animation-delay:${(Math.random() * 0.12).toFixed(2)}s`;
+      if (i % 3 === 0) p.className = 'w';
+      host.appendChild(p);
+    }
+    setTimeout(() => (host.innerHTML = ''), 1600);
   }
 
   /** Pluie de pièces qui tombent en tournoyant sur tout l'écran. */

@@ -71,7 +71,7 @@ export const CREDITS = [
     id: 'fonts',
     icon: 'type',
     role: T('Polices', 'Fonts', 'Tipografías'),
-    names: ['Unbounded — The Unbounded Project Authors', 'Outfit — The Outfit Project Authors'],
+    names: ['Outfit — The Outfit Project Authors'],
     note: T('SIL Open Font License 1.1', 'SIL Open Font License 1.1', 'SIL Open Font License 1.1'),
   },
   {

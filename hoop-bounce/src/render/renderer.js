@@ -49,7 +49,7 @@ const C = {
   hint: 'rgba(235,242,255,0.55)',
 };
 
-const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+const FONT = '"Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
 export class Renderer {
   /** @param {HTMLCanvasElement} canvas */

@@ -20,8 +20,9 @@ import { t } from './i18n.js';
 import { chestHtml, rewardChips } from './rewards-fx.js';
 
 const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z"/></svg>';
-const MISSION_EMOJI = { flag: '🏁', hoop: '🏀', star: '⭐', shield: '🛡️', clock: '⏱️', ball: '💥', world: '🌍', play: '🎮', swish: '✨' };
-const ACH_EMOJI = { flag: '🏁', ball: '💥', star: '⭐', shield: '🛡️', bag: '🛍️', play: '🎮', city: '🏙️', coin: '🪙', gift: '🎁', target: '🎯', hoop: '🏀', swish: '✨', snow: '❄️', skull: '💀', clock: '⏱️', chest: '🧰', volcano: '🌋', forest: '🌲', crown: '👑', trophy: '🏆', space: '🌌', gem: '💎' };
+/** Icône (src/menu/icons.js) de chaque type de mission et de succès : un seul style graphique, pas d'émoji. */
+const MISSION_ICON = { flag: 'flag', hoop: 'hoop', star: 'star', shield: 'shield', clock: 'clock', ball: 'burst', world: 'worlds', play: 'modes', swish: 'sparkle' };
+const ACH_ICON = { flag: 'flag', ball: 'burst', star: 'star', shield: 'shield', bag: 'shop', play: 'modes', city: 'city', coin: 'coinline', gift: 'gift', target: 'target', hoop: 'hoop', swish: 'sparkle', snow: 'snow', skull: 'skull', clock: 'clock', chest: 'chest', volcano: 'volcano', forest: 'forest', crown: 'crown', trophy: 'trophy', space: 'space', gem: 'gemline' };
 const DPR = () => Math.min(window.devicePixelRatio || 1, 2);
 
 /** Contexte de sauvegarde, relu à chaque fois (le jeu ou la boutique ont pu le modifier). */
@@ -205,7 +206,7 @@ export class MissionsView extends LiveView {
           : `<span class="m-pct">${Math.floor((100 * m.value) / m.target)} %</span>`;
       return `
         <article class="mcard reveal" data-tier="${i}" data-state="${state}" style="--i:${i + 2};--p:${(m.value / m.target).toFixed(3)}">
-          <span class="m-icon" aria-hidden="true">${MISSION_EMOJI[m.icon] ?? '🎯'}</span>
+          <span class="m-icon" aria-hidden="true">${ICONS[MISSION_ICON[m.icon] ?? 'target']}</span>
           <div class="m-main">
             <span class="m-tier">${t(l, `missions.tier${i}`)}${m.done && !m.claimed ? ` · <b>${t(l, 'missions.done')}</b>` : ''}</span>
             <h2 class="m-title">${text}</h2>
@@ -290,7 +291,7 @@ export class AchievementsView extends LiveView {
           : `<span class="a-val">${val}</span>`;
       return `
         <article class="acard" data-tier="${a.tier}" data-state="${a.state}" style="--t:${TIERS[a.tier].rgb};--i:${Math.min(i, 14)};--p:${(a.value / a.target).toFixed(3)}">
-          <span class="a-medal" aria-hidden="true"><span>${ACH_EMOJI[a.icon] ?? '🏆'}</span></span>
+          <span class="a-medal" aria-hidden="true"><span>${ICONS[ACH_ICON[a.icon] ?? 'trophy']}</span></span>
           <div class="a-main">
             <span class="a-tier">${lt(l, `tier.${a.tier}`)}</span>
             <h2 class="a-name">${lt(l, `ach.${a.id}`)}</h2>

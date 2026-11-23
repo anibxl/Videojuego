@@ -590,4 +590,4 @@ function autoOpenDaily() {
 }
 
 // Accès pour les tests automatisés
-window.__menu = { scene, settings, sound, showPage, STRINGS, worldsView, collectionView, dailyView, missionsView, achievementsView, passView, refreshHome };
+window.__menu = { scene, settings, sound, showPage, STRINGS, worldsView, collectionView, dailyView, missionsView, achievementsView, passView, refreshHome, fx: viewEnv.fx };

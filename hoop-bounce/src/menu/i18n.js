@@ -142,7 +142,7 @@ export const STRINGS = {
     'pass.reward.title': 'Hoop Pass · Niveau {n}',
     'pass.all.title': 'Hoop Pass · {n} récompense|Hoop Pass · {n} récompenses',
     'pass.welcome.title': 'Cadeau de bienvenue',
-    'pass.noGems': 'Il te manque {n} 💎 — gagne des gemmes dans le Pass et les coffres.',
+    'pass.noGems': 'Il te manque {n} gemmes — gagne des gemmes dans le Pass et les coffres.',
     'pass.premium.ok': 'Pass Premium débloqué !',
     'pass.overToast': 'La saison est terminée.',
     'pass.lockedToast': 'Atteins le niveau {n} pour récupérer cette récompense.',
@@ -240,7 +240,7 @@ export const STRINGS = {
     'credits.body':
       '<p><strong>Conception et développement</strong><br>EchoSpeed</p>' +
       '<p><strong>Sons et musique</strong><br>Synthétisés en temps réel dans le jeu</p>' +
-      '<p><strong>Polices</strong><br>Unbounded — The Unbounded Project Authors<br>Outfit — The Outfit Project Authors<br>Sous licence SIL Open Font License 1.1</p>' +
+      '<p><strong>Polices</strong><br>Outfit — The Outfit Project Authors<br>Sous licence SIL Open Font License 1.1</p>' +
       '<p>Merci de jouer !</p>',
     'close': 'Fermer',
     'locked.toast': 'Ce mode arrive dans une prochaine mise à jour',
@@ -385,7 +385,7 @@ export const STRINGS = {
     'pass.reward.title': 'Hoop Pass · Level {n}',
     'pass.all.title': 'Hoop Pass · {n} reward|Hoop Pass · {n} rewards',
     'pass.welcome.title': 'Welcome gift',
-    'pass.noGems': 'You need {n} more 💎 — earn gems in the Pass and in chests.',
+    'pass.noGems': 'You need {n} more gems — earn gems in the Pass and in chests.',
     'pass.premium.ok': 'Premium Pass unlocked!',
     'pass.overToast': 'The season is over.',
     'pass.lockedToast': 'Reach level {n} to claim this reward.',
@@ -483,7 +483,7 @@ export const STRINGS = {
     'credits.body':
       '<p><strong>Design and development</strong><br>EchoSpeed</p>' +
       '<p><strong>Sound and music</strong><br>Synthesized in real time by the game</p>' +
-      '<p><strong>Fonts</strong><br>Unbounded — The Unbounded Project Authors<br>Outfit — The Outfit Project Authors<br>Licensed under the SIL Open Font License 1.1</p>' +
+      '<p><strong>Fonts</strong><br>Outfit — The Outfit Project Authors<br>Licensed under the SIL Open Font License 1.1</p>' +
       '<p>Thanks for playing!</p>',
     'close': 'Close',
     'locked.toast': 'This mode arrives in a future update',
@@ -628,7 +628,7 @@ export const STRINGS = {
     'pass.reward.title': 'Hoop Pass · Nivel {n}',
     'pass.all.title': 'Hoop Pass · {n} recompensa|Hoop Pass · {n} recompensas',
     'pass.welcome.title': 'Regalo de bienvenida',
-    'pass.noGems': 'Te faltan {n} 💎 — gana gemas en el Pase y en los cofres.',
+    'pass.noGems': 'Te faltan {n} gemas — gana gemas en el Pase y en los cofres.',
     'pass.premium.ok': '¡Pase Premium desbloqueado!',
     'pass.overToast': 'La temporada ha terminado.',
     'pass.lockedToast': 'Alcanza el nivel {n} para recoger esta recompensa.',
@@ -726,7 +726,7 @@ export const STRINGS = {
     'credits.body':
       '<p><strong>Diseño y desarrollo</strong><br>EchoSpeed</p>' +
       '<p><strong>Sonido y música</strong><br>Sintetizados en tiempo real por el juego</p>' +
-      '<p><strong>Tipografías</strong><br>Unbounded — The Unbounded Project Authors<br>Outfit — The Outfit Project Authors<br>Con licencia SIL Open Font License 1.1</p>' +
+      '<p><strong>Tipografías</strong><br>Outfit — The Outfit Project Authors<br>Con licencia SIL Open Font License 1.1</p>' +
       '<p>¡Gracias por jugar!</p>',
     'close': 'Cerrar',
     'locked.toast': 'Este modo llegará en una próxima actualización',

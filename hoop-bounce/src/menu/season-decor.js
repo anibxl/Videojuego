@@ -9,6 +9,7 @@
 //   - de la neige sur le haut des tuiles et des boutons du haut (CSS : css/season-christmas.css).
 // Tout est décoratif (aria-hidden, pointer-events: none) et disparaît dès qu'une page s'ouvre.
 
+const TREE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5l5.6 7.4h-2.9l4.1 5.9H5.2l4.1-5.9H6.4z"/><rect x="10.8" y="15.6" width="2.4" height="4.4" rx="1"/></svg>';
 const BULB_COLORS = ['#ff5c5c', '#ffd254', '#78dc8c', '#6eb4ff', '#ff96dc'];
 
 /** Guirlande : fils en chaînettes d'un bord à l'autre, ampoules régulièrement espacées. */
@@ -107,7 +108,7 @@ export function applySeason(season, env) {
   // Ruban « Saison de Noël »
   const tagline = document.querySelector('.tagline');
   if (tagline && !document.querySelector('.xmas-ribbon')) {
-    tagline.insertAdjacentHTML('afterend', `<p class="xmas xmas-ribbon"><span aria-hidden="true">🎄</span><span data-i18n="season.christmas">${env.text('season.christmas')}</span><span aria-hidden="true">❄</span></p>`);
+    tagline.insertAdjacentHTML('afterend', `<p class="xmas xmas-ribbon"><span class="ico" aria-hidden="true">${TREE}</span><span data-i18n="season.christmas">${env.text('season.christmas')}</span><span aria-hidden="true">❄</span></p>`);
   }
   // JOUER : neige sur le dessus, houx, cadeaux à côté
   const play = document.getElementById('btn-play');

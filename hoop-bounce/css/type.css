@@ -1,0 +1,85 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   TYPOGRAPHIE ET SURFACES — règles communes à toutes les pages (chargé en dernier).
+   Niveaux (css/tokens.css) : grand titre · titre · sous-titre · texte · petit texte · étiquette.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Grand titre : logo, « Panier ! », intro d'un monde, grands moments */
+.wordmark, .intro-title, .rfx-eyebrow, .hp-banner-title, #win .card h1, .boot-logo, .about-logo .wordmark {
+  font-weight: var(--w-display);
+  letter-spacing: var(--track-display);
+  text-shadow: none;
+}
+.play-label { font-weight: var(--w-display); letter-spacing: 0.05em; }
+.lnum, .tsa-num, .hp-ring-in b, .pass-btn-lv b, .tsl-num { font-weight: var(--w-display); }
+
+/* Titre de page */
+.page-head h1, .top .title, .detail h2, .sold-out h2, .banner h2, .wl-side h2, .sheet-head h2, .empty h2, .card h1, .card h2 {
+  font-weight: var(--w-title);
+  letter-spacing: var(--track-title);
+  line-height: var(--lh-tight);
+}
+.page-head h1 { font-size: var(--t-h1); }
+
+/* Sous-titre : titres de cartes et de sections */
+.wcard-title b, .fmode-title, .cl-name, .bv-title, .hp-premium-title, .hp-howto-title, .tsl-group h2, .intro-name,
+.m-title, .a-name, .about-facts dd, .tsh-tag {
+  font-weight: var(--w-title);
+  letter-spacing: var(--track-title);
+}
+
+/* Texte : sous-titres de page et descriptions */
+.subtitle { font-size: var(--t-body); line-height: var(--lh-body); color: var(--c-ink-2); }
+
+/* Étiquettes en petites capitales : interlettrage commun */
+.rar-ribbon, .rarity-tag, .hp-sub, .hp-ribbon, .hp-banner-eyebrow, .tagline, .intro-eyebrow, .level-num, .dday-label, .m-tier, .a-tier, .cl-shelf h3 {
+  letter-spacing: var(--track-label);
+}
+
+/* Moins de lueurs autour des textes */
+.hp-title h1 span:last-child, .pass-btn-title { filter: none; }
+.wordmark .w1 { text-shadow: none; }
+.wordmark .w2 { filter: drop-shadow(0 3px 8px rgba(255, 106, 33, 0.22)); }
+.hp-ring-in b { text-shadow: none; }
+.loot.coins b, .rfx-eyebrow { text-shadow: none; }
+
+/* Chiffres alignés dans tous les compteurs */
+.chip-value, .coins b, #coin-count, .hp-xpval, .tsh-stat b, .score-line b, .win-coins b, .loot b { font-variant-numeric: tabular-nums; }
+
+/* ── Micro-animations au repos (subtiles ; arrêtées si « mouvements réduits ») ─────────────── */
+/* Pièces des soldes et des cartes : pivotent doucement, l'éclat passe de temps en temps */
+.chip-icon .hb-coin, .coins .coin-ico, .win-coins .coin-ico {
+  animation: hb-coin-spin 6s ease-in-out infinite;
+}
+.coin-stack .coin:nth-child(2) .hb-coin { animation-delay: -1.4s; --glint-delay: -1.8s; }
+.coin-stack .coin:nth-child(3) .hb-coin { animation-delay: -2.8s; --glint-delay: -3.1s; }
+.hp-col:nth-child(odd) .hp-ic .hb-coin { animation-delay: -3s; --glint-delay: -2.5s; }
+/* Gemmes : flottent et brillent */
+.chip-icon .hb-gem, .hp-ic .hb-gem, .gem-ico .hb-gem, .loot.gems .hb-gem { animation: hb-gem-float 3.6s ease-in-out infinite; }
+/* Coffres des cartes à récupérer : respirent */
+.hp-card.s-ready .chest, .rchip .chest { animation: chest-breathe 3.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .chip-icon .hb-coin, .coins .coin-ico, .hp-ic .hb-coin, .coin-stack .hb-coin, .win-coins .coin-ico,
+  .chip-icon .hb-gem, .hp-ic .hb-gem, .gem-ico .hb-gem, .loot.gems .hb-gem, .hp-card.s-ready .chest, .rchip .chest { animation: none; }
+}
+
+/* ── Icônes : un seul style (trait 1,9, coins arrondis, couleur du texte), à la taille du texte ── */
+.ico { display: inline-grid; place-items: center; width: 1em; height: 1em; flex: none; line-height: 1; vertical-align: -0.14em; }
+.ico svg { width: 100%; height: 100%; display: block; }
+.title-ico, .cl-title-ico { filter: none; color: currentColor; opacity: 0.9; }
+.wcard-title .emoji, .fmode-title .emoji { color: rgb(var(--accent, 255, 255, 255)); }
+.m-icon svg, .a-medal span svg { width: 1em; height: 1em; display: block; }
+.ad-btn .ad-ico { color: #8ff0c8; }
+.xmas-ribbon .ico { color: #bff0c8; }
+.sold-ico { color: var(--gold, #ffc94d); }
+.m-icon { color: rgb(var(--tc)); box-shadow: none; }
+.m-icon svg { width: 0.95em; height: 0.95em; }
+.a-medal span { color: rgb(var(--tc, 220, 228, 255)); }
+.a-medal span svg { width: 22px; height: 22px; }
+
+/* ── Boutons : même identité, mouvement plus doux et plus physique ─────────────────────────── */
+.pressable { transition: transform 0.34s var(--ease-spring), background-color 0.2s ease, box-shadow 0.3s var(--ease-soft), filter 0.2s ease; }
+.pressable.is-pressed { transform: translateY(1px) scale(0.955); filter: brightness(0.95); transition-duration: 0.1s; transition-timing-function: ease-out; }
+@keyframes release { 0% { transform: translateY(1px) scale(0.955); } 50% { transform: scale(1.025); } 100% { transform: none; } }
+.pressable.is-released { animation: release 0.5s var(--ease-soft); }
+@media (hover: hover) { .tile:hover .tile-icon, .hub:hover, .chip.coins:hover { transform: translateY(-1px); } }
+.tile-icon, .hub, .chip { transition: transform 0.3s var(--ease-soft), box-shadow 0.3s var(--ease-soft), border-color 0.2s ease, color 0.2s ease; }

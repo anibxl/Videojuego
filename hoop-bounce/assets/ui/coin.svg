@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs>
+  <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c27c12"/><stop offset="1" stop-color="#7d4507"/></linearGradient>
+  <linearGradient id="rim" x1=".15" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="#fff7cf"/><stop offset=".35" stop-color="#ffd358"/><stop offset=".7" stop-color="#eda21d"/><stop offset="1" stop-color="#b9700b"/></linearGradient>
+  <radialGradient id="face" cx="62%" cy="72%" r="85%"><stop offset="0" stop-color="#ffe07a"/><stop offset=".55" stop-color="#f6b934"/><stop offset="1" stop-color="#d98c10"/></radialGradient>
+  <linearGradient id="relief" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4c2"/><stop offset="1" stop-color="#ffcc4a"/></linearGradient>
+</defs>
+<circle cx="32" cy="34.6" r="28.4" fill="url(#edge)"/>
+<circle cx="32" cy="31" r="28.4" fill="url(#rim)"/>
+<circle cx="32" cy="31" r="25.8" fill="none" stroke="#b97410" stroke-opacity=".45" stroke-width="1.6" stroke-dasharray="1.6 2.4"/>
+<circle cx="32" cy="31" r="22" fill="url(#face)"/>
+<path d="M12.6 26.5a20.4 20.4 0 0 1 30-14.6" fill="none" stroke="#a9650a" stroke-opacity=".5" stroke-width="2.2" stroke-linecap="round"/>
+<path d="M51.6 34a20.4 20.4 0 0 1-31.5 13.2" fill="none" stroke="#fff3c0" stroke-opacity=".7" stroke-width="1.6" stroke-linecap="round"/>
+<g transform="translate(32 31)" fill="none" stroke-linecap="round">
+  <g stroke="#fff3c4" stroke-opacity=".85" stroke-width="2.2" transform="translate(.7 .9)">
+    <circle r="11.5"/><path d="M0-11.5v23M-11.5 0h23M-7.4-8.7c3 2.6 4.4 5.6 4.4 8.7s-1.4 6.1-4.4 8.7M7.4-8.7c-3 2.6-4.4 5.6-4.4 8.7s1.4 6.1 4.4 8.7"/>
+  </g>
+  <g stroke="#b06a09" stroke-width="2.2">
+    <circle r="11.5"/><path d="M0-11.5v23M-11.5 0h23M-7.4-8.7c3 2.6 4.4 5.6 4.4 8.7s-1.4 6.1-4.4 8.7M7.4-8.7c-3 2.6-4.4 5.6-4.4 8.7s1.4 6.1 4.4 8.7"/>
+  </g>
+</g>
+<path d="M9.5 22a24 24 0 0 1 15-14.6" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2.6" stroke-linecap="round"/>
+<circle cx="32" cy="31" r="28.4" fill="none" stroke="#8a4f08" stroke-opacity=".55" stroke-width="1"/>
+</svg>

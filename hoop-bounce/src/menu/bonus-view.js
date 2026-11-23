@@ -26,8 +26,8 @@ const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').match
 function segmentArt(lang, seg) {
   if (seg.icon === 'coin') return `<span class="coin">${ICONS.coin}</span><b>${seg.reward.coins}</b>`;
   if (seg.icon === 'chest') return `${chestHtml(seg.reward.chest, 'mini')}<b>${t(lang, `wheel.${seg.id}`)}</b>`;
-  if (seg.icon === 'effect') return `<span class="wseg-emoji">✨</span><b>${t(lang, 'wheel.effect')}</b>`;
-  return `<span class="wseg-emoji">🏀</span><b>${t(lang, 'wheel.skin')}</b>`;
+  if (seg.icon === 'effect') return `<span class="wseg-emoji ico">${ICONS.sparkle}</span><b>${t(lang, 'wheel.effect')}</b>`;
+  return `<span class="wseg-emoji ico">${ICONS.ball}</span><b>${t(lang, 'wheel.skin')}</b>`;
 }
 
 /** Fond de la roue : un dégradé conique, une couleur par case, fins séparateurs dorés. */
@@ -59,9 +59,9 @@ export class BonusView extends LiveView {
     const chestActions = chestOpen
       ? `
         <div class="bv-actions">
-          <button class="bv-free pressable" data-chest="free"><span class="bv-emoji">🎁</span><span>${t(l, 'bonus.chest.free')}</span></button>
+          <button class="bv-free pressable" data-chest="free"><span class="bv-emoji ico">${ICONS.gift}</span><span>${t(l, 'bonus.chest.free')}</span></button>
           <span class="bv-or">${t(l, 'bonus.or')}</span>
-          <button class="ad-btn pressable" data-chest="ad"><span class="ad-ico">📺</span><span class="ad-txt"><b>${t(l, 'bonus.watch')}</b><small data-sub>→ ${t(l, 'bonus.chest.upgrade')}</small></span></button>
+          <button class="ad-btn pressable" data-chest="ad"><span class="ad-ico ico">${ICONS.tv}</span><span class="ad-txt"><b>${t(l, 'bonus.watch')}</b><small data-sub>→ ${t(l, 'bonus.chest.upgrade')}</small></span></button>
         </div>
         <p class="bv-perks"><span>✦</span> ${t(l, 'bonus.chest.perks')}</p>`
       : `<p class="bv-done">${CHECK}<span>${t(l, 'bonus.chest.opened')}</span></p><p class="bv-renew" data-countdown></p>`;
@@ -90,9 +90,9 @@ export class BonusView extends LiveView {
             <div class="wheel-side">
               <h2 class="bv-title">${t(l, 'bonus.wheel.title')}</h2>
               ${free
-                ? `<button class="bv-spin pressable" data-spin="free"><span class="bv-emoji">🎡</span><span>${t(l, 'bonus.wheel.spin')}</span></button>`
+                ? `<button class="bv-spin pressable" data-spin="free"><span class="bv-emoji ico">${ICONS.wheel}</span><span>${t(l, 'bonus.wheel.spin')}</span></button>`
                 : `<p class="bv-done small">${CHECK}<span>${t(l, 'bonus.wheel.used')}</span></p>`}
-              <button class="ad-btn pressable" data-spin="ad"><span class="ad-ico">📺</span><span class="ad-txt"><b>${t(l, 'bonus.watch')}</b><small data-sub></small></span></button>
+              <button class="ad-btn pressable" data-spin="ad"><span class="ad-ico ico">${ICONS.tv}</span><span class="ad-txt"><b>${t(l, 'bonus.watch')}</b><small data-sub></small></span></button>
             </div>
           </section>
         </div>

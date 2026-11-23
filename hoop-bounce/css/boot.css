@@ -111,7 +111,7 @@
 .boot-logo {
   position: relative;
   margin: clamp(14px, 4vh, 24px) 0 0;
-  font-family: "Unbounded", system-ui, sans-serif;
+  font-family: "Outfit", system-ui, sans-serif;
   font-weight: 800;
   font-size: clamp(38px, 13vh, 84px);
   line-height: 1;
@@ -174,7 +174,7 @@
   width: clamp(120px, 22vw, 200px);
   height: 3px;
   margin-left: calc(-0.5 * clamp(120px, 22vw, 200px));
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
   opacity: 0;

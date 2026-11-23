@@ -20,8 +20,6 @@
   --mint: #3fe0b8;
   --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
   --ease-spring: cubic-bezier(0.3, 1.6, 0.45, 1);
-  --font-display: "Unbounded", system-ui, sans-serif;
-  --font-ui: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -62,7 +60,7 @@ body {
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid rgba(var(--orange-rgb), 0.9);
+  outline: 2px solid rgba(255, 255, 255, 0.55);
   outline-offset: 3px;
 }
 
@@ -105,7 +103,7 @@ svg {
   gap: 8px;
   height: 36px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--glass);
   border: 1px solid var(--hairline);
   line-height: 36px;
@@ -131,7 +129,7 @@ svg {
   height: 36px;
   align-items: center;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--glass);
   border: 1px solid var(--hairline);
 }
@@ -278,7 +276,7 @@ svg {
   justify-items: center;
   gap: 1px;
   padding: 8px 14px;
-  border-radius: 14px;
+  border-radius: var(--r-md);
   background: rgba(255, 122, 47, 0.95);
   color: #2a0f00;
   font-weight: 700;
@@ -354,10 +352,10 @@ body.overlay-open .controls {
 .card {
   width: min(100%, 360px);
   padding: 22px 22px 20px;
-  border-radius: 24px;
+  border-radius: var(--r-xl);
   background: linear-gradient(180deg, #17223f, #0e172c);
   border: 1px solid var(--hairline-strong);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 30px 80px rgba(2, 6, 20, 0.55);
   text-align: center;
   transition: transform 0.5s var(--ease-out);
 }
@@ -369,7 +367,7 @@ body.overlay-open .controls {
 .card h1 {
   margin: 0 0 16px;
   font-family: var(--font-display);
-  font-weight: 750;
+  font-weight: 700;
   font-size: 30px;
   letter-spacing: -0.01em;
 }
@@ -401,7 +399,7 @@ body.overlay-open .controls {
   justify-content: center;
   gap: 8px;
   height: 52px;
-  border-radius: 16px;
+  border-radius: var(--r-md);
   font-weight: 700;
   font-size: 16px;
   transition: transform 0.25s var(--ease-spring), background-color 0.15s ease;
@@ -629,7 +627,7 @@ body { --accent: #ff8a4c; --accent-rgb: 255, 138, 76; }
 .intro-title {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   font-size: clamp(44px, 11vh, 88px);
   line-height: 1;
   letter-spacing: -0.02em;
@@ -663,7 +661,7 @@ body { --accent: #ff8a4c; --accent-rgb: 255, 138, 76; }
   gap: 8px;
   height: 32px;
   padding: 0 13px 0 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(10, 16, 30, 0.6);
   border: 1px solid rgba(var(--accent-rgb), 0.35);
   font-size: 13.5px;
@@ -773,7 +771,7 @@ body.intro-open .controls {
   gap: 8px;
   margin: -8px 0 14px;
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 18px;
   color: var(--gold);
   animation: coins-in 0.5s var(--ease-spring) both;
@@ -811,10 +809,10 @@ body.intro-open .controls {
   min-width: 260px;
   max-width: min(440px, 80vw);
   padding: 10px 18px 10px 12px;
-  border-radius: 18px;
+  border-radius: var(--r-lg);
   background: linear-gradient(180deg, rgba(28, 40, 72, 0.96), rgba(14, 22, 42, 0.96));
   border: 1px solid rgba(63, 224, 184, 0.55);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(63, 224, 184, 0.25);
+  box-shadow: 0 16px 40px rgba(2, 6, 20, 0.5), 0 0 30px rgba(63, 224, 184, 0.25);
   transform: translate(-50%, -140%);
   opacity: 0;
   pointer-events: none;
@@ -822,13 +820,13 @@ body.intro-open .controls {
 }
 
 .live-banner.show { transform: translate(-50%, 0); opacity: 1; }
-.live-banner[data-kind="achievement"] { border-color: rgba(255, 201, 77, 0.6); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 201, 77, 0.3); }
+.live-banner[data-kind="achievement"] { border-color: rgba(255, 201, 77, 0.6); box-shadow: 0 16px 40px rgba(2, 6, 20, 0.5), 0 0 30px rgba(255, 201, 77, 0.3); }
 
 .live-ico {
   flex: none;
   width: 38px;
   height: 38px;
-  border-radius: 12px;
+  border-radius: var(--r-sm);
   background: radial-gradient(circle at 35% 30%, #a6ffe6, #20b48f);
   box-shadow: 0 0 18px rgba(63, 224, 184, 0.6);
   position: relative;
@@ -884,7 +882,7 @@ body.intro-open .controls {
   right: -44px;
   top: 50%;
   padding: 2px 8px;
-  border-radius: 99px;
+  border-radius: var(--r-pill);
   background: linear-gradient(180deg, #7cf0c8, #2fc79b);
   color: #032a1e;
   font-size: 14px;
@@ -978,7 +976,7 @@ body.intro-open .controls {
 
 /* Écran de victoire, panier parfait : halo doré qui respire, titre qui brille */
 #win.perfect .win-card {
-  box-shadow: 0 0 0 1px rgba(255, 214, 90, 0.35), 0 0 70px rgba(255, 196, 70, 0.35), 0 30px 80px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px rgba(255, 214, 90, 0.35), 0 0 70px rgba(255, 196, 70, 0.35), 0 30px 80px rgba(2, 6, 20, 0.5);
   animation: perfect-glow 2.4s 0.6s ease-in-out infinite;
 }
 #win.perfect h1 {
@@ -990,7 +988,7 @@ body.intro-open .controls {
   animation: title-shine 2.2s 0.5s ease-in-out infinite;
 }
 @keyframes perfect-glow {
-  50% { box-shadow: 0 0 0 1px rgba(255, 214, 90, 0.5), 0 0 95px rgba(255, 196, 70, 0.5), 0 30px 80px rgba(0, 0, 0, 0.5); }
+  50% { box-shadow: 0 0 0 1px rgba(255, 214, 90, 0.5), 0 0 95px rgba(255, 196, 70, 0.5), 0 30px 80px rgba(2, 6, 20, 0.5); }
 }
 @keyframes title-shine {
   0% { background-position: 120% 0; }
@@ -1003,5 +1001,38 @@ body.intro-open .controls {
 }
 
 /* Hoop Pass : XP gagnée (saison en cours) */
-.pass-xp { margin: -4px 0 10px; text-align: center; font-size: 12.5px; font-weight: 800; letter-spacing: 0.03em; color: #ffd36b; text-shadow: 0 0 10px rgba(255, 200, 90, 0.4); }
+.pass-xp { margin: -4px 0 10px; text-align: center; font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em; color: #ffd36b; text-shadow: 0 0 10px rgba(255, 200, 90, 0.4); }
 .pass-xp[hidden] { display: none; }
+
+/* Écran de victoire ouvert : la bannière « Succès débloqué » se range dans l'espace libre à gauche
+   (elle ne recouvre plus le titre de la carte) */
+body:has(#win:not(.hidden)) .live-banner {
+  left: max(14px, var(--safe-left));
+  min-width: 0;
+  max-width: calc(50vw - 200px);
+  transform: translate(-16px, 0);
+}
+body:has(#win:not(.hidden)) .live-banner.show { transform: none; }
+
+/* Victoire : halo de rayons doux qui tourne derrière la carte (transform seulement) */
+#win .win-card { position: relative; z-index: 1; }
+#win::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  width: 640px;
+  height: 640px;
+  margin: -320px 0 0 -320px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 214, 120, 0.12) 0deg 7deg, transparent 7deg 20deg);
+  -webkit-mask: radial-gradient(closest-side, #000 18%, transparent 72%);
+  mask: radial-gradient(closest-side, #000 18%, transparent 72%);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.6s ease 0.2s, transform 0.9s var(--ease-out) 0.2s;
+  pointer-events: none;
+}
+#win:not(.hidden)::before { opacity: 1; transform: scale(1); animation: win-rays 24s linear infinite; }
+@keyframes win-rays { from { transform: scale(1) rotate(0); } to { transform: scale(1) rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { #win::before { animation: none; } }

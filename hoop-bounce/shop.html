@@ -7,12 +7,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Hoop Bounce — Boutique</title>
-  <link rel="preload" href="assets/fonts/unbounded.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/outfit.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/live.css">
   <link rel="stylesheet" href="css/shop.css">
   <link rel="stylesheet" href="css/polish.css">
+  <link rel="stylesheet" href="css/type.css">
 </head>
 <body>
   <div class="backdrop" id="backdrop" aria-hidden="true"></div>
@@ -21,10 +22,10 @@
     <a class="icon-btn" id="btn-back" href="index.html" data-label="back">
       <svg viewBox="0 0 24 24"><path d="M15.4 5.4 14 4l-8 8 8 8 1.4-1.4L8.8 12z"/></svg>
     </a>
-    <h1 class="title"><span class="title-ico" aria-hidden="true">🛒</span><span data-t="title"></span></h1>
+    <h1 class="title"><span class="title-ico ico" aria-hidden="true" data-ico="shop"></span><span data-t="title"></span></h1>
     <nav class="tabs" id="tabs" role="tablist"></nav>
     <div class="right">
-      <a class="to-col" id="btn-col" href="index.html#collection"><span aria-hidden="true">🎒</span><span data-t="toCollection"></span></a>
+      <a class="to-col" id="btn-col" href="index.html#collection"><span class="ico" aria-hidden="true" data-ico="collection"></span><span data-t="toCollection"></span></a>
       <div class="coins gems" id="gems"><span class="gem-ico" aria-hidden="true"></span><b id="gem-n">0</b></div>
       <div class="coins" id="coins"><span class="coin-ico" aria-hidden="true"></span><b id="coin-n">0</b></div>
     </div>
@@ -49,7 +50,7 @@
     </section>
     <!-- Tout vendu dans cette catégorie -->
     <section class="sold-out" id="sold-out" hidden>
-      <span class="sold-ico" aria-hidden="true">🏆</span>
+      <span class="sold-ico ico" aria-hidden="true" data-ico="trophy"></span>
       <h2 data-t="soldOut"></h2>
       <p data-t="soldOut.sub"></p>
       <a class="action equip" href="index.html#collection" data-t="toCollection"></a>

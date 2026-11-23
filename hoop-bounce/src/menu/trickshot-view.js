@@ -84,7 +84,7 @@ export class TrickshotView {
         <section class="tsh-hero reveal" style="--i:0">
           <span class="tsh-art">${TRICKSHOT_ART()}</span>
           <span class="tsh-hero-txt">
-            <span class="tsh-tag">🎯 ${t('tagline')}</span>
+            <span class="tsh-tag"><span class="ico" aria-hidden="true">${ICONS.target}</span> ${t('tagline')}</span>
             <span class="tsh-desc">${t('desc')}</span>
             <button class="tsh-play pressable" data-ts-play>
               <span class="tsh-play-ico">${ICONS.play ?? '▶'}</span>

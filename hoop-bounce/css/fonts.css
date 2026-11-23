@@ -1,12 +1,4 @@
-/* Polices embarquées (fonctionnent hors ligne), licence SIL Open Font License 1.1 — voir assets/fonts/ */
-
-@font-face {
-  font-family: "Unbounded";
-  src: url("../assets/fonts/unbounded.woff2") format("woff2");
-  font-weight: 200 900;
-  font-style: normal;
-  font-display: swap;
-}
+/* Police embarquée (une seule famille : Outfit, variable 100 → 900) (fonctionnent hors ligne), licence SIL Open Font License 1.1 — voir assets/fonts/ */
 
 @font-face {
   font-family: "Outfit";

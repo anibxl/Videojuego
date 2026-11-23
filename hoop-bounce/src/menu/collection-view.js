@@ -83,10 +83,10 @@ export class CollectionView {
     this.root.innerHTML = `
       <header class="page-head">
         <button class="icon-btn pressable" data-back aria-label="${t(l, 'back')}">${ICONS.back}</button>
-        <h1 id="title-collection"><span class="cl-title-ico" aria-hidden="true">🎒</span>${t(l, 'collection.title')}</h1>
+        <h1 id="title-collection"><span class="cl-title-ico ico" aria-hidden="true">${ICONS.collection}</span>${t(l, 'collection.title')}</h1>
         <span class="spacer"></span>
         <span class="cl-total reveal" style="--i:0"><b>${p.percent}%</b>${t(l, 'collection.owned', { n: p.owned, total: p.total })}</span>
-        <button class="cl-shop pressable reveal" style="--i:1" data-shop aria-label="${t(l, 'collection.shop')}"><span aria-hidden="true">🛒</span><span>${t(l, 'collection.shop')}</span></button>
+        <button class="cl-shop pressable reveal" style="--i:1" data-shop aria-label="${t(l, 'collection.shop')}"><span class="ico" aria-hidden="true">${ICONS.shop}</span><span>${t(l, 'collection.shop')}</span></button>
       </header>
       <div class="cl-body">
         <div class="cl-summary reveal" style="--i:1" role="tablist"></div>
@@ -109,7 +109,7 @@ export class CollectionView {
     requestAnimationFrame(() => this.layout());
   }
 
-  /** Résumé : 🏀 Skins 8/21, ✨ Traînées 3/10, 💥 Effets 4/20 — chaque carte filtre les étagères. */
+  /** Résumé : Skins 8/21, Traînées 3/10, Effets 4/20 — chaque carte filtre les étagères. */
   _renderSummary() {
     const l = this.lang;
     const sums = this.wallet.collectionSummary();
@@ -120,7 +120,7 @@ export class CollectionView {
         const full = g.owned === g.total;
         const sub = g.id === 'trails' ? '' : `<small>${t(l, `collection.sum.${g.id}.sub`)}</small>`;
         return `<button class="cl-sum pressable ${full ? 'full' : ''} ${this.group === g.id ? 'on' : ''}" role="tab" aria-selected="${this.group === g.id}" data-group="${g.id}" style="--k:${k.toFixed(3)}">
-          <span class="cl-sum-ico" aria-hidden="true">${g.icon}</span>
+          <span class="cl-sum-ico ico" aria-hidden="true">${ICONS[g.icon] ?? ''}</span>
           <span class="cl-sum-txt"><b>${t(l, `collection.sum.${g.id}`)}</b>${sub}</span>
           <span class="cl-sum-n">${full ? `<em>${t(l, 'collection.complete')}</em>` : ''}<b>${g.owned}</b>/${g.total}</span>
           <span class="cl-sum-bar"><i></i></span>

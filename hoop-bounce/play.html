@@ -7,11 +7,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Hoop Bounce</title>
-  <link rel="preload" href="assets/fonts/unbounded.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/outfit.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/polish.css">
+  <link rel="stylesheet" href="css/type.css">
 </head>
 <body>
   <canvas id="game" aria-label="Zone de jeu"></canvas>
@@ -78,7 +79,7 @@
         <p class="win-coins" id="win-coins"><span class="reward-label" data-t="win.reward"></span><span class="coin-ico" aria-hidden="true"></span><b id="win-coins-n">+0</b><span class="x2" id="win-x2" aria-hidden="true">×2</span></p>
         <!-- Publicité récompensée (optionnelle) : doubler les pièces -->
         <button class="ad-btn" id="btn-double" type="button">
-          <span class="ad-ico" aria-hidden="true">🎁</span>
+          <span class="ad-ico ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="9" width="17" height="11.5" rx="1.8"/><path d="M2.8 6.6h18.4V9H2.8zM12 6.6v13.9"/><path d="M12 6.6c-1.2-2.8-4.6-3.6-5.3-1.7-.5 1.4 1.6 1.7 5.3 1.7zM12 6.6c1.2-2.8 4.6-3.6 5.3-1.7.5 1.4-1.6 1.7-5.3 1.7z"/></svg></span>
           <span class="ad-txt"><b data-t="ad.watch"></b><small id="btn-double-sub" data-t="ad.double"></small></span>
         </button>
       </div>
@@ -103,7 +104,7 @@
         <button class="primary" id="btn-fail-restart"><svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg><span data-t="fail.restart"></span></button>
         <!-- Publicité récompensée (optionnelle) : reprendre au dernier drapeau -->
         <button class="ad-btn" id="btn-fail-continue" type="button">
-          <span class="ad-ico" aria-hidden="true">🎁</span>
+          <span class="ad-ico ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="9" width="17" height="11.5" rx="1.8"/><path d="M2.8 6.6h18.4V9H2.8zM12 6.6v13.9"/><path d="M12 6.6c-1.2-2.8-4.6-3.6-5.3-1.7-.5 1.4 1.6 1.7 5.3 1.7zM12 6.6c1.2-2.8 4.6-3.6 5.3-1.7.5 1.4-1.6 1.7-5.3 1.7z"/></svg></span>
           <span class="ad-txt"><b id="btn-fail-continue-label" data-t="ad.watch"></b><small id="btn-fail-continue-sub" data-t="ad.checkpoint"></small></span>
         </button>
         <div class="actions-row">

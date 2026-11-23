@@ -29,10 +29,10 @@ const CROWN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.2l4.6 3
 const CLOCK = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4.2l2.6 1.6M9.5 2.8h5"/></svg>';
 const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>';
 const SOURCES = [
-  { key: 'level', icon: '🏀', replay: 'levelReplay' },
-  { key: 'trickshot', icon: '🎯', replay: 'trickshotReplay' },
-  { key: 'mission', icon: '📅' },
-  { key: 'achievement', icon: '🏆' },
+  { key: 'level', icon: 'ball', replay: 'levelReplay' },
+  { key: 'trickshot', icon: 'target', replay: 'trickshotReplay' },
+  { key: 'mission', icon: 'daily' },
+  { key: 'achievement', icon: 'trophy' },
 ];
 /** Couleur (r,g,b) d'un coffre, pour l'accent de sa carte. */
 const CHEST_RGB = { common: '214,160,90', rare: '77,163,255', epic: '180,107,255', super: '255,150,70', premium: '120,210,255', legendary: '255,170,60' };
@@ -84,7 +84,7 @@ export class PassView {
     this.root.dataset.season = s.id;
     const cols = s.levels.map((lv) => this.colHtml(lv)).join('');
     this.root.innerHTML = `
-      <div class="hp-bg" aria-hidden="true"><i class="hp-glow g1"></i><i class="hp-glow g2"></i><i class="hp-glow g3"></i><span class="hp-snow"></span><span class="hp-snow s2"></span></div>
+      <div class="hp-bg" aria-hidden="true"><i class="hp-glow g1"></i><i class="hp-glow g2"></i><i class="hp-glow g3"></i></div>
       <header class="page-head hp-head">
         <button class="icon-btn pressable" data-back aria-label="${t(l, 'back')}">${ICONS.back}</button>
         <div class="hp-title reveal" style="--i:0">
@@ -137,7 +137,7 @@ export class PassView {
       <div class="hp-howto" hidden>
         <div class="hp-howto-card" role="dialog" aria-modal="true" aria-label="${t(l, 'pass.howto')}">
           <p class="hp-howto-title">${t(l, 'pass.howto')}</p>
-          <ul>${SOURCES.map((src) => `<li><span class="hp-howto-ic">${src.icon}</span><span>${t(l, `pass.how.${src.key}`)}${src.replay ? `<small>${t(l, 'pass.how.replay', { n: s.xp[src.replay] })}</small>` : ''}</span><b>+${s.xp[src.key]} XP</b></li>`).join('')}</ul>
+          <ul>${SOURCES.map((src) => `<li><span class="hp-howto-ic ico">${ICONS[src.icon]}</span><span>${t(l, `pass.how.${src.key}`)}${src.replay ? `<small>${t(l, 'pass.how.replay', { n: s.xp[src.replay] })}</small>` : ''}</span><b>+${s.xp[src.key]} XP</b></li>`).join('')}</ul>
           <button class="hp-howto-ok pressable" data-howto-close>${t(l, 'reward.ok')}</button>
         </div>
       </div>
@@ -163,7 +163,7 @@ export class PassView {
     const l = this.lang;
     const v = rewardVisual(l, r);
     const mythic = v.rarity === 'mythic';
-    return `<button class="hp-card ${track}${highlight ? ' hl' : ''}${mythic ? ' mythic' : ''} kind-${v.kind}" data-l="${level}" data-t="${track}" style="--r:${v.rgb}" aria-label="${t(l, `pass.${track}`)} · ${t(l, 'pass.lv', { n: level })} · ${v.label}">
+    return `<button class="hp-card ${track}${highlight ? ' hl' : ''}${mythic ? ' mythic' : ''} kind-${v.kind}" data-l="${level}" data-t="${track}" style="--r:${v.rgb};--k:${level + (track === 'free' ? 0.5 : 0)}" aria-label="${t(l, `pass.${track}`)} · ${t(l, 'pass.lv', { n: level })} · ${v.label}">
       <span class="hp-card-glow" aria-hidden="true"></span>
       ${highlight ? `<span class="hp-ribbon">${mythic ? '✦ ' : ''}${t(l, 'pass.exclusive')}</span>` : ''}
       <span class="hp-vis">${v.html}</span>
@@ -493,6 +493,8 @@ export class PassView {
     await this.env.fx.reveal({ title: t(this.lang, 'pass.reward.title', { n: level }), coins: res.coins, gems: res.gems, item: res.item, chest: res.chest }, this.el.coinChip);
     card.classList.remove('claiming');
     this.afterGain(res);
+    card.classList.add('just-claimed');
+    setTimeout(() => card.classList.remove('just-claimed'), 900);
     this.busy = false;
   }
 
@@ -513,8 +515,11 @@ export class PassView {
     this.updateCards();
     for (const c of this.root.querySelectorAll('.hp-card.s-claimed')) c.classList.add('claiming');
     await this.env.fx.reveal({ title: t(this.lang, 'pass.all.title', { n: list.length }), coins: sum.coins, gems: sum.gems, items: sum.items, chest: null }, this.el.coinChip);
-    for (const c of this.root.querySelectorAll('.hp-card.claiming')) c.classList.remove('claiming');
+    const done = [...this.root.querySelectorAll('.hp-card.claiming')];
+    for (const c of done) c.classList.remove('claiming');
     this.afterGain(sum);
+    for (const c of done) c.classList.add('just-claimed');
+    setTimeout(() => done.forEach((c) => c.classList.remove('just-claimed')), 900);
     this.busy = false;
   }
 

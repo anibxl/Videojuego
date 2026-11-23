@@ -3,10 +3,11 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 23/11/2026 · **Version :** 1.3.0-dev (non publiée ; la version publiable reste
+> **Dernière mise à jour :** 23/11/2026 · **Version :** 1.4.0-dev (non publiée ; la version publiable reste
 > 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1 : menu décoré + **Hoop Pass**) · **Version de
-> test Android :** **`HoopBounce_Test_v6.apk` (1.5.0-test6, mise à jour)** · **iOS :** projet Xcode prêt
-> (`ios/`) · **Étape en cours :** validation du Hoop Pass et des gemmes ; rien n'est publié.
+> test Android :** **`HoopBounce_Test_v7.apk` (1.6.0-test7, mise à jour)** · **iOS :** projet Xcode prêt
+> (`ios/`) · **Phase en cours :** qualité visuelle uniquement (plus aucune nouvelle fonctionnalité) — étape 25 :
+> direction artistique unifiée ; rien n'est publié.
 
 ## Sommaire
 
@@ -240,7 +241,7 @@ Voir aussi [Idées futures](#8-idées-futures).
   publiable sur le Play Store. Les vibrations passeront alors par le plugin `@capacitor/haptics`.
 - **Moteur physique maison** (contrôle total du ressenti, déterministe, testable).
 - **Sons et musique synthétisés** en temps réel (Web Audio) : aucun fichier audio.
-- **Polices embarquées** (Unbounded, Outfit — licence SIL OFL 1.1) : fonctionnent hors ligne.
+- **Police embarquée** : une seule famille, **Outfit** (variable 100 → 900, licence SIL OFL 1.1), hors ligne.
 - **Tests** : `node --test` (aucune dépendance), navigateur headless (Playwright) pour les vérifications visuelles.
 - Pourquoi pas Godot : le moteur ne pouvait pas être exécuté dans l'environnement de développement, donc ce
   qui était écrit n'aurait pas pu être testé.
@@ -263,12 +264,16 @@ hoop-bounce/
 ├── native/
 │   └── android/README.md   Projet Android et AdMob : ce qui est en place, synchronisation, vrais identifiants
 ├── assets/
-│   └── fonts/              Polices embarquées + licences OFL
-│       ├── unbounded.woff2     Titres, logo, boutons principaux (latin, ~50 Ko)
-│       ├── outfit.woff2        Textes de l'interface (latin, ~32 Ko)
+│   ├── ui/                 ★ Illustrations d'interface (pièce, gemme, 6 coffres) — générées par tools/ui-art.mjs
+│   └── fonts/              Police embarquée + licence OFL
+│       ├── outfit.woff2        La seule police du jeu (variable 100 → 900, latin, ~32 Ko)
 │       └── LICENSE-*.txt       Licences SIL Open Font License 1.1
 ├── css/
-│   ├── fonts.css           Déclaration des polices (@font-face)
+│   ├── fonts.css           Déclaration de la police (@font-face, Outfit)
+│   ├── tokens.css          ★ Système de design : typographie, arrondis, ombres, surfaces, couleurs, mouvement,
+│   │                       pièce et gemme (chargé en premier sur toutes les pages)
+│   ├── type.css            Règles communes à toutes les pages : hiérarchie du texte, icônes, micro-animations,
+│   │                       mouvement des boutons (chargé en dernier)
 │   ├── boot.css            Écran de chargement (logo, ballon qui rebondit, barre, fondu vers le menu)
 │   ├── menu.css            Styles du menu (accueil, pages, fenêtres, animations)
 │   ├── menu-views.css      Styles des pages Mondes (cartes, niveaux) et Collection du menu
@@ -425,6 +430,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `bonus-view.js` | Page Bonus du jour (étape 13) : coffre bonus (gratuit ou amélioré avec une publicité) et roue de la chance (rotation, ralentissement, clics, pointeur). |
 | `rewards-fx.js` | Révélation d'une récompense : coffre qui tombe, tremble et s'ouvre, rayons, butin (pièces, 💎 gemmes, un ou plusieurs objets), pluie de pièces, pièces qui filent vers le compteur. Aussi utilisée par la boutique (coffres en gemmes). |
 | `pass-view.js` | Page **Hoop Pass** : en-tête de saison, niveau et XP, carte Premium, piste défilante des 50 niveaux (Premium / Gratuit), montées de niveau animées, récupération, « Tout récupérer », « Mon niveau », étincelles. État du bouton de l'accueil (`passHomeState`). |
+| `snowfall.js` | Neige de la saison de Noël (étape 25) : trois plans (lointain, cristaux, flocons flous), vent, parallaxe, flocons précalculés. |
 | `sound.js` | Musique d'ambiance du menu (avec le motif du rebond toutes les 4 mesures) ; les sons d'interface viennent de la voix partagée `audio/ui-voice.js`. |
 | `icons.js` | Icônes SVG dessinées à la main. |
 | `i18n.js` | Textes du menu en français, anglais et espagnol. |
@@ -473,6 +479,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tests/fixtures/trickshot.json` | Une solution en un tir par niveau TRICKSHOT (angle, puissance, instant) et la part de tirs gagnants mesurée. |
 | `tools/trickshot-check.mjs` | Solveur du mode TRICKSHOT : essaie des milliers de tirs par niveau (angles × puissances × instants, 4 processus), mesure la part de tirs gagnants → difficulté, cherche finement autour des tirs les plus proches ; `--quick`, `--save`, `N` ou `N-M`. |
 | `tools/trickshot-atlas.html` | Atlas des cartes TRICKSHOT (`?from=1&to=25`) avec le trajet de la solution enregistrée, pour relire les niveaux d'un coup d'œil. |
+| `tools/ui-art.mjs` | Génère les illustrations d'interface `assets/ui/*.svg` (pièce, gemme, 6 coffres en deux pièces) dans un style commun (étape 25). |
 | `tools/route-check.mjs` | Outil de level design : essaie des centaines de séquences de commandes par passage et mesure la difficulté ; « pilote » pour écrire les solutions expertes (rouler jusqu'à, charger, sauter, viser). |
 
 ### Ajouter un niveau ou un élément
@@ -500,7 +507,7 @@ Le premier écran du jeu, affiché dès l'ouverture (il ne dépend que de `css/b
 - **Fond** : dégradé bleu nuit vers le noir, faisceau de projecteur venu d'en haut qui respire lentement, halo
   orange derrière le logo, lueurs bleue et violette dans les coins ; **particules** (poussières lumineuses
   chaudes et froides, quelques halos flous) qui montent en ondulant.
-- **Logo** au centre : **HoopBounce** en grand (« Hoop » blanc, « Bounce » dégradé orange, police Unbounded),
+- **Logo** au centre : **HoopBounce** en grand (« Hoop » blanc, « Bounce » dégradé orange, police Outfit),
   puis **« Par EchoSpeed »** (« By » / « Por » selon la langue). Entrée douce : les deux mots montent en se
   précisant (flou → net), un **reflet** traverse le logo, la signature apparaît en resserrant ses lettres. Le
   texte attend que la police soit chargée (aucun changement de police visible).
@@ -526,7 +533,7 @@ dérive lente de la caméra et **parallaxe sur 4 plans** (suit aussi le doigt / 
 et recule légèrement quand une page est ouverte.
 
 **Accueil**
-- Logo : ballon vectoriel + « HOOP » (blanc) / « BOUNCE » (dégradé orange), police Unbounded ; slogan.
+- Logo : ballon vectoriel + « HOOP » (blanc) / « BOUNCE » (dégradé orange), police Outfit ; slogan.
 - Bouton **JOUER** : seul élément chaud et lumineux de l'écran, lueur qui « respire », reflet qui balaie.
 - Sous JOUER : **le niveau à reprendre** (« Monde 2 · Niveau 3 — Stalactites »), ou « Tous les niveaux sont
   terminés ! ».
@@ -734,7 +741,7 @@ a deux colonnes, qui restent côte à côte sur téléphone en paysage.
   - Musiques (compositions originales jouées en temps réel) ;
   - Effets sonores (synthétisés, aucun fichier audio) ;
   - Graphismes (dessinés par le code) ;
-  - Polices (Unbounded, Outfit — SIL OFL 1.1) ;
+  - Police (Outfit — SIL OFL 1.1) ;
   - Technologies (Capacitor, Google Mobile Ads).
   - En bas : « ♥ Merci de jouer ! ».
 - **Animations** :
@@ -801,6 +808,66 @@ décrit l'ancienne page (étapes 7 à 10), conservé pour l'historique :
   (pulsation), verrouillés, « Bientôt » pour ceux qui ne sont pas encore créés. Lancer un niveau : un pan de
   la couleur du monde balaie l'écran, puis l'introduction du monde.
 - `?unlock=all` : tout est ouvert (pour tester), sans rien enregistrer en plus.
+
+### Direction artistique et système de design (étape 25)
+
+> **Objectif** : qu'aucun joueur ne puisse dire « ça ressemble à un jeu fait par une IA ». Une seule direction
+> artistique, **stylisée haut de gamme** (pas réaliste) : « terrain de nuit » — bleu nuit profond, un accent chaud
+> (orange ballon), l'or des récompenses, **une seule lumière venant d'en haut à gauche**, ombres bleu nuit
+> (jamais noir pur). Aucune fonctionnalité, règle, sauvegarde ou niveau n'a changé.
+
+**Système de design** (`css/tokens.css`, chargé en premier partout ; `css/type.css`, chargé en dernier partout)
+- **Typographie — une seule famille : Outfit** (Unbounded supprimée). Six niveaux :
+  grand titre `--t-display` (logo, « Panier ! », grands moments, graisse 800) · titre `--t-h1` (titres de page,
+  700) · sous-titre `--t-h2` (titres de cartes) · texte `--t-body` · petit texte `--t-small` · étiquette
+  `--t-label` (petites capitales, interlettrage commun). Toutes les graisses ont baissé d'un cran (900/800 → 700) :
+  contours moins épais, lecture plus fine ; lueurs autour des textes retirées ; chiffres tabulaires partout.
+- **Arrondis** : 5 valeurs pour tout le jeu (`--r-xs` 8 · `--r-sm` 12 · `--r-md` 16 · `--r-lg` 20 · `--r-xl` 26,
+  plus `--r-pill`) — 128 arrondis épars ramenés à ce jeu.
+- **Ombres** : 4 niveaux (`--sh-1` → `--sh-4`) teintés bleu nuit ; toutes les ombres noires converties.
+- **Focus clavier** discret (contour blanc fin) au lieu de l'anneau orange épais.
+
+**Illustrations** (`assets/ui/*.svg`, générées par `tools/ui-art.mjs` : modifier le script puis le relancer)
+- **Pièce** : disque d'or épais (tranche visible), bord biseauté et cannelé, face creusée, ballon en relief, reflets.
+  Classe `.hb-coin` (et `.coin-ico` : même image partout — menu, boutique, jeu, Pass, révélations, pluie de pièces).
+- **Gemme** : taille brillant à facettes (couronne, table, pavillon), reflets internes, éclats. Classe `.hb-gem`.
+- **Coffres** : 6 modèles du même atelier, reconnaissables au premier coup d'œil — **commun** (bois brun, fer),
+  **rare** (bois bleu, acier, pierre bleue), **épique** (bois violet, or, gravures, équerres), **bonus amélioré**
+  (orange et or), **premium** (bleu nuit, argent glacé, cristal), **légendaire** (acajou, or, couronne, pierre
+  ambre). Planches, veines, ferrures rivetées, serrure, bombé éclairé ; couvercle et caisse séparés pour s'ouvrir.
+
+**Icônes** (`src/menu/icons.js`) : **plus aucun émoji dans l'interface**. ~20 icônes ajoutées dans le style des
+existantes (grille 24, trait 1,9, coins arrondis, couleur du texte) : missions et succès (drapeau, panier, étoile,
+chrono, éclat, ville, flocon, volcan, sapin, planète, crâne, coffre, couronne, gemme…), mondes, modes (vague,
+drapeau à damier, outils), Bonus (cadeau, écran, roue), sources d'XP du Pass, boutique, collection, publicité du
+jeu. Classe commune `.ico` (taille du texte).
+
+**Micro-animations** (le jeu vit même sans toucher) : pièces des soldes qui pivotent lentement, petit éclat
+qui scintille sur les pièces et les gemmes, gemmes qui flottent, coffres qui respirent (couvercle qui se soulève
+à peine), cartes du Hoop Pass qui flottent chacune à son rythme. Toutes en `transform` / `opacity` ; arrêtées si
+« mouvements réduits ».
+
+**Ouverture des coffres** (`menu/rewards-fx.js`, aussi dans la boutique) : le coffre apparaît au centre sur un
+halo → tremble de plus en plus fort pendant que **la lumière s'échappe par la fente** (rayons vers le haut) et que
+le halo grandit → s'ouvre : couvercle projeté, éclair à la couleur de la rareté, **gerbe de particules** → la
+récompense **sort du coffre** ; son à chaque temps, vibrations courtes. Fond plus sombre (le coffre est le seul
+sujet) ; la mise en page ne saute plus quand le butin apparaît.
+
+**Hoop Pass** : cartes qui flottent, coffres des cartes disponibles qui respirent, carte récupérée balayée par un
+reflet et coche qui apparaît d'un coup (aussi pour « Tout récupérer ») ; le système n'a pas changé.
+
+**Neige de Noël** (`src/menu/snowfall.js`) : une vraie chute de neige en trois plans — **loin** (beaucoup de petits
+flocons doux, lents, dessinés *derrière* les sapins), **milieu** (cristaux à six branches de tailles variées qui
+tournent lentement), **près** (quelques grands flocons flous qui passent devant). Vent par rafales, balancement
+propre à chaque flocon, parallaxe par plan ; flocons précalculés. Les ampoules des sapins sont rondes et
+lumineuses. La neige se voit aussi, atténuée, derrière les pages (dont le Hoop Pass, qui n'a plus de points CSS).
+
+**Fonds du jeu** : perspective atmosphérique — la silhouette des plans lointains tire vers la couleur de
+l'horizon (précalculé, aucun coût) : plus de profondeur, plan de jeu inchangé. Écran de victoire : halo de rayons
+doux qui tourne derrière la carte ; la bannière « Succès débloqué » se range à gauche au lieu de couvrir le titre.
+
+**Boutons** : identité conservée ; appui plus physique (s'enfonce d'1 px, s'assombrit à peine), relâcher élastique
+plus doux, transitions d'ombre plus naturelles, léger soulèvement au survol.
 
 ### Boutons
 
@@ -1699,7 +1766,7 @@ porte-monnaie.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v6.apk` (≈ 0,6 Mo, **1.5.0-test6**, Hoop Pass et gemmes) —
+**Fichier actuel :** `dist/HoopBounce_Test_v7.apk` (≈ 0,6 Mo, **1.6.0-test7**, direction artistique unifiée) —
 une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
 
@@ -1721,7 +1788,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · **v6 : `1.5.0-test6` (6)** ; « 1.5.0 (test 6) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · **v7 : `1.6.0-test7` (7)** ; « 1.6.0 (test 7) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -1899,6 +1966,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   visage), Collection en album avec articles verrouillés visibles, animations de déblocage par rareté
 
 ### Phase 6 bis — Finition « vrai jeu mobile » 🟡
+- ✅ **Étape 25 — direction artistique unifiée** : une seule police, système de design, pièces / gemmes /
+  coffres illustrés, icônes sans émoji, vraie neige, ouverture de coffre, micro-animations, profondeur des fonds
 - ✅ Sensations : caméra (recul en hauteur, coups de zoom, arrêt sur image), contrôle en l'air plus vif
 - ✅ Ombres douces, lumière du monde sur le ballon, étalonnage des couleurs
 - ✅ Effets de rebond (éclair, traits de vitesse, matière du monde) et de panier (gerbe de rayons, ondes)
@@ -2000,6 +2069,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Étape 25 — qualité visuelle** : direction artistique unique (Outfit seule, hiérarchie, arrondis, ombres),
+  pièces, gemmes et 6 coffres illustrés, icônes cohérentes, neige réaliste, ouverture de coffre, effets du Pass,
+  victoire, boutons, profondeur des fonds — sans toucher au jeu ni aux sauvegardes
 - ✅ **Hoop Pass « Saison 1 · Noël »** + 💎 gemmes : page du Pass, bouton de l'accueil, XP des niveaux,
   Trickshots, missions et succès, Premium, 9 objets de saison, onglet Gemmes de la boutique
 - ✅ **Saison de Noël — étape 1** : menu principal décoré (décor enneigé, neige, guirlande, bonnet, cadeaux,
@@ -2045,6 +2117,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation de la qualité visuelle** (étape 25) avec `HoopBounce_Test_v7.apk` : impression générale, lisibilité
+  de la police, coffres, neige, fluidité sur téléphone
 - 🟡 **Validation du Hoop Pass et des gemmes** avec `HoopBounce_Test_v6.apk` ; décision attendue sur le rythme
   des gemmes (voir Bugs connus)
 - 🟡 **Validation du menu de Noël** (saison 1, étape 1) avec `HoopBounce_Test_v5.apk`
@@ -2235,6 +2309,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - Mesure (Chromium sans carte graphique, 844×390 en ×2) : **médiane 16,7 ms (60 images/s)** sur les 5 grands
   finals, 0 à 9 images lentes sur 240 ; rendu d'une image ≈ 8–10 ms en logiciel (bien moins sur un GPU mobile).
 
+**Direction artistique (étape 25)**
+- Illustrations en **fichiers SVG** (mis en cache, partagés par toutes les pages) au lieu de dégradés CSS.
+- Éclat des pièces : une petite étoile animée en `transform` / `opacity` (l'ancien reflet masqué redessinait
+  chaque image : −15 images/s mesurées) ; plus de `filter: drop-shadow` autour des éléments animés (même raison).
+- Neige : flocons précalculés (3 sprites de cristaux, 1 point doux, 1 flocon flou) ; ~125 flocons en qualité haute.
+- Fonds : profondeur précalculée dans les couleurs des plans (un voile par image coûtait −20 images/s en ×2).
+- Mesures (Chromium sans carte graphique, 844×390) : jeu 60 images/s (×1 et ×2) ; menu de Noël ≈ 40 images/s en ×2
+  sans GPU (48 avant ; le surcoût vient d'animations composées, quasi gratuites sur le GPU d'un téléphone).
+
 **Hoop Pass**
 - Page construite une fois, puis **mise à jour sans reconstruction** (états des cartes seulement) : le
   défilement et les aperçus restent ; seulement 6 aperçus d'objets dessinés.
@@ -2248,6 +2331,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | Étape 25 : les nouvelles animations (pièces qui pivotent, éclats, neige) sont mesurées dans un navigateur sans carte graphique ; elles sont prévues pour le GPU des téléphones (transform / opacity). | 🔴 À confirmer sur téléphone (v7) |
+| Info | Étape 25 : les « ✓ » et « → » des textes viennent de la police du système (Outfit ne les contient pas) : rendu légèrement différent selon l'appareil. | 🟡 Mineur |
 | Info | Hoop Pass : le Premium coûte 250 💎 ; sans dépenser ailleurs, on ne les réunit qu’au **niveau 50** du Pass (cadeau 50 + 240 de la ligne gratuite = 290 ; 230 au niveau 48). Le Premium étant rétroactif, rien n’est perdu, mais on le débloque très tard. | 🟡 À décider : baisser le prix, augmenter le cadeau, ou ajouter quelques gemmes (missions, calendrier) |
 | Info | Hoop Pass : les dates suivent l'heure de l'appareil (comme la récompense quotidienne). | 🟡 Normal hors ligne |
 | ✅ | Hoop Pass (en développement) : pastille du bouton de l'accueil coupée après un toucher, accueil pas rafraîchi au retour de la page, son du Premium qui plantait, étiquette « rarity.mythic ». | ✅ Corrigé avant validation |
@@ -2269,7 +2354,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | Info | Version de test : pas de vraies annonces de test AdMob (SDK absent de l'enveloppe) ; ce sont les annonces de test simulées du jeu. Les vraies annonces de test se vérifient avec la version Capacitor (`android/`). | 🟡 Normal pour cette version |
 | Info | Projet Capacitor (`android/`, version Play Store) jamais construit (SDK Android indisponible dans l'environnement de développement) : à faire dans Android Studio. | 🔴 À tester |
 | Info | Fournisseur AdMob (application Android) écrit d'après la documentation du plugin, **pas encore essayé sur un appareil** : événements de récompense et de fermeture à confirmer avec les annonces de test. | 🔴 À tester (phase Android) |
-| Faible | Écran de victoire sur petit téléphone : la bannière « Mission terminée ! » recouvre quelques secondes le titre « Panier ! ». | 🟡 À améliorer |
+| ✅ | Écran de victoire sur petit téléphone : la bannière « Mission terminée ! » recouvrait quelques secondes le titre « Panier ! ». | ✅ Corrigé (étape 25 : la bannière se range à gauche) |
 | Info | Les limites de publicités par jour suivent l'heure de l'appareil (comme la récompense quotidienne). | 🟡 Normal hors ligne |
 | ✅ | Ouvrir une page du menu pendant l'entrée animée de l'accueil laissait les boutons du haut par-dessus l'en-tête. | ✅ Corrigé (v0.11.0) |
 | Info | La journée change à minuit, heure de l'appareil : changer l'heure du téléphone permet de récupérer plus tôt (aucun serveur pour vérifier). | 🟡 Normal hors ligne ; à revoir si un compte en ligne arrive |
@@ -2297,6 +2382,37 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 23/11/2026 — Étape 25 : qualité visuelle, direction artistique unifiée (v1.4.0-dev, APK de test v7)
+
+> Début de la phase « qualité » : **plus aucune nouvelle fonctionnalité**. Gameplay, niveaux, Trickshot, missions,
+> succès, boutique, collection, Hoop Pass, progression et sauvegardes : **inchangés**.
+
+**Ajouté**
+- `css/tokens.css` (système de design) et `css/type.css` (règles communes : hiérarchie, icônes, micro-animations,
+  boutons), chargés sur toutes les pages.
+- `assets/ui/` : pièce, gemme, 6 coffres (couvercle + caisse), générés par `tools/ui-art.mjs`.
+- ~20 icônes au trait dans `src/menu/icons.js` ; plus aucun émoji dans l'interface.
+- `src/menu/snowfall.js` : neige en trois plans (flocons lointains derrière les sapins, cristaux qui tournent,
+  grands flocons flous au premier plan) ; ampoules rondes sur les sapins.
+- Ouverture de coffre en cinq temps (apparition, secousses et lumière par la fente, ouverture et particules,
+  récompense qui sort du coffre, son et vibration) ; effets de récupération du Pass ; rayons de victoire.
+
+**Modifié**
+- **Une seule police** (Outfit) : Unbounded supprimée (fichier, préchargement, crédits) ; graisses abaissées,
+  lueurs des textes retirées, hiérarchie commune.
+- Arrondis ramenés à 5 valeurs, ombres bleu nuit à 4 niveaux, focus discret.
+- Pièces et gemmes illustrées partout ; coffres illustrés partout (quotidien, missions, Bonus, Pass, boutique).
+- Fonds du jeu : profondeur atmosphérique précalculée. Boutons : mouvement plus doux, ombres plus naturelles.
+- Écran de victoire : la bannière « Succès débloqué » ne recouvre plus le titre.
+- Boutique : en-tête qui tient avec les deux soldes sous 900 px (compteurs des onglets masqués).
+- `tests/modes.test.mjs` vérifie les icônes au lieu des émojis (360 tests).
+
+**Vérifié** : 360 tests ; smoke test complet sans erreur ; jeu à 60 images/s ; mise à jour v6 → v7 simulée sans
+perte (pièces, gemmes, skins, progression, Trickshot) ; captures avant / après de toutes les pages.
+
+**Reste à faire**
+- Avis du porteur du projet sur le rendu ; essai sur téléphone (fluidité des micro-animations et de la neige).
 
 ### 23/11/2026 — Hoop Pass « Saison 1 · Noël » et 💎 gemmes (v1.3.0-dev, APK de test v6)
 

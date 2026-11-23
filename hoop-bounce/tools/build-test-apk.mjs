@@ -27,9 +27,9 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, rea
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const TEST_BUILD = 6;
+const TEST_BUILD = 7;
 // Nom de version des versions de test : 1.1.0 = mode TRICKSHOT, 1.2.0 = TRICKSHOT « laboratoire », 1.3.0 = Boutique / Collection, 1.4.0 = menu de Noël (Play Store : 1.0.0)
-const VERSION = '1.5.0';
+const VERSION = '1.6.0';
 const PACKAGE = 'com.echospeed.hoopbounce.test';
 // Empreinte SHA-256 de la clé de test qui a signé la v1 : une autre clé empêcherait la mise à jour
 const KEY_SHA256 = '894f0b7da38d40fbd7ad33ae73cfe4d3c64659d981e8f94c00d4cba11535bfd8';
