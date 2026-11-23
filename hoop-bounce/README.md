@@ -3,7 +3,12 @@
 Jeu de plateforme 2D pour Android, **à l'horizontale** : on fait rouler et rebondir une balle de basket
 jusqu'au panier.
 
-**Saison 1 — 🎄 Noël, étape 1 (actuelle) :** le **menu principal** passe à l'heure de Noël : soir d'hiver à la
+**Hoop Pass « Saison 1 · ❄️ Noël ❄️ » (actuel) :** passe de saison de 50 niveaux (lignes Gratuit et Premium),
+XP gagnée en terminant des niveaux et des Trickshots, en récupérant missions et succès ; nouvelle monnaie rare
+💎 **gemmes**, 9 objets de saison dont un skin **mythique**, onglet Gemmes dans la boutique. Bouton à côté de
+JOUER, page `index.html#pass`. Contenu d'une saison : `src/shared/seasons/`. APK : `dist/HoopBounce_Test_v6.apk`.
+
+**Saison 1 — 🎄 Noël, étape 1 :** le **menu principal** passe à l'heure de Noël : soir d'hiver à la
 montagne, neige qui tombe, guirlande lumineuse, bonnet sur le logo, cadeaux, ambiance sonore d'hiver (le jeu ne
 change pas). Interrupteur : `src/shared/season.js` (`?season=off` pour comparer). APK : `dist/HoopBounce_Test_v5.apk`.
 

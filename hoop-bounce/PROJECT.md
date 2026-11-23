@@ -3,10 +3,10 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 23/11/2026 · **Version :** 1.2.0-dev (non publiée ; la version publiable reste
-> 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1, étape 1 : menu décoré) · **Version de test
-> Android :** **`HoopBounce_Test_v5.apk` (1.4.0-test5, mise à jour)** · **iOS :** projet Xcode prêt (`ios/`) ·
-> **Étape en cours :** validation du menu de Noël ; rien n'est publié.
+> **Dernière mise à jour :** 23/11/2026 · **Version :** 1.3.0-dev (non publiée ; la version publiable reste
+> 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1 : menu décoré + **Hoop Pass**) · **Version de
+> test Android :** **`HoopBounce_Test_v6.apk` (1.5.0-test6, mise à jour)** · **iOS :** projet Xcode prêt
+> (`ios/`) · **Étape en cours :** validation du Hoop Pass et des gemmes ; rien n'est publié.
 
 ## Sommaire
 
@@ -16,6 +16,7 @@
 4. [Interface](#4-interface)
 4 bis. [Mode TRICKSHOT](#4-bis-mode-trickshot-étapes-22-et-23)
 4 ter. [Saisons — Saison 1 : Noël](#4-ter-saisons--saison-1--noël)
+4 quater. [Hoop Pass et gemmes](#4-quater-hoop-pass-et-gemmes-saison-1--noël)
 5. [Progression](#5-progression)
 5 bis. [Publication Google Play](#5-bis-publication-google-play-version-100)
 5 ter. [Version iPhone (iOS)](#5-ter-version-iphone-ios)
@@ -274,6 +275,7 @@ hoop-bounce/
 │   ├── live.css            Récompense quotidienne, Missions, Succès, Bonus (coffre, roue), révélation des récompenses
 │   ├── shop.css            Styles de la boutique
 │   ├── season-christmas.css  Saison de Noël : décorations du menu (guirlande, bonnet, houx, cadeaux, neige)
+│   ├── pass.css            Hoop Pass : bouton « billet » de l'accueil et page du passe de saison
 │   ├── trickshot.css       Écran du mode TRICKSHOT (HUD, carte d'intro, pause, victoire, échec)
 │   ├── trickshot-menu.css  Pages du menu du mode TRICKSHOT (carte des modes, accueil du mode, 50 niveaux)
 │   ├── polish.css          Finitions communes à toutes les pages (onde au toucher, boutons, transitions,
@@ -294,7 +296,8 @@ hoop-bounce/
 │   ├── shop/               Boutique (grille, aperçu animé, achats, textes)
 │   ├── input/              Entrées tactiles et clavier du jeu
 │   ├── platform/           Fonctions propres à l'appareil (vibrations)
-│   ├── menu/               Tout le menu principal (dont scene-christmas.js et season-decor.js : Saison de Noël)
+│   ├── menu/               Tout le menu principal (dont scene-christmas.js et season-decor.js : Saison de Noël,
+│   │                       pass-view.js : page du Hoop Pass)
 │   ├── trickshot/          ★ Mode TRICKSHOT : règles, 50 niveaux, visée, rendu de l'arène, progression, textes
 │   └── shared/             Ce que le menu, la boutique et le jeu partagent (réglages, porte-monnaie,
 │                           statistiques, récompenses quotidiennes, missions, succès, coffres,
@@ -420,7 +423,8 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `live-views.js` | Pages Récompense quotidienne (calendrier de 7 jours), Missions (3 par jour) et Succès (4 paliers), pastilles de l'accueil. |
 | `about-page.js` | Page « À propos » (étape 16) : identité du jeu, version, créateur, copyright, crédits, liens (politique de confidentialité, conditions d'utilisation). |
 | `bonus-view.js` | Page Bonus du jour (étape 13) : coffre bonus (gratuit ou amélioré avec une publicité) et roue de la chance (rotation, ralentissement, clics, pointeur). |
-| `rewards-fx.js` | Révélation d'une récompense : coffre qui tombe, tremble et s'ouvre, rayons, butin, pluie de pièces, pièces qui filent vers le compteur. |
+| `rewards-fx.js` | Révélation d'une récompense : coffre qui tombe, tremble et s'ouvre, rayons, butin (pièces, 💎 gemmes, un ou plusieurs objets), pluie de pièces, pièces qui filent vers le compteur. Aussi utilisée par la boutique (coffres en gemmes). |
+| `pass-view.js` | Page **Hoop Pass** : en-tête de saison, niveau et XP, carte Premium, piste défilante des 50 niveaux (Premium / Gratuit), montées de niveau animées, récupération, « Tout récupérer », « Mon niveau », étincelles. État du bouton de l'accueil (`passHomeState`). |
 | `sound.js` | Musique d'ambiance du menu (avec le motif du rebond toutes les 4 mesures) ; les sons d'interface viennent de la voix partagée `audio/ui-voice.js`. |
 | `icons.js` | Icônes SVG dessinées à la main. |
 | `i18n.js` | Textes du menu en français, anglais et espagnol. |
@@ -430,9 +434,12 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | Fichier | Rôle |
 |---|---|
 | `catalog.js` | Catalogue de la boutique (articles, raretés, prix, textes) et barème des pièces. |
-| `wallet.js` | Porte-monnaie et inventaire : pièces gagnées, articles possédés et équipés, étoiles déjà récompensées ; articles donnés (récompenses), articles achetés. |
+| `wallet.js` | Porte-monnaie et inventaire : pièces gagnées, **💎 gemmes** (`hoopbounce.gems`), articles possédés et équipés, étoiles déjà récompensées ; articles donnés (récompenses), articles achetés en pièces ou en gemmes (`buyWithGems`). |
+| `pass.js` | ★ **Système du Hoop Pass** (sans navigateur) : XP, niveaux, états des récompenses, récupération, Premium, cadeau de bienvenue, fin de saison ; `awardPassXp()` appelé par le jeu, le Trickshot, les missions et les succès. |
+| `seasons/` | ★ **Configuration des saisons** : `christmas.js` (thème, textes, couleurs, dates, barème d'XP, prix du Premium, 50 niveaux et récompenses, objets exclusifs) et `index.js` (registre). |
+| `gem-offers.js` | Offres en gemmes de la boutique : coffres premium et légendaire, pack de saison. |
 | `stats.js` | Statistiques du joueur : compteurs à vie (succès) et du jour (missions), remis à zéro à minuit (heure locale). |
-| `rewards.js` | Récompenses communes : pièces, coffres (commun, rare, épique), articles exclusifs, article au hasard ; doublons convertis en pièces. |
+| `rewards.js` | Récompenses communes : pièces, gemmes, coffres (commun, rare, épique, premium, légendaire), articles exclusifs, article au hasard ; doublons convertis en pièces. |
 | `daily.js` | Récompense quotidienne : calendrier de 7 jours, une récompense par jour, mémorisée, nouveau cycle après le 7e jour. |
 | `missions.js` | Missions quotidiennes : 9 modèles, 3 missions tirées par jour (facile, moyenne, difficile), progression, récompenses. |
 | `achievements.js` | Succès : 40 succès sur 4 paliers, mesure de la progression, récompenses à récupérer. |
@@ -533,6 +540,8 @@ et recule légèrement quand une page est ouverte.
 - **Bonus** (étape 13) : quatrième bouton (icône de roue, orange), pastille quand le coffre du jour ou le lancer
   gratuit attend.
 - **Première visite du jour** : la page Récompense quotidienne s'ouvre d'elle-même (une fois par jour).
+- **Hoop Pass** (saison 1) : bouton « billet » à droite de JOUER (médaillon doré du niveau, « Saison 1 · Noël »,
+  mini-barre d'XP, pastille rouge des récompenses à récupérer) — voir [Hoop Pass](#4-quater-hoop-pass-et-gemmes-saison-1--noël).
 
 **Pages**
 
@@ -604,6 +613,11 @@ succès) n'y sont pas : une ligne rappelle combien il en reste à gagner en joua
   `'owned'` et aucun bouton Acheter n'existe pour un objet possédé.
 - **Tout acheté** dans un onglet : écran **« 🏆 Tout est à toi ! »** avec un bouton vers la Collection.
 - Pièces manquantes : la carte et le solde tremblent, son de refus. `shop.html?item=…` ouvre un objet en vitrine.
+- **Onglet 💎 Gemmes** (Hoop Pass) : coffres **premium** (60 💎, objet épique ou légendaire garanti) et
+  **légendaire** (150 💎, objet légendaire garanti) ouverts avec la grande révélation du menu ; **offre spéciale
+  « Pack Hiver »** (Cristal + Tempête de neige, 240 💎 au lieu de 300, saison 1 seulement, une fois) ; skins très
+  rares vendus en gemmes (Cristal 180, Aurore 260, Tempête de neige 120). Solde de gemmes dans l'en-tête (sur
+  petit écran : seul le solde de l'onglet affiché ; soldes abrégés dès 10 000, « 125 k »).
 
 ### Sélection des mondes et des niveaux (`index.html#mondes`)
 
@@ -1170,10 +1184,88 @@ La musique habituelle du menu est **conservée** ; la saison lui **ajoute** (bus
 - de **petits grelots** très discrets toutes les 9 à 16 secondes (tintements métalliques, stéréo, réverbération) ;
 - une **note de cloche** (célesta) sur l'accord, une mesure sur deux.
 
-### Suite prévue (étapes suivantes, à valider)
+### Suite de la saison
 
-🔴 Contenus de la saison : objets de Noël dans la boutique, récompenses de l'événement, niveaux ou carte
-Trickshot enneigés, effets de neige en jeu… — rien n'est fait avant validation de l'étape 1.
+- ✅ **Hoop Pass « Saison 1 · Noël »** et gemmes — voir la section suivante.
+- 🔴 À valider plus tard : niveaux ou carte Trickshot enneigés, effets de neige en jeu.
+
+---
+
+## 4 quater. Hoop Pass et gemmes (Saison 1 : Noël)
+
+> Le **Hoop Pass** est le passe de saison de Hoop Bounce : en jouant, on gagne de l'XP de Pass, qui fait monter
+> un niveau de 1 à 50 ; chaque niveau débloque une récompense **Gratuite** et une récompense **Premium**.
+> **Saison 1 : ❄️ Noël ❄️**, du **23/11/2026 au 07/01/2027** (heure de l'appareil). Design propre au jeu :
+> bleu nuit, blanc, rouge foncé, doré, touches de vert sapin ; cartes arrondies, profondeur, lumière, neige
+> légère ; pas de cadres épais.
+
+### Architecture évolutive (nouvelles saisons)
+
+| Fichier | Rôle |
+|---|---|
+| `src/shared/seasons/christmas.js` | **Tout le contenu de la saison, en données** : id, numéro, emoji, nom et slogan (FR/EN/ES), dates, palette, barème d'XP, courbe des niveaux, prix du Premium, cadeau de bienvenue, objets exclusifs, 50 niveaux (gratuit / Premium / marquant). |
+| `src/shared/seasons/index.js` | Registre des saisons (`SEASON_CONFIGS`, `seasonConfig(id)`). |
+| `src/shared/season.js` | `SEASON` : saison en cours (décor du menu + Pass). |
+| `src/shared/pass.js` | Le système (identique pour toutes les saisons). |
+| `src/menu/pass-view.js`, `css/pass.css` | La page ; ses couleurs viennent de la palette de la saison (variables `--hp-*`). |
+
+**Créer une saison** (Halloween, Été, Espace, Volcan…) : copier `christmas.js`, changer les valeurs (thème,
+couleurs, dates, récompenses, objets exclusifs avec `season: '<passId>'`), l'ajouter au registre, passer
+`SEASON` à son id. Chaque saison a sa **propre sauvegarde** (`hoopbounce.pass.<passId>`) : une nouvelle saison
+repart du niveau 1, l'ancienne est gardée.
+
+### XP de Pass
+
+| Action | XP |
+|---|---|
+| Terminer un niveau | 60 la première fois, 15 en rejouant |
+| Réussir un Trickshot | 80 la première fois, 20 en rejouant |
+| Récupérer une mission quotidienne | 100 |
+| Récupérer un succès | 150 |
+
+- Niveau n → n+1 : `200 + 4 × (n+1)` XP (208 … 400) ; **14 896 XP** pour le niveau 50.
+- Le gain s'affiche sur l'écran de victoire du jeu et du Trickshot (« +60 XP · Hoop Pass · niveau 4 ! »).
+- Hors saison ou après la fin : plus d'XP, rien ne casse.
+
+### Récompenses (50 niveaux, deux lignes)
+
+- **Gratuit** : pièces (160 → 650), gemmes (15 à 30 aux niveaux 6, 12, 18… ; 60 au niveau 50), coffres (commun
+  3, 9, 21 ; rare 15, 27, 33 ; épique 39, 45), effet de rebond **Flocons** (niveau 25).
+- **Premium** : gemmes, coffres rares / épiques / premium, 2 000 à 4 000 pièces, et les **niveaux marquants** :
+  5 **traînée Sucre d'orge** · 10 **Ballon de Noël** · 20 **effet de victoire « Pluie de cadeaux »** · 30 **skin
+  Père Noël** · 40 **coffre légendaire** · 50 **skin MYTHIQUE « Étoile du Nord »** (nouvelle rareté, rose).
+- **Objets exclusifs** (`exclusive: 'pass'`, `season: 'christmas-1'`) : jamais en boutique ni dans les coffres ;
+  **impossibles à obtenir après la saison** ; ceux déjà obtenus restent au joueur.
+- **Premium** : débloqué avec **250 💎** (version de test, aucun argent réel) ; il donne aussi les récompenses
+  Premium des niveaux déjà atteints. **Cadeau de bienvenue** : 50 💎 à la première ouverture.
+
+### Les 💎 gemmes
+
+Monnaie **rare**, à côté des pièces (sans les remplacer). Gagnées : ligne gratuite et Premium du Pass, cadeau de
+bienvenue, coffres premium (5–15) et légendaires (10–20). Dépensées uniquement pour : le Pass Premium, les
+coffres premium et légendaires, les skins très rares vendus en gemmes, les offres spéciales (onglet Gemmes de la
+boutique, `src/shared/gem-offers.js`).
+
+### La page (`index.html#pass`)
+
+- **En-tête** : « HOOP **PASS** » (doré), « Saison 1 · ❄ Noël ❄ », temps restant (« 44 j 10 h », « Saison
+  terminée »), gemmes, pièces.
+- **Panneau gauche, toujours visible** : anneau du niveau, barre d'XP animée (« → Niv. 13 · 92 / 252 XP »),
+  « Gagner de l'XP » (fenêtre du barème), carte **Pass Premium** (« Débloquer · 💎 250 », deuxième toucher
+  « Confirmer » ; dorée une fois actif), bouton vert **Tout récupérer (n)**.
+- **Piste** à défilement horizontal fluide (doigt natif, molette et glisser à la souris) : **Premium en haut**
+  (cartes rouge foncé), **frise des niveaux** au milieu (remplie en or jusqu'au niveau actuel + avancement),
+  **Gratuit en bas** (cartes bleu nuit). États : **disponible** (lueur qui pulse, flotte, « Récupérer »),
+  **récupéré** (atténué, coche verte), **verrouillé** (cadenas), **Premium non débloqué** (cadenas doré), fin
+  de saison (grisé). Niveaux marquants : ruban « Exclusif » ; carte mythique à halo arc-en-ciel tournant.
+  Bouton **« Mon niveau »** dès que le niveau actuel sort de l'écran ; fondus sur les bords (envie de défiler).
+- **Montées de niveau** : à l'ouverture, les niveaux gagnés depuis la dernière visite défilent (barre qui se
+  remplit avec un grain sonore, anneau qui éclate, étincelles et flocons, son de cloches qui monte avec le
+  niveau, vibration, colonne qui s'allume), puis un bandeau **« Niveau N atteint ! »** montre les récompenses
+  débloquées.
+- **Récupérer** : grande révélation (coffre qui s'ouvre, pièces, gemmes, objets) ; « Tout récupérer » montre
+  tout le butin d'un coup. **Premium débloqué** : accord doré, éclat qui balaie la ligne Premium.
+- Libellés FR / EN / ES ; « mouvements réduits » respecté.
 
 ---
 
@@ -1607,7 +1699,7 @@ porte-monnaie.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v5.apk` (≈ 0,5 Mo, **1.4.0-test5**, menu de Noël) —
+**Fichier actuel :** `dist/HoopBounce_Test_v6.apk` (≈ 0,6 Mo, **1.5.0-test6**, Hoop Pass et gemmes) —
 une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
 
@@ -1629,7 +1721,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · **v5 : `1.4.0-test5` (5)** ; « 1.4.0 (test 5) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · **v6 : `1.5.0-test6` (6)** ; « 1.5.0 (test 6) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -1855,7 +1947,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 ### Phase 7 bis — Saisons 🟡
 - ✅ Interrupteur de saison ; **Saison 1 — Noël, étape 1** : menu principal décoré et ambiance d'hiver
-- 🔴 Noël, étapes suivantes (à valider) : objets et récompenses de l'événement, contenu enneigé en jeu
+- ✅ **Hoop Pass « Saison 1 · Noël »** : 50 niveaux, lignes Gratuit / Premium, XP en jouant, 9 objets
+  (dont un mythique), 💎 gemmes, onglet Gemmes de la boutique, architecture prête pour d'autres saisons
+- 🔴 Noël, à valider plus tard : contenu enneigé en jeu ; saisons suivantes (Halloween, Été, Espace, Volcan…)
 
 ### Phase 7 — Modes de jeu 🟡
 - ✅ Page « Modes à venir » : 3 cartes de présentation illustrées et animées, verrouillées (étape 19)
@@ -1906,6 +2000,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Hoop Pass « Saison 1 · Noël »** + 💎 gemmes : page du Pass, bouton de l'accueil, XP des niveaux,
+  Trickshots, missions et succès, Premium, 9 objets de saison, onglet Gemmes de la boutique
 - ✅ **Saison de Noël — étape 1** : menu principal décoré (décor enneigé, neige, guirlande, bonnet, cadeaux,
   ambiance sonore d'hiver), désactivable d'un mot à la fin de l'événement
 - ✅ **Boutique et Collection refaites** (étape 24) : la boutique vend (objets achetables seulement, Acheter
@@ -1949,6 +2045,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation du Hoop Pass et des gemmes** avec `HoopBounce_Test_v6.apk` ; décision attendue sur le rythme
+  des gemmes (voir Bugs connus)
 - 🟡 **Validation du menu de Noël** (saison 1, étape 1) avec `HoopBounce_Test_v5.apk`
 - 🟡 **Validation de la Boutique et de la Collection** (étape 24) avec `HoopBounce_Test_v4.apk`
 - 🟡 **Validation du mode TRICKSHOT refondu** par le porteur du projet (étape 23) avec `HoopBounce_Test_v3.apk` :
@@ -2137,12 +2235,22 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - Mesure (Chromium sans carte graphique, 844×390 en ×2) : **médiane 16,7 ms (60 images/s)** sur les 5 grands
   finals, 0 à 9 images lentes sur 240 ; rendu d'une image ≈ 8–10 ms en logiciel (bien moins sur un GPU mobile).
 
+**Hoop Pass**
+- Page construite une fois, puis **mise à jour sans reconstruction** (états des cartes seulement) : le
+  défilement et les aperçus restent ; seulement 6 aperçus d'objets dessinés.
+- Animations sur `transform` / `opacity` (frise remplie par `translateX`, barre par `scaleX`) ; étincelles dans
+  un canevas actif seulement pendant un effet ; neige du fond en un seul calque déplacé ; halos sans `filter:
+  blur` (déjà dégradés). Mesure (Chromium sans carte graphique, ×2) : page du Pass ≈ autres pages du menu.
+
 ---
 
 ## 10. Bugs connus
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | Hoop Pass : le Premium coûte 250 💎 ; sans dépenser ailleurs, on ne les réunit qu’au **niveau 50** du Pass (cadeau 50 + 240 de la ligne gratuite = 290 ; 230 au niveau 48). Le Premium étant rétroactif, rien n’est perdu, mais on le débloque très tard. | 🟡 À décider : baisser le prix, augmenter le cadeau, ou ajouter quelques gemmes (missions, calendrier) |
+| Info | Hoop Pass : les dates suivent l'heure de l'appareil (comme la récompense quotidienne). | 🟡 Normal hors ligne |
+| ✅ | Hoop Pass (en développement) : pastille du bouton de l'accueil coupée après un toucher, accueil pas rafraîchi au retour de la page, son du Premium qui plantait, étiquette « rarity.mythic ». | ✅ Corrigé avant validation |
 | Info | TRICKSHOT (étape 23) : progression Trickshot de l'étape 22 convertie (les anciennes cartes n'existent plus) : les déblocages sont gardés, pas les étoiles ni les records des anciennes cartes. | 🟡 Voulu |
 | ✅ | TRICKSHOT (étape 23, en développement) : cartes 10, 12, 14 et 20 gagnables sans leur mécanique (tir en cloche ou ricochet), bouton en relief qui freinait le ballon, texte « TRICKSHOT ! » hors écran pour un panier près du plafond. | ✅ Corrigé avant validation |
 | Info | TRICKSHOT (étape 22) : la difficulté est **mesurée par simulation** (part des tirs gagnants sur une grille), pas encore par des joueurs. Un niveau « Impossible » a toujours une solution, mais la fenêtre est très étroite. | 🟡 À éprouver |
@@ -2189,6 +2297,36 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 23/11/2026 — Hoop Pass « Saison 1 · Noël » et 💎 gemmes (v1.3.0-dev, APK de test v6)
+
+**Ajouté**
+- **Hoop Pass** : système `src/shared/pass.js` + configuration de saison `src/shared/seasons/christmas.js`
+  (thème, couleurs, dates 23/11/2026 → 07/01/2027, barème, 50 niveaux, objets exclusifs) et registre ;
+  architecture prête pour Halloween, Été, Espace, Volcan…
+- **XP de Pass** : niveaux terminés (60 / 15), Trickshots (80 / 20), missions (100), succès (150) ; affichée
+  sur les écrans de victoire.
+- **Page Hoop Pass** (`src/menu/pass-view.js`, `css/pass.css`) : en-tête de saison et temps restant, anneau et
+  barre d'XP, carte Premium, piste défilante Premium / frise / Gratuit, états clairs, « Mon niveau », « Tout
+  récupérer », montées de niveau animées (barre, éclat, étincelles, cloches), bandeau « Niveau N atteint ! »,
+  révélations, cadeau de bienvenue, déblocage Premium.
+- **Bouton « billet » Hoop Pass** à côté de JOUER (niveau, barre, pastille) ; les cadeaux de Noël s'y posent.
+- **💎 Gemmes** (`hoopbounce.gems`), coffres **premium** et **légendaire**, nouvelle rareté **mythique**.
+- **9 objets** : Ballon de Noël, Père Noël, Étoile du Nord (mythique), Sucre d'orge, Flocons, Pluie de cadeaux
+  (exclusifs du Pass) ; Cristal, Aurore, Tempête de neige (vendus en gemmes).
+- **Boutique : onglet 💎 Gemmes** (coffres, Pack Hiver, skins rares) et solde de gemmes.
+- Sons : niveau du Pass, remplissage, Premium (`audio/ui-voice.js`) ; icône gemme.
+- Tests : `tests/pass.test.mjs` (8 tests, **360 au total**) ; smoke test complet sans erreur ; mise à jour v5 →
+  v6 simulée : aucune sauvegarde perdue.
+- `dist/HoopBounce_Test_v6.apk` (1.5.0-test6) : mise à jour par-dessus les versions précédentes.
+
+**Modifié**
+- `rewards-fx.js` : affiche aussi les gemmes et plusieurs objets.
+- Boutique : la ligne « objets exclusifs » ne compte plus les objets vendus en gemmes ; en-tête plus compact.
+- Le gameplay, les niveaux et les sauvegardes existantes : **inchangés**.
+
+**Reste à faire**
+- Avis du porteur du projet ; décider du rythme des gemmes pour le Premium (voir Bugs connus).
 
 ### 23/11/2026 — Saison 1 « Noël », étape 1 : le menu principal décoré (APK de test v5)
 
