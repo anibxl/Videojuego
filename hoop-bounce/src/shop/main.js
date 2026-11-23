@@ -1,5 +1,9 @@
-// Boutique : grille d'articles par catégorie, aperçu animé, achat avec les pièces gagnées en jouant,
-// équipement. Aucun achat avec de l'argent réel.
+// Boutique (étape 24) : UNIQUEMENT les objets que l'on peut acheter — ballons, visages, effets de rebond,
+// traînées et animations de panier pas encore possédés (les objets exclusifs se gagnent en jouant et
+// n'y figurent pas). Chaque carte montre l'aperçu, le prix et un bouton « Acheter » ; la vitrine montre
+// l'objet choisi en grand. Un objet acheté ne peut jamais être acheté deux fois : il affiche un badge
+// « Possédé », puis quitte la boutique (il est équipé aussitôt et se retrouve dans la Collection).
+// Aucun achat avec de l'argent réel : uniquement les pièces gagnées en jouant.
 
 import { CATALOG, RARITIES, itemById } from '../shared/catalog.js';
 import { Wallet } from '../shared/wallet.js';
@@ -25,23 +29,25 @@ const vibrate = (p) => {
   vibratePattern(p); // Android : navigator.vibrate ; iPhone : retour haptique natif
 };
 const name = (item) => item.name[lang] ?? item.name.fr;
-// Prix : complets dans le détail (« 25 000 »), abrégés sur les cartes au-delà de 100 000 (« 650 k », « 1 M »)
+// Prix : complets dans la vitrine (« 25 000 »), abrégés sur les cartes au-delà de 100 000 (« 650 k », « 1 M »)
 const LOCALE = lang === 'en' ? 'en-US' : lang === 'es' ? 'es-ES' : 'fr-FR';
 // (espace insécable classique : l'espace fine n'existe pas dans les polices du jeu)
-const fmt = (n) => n.toLocaleString(LOCALE).replace(/\u202f/g, '\u00a0');
-const short = (n) => (n >= 100000 ? new Intl.NumberFormat(LOCALE, { notation: 'compact', maximumFractionDigits: 1 }).format(n).replace(/\u202f/g, '\u00a0') : fmt(n));
-const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10.5V8a5 5 0 0 1 10 0v2.5h.5A1.5 1.5 0 0 1 19 12v7.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19.5V12a1.5 1.5 0 0 1 1.5-1.5zm2 0h6V8a3 3 0 0 0-6 0z"/></svg>';
+const fmt = (n) => n.toLocaleString(LOCALE).replace(/ /g, ' ');
+const short = (n) => (n >= 100000 ? new Intl.NumberFormat(LOCALE, { notation: 'compact', maximumFractionDigits: 1 }).format(n).replace(/ /g, ' ') : fmt(n));
+
+/** En vente : un objet payant, non exclusif, pas encore possédé (règle commune : Wallet.isForSale). */
+const forSale = (it, w) => w.isForSale(it.id);
 
 /** Onglets : les ballons « amusants » (avec un visage) ont leur propre onglet, mais s'équipent comme des ballons. */
 const TABS = [
-  { id: 'ball', cat: 'ball', has: (it) => it.category === 'ball' && it.group !== 'fun' },
-  { id: 'fun', cat: 'ball', has: (it) => it.category === 'ball' && it.group === 'fun' },
-  { id: 'bounce', cat: 'bounce', has: (it) => it.category === 'bounce' },
-  { id: 'trail', cat: 'trail', has: (it) => it.category === 'trail' },
-  { id: 'goal', cat: 'goal', has: (it) => it.category === 'goal' },
+  { id: 'all', has: () => true },
+  { id: 'ball', has: (it) => it.category === 'ball' && it.group !== 'fun' },
+  { id: 'fun', has: (it) => it.category === 'ball' && it.group === 'fun' },
+  { id: 'bounce', has: (it) => it.category === 'bounce' },
+  { id: 'trail', has: (it) => it.category === 'trail' },
+  { id: 'goal', has: (it) => it.category === 'goal' },
 ];
 const tabOf = (id) => TABS.find((t) => t.id === id) ?? TABS[0];
-const tabForItem = (it) => TABS.find((t) => t.has(it))?.id ?? 'ball';
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
 // ─── Textes ─────────────────────────────────────────────────────────────────
@@ -54,19 +60,28 @@ for (const el of document.querySelectorAll('[data-label]')) el.setAttribute('ari
 // ─── État ───────────────────────────────────────────────────────────────────
 
 let tab = tabOf(params.get('tab')).id;
-let selected = defaultSelection(tab);
-// Lien direct vers un article (depuis la Collection : « Voir dans la boutique »)
+/** Objets achetés pendant cette visite : leur carte reste un instant avec le badge « Possédé ». */
+const justBought = new Set();
+let selected = null;
 const wanted = itemById(params.get('item'));
-if (wanted) {
-  tab = tabForItem(wanted);
-  selected = wanted.id;
-}
+if (wanted && forSale(wanted, wallet)) selected = wanted.id;
 
-/** Article montré à l'ouverture d'un onglet : l'article équipé s'il en fait partie, sinon le premier. */
-function defaultSelection(tabId) {
+/** Objets de l'onglet affichés : en vente (et ceux qu'on vient d'acheter), du moins cher au plus cher par rareté. */
+function shelf(tabId = tab) {
   const t = tabOf(tabId);
-  const eq = itemById(wallet.equipped(t.cat));
-  return eq && t.has(eq) ? eq.id : CATALOG.find(t.has).id;
+  return CATALOG.filter((it) => t.has(it) && (forSale(it, wallet) || justBought.has(it.id))).sort(
+    (a, b) => RARITIES[a.rarity].order - RARITIES[b.rarity].order || a.price - b.price,
+  );
+}
+const forSaleCount = (tabId) => CATALOG.filter((it) => tabOf(tabId).has(it) && forSale(it, wallet)).length;
+
+/** Article montré en vitrine : celui choisi s'il est toujours affiché, sinon le moins cher qu'on peut s'offrir. */
+function pickSelection() {
+  const items = shelf();
+  if (selected && items.some((it) => it.id === selected)) return selected;
+  const affordable = items.filter((it) => forSale(it, wallet) && it.price <= wallet.coins);
+  const pick = affordable.length ? affordable[affordable.length - 1] : items.find((it) => forSale(it, wallet));
+  return pick?.id ?? null;
 }
 const preview = new Preview($('preview'));
 
@@ -80,9 +95,8 @@ function look(overrideItem = null) {
 
 function renderTabs() {
   $('tabs').innerHTML = TABS.map((t) => {
-    const items = CATALOG.filter(t.has);
-    const owned = items.filter((i) => wallet.owns(i.id)).length;
-    return `<button role="tab" data-tab="${t.id}" aria-selected="${t.id === tab}">${st(lang, `tab.${t.id}`)}<small>${owned}/${items.length}</small></button>`;
+    const n = forSaleCount(t.id);
+    return `<button role="tab" data-tab="${t.id}" aria-selected="${t.id === tab}" class="${n ? '' : 'empty'}">${st(lang, `tab.${t.id}`)}<small>${n}</small></button>`;
   }).join('');
 }
 
@@ -90,35 +104,38 @@ $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('[data-tab]');
   if (!b || b.dataset.tab === tab) return;
   tab = b.dataset.tab;
-  selected = defaultSelection(tab);
+  selected = null;
+  justBought.clear();
   sfx.unlock();
   sfx.tab([...$('tabs').querySelectorAll('[data-tab]')].indexOf(b));
   render();
 });
 
-// ─── Grille ─────────────────────────────────────────────────────────────────
+// ─── Rayon (grille) ─────────────────────────────────────────────────────────
 
 function renderGrid() {
-  // Les exclusifs (gagnés en jouant chaque jour ou avec les succès) sont présentés à la fin
-  const items = CATALOG.filter(tabOf(tab).has).sort((a, b) => !!a.exclusive - !!b.exclusive || RARITIES[a.rarity].order - RARITIES[b.rarity].order || a.price - b.price);
+  const items = shelf();
   const grid = $('grid');
+  const n = forSaleCount(tab);
+  const exclusives = CATALOG.filter((it) => tabOf(tab).has(it) && it.exclusive && !wallet.owns(it.id)).length;
+  $('shelf-info').innerHTML = n
+    ? `<b>${st(lang, 'forSale', { n })}</b>${exclusives ? `<span>${st(lang, 'exclusiveNote', { n: exclusives })}</span>` : ''}`
+    : '';
   grid.innerHTML = items
     .map((it, i) => {
       const owned = wallet.owns(it.id);
-      const on = wallet.equipped(it.category) === it.id;
-      const poor = !owned && wallet.coins < it.price;
-      const right = owned
-        ? `<span class="state ${on ? 'on' : ''}">${st(lang, on ? 'equipped' : 'owned')}</span>`
-        : it.exclusive
-          ? `<span class="price exclusive">★ ${st(lang, 'exclusive')}</span>`
-          : `<span class="price ${poor ? 'poor' : ''}"><span class="coin-ico"></span>${short(it.price)}</span>`;
-      return `<button class="item ${it.rarity} ${owned ? '' : 'locked'} ${it.id === selected ? 'selected' : ''}" data-id="${it.id}" style="--r:${RARITIES[it.rarity].rgb};animation-delay:${i * 0.04}s" aria-label="${name(it)} · ${st(lang, `rarity.${it.rarity}`)}${owned ? '' : ` · ${it.exclusive ? st(lang, 'exclusive') : fmt(it.price)}`}">
+      const ok = !owned && wallet.coins >= it.price;
+      const foot = owned
+        ? `<span class="owned-badge">✓ ${st(lang, 'owned')}</span>`
+        : `<span class="tag ${ok ? 'ok' : 'poor'}"><span class="coin-ico"></span>${short(it.price)}</span>
+           <button class="buy-mini ${ok ? '' : 'poor'}" data-buy="${it.id}" aria-label="${st(lang, 'buy')} ${name(it)} · ${fmt(it.price)}">${st(lang, 'buy')}</button>`;
+      return `<article class="item ${it.rarity} ${owned ? 'is-owned' : ''} ${ok ? 'can' : ''} ${it.id === selected ? 'selected' : ''}" data-id="${it.id}" style="--r:${RARITIES[it.rarity].rgb};animation-delay:${Math.min(i, 14) * 0.035}s" tabindex="0" aria-label="${name(it)} · ${st(lang, `rarity.${it.rarity}`)} · ${owned ? st(lang, 'owned') : fmt(it.price)}">
+        <span class="rar-ribbon">${st(lang, `rarity.${it.rarity}`)}</span>
+        ${ok ? `<span class="can-dot" title="${st(lang, 'affordable')}"></span>` : ''}
         <canvas></canvas>
-        ${on ? '<span class="check"></span>' : ''}
-        ${owned ? '' : `<span class="lock">${LOCK}</span>`}
         <span class="name">${name(it)}</span>
-        <span class="meta"><span class="rar">${st(lang, `rarity.${it.rarity}`)}</span>${right}</span>
-      </button>`;
+        <span class="foot">${foot}</span>
+      </article>`;
     })
     .join('');
   requestAnimationFrame(() => {
@@ -127,45 +144,67 @@ function renderGrid() {
 }
 
 $('grid').addEventListener('click', (e) => {
+  const buy = e.target.closest('[data-buy]');
+  if (buy) {
+    selected = buy.dataset.buy;
+    markSelected();
+    renderDetail();
+    buyItem(buy.dataset.buy);
+    return;
+  }
   const el = e.target.closest('.item');
   if (!el) return;
   selected = el.dataset.id;
   sfx.unlock();
   sfx.select([...$('grid').children].indexOf(el));
-  for (const c of $('grid').querySelectorAll('.item')) c.classList.toggle('selected', c === el);
+  markSelected();
   renderDetail();
 });
+$('grid').addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList?.contains('item')) {
+    e.preventDefault();
+    e.target.click();
+  }
+});
 
-// ─── Détail et aperçu ───────────────────────────────────────────────────────
+function markSelected() {
+  for (const c of $('grid').querySelectorAll('.item')) c.classList.toggle('selected', c.dataset.id === selected);
+}
+
+// ─── Vitrine ────────────────────────────────────────────────────────────────
 
 function renderDetail() {
   const it = itemById(selected);
+  $('stage').hidden = !it;
+  $('sold-out').hidden = !!it;
+  if (!it) {
+    preview.set(look(), 'ball', '255,190,80');
+    return;
+  }
   const rar = RARITIES[it.rarity];
   document.documentElement.style.setProperty('--sel-rgb', rar.rgb);
   $('d-name').textContent = name(it);
   $('d-desc').textContent = it.desc[lang] ?? it.desc.fr;
   $('d-rarity').textContent = st(lang, `rarity.${it.rarity}`);
-  const btn = $('d-action');
   const owned = wallet.owns(it.id);
-  const on = wallet.equipped(it.category) === it.id;
+  $('d-price').hidden = owned;
+  $('d-price').innerHTML = `<span class="coin-ico"></span>${fmt(it.price)}`;
+  $('d-owned').hidden = !owned;
+  $('d-owned').textContent = `✓ ${st(lang, 'owned')}`;
+  const btn = $('d-action');
   btn.className = 'action';
   // Objectif d'épargne : barre de progression vers le prix d'un article pas encore possédé
   const goal = $('d-goal');
-  goal.hidden = owned || !!it.exclusive || !it.price;
+  goal.hidden = owned;
   if (!goal.hidden) {
     const k = Math.min(1, wallet.coins / it.price);
     $('d-goal-fill').style.width = `${(k * 100).toFixed(1)}%`;
     $('d-goal-text').textContent = `${fmt(Math.min(wallet.coins, it.price))} / ${fmt(it.price)}`;
   }
-  if (on) {
+  if (owned) {
+    // Jamais deux fois : l'objet est à toi, il t'attend dans la Collection
     btn.classList.add('equipped');
-    btn.innerHTML = `✓ ${st(lang, 'equipped')}`;
-  } else if (owned) {
-    btn.classList.add('equip');
-    btn.textContent = st(lang, 'equip');
-  } else if (it.exclusive) {
-    btn.classList.add('poor');
-    btn.textContent = st(lang, `exclusive.${it.exclusive}`);
+    btn.innerHTML = `✓ ${st(lang, 'boughtNote')}`;
   } else if (wallet.coins >= it.price) {
     btn.classList.add('buy');
     btn.innerHTML = `${st(lang, 'buy')} · <span class="coin-ico"></span>${fmt(it.price)}`;
@@ -177,29 +216,32 @@ function renderDetail() {
 }
 
 $('d-action').addEventListener('click', () => {
-  const it = itemById(selected);
+  if (selected && !wallet.owns(selected)) buyItem(selected);
+});
+
+/** Achat d'un objet (vitrine ou bouton de la carte). */
+function buyItem(id) {
+  const it = itemById(id);
   sfx.unlock();
-  if (wallet.owns(it.id)) {
-    if (wallet.equipped(it.category) === it.id) return;
-    wallet.equip(it.id);
-    sfx.equip();
-    vibrate(12);
-    render();
-    return;
-  }
-  const res = wallet.buy(it.id);
+  if (!it || wallet.owns(id)) return; // déjà possédé : jamais deux fois
+  const res = wallet.buy(id);
   if (res === 'coins') {
     $('coins').classList.remove('shake');
     void $('coins').offsetWidth;
     $('coins').classList.add('shake');
+    const card = $('grid').querySelector(`[data-id="${id}"]`);
+    card?.classList.remove('shake');
+    void card?.offsetWidth;
+    card?.classList.add('shake');
     sfx.denied();
     vibrate([10, 40, 10]);
     return;
   }
   if (res !== 'ok') return;
-  // Achat : les pièces défilent, l'article se débloque avec une animation de sa rareté, il est équipé.
+  // Achat : les pièces défilent, l'objet se débloque avec l'animation de sa rareté et il est équipé.
   // Épique : rayons violets. Légendaire : rayons dorés, éclats, son et vibration plus forts.
-  wallet.equip(it.id);
+  wallet.equip(id);
+  justBought.add(id);
   rollCoins(wallet.coins + it.price, wallet.coins);
   sfx.buy(it.rarity);
   const big = it.rarity === 'legendary' || it.rarity === 'epic';
@@ -225,9 +267,19 @@ $('d-action').addEventListener('click', () => {
   void burst.offsetWidth;
   burst.classList.add('run');
   render(false);
-});
+  // La carte garde un instant son badge « Possédé », puis quitte la boutique
+  setTimeout(() => {
+    const card = $('grid').querySelector(`[data-id="${id}"]`);
+    card?.classList.add('leaving');
+    setTimeout(() => {
+      justBought.delete(id);
+      if (selected === id) selected = null;
+      render(false);
+    }, 450);
+  }, 1900);
+}
 
-// ─── Pièces et collection ───────────────────────────────────────────────────
+// ─── Pièces ─────────────────────────────────────────────────────────────────
 
 function rollCoins(from, to) {
   const el = $('coin-n');
@@ -243,25 +295,20 @@ function rollCoins(from, to) {
   $('coins').classList.add('bump');
 }
 
-function renderHeader(coins = true) {
-  if (coins) $('coin-n').textContent = fmt(wallet.coins);
-  const p = wallet.progress();
-  $('col-count').textContent = `${p.owned}/${p.total}`;
-  requestAnimationFrame(() => ($('col-bar').style.width = `${p.percent}%`));
-}
-
 function render(coins = true) {
-  renderHeader(coins);
+  if (coins) $('coin-n').textContent = fmt(wallet.coins);
+  selected = pickSelection();
   renderTabs();
   renderGrid();
   renderDetail();
+  layout();
 }
 
 // ─── Mise en page et animation ──────────────────────────────────────────────
 
 function layout() {
   const box = $('preview-box');
-  preview.resize(box.clientWidth, box.clientHeight, DPR);
+  if (box.clientWidth) preview.resize(box.clientWidth, box.clientHeight, DPR);
 }
 window.addEventListener('resize', layout);
 
@@ -269,7 +316,7 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  preview.draw(dt);
+  if (!$('stage').hidden) preview.draw(dt);
   requestAnimationFrame(frame);
 }
 
@@ -292,6 +339,14 @@ $('btn-back').addEventListener('click', (e) => {
   sfx.click();
   go(backUrl());
 });
+for (const a of document.querySelectorAll('a[href="index.html#collection"]')) {
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    sfx.unlock();
+    sfx.click();
+    go('index.html#collection');
+  });
+}
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') go(backUrl());
 });
@@ -299,9 +354,8 @@ window.addEventListener('pageshow', (e) => {
   if (e.persisted) $('fade').classList.add('out');
 });
 
-layout();
 render();
 requestAnimationFrame(frame);
 requestAnimationFrame(() => $('fade').classList.add('out'));
 
-window.__shop = { wallet, render };
+window.__shop = { wallet, render, forSale: (id) => forSale(itemById(id), wallet) };

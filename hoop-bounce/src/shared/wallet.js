@@ -9,6 +9,13 @@ import { CATALOG, DEFAULTS, REWARDS, itemById } from './catalog.js';
 const COINS_KEY = 'hoopbounce.coins';
 const INV_KEY = 'hoopbounce.inventory';
 
+/** Familles de la collection (résumé « Skins 8/21 · Traînées 5/10 · Effets 3/20 »). */
+export const COLLECTION_GROUPS = Object.freeze([
+  Object.freeze({ id: 'skins', icon: '🏀', categories: Object.freeze(['ball']) }),
+  Object.freeze({ id: 'trails', icon: '✨', categories: Object.freeze(['trail']) }),
+  Object.freeze({ id: 'effects', icon: '💥', categories: Object.freeze(['bounce', 'goal']) }),
+]);
+
 export class Wallet {
   constructor(storage = safeLocalStorage()) {
     this.storage = storage;
@@ -99,6 +106,21 @@ export class Wallet {
     this.inv.equipped[category] = DEFAULTS[category];
     this._save();
     return true;
+  }
+
+  /** En vente dans la boutique : article payant, non exclusif, pas encore possédé (jamais acheté deux fois). */
+  isForSale(id) {
+    const it = itemById(id);
+    return !!it && !it.exclusive && typeof it.price === 'number' && it.price > 0 && !this.owns(id);
+  }
+
+  /** Résumé de la collection par famille : skins (ballons et visages), traînées, effets (rebonds et paniers). */
+  collectionSummary() {
+    return COLLECTION_GROUPS.map((g) => {
+      const items = CATALOG.filter((i) => g.categories.includes(i.category));
+      const owned = items.filter((i) => this.owns(i.id)).length;
+      return { id: g.id, icon: g.icon, categories: g.categories, owned, total: items.length };
+    });
   }
 
   /** Progression de la collection : articles possédés / total. */

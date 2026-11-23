@@ -3,10 +3,10 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 23/11/2026 · **Version :** 1.2.0-dev (mode TRICKSHOT refondu « laboratoire », non
-> publié ; la version publiable reste 1.0.0, build 1) · **Version de test Android :** **`HoopBounce_Test_v3.apk`
-> (1.2.0-test3, mise à jour des v1 et v2)** · **iOS :** projet Xcode prêt (`ios/`) · **Étape en cours :** validation
-> du mode TRICKSHOT refondu (étape 23) par le porteur du projet ; rien n'est publié.
+> **Dernière mise à jour :** 23/11/2026 · **Version :** 1.2.0-dev (non publiée ; la version publiable reste
+> 1.0.0, build 1) · **Version de test Android :** **`HoopBounce_Test_v4.apk` (1.3.0-test4, mise à jour)** ·
+> **iOS :** projet Xcode prêt (`ios/`) · **Étape en cours :** validation de la nouvelle Boutique et de la nouvelle
+> Collection (étape 24) et du mode TRICKSHOT refondu (étape 23) ; rien n'est publié.
 
 ## Sommaire
 
@@ -582,33 +582,26 @@ et recule légèrement quand une page est ouverte.
 - **Textes d'aide** peints sur le décor dans chaque niveau.
 - Message « Tourne ton téléphone » en portrait sur téléphone.
 
-### Boutique (`shop.html`)
+### Boutique (`shop.html`) — refaite à l'étape 24
 
-- **En-tête** : retour, onglets **Ballons / Visages / Rebonds / Traînées / Paniers** (avec le nombre possédé),
-  progression de la collection (barre + 7/51), solde de pièces (« 612 480 », qui défile à chaque achat et
-  tremble s'il manque des pièces).
-- **À gauche** : **aperçu animé** de l'article choisi, combiné avec les autres articles équipés (ballon qui
-  rebondit sur un parquet avec sa traînée et son effet de rebond ; tir dans un panier pour les animations),
-  étiquette de rareté, nom, description et bouton : **Acheter · prix**, **Équiper**, **✓ Équipé**, ou
-  « Il te manque N ».
-  - **Objectif d'épargne** (étape 17) : barre « 112 480 / 1 000 000 » dans la couleur de la rareté pour tout
-    article pas encore possédé.
-  - Les articles verrouillés se prévisualisent comme les autres.
-- **À droite** : grille d'articles triés par rareté puis par prix. Chaque carte montre :
-  - la vignette dessinée avec le vrai rendu, le nom et la rareté en couleur ;
-  - le prix, abrégé au-delà de 100 000 (« 650 k », « 1 M »), ou l'état « Possédé / Équipé » ;
-  - un **cadenas** sur les articles non possédés et une coche sur l'article équipé.
-  - Épiques : lueur violette. **Légendaires** : fond doré, bordure dorée qui respire et reflet animé.
-  - Les cartes apparaissent en cascade. L'encart « Comment gagner des pièces » mentionne aussi les gains
-    quotidiens.
-- **Achat** : les pièces défilent, onde et étiquette de la couleur de la rareté, fanfare, vibration ; l'article
-  est équipé aussitôt.
-  - **Épique** : rayons violets qui tournent, éclats, « ÉPIQUE ! », son bonus.
-  - **Légendaire** : grands rayons dorés, 26 éclats, étiquette dorée « LÉGENDAIRE ! » plus longue, vibration
-    plus forte.
-- `shop.html?item=ball-diamond` ouvre directement un article (bouton « Débloquer » de la Collection).
-- Accès : tuile « Magasin » et solde de pièces du menu, bouton « Boutique » de la Collection ; le retour ramène
-  à la page d'où l'on vient (accueil ou Collection).
+**Rôle : vendre.** La boutique n'affiche **que les objets qui peuvent être achetés** : ballons, visages,
+effets de rebond, traînées et animations de panier **pas encore possédés** (règle commune
+`Wallet.isForSale(id)` : payant, non exclusif, non possédé). Les objets exclusifs (récompense quotidienne,
+succès) n'y sont pas : une ligne rappelle combien il en reste à gagner en jouant.
+- **Ambiance « vitrine »** chaude (or et orange), différente de la Collection (froide, turquoise).
+- **En-tête** : retour, « 🛒 Boutique », onglets **Tout / Ballons / Visages / Rebonds / Traînées / Paniers**
+  avec le **nombre d'objets à vendre**, bouton **🎒 Ma collection**, solde de pièces.
+- **Vitrine** (à gauche) : aperçu animé de l'objet choisi (porté avec la tenue actuelle), rareté, **grande
+  étiquette de prix dorée**, nom, description, objectif d'épargne (« 48 000 / 85 000 ») et bouton **Acheter ·
+  prix** (ou « Il te manque N »). À l'ouverture, la vitrine montre l'objet le plus cher qu'on peut s'offrir.
+- **Rayon** (à droite) : « 38 à vendre », puis les cartes (rareté, puis prix croissant). Chaque carte :
+  **aperçu**, rareté, nom, **prix** et **bouton « Acheter »** ; point vert qui pulse si l'objet est à ta portée.
+- **Achat** (carte ou vitrine) : pièces débitées une seule fois, animation de la rareté (rayons violets ou
+  dorés, « ÉPIQUE ! », « LÉGENDAIRE ! »), son, vibration ; l'objet est **équipé aussitôt**. Sa carte affiche un
+  badge **« ✓ Possédé »** pendant 2 s puis **quitte la boutique**. **Jamais deux fois** : `buy()` répond
+  `'owned'` et aucun bouton Acheter n'existe pour un objet possédé.
+- **Tout acheté** dans un onglet : écran **« 🏆 Tout est à toi ! »** avec un bouton vers la Collection.
+- Pièces manquantes : la carte et le solde tremblent, son de refus. `shop.html?item=…` ouvre un objet en vitrine.
 
 ### Sélection des mondes et des niveaux (`index.html#mondes`)
 
@@ -636,31 +629,25 @@ Refaite à l'étape 11 : plus de page « Bientôt disponible ». Tout se passe d
 - Liens : `index.html?world=snow#mondes` ouvre directement les niveaux de la Neige (bouton « Choisir un
   niveau » de la partie) ; `?unlock=all` ouvre tout pour tester ; l'ancienne adresse `worlds.html` y renvoie.
 
-### Collection (`index.html#collection`)
+### Collection (`index.html#collection`) — refaite à l'étape 24
 
-Corrigée à l'étape 11 (elle restait vide : elle lisait un ancien catalogue vide au lieu de l'inventaire de la
-boutique).
-
-- **Source unique** : le porte-monnaie partagé avec la boutique et le jeu (`shared/wallet.js`, clé
-  `hoopbounce.inventory`). Un article acheté apparaît **dès le retour au menu**.
-- **Album complet** (étape 17) : **tous les articles** sont visibles, possédés ou non.
-- **En-tête** : retour, « Collection », progression (barre + « 7/51 possédés »), bouton **Boutique**.
-- **À gauche** : **aperçu animé** de l'article choisi, porté avec le reste de la tenue équipée (même rendu que
-  dans le jeu), étiquette de rareté (ou « Par défaut »), badge **« ✓ Équipé »**, nom, description et bouton
-  **Équiper** ou **Déséquiper**.
-- **À droite** : onglets **Tout / Ballons / Visages / Rebonds / Traînées / Paniers** et la grille :
-  - **articles possédés** : vignette, nom, rareté, badge « Équipé », lueur ou bordure dorée qui respire ;
-  - **articles verrouillés** : bordure en pointillés, vignette grisée, cadenas, prix (ou « ★ Exclusif ») ;
-    leur aperçu animé reste disponible ;
-  - **« Nouveau ! »** sur les articles débloqués depuis la dernière visite (petit saut lumineux), une seule
-    fois (clé `hoopbounce.collectionSeen`).
-  - Sous la grille, la progression **par rareté** (« Commun 1/9 · Rare 1/12 · Épique 0/13 · Légendaire
-    1/13 »), puis « Collection complète ! » quand tout est obtenu.
-  - Article verrouillé choisi : bouton **« Débloquer · 25 000 »**, qui ouvre la boutique sur cet article
-    (ou « Exclusif · Récompense quotidienne / Succès »).
-- **Déséquiper** remet l'article de base de la catégorie (ballon classique, onde, aucune traînée, confettis).
-- **Enregistré tout de suite** : l'article équipé reste équipé au prochain lancement (jeu, boutique, menu).
-- Sons : sélection, carillon à l'équipement, son descendant au retrait ; vibration courte ; message.
+**Rôle : montrer ce que l'on possède et donner envie de compléter.** La Collection n'affiche **que les objets
+possédés** : aucun objet verrouillé, **aucun prix, aucun bouton Acheter** (seulement un lien « 🛒 Boutique »
+dans l'en-tête pour y aller).
+- **Ambiance « album de trophées »** froide (turquoise et violet) : chaque objet est posé sur un **socle
+  lumineux**, rangé sur une **étagère** par catégorie (Ballons, Visages, Rebonds, Traînées, Paniers, avec le
+  nombre d'objets). Légendaires : fond doré.
+- **Résumé de la collection** en haut : **🏀 Skins 9/21 · ✨ Traînées 1/10 · 💥 Effets 2/20** (effets = rebonds
+  et animations de panier), chacun avec sa barre de progression, « Complet ! » doré quand tout est obtenu,
+  et une ligne « Encore N objets à obtenir : boutique, récompenses quotidiennes, succès ». Chaque résumé est
+  aussi un **filtre** (toucher à nouveau pour tout voir). En-tête : pourcentage total (« 24 % · 12/51 »).
+- **Vitrine** (à gauche) : aperçu animé de l'objet choisi avec le reste de la tenue, rareté (ou « Par
+  défaut »), badge **« ✓ Équipé »**, nom, description, **Équiper** ou **✓ Équipé + Déséquiper**.
+- **Badges** sur les cartes : **« Équipé »** (un par catégorie) et **« Nouveau ! »** sur les objets obtenus
+  depuis la dernière visite (une seule fois, clé `hoopbounce.collectionSeen`).
+- **Déséquiper** remet l'objet de base de la catégorie (ballon classique, onde, aucune traînée, confettis).
+  Tout est enregistré tout de suite (`hoopbounce.inventory`, inchangé) : jeu, Trickshot, boutique et menu
+  utilisent le même équipement.
 
 ### Récompense quotidienne, Missions, Succès (`index.html#quotidien`, `#missions`, `#succes`)
 
@@ -1560,8 +1547,8 @@ porte-monnaie.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v3.apk` (≈ 0,5 Mo, **1.2.0-test3**, TRICKSHOT refondu) — une
-**mise à jour** des v1 et v2 (même identifiant, même clé, versionCode 3 > 2 > 1) : elle s'installe par-dessus et
+**Fichier actuel :** `dist/HoopBounce_Test_v4.apk` (≈ 0,5 Mo, **1.3.0-test4**, Boutique et Collection refaites) —
+une **mise à jour** des v1, v2 et v3 (même identifiant, même clé, versionCode 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
 
 **Mise à jour v3 (étape 23) — vérifié :** identifiant inchangé, clé identique (empreinte contrôlée par le script),
@@ -1582,7 +1569,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (code 1) · v2 : `1.1.0-test2` (code 2) · **v3 : `1.2.0-test3` (code 3)** ; « 1.2.0 (test 3) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · **v4 : `1.3.0-test4` (4)** ; « 1.3.0 (test 4) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -1614,7 +1601,7 @@ des 5 mondes jouable (55-60 images/s), sauvegarde (pièces, skin équipé, progr
 **Non vérifiable ici** : l'installation et l'exécution sur un vrai téléphone (pas d'appareil ni d'émulateur
 Android dans l'environnement de développement) → premier essai à faire par le porteur du projet.
 
-**Mettre à jour les testeurs** : `node tools/build-test-apk.mjs --build 4` → `HoopBounce_Test_v4.apk`, signée
+**Mettre à jour les testeurs** : `node tools/build-test-apk.mjs --build 5` → `HoopBounce_Test_v5.apk`, signée
 avec **la même clé de test** (sinon il faut désinstaller, ce qui efface la progression de test). Le script refuse
 de construire sans la clé d'origine, avec une autre clé, un autre identifiant ou un versionCode qui n'augmente pas.
 
@@ -1855,6 +1842,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Boutique et Collection refaites** (étape 24) : la boutique vend (objets achetables seulement, Acheter
+  sur chaque carte), la collection montre (objets possédés seulement, résumé Skins / Traînées / Effets)
 - ✅ **Mode TRICKSHOT refondu** (étape 23) : visée confortable, laboratoire, 20 cartes-casse-têtes, polish,
   version de test v3
 - ✅ **Mode TRICKSHOT** (étape 22) : 50 cartes toutes résolubles en un tir, solveur de difficulté, écran de jeu,
@@ -1894,6 +1883,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation de la Boutique et de la Collection** (étape 24) avec `HoopBounce_Test_v4.apk`
 - 🟡 **Validation du mode TRICKSHOT refondu** par le porteur du projet (étape 23) avec `HoopBounce_Test_v3.apk` :
   confort de la visée, force du geste, longueur des pointillés, lisibilité du laboratoire, difficulté des 20 cartes
 - 🟡 Première compilation iPhone dans Xcode (Mac) et essai sur iPhone ; TestFlight pour les amis (étape 21)
@@ -2132,6 +2122,28 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 23/11/2026 — Étape 24 : Boutique et Collection refaites, chacune avec son rôle (APK de test v4)
+
+**Ajouté**
+- **Boutique = vendre** : uniquement les objets achetables (non possédés, non exclusifs) ; onglets « Tout » et
+  compteurs « à vendre » ; vitrine avec grande étiquette de prix ; **bouton « Acheter » sur chaque carte** ;
+  badge « ✓ Possédé » puis disparition de la carte après l'achat ; écran « Tout est à toi ! » ; lien « Ma
+  collection » ; ambiance chaude de magasin.
+- **Collection = posséder** : uniquement les objets possédés, sans prix ni cadenas ni achat ; **résumé Skins /
+  Traînées / Effets** avec barres de progression (et filtres), pourcentage total ; étagères par catégorie,
+  socles lumineux ; Équiper / Déséquiper, badges « Équipé » et « Nouveau ! » ; ambiance froide turquoise.
+- `Wallet.isForSale(id)`, `Wallet.collectionSummary()`, `COLLECTION_GROUPS` (règles communes, testées).
+- 2 tests (350 au total) ; parcours navigateur : achat par la carte, jamais deux fois, catégorie vidée,
+  Collection = exactement les objets possédés, équiper / déséquiper enregistrés.
+- `dist/HoopBounce_Test_v4.apk` (1.3.0-test4) : mise à jour par-dessus les versions précédentes.
+
+**Modifié**
+- Anciens styles de la Collection retirés (le compteur et les onglets partagés avec la page Succès sont
+  gardés). Sauvegardes, pièces, objets et équipement **inchangés** (mêmes clés, même format).
+
+**Reste à faire**
+- Avis du porteur du projet sur les deux pages (sur téléphone).
 
 ### 23/11/2026 — Étape 23 : refonte complète du mode TRICKSHOT (v1.2.0-dev, APK de test v3)
 

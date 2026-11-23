@@ -20,23 +20,22 @@
     <a class="icon-btn" id="btn-back" href="index.html" data-label="back">
       <svg viewBox="0 0 24 24"><path d="M15.4 5.4 14 4l-8 8 8 8 1.4-1.4L8.8 12z"/></svg>
     </a>
-    <h1 class="title" data-t="title"></h1>
+    <h1 class="title"><span class="title-ico" aria-hidden="true">🛒</span><span data-t="title"></span></h1>
     <nav class="tabs" id="tabs" role="tablist"></nav>
     <div class="right">
-      <div class="collection" title="">
-        <span class="col-label" data-t="collection"></span>
-        <div class="bar"><i id="col-bar"></i></div>
-        <b id="col-count">0/0</b>
-      </div>
+      <a class="to-col" id="btn-col" href="index.html#collection"><span aria-hidden="true">🎒</span><span data-t="toCollection"></span></a>
       <div class="coins" id="coins"><span class="coin-ico" aria-hidden="true"></span><b id="coin-n">0</b></div>
     </div>
   </header>
 
   <main class="body">
-    <section class="stage">
+    <!-- Vitrine : l'article choisi en grand, son prix, Acheter -->
+    <section class="stage" id="stage">
       <div class="preview-box" id="preview-box">
         <canvas id="preview"></canvas>
         <span class="rarity-tag" id="d-rarity"></span>
+        <span class="price-tag" id="d-price"></span>
+        <span class="owned-tag" id="d-owned" hidden></span>
         <div class="unlock-burst" id="burst" aria-hidden="true"><i class="burst-rays"></i><span></span><span></span><b id="burst-text"></b><div class="burst-bits"></div></div>
       </div>
       <div class="detail">
@@ -46,8 +45,16 @@
         <button class="action" id="d-action"></button>
       </div>
     </section>
+    <!-- Tout vendu dans cette catégorie -->
+    <section class="sold-out" id="sold-out" hidden>
+      <span class="sold-ico" aria-hidden="true">🏆</span>
+      <h2 data-t="soldOut"></h2>
+      <p data-t="soldOut.sub"></p>
+      <a class="action equip" href="index.html#collection" data-t="toCollection"></a>
+    </section>
 
     <section class="grid-wrap">
+      <p class="shelf-info" id="shelf-info"></p>
       <div class="grid" id="grid" role="tabpanel"></div>
       <div class="earn">
         <p class="earn-title" data-t="earn"></p>

@@ -144,3 +144,60 @@ test('rendu : chaque ballon a son apparence (visage, aura des légendaires), cha
     assert.ok(fx.items.filter((p) => p.alive).length > 10, id);
   }
 });
+
+// ─── Étape 24 : la Boutique ne montre que ce qui s'achète, la Collection que ce qui est possédé ───
+
+test('boutique : seuls les objets achetables sont en vente ; jamais deux fois le même', async () => {
+  const store = memory();
+  const w = new Wallet(store);
+  w.coins = 100000;
+  for (const it of CATALOG) {
+    const expect = !it.exclusive && it.price > 0;
+    assert.equal(w.isForSale(it.id), expect, `${it.id} : ${expect ? 'en vente' : 'pas en vente'}`);
+  }
+  assert.equal(w.isForSale('ball-classic'), false, 'objet de base : déjà possédé');
+  assert.equal(w.isForSale('ball-hoop'), false, 'exclusif : se gagne en jouant');
+  assert.equal(w.buy('ball-neon'), 'ok');
+  assert.equal(w.isForSale('ball-neon'), false, 'acheté : quitte la boutique');
+  const coins = w.coins;
+  assert.equal(w.buy('ball-neon'), 'owned', 'second achat refusé');
+  assert.equal(w.coins, coins, 'aucune pièce retirée');
+  assert.equal(new Wallet(store).isForSale('ball-neon'), false, 'toujours possédé au prochain lancement');
+  // La page n'affiche plus de cadenas ni d'articles verrouillés : elle filtre avec isForSale
+  const src = readFileSync(new URL('../src/shop/main.js', import.meta.url), 'utf8');
+  assert.match(src, /isForSale/);
+  assert.doesNotMatch(src, /class="lock"/);
+  for (const k of ['tab.all', 'forSale', 'soldOut', 'soldOut.sub', 'toCollection', 'boughtNote', 'exclusiveNote', 'affordable']) {
+    for (const l of ['fr', 'en', 'es']) assert.ok(SHOP_STRINGS[l][k], `${k} (${l})`);
+  }
+});
+
+test('collection : uniquement les objets possédés, résumé Skins / Traînées / Effets', async () => {
+  const { ownedOn, SHELVES } = await import('../src/menu/collection-view.js');
+  const store = memory();
+  const w = new Wallet(store);
+  // Nouveau joueur : les objets de base seulement
+  let sum = Object.fromEntries(w.collectionSummary().map((g) => [g.id, g]));
+  assert.deepEqual(Object.keys(sum), ['skins', 'trails', 'effects']);
+  assert.equal(sum.skins.total, CATALOG.filter((i) => i.category === 'ball').length);
+  assert.equal(sum.trails.total, CATALOG.filter((i) => i.category === 'trail').length);
+  assert.equal(sum.effects.total, CATALOG.filter((i) => i.category === 'bounce' || i.category === 'goal').length);
+  assert.equal(sum.skins.owned, 1);
+  assert.equal(sum.effects.owned, 2, 'onde + confettis');
+  w.coins = 100000;
+  w.buy('ball-neon');
+  assert.equal(w.buy('trail-streak'), 'ok');
+  w.grant('ball-hoop');
+  sum = Object.fromEntries(w.collectionSummary().map((g) => [g.id, g]));
+  assert.equal(sum.skins.owned, 3);
+  assert.equal(sum.trails.owned, 2);
+  // Étagères : rien de verrouillé
+  const shown = SHELVES.flatMap((s) => ownedOn(w, s.id));
+  assert.ok(shown.length > 0);
+  for (const it of shown) assert.ok(w.owns(it.id), `${it.id} affiché sans être possédé`);
+  assert.equal(shown.length, CATALOG.filter((i) => w.owns(i.id)).length, 'tous les objets possédés sont rangés');
+  assert.deepEqual(ownedOn(w, 'ball', 'trails'), [], 'filtre par famille');
+  // Aucun prix, aucun bouton d'achat dans la page
+  const src = readFileSync(new URL('../src/menu/collection-view.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /data-buy|citem-price|collection\.unlock|ICONS\.coin|LOCK/);
+});

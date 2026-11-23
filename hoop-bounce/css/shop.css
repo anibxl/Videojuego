@@ -642,3 +642,185 @@ html.fit-760 .bar { width: 50px; }
 @media (prefers-reduced-motion: reduce) {
   .item.legendary { animation: card-in 0.5s var(--ease-out) forwards; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Boutique v2 (étape 24) — une VITRINE : uniquement ce qui s'achète. Ambiance chaude de magasin (or et
+   orange), étiquettes de prix, bouton « Acheter » sur chaque carte. Rien à voir avec la Collection (froide,
+   turquoise, étagères de trophées, sans aucun prix).
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.backdrop {
+  background:
+    radial-gradient(60% 80% at 25% 60%, rgba(var(--sel-rgb), 0.14), rgba(0, 0, 0, 0) 70%),
+    radial-gradient(70% 60% at 80% 0%, rgba(255, 170, 60, 0.16), rgba(0, 0, 0, 0) 70%),
+    radial-gradient(120% 90% at 50% 0%, #1d1626 0%, #07060c 72%);
+}
+
+.title { display: flex; align-items: center; gap: 8px; }
+.title-ico { font-size: 0.9em; filter: drop-shadow(0 0 8px rgba(255, 170, 60, 0.6)); }
+
+.to-col {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 99px;
+  background: rgba(70, 220, 210, 0.1);
+  border: 1px solid rgba(70, 220, 210, 0.35);
+  color: #8ff3ea;
+  font-weight: 700;
+  font-size: 13.5px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.to-col:active { transform: scale(0.95); }
+
+.tabs button small { background: rgba(255, 194, 61, 0.18); color: var(--gold); }
+.tabs button[aria-selected="true"] small { background: rgba(255, 122, 47, 0.25); color: #ff9b52; }
+.tabs button.empty small { background: rgba(255, 255, 255, 0.06); color: var(--ink-3); }
+
+/* Vitrine */
+.stage {
+  background:
+    radial-gradient(90% 60% at 50% 0%, rgba(255, 200, 110, 0.12), rgba(0, 0, 0, 0) 70%),
+    linear-gradient(180deg, #221a2c, #120e1a);
+  border-color: rgba(255, 194, 61, 0.28);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(var(--sel-rgb), 0.25), inset 0 1px 0 rgba(255, 220, 160, 0.12);
+}
+.stage[hidden], .sold-out[hidden] { display: none; }
+.price-tag {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px 0 10px;
+  border-radius: 10px 99px 99px 10px;
+  background: linear-gradient(180deg, #ffd96b, #ffb534);
+  color: #2a1700;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 8px 22px rgba(255, 170, 40, 0.35);
+  transform: rotate(-2deg);
+}
+.price-tag[hidden] { display: none; }
+.price-tag .coin-ico { width: 18px; height: 18px; box-shadow: none; }
+.owned-tag {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 99px;
+  background: rgba(80, 220, 150, 0.2);
+  border: 1px solid rgba(80, 220, 150, 0.6);
+  color: #7cf0b6;
+  font-weight: 800;
+  line-height: 30px;
+}
+.owned-tag[hidden] { display: none; }
+.action.equipped { font-size: 13px; line-height: 1.25; padding: 8px 14px; height: auto; min-height: 50px; }
+
+/* Tout vendu */
+.sold-out {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px;
+  border-radius: 24px;
+  background: radial-gradient(80% 70% at 50% 30%, rgba(255, 200, 90, 0.16), rgba(0, 0, 0, 0) 70%), #15111e;
+  border: 1px solid rgba(255, 194, 61, 0.3);
+  text-align: center;
+}
+.sold-out h2 { margin: 0; font-family: var(--font-display); font-size: 22px; }
+.sold-out p { margin: 0 0 6px; color: var(--ink-2); max-width: 300px; }
+.sold-ico { font-size: 46px; animation: bump 1.8s ease-in-out infinite; }
+.sold-out .action { text-decoration: none; display: grid; place-items: center; padding: 0 22px; }
+
+/* Rayon */
+.shelf-info { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 8px; font-size: 12.5px; color: var(--ink-3); }
+.shelf-info b { color: var(--gold); font-size: 13px; }
+.shelf-info:empty { display: none; }
+
+.grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+.item {
+  cursor: pointer;
+  padding: 0 0 8px;
+  background:
+    linear-gradient(180deg, rgba(var(--r), 0.18), rgba(30, 22, 40, 0.92) 58%),
+    #17121f;
+  border-color: rgba(var(--r), 0.4);
+}
+.item canvas { height: 72px; margin-top: 4px; }
+.item .name { padding: 0 10px; }
+.rar-ribbon {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(var(--r), 0.2);
+  color: rgb(var(--r));
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.can-dot {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #6dffb0;
+  box-shadow: 0 0 10px #6dffb0;
+  animation: can 1.8s ease-in-out infinite;
+}
+@keyframes can { 50% { transform: scale(1.35); opacity: 0.7; } }
+.item .foot { display: flex; align-items: center; gap: 6px; padding: 6px 8px 0 10px; margin-top: auto; }
+.item .tag { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--gold); white-space: nowrap; }
+.item .tag .coin-ico { width: 14px; height: 14px; box-shadow: none; }
+.item .tag.poor { color: #c99a8a; }
+.buy-mini {
+  margin-left: auto;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #ff9b52, #ff6a24);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 12px rgba(255, 96, 28, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.2s var(--ease-spring);
+}
+.buy-mini:active { transform: scale(0.9); }
+.buy-mini.poor { background: rgba(255, 255, 255, 0.08); color: var(--ink-3); box-shadow: none; }
+.item.can { border-color: rgba(var(--r), 0.6); }
+.item.shake { animation: shake 0.4s ease; opacity: 1; transform: none; }
+.owned-badge {
+  margin: 0 auto;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: rgba(80, 220, 150, 0.2);
+  border: 1px solid rgba(80, 220, 150, 0.6);
+  color: #7cf0b6;
+  font-weight: 800;
+  font-size: 12.5px;
+}
+.item.is-owned { border-color: rgba(80, 220, 150, 0.7); box-shadow: 0 0 0 1px rgba(80, 220, 150, 0.4), 0 0 24px rgba(80, 220, 150, 0.2); }
+.item.is-owned canvas { animation: bump 0.6s var(--ease-spring); }
+.item.leaving { transition: opacity 0.45s ease, transform 0.45s ease; opacity: 0 !important; transform: scale(0.8) !important; }
+/* En-tête compact sur téléphone : « Ma collection » devient une icône, onglets resserrés */
+html.fit-1100 .to-col { padding: 0 11px; }
+html.fit-1100 .to-col span:last-child { display: none; }
+html.fit-1100 .tabs button { padding: 0 10px; }
+html.fit-760 .to-col { display: none; }
+@media (max-width: 1100px) { .to-col { padding: 0 11px; } .to-col span:last-child { display: none; } .tabs button { padding: 0 10px; } }
