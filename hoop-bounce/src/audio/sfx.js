@@ -887,6 +887,10 @@ export class Sfx {
     if (this.ready) this.ui.mission();
   }
 
+  achievement(hidden = false) {
+    if (this.ready) this.ui.achievement(hidden);
+  }
+
   /** Monde débloqué : motif du rebond en entier. */
   unlockWorld() {
     if (this.ready) this.ui.unlockWorld();

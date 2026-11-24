@@ -154,6 +154,19 @@ export class Fx {
           ctx.fill();
           break;
         }
+        case 'hex': {
+          // Hexagone lumineux (laboratoire du Trickshot, sceau des défis)
+          ctx.strokeStyle = `rgb(${p.color})`;
+          ctx.lineWidth = p.width ?? 0.06;
+          ctx.beginPath();
+          for (let k = 0; k <= 6; k++) {
+            const a = p.rot + (k * TAU) / 6;
+            if (k) ctx.lineTo(p.x + Math.cos(a) * s, p.y + Math.sin(a) * s);
+            else ctx.moveTo(p.x + Math.cos(a) * s, p.y + Math.sin(a) * s);
+          }
+          ctx.stroke();
+          break;
+        }
         case 'flame':
           // Flamme : goutte qui monte, du jaune au rouge
           ctx.fillStyle = `rgb(${u < 0.35 ? '255,230,120' : u < 0.7 ? '255,150,40' : '220,60,20'})`;
@@ -263,6 +276,19 @@ export function bounceEffect(fx, id, x, y, level) {
       }
       return true;
     }
+    case 'bounce-lab': {
+      // Labo (succès Trickshot) : deux hexagones électriques qui s'ouvrent, arcs et étincelles cyan
+      fx.spawn({ kind: 'hex', x, y: y + 0.1, vx: 0, vy: 0, rot: 0, vr: 2.5, life: 0.45, size: 0.25, grow: 3 + level * 0.4, color: '70,235,225', width: 0.06 });
+      fx.spawn({ kind: 'hex', x, y: y + 0.1, vx: 0, vy: 0, rot: Math.PI / 6, vr: -3, life: 0.55, size: 0.2, grow: 4.5 + level * 0.5, color: '255,90,200', width: 0.035 });
+      fx.spawn({ kind: 'glow', x, y: y + 0.15, vx: 0, vy: 0, life: 0.3, size: 0.8, grow: 0.4, color: '70,235,225' });
+      for (let i = 0; i < 2 + Math.ceil(level / 2); i++) fx.spawn({ kind: 'bolt', x, y, vx: 0, vy: 0, rot: rand(0.3, Math.PI - 0.3), len: rand(0.5, 0.9) * k, life: 0.16, color: i % 2 ? '200,255,250' : '70,235,225' });
+      for (let i = 0; i < 6 + level; i++) {
+        const a = rand(0.2, Math.PI - 0.2);
+        const v = rand(2.5, 5) * k;
+        fx.spawn({ kind: 'spark', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 10, life: rand(0.25, 0.4), size: 0.055, color: i % 3 ? '120,245,235' : '255,255,255' });
+      }
+      return true;
+    }
     case 'bounce-rainbow':
       RAINBOW.forEach((c, i) => fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.45 + i * 0.03, size: 0.15 + i * 0.05, grow: 3 + level * 0.4, color: c, width: 0.05 }));
       return true;
@@ -338,6 +364,21 @@ export function drawTrail(ctx, id, pts, time, r = 0.4) {
       ctx.globalCompositeOperation = 'source-over';
       break;
     }
+    case 'trail-spectre': {
+      // Spectre (succès Fantôme) : voile pâle et échos translucides du ballon, comme le fantôme du jeu
+      for (let i = 1; i < n; i++) seg(i, r * 1.5 * (i / n), `rgba(190,225,255,${0.16 * (i / n)})`);
+      ctx.lineWidth = r * 0.12;
+      for (let i = n - 4; i > 0; i -= 4) {
+        const a = (i / n) * 0.55;
+        ctx.strokeStyle = `rgba(214,236,255,${a.toFixed(3)})`;
+        ctx.fillStyle = `rgba(190,225,255,${(a * 0.35).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(pts[i].x, pts[i].y + Math.sin(time * 5 + i) * r * 0.08, r * (0.55 + 0.4 * (i / n)), 0, TAU);
+        ctx.fill();
+        ctx.stroke();
+      }
+      break;
+    }
     case 'trail-energy': {
       // Courant électrique : halo vert-cyan, cœur blanc qui ondule
       ctx.globalCompositeOperation = 'lighter';
@@ -384,7 +425,7 @@ export function drawTrail(ctx, id, pts, time, r = 0.4) {
 /** Particules émises le long de la traînée (appelé à chaque image). */
 export function emitTrail(fx, id, x, y, speed, dt) {
   if (speed < 1.5) return;
-  const rate = id === 'trail-xmas' ? 10 : id === 'trail-snow' ? 30 : id === 'trail-flame' ? 40 : id === 'trail-frost' ? 22 : id === 'trail-plasma' ? 26 : id === 'trail-hoop' ? 10 : id === 'trail-aurora' ? 18 : id === 'trail-energy' ? 24 : id === 'trail-galaxy' ? 14 : 0;
+  const rate = id === 'trail-xmas' ? 10 : id === 'trail-snow' ? 30 : id === 'trail-flame' ? 40 : id === 'trail-frost' ? 22 : id === 'trail-plasma' ? 26 : id === 'trail-hoop' ? 10 : id === 'trail-aurora' ? 18 : id === 'trail-energy' ? 24 : id === 'trail-galaxy' ? 14 : id === 'trail-spectre' ? 12 : 0;
   if (!rate || Math.random() > rate * dt) return;
   if (id === 'trail-xmas') fx.spawn({ kind: 'star', x: x + rand(-0.15, 0.15), y: y + rand(-0.15, 0.15), vx: 0, vy: -0.3, vr: 3, life: rand(0.4, 0.7), size: rand(0.05, 0.08), color: Math.random() < 0.5 ? '255,255,255' : '255,211,107' });
   else if (id === 'trail-snow') fx.spawn({ kind: 'star', x: x + rand(-0.3, 0.3), y: y + rand(-0.3, 0.3), vx: rand(-0.4, 0.4), vy: rand(-0.8, -0.2), vr: rand(-3, 3), life: rand(0.6, 1.1), size: rand(0.05, 0.1), color: Math.random() < 0.7 ? '255,255,255' : '190,225,255' });
@@ -395,6 +436,7 @@ export function emitTrail(fx, id, x, y, speed, dt) {
   else if (id === 'trail-plasma') fx.spawn({ kind: 'spark', x, y, vx: rand(-3, 3), vy: rand(-3, 3), life: 0.2, size: 0.05, color: '220,180,255' });
   else if (id === 'trail-energy') fx.spawn({ kind: 'bolt', x, y, vx: 0, vy: 0, rot: rand(0, TAU), len: rand(0.25, 0.5), life: 0.1, color: '150,255,230' });
   else if (id === 'trail-galaxy') fx.spawn({ kind: 'star', x: x + rand(-0.25, 0.25), y: y + rand(-0.25, 0.25), vx: rand(-0.3, 0.3), vy: rand(-0.3, 0.3), vr: 2, life: rand(0.5, 0.9), size: rand(0.04, 0.08), color: Math.random() < 0.5 ? '255,255,255' : '200,170,255' });
+  else if (id === 'trail-spectre') fx.spawn({ kind: 'ring', x: x + rand(-0.1, 0.1), y: y + rand(-0.1, 0.1), vx: 0, vy: 0.2, life: rand(0.5, 0.8), size: 0.12, grow: 1.2, color: '200,230,255', width: 0.025 });
 }
 
 // ─── Animations de panier ───────────────────────────────────────────────────
@@ -464,6 +506,20 @@ export function goalEffect(fx, id, x, y) {
         }
       });
       fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.8, size: 0.3, grow: 9, color: '170,200,255', width: 0.06 });
+      return true;
+    }
+    case 'goal-mystery': {
+      // Énigme (tous les défis cachés) : un sceau violet et or s'ouvre — deux hexagones qui tournent en sens
+      // contraire, un anneau, puis des étoiles et des éclats dorés en spirale
+      fx.spawn({ kind: 'glow', x, y: y + 1, vx: 0, vy: 0, life: 1.2, size: 2.4, grow: 0.4, color: '150,80,255' });
+      fx.spawn({ kind: 'hex', x, y: y + 1, vx: 0, vy: 0, rot: 0, vr: 1.6, life: 1.4, size: 0.4, grow: 3.4, color: '200,150,255', width: 0.07 });
+      fx.spawn({ kind: 'hex', x, y: y + 1, vx: 0, vy: 0, rot: Math.PI / 6, vr: -2.2, life: 1.2, size: 0.3, grow: 4.5, color: '255,214,90', width: 0.05 });
+      fx.spawn({ kind: 'ring', x, y, vx: 0, vy: 0, life: 0.8, size: 0.3, grow: 8, color: '220,190,255', width: 0.06 });
+      for (let i = 0; i < 18; i++) {
+        const a = (i / 18) * TAU;
+        const v = rand(3, 5.5);
+        fx.spawn({ kind: i % 3 ? 'spark' : 'star', x, y: y + 1, vx: Math.cos(a) * v - Math.sin(a) * 2, vy: Math.sin(a) * v + Math.cos(a) * 2, drag: 1.4, g: 2, vr: 5, life: rand(0.9, 1.4), size: i % 3 ? 0.06 : 0.17, color: i % 2 ? '255,214,90' : '210,170,255' });
+      }
       return true;
     }
     case 'goal-burst':

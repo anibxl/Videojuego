@@ -11,7 +11,9 @@ import { STRINGS, t } from './i18n.js';
 import { ballEmblem, modesPage, settingsPage } from './pages.js';
 import { WorldsView } from './worlds-view.js';
 import { CollectionView } from './collection-view.js';
-import { DailyView, MissionsView, AchievementsView, liveBadges } from './live-views.js';
+import { DailyView, MissionsView, liveBadges, liveContext } from './live-views.js';
+import { AchievementsView } from './achievements-view.js';
+import { UnlockCards } from '../shared/unlock-card.js';
 import { RewardFx } from './rewards-fx.js';
 import { BonusView } from './bonus-view.js';
 import { TrickshotView } from './trickshot-view.js';
@@ -160,6 +162,34 @@ function refreshHome() {
     /* sauvegarde indisponible */
   }
   refreshPassButton();
+  scheduleUnlocks();
+}
+
+// Succès débloqués dans le menu (récompense quotidienne, missions, coffres, Pass…) : carte animée
+// (src/shared/unlock-card.js), une fois l'écran de chargement effacé et sans couvrir une révélation
+let unlockCards = null;
+let unlockTimer = 0;
+let menuRevealed = false;
+function scheduleUnlocks() {
+  clearTimeout(unlockTimer);
+  unlockTimer = setTimeout(announceUnlocks, 700);
+}
+function announceUnlocks() {
+  const revealing = viewEnv.fx && viewEnv.fx.el && !viewEnv.fx.el.hidden;
+  if (!menuRevealed || launching || revealing) {
+    scheduleUnlocks();
+    return;
+  }
+  try {
+    const c = liveContext();
+    const fresh = c.achievements.newlyUnlocked(c);
+    if (!fresh.length) return;
+    unlockCards ??= new UnlockCards({ lang, sound: (hidden) => sound.achievement?.(hidden), vibrate: () => vibrate([12, 50, 18]) });
+    unlockCards.show(fresh);
+    if (achievementsView.active) achievementsView.render(true);
+  } catch {
+    /* sauvegarde indisponible */
+  }
 }
 
 /** Bouton Hoop Pass de l'accueil : niveau, avancement, récompenses à récupérer. */
@@ -560,6 +590,8 @@ requestAnimationFrame(() => requestAnimationFrame(() => boot.done('scene')));
 // Entrée animée une fois les polices prêtes (pas de saut de mise en page) et l'écran de chargement effacé
 const fontsReady = document.fonts?.ready ?? Promise.resolve();
 Promise.all([Promise.race([fontsReady, new Promise((r) => setTimeout(r, 700))]), boot.revealed]).then(() => {
+  menuRevealed = true;
+  scheduleUnlocks();
   $$('.segmented').forEach(positionIndicator);
   if (state.page !== 'home') return; // arrivée directe sur une page : pas d'entrée animée de l'accueil par-dessus
   app.classList.add('intro');

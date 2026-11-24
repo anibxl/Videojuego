@@ -260,6 +260,14 @@ export class UiVoice {
     this.note(PENTA[14], 0.4, 0.025, { delay: 0.45, send: 0.7 });
   }
 
+  /** Succès débloqué (phase 5) : souffle, motif de cloches montant et étincelle finale ; défi caché : plus mystérieux. */
+  achievement(hidden = false) {
+    this.air(0.9, 0.06, 500, 7000, { q: 0.7 });
+    this.motif({ voice: 'bell', gain: 0.075, shift: hidden ? -3 : 2, count: 5 });
+    this.motif({ voice: 'pluck', gain: 0.035, shift: hidden ? 2 : 7, delay: 0.18, count: 4 });
+    this.note(PENTA[hidden ? 12 : 15], 0.9, 0.03, { delay: 0.62, send: 0.9 });
+  }
+
   /** Monde débloqué : motif du rebond en entier, deux octaves, grand souffle. */
   unlockWorld() {
     this.air(1, 0.07, 400, 6000, { q: 0.8 });

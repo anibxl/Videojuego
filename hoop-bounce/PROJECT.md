@@ -3,12 +3,11 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.7.0-dev (non publiée ; la version publiable reste
+> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.8.0-dev (non publiée ; la version publiable reste
 > 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1 : menu décoré + **Hoop Pass**) · **Version de
-> test Android :** **`HoopBounce_Test_v10.apk` (1.9.0-test10, mise à jour)** · **iOS :** projet Xcode prêt
-> (`ios/`) · **Phase en cours :** **phase 4 : économie** (roulette quotidienne, calendrier, gemmes rares, coffres,
-> pièces, Pass prêt pour l'achat intégré) ; phases 2 (refonte des 50 niveaux) et 3 (Mode Fantôme) terminées ;
-> rien n'est publié.
+> test Android :** **`HoopBounce_Test_v11.apk` (1.10.0-test11, mise à jour)** · **iOS :** projet Xcode prêt
+> (`ios/`) · **Phase en cours :** **phase 5 : succès** (62 succès en 7 catégories, défis cachés, emblèmes,
+> animation de déblocage) ; phases 2 (niveaux), 3 (Mode Fantôme) et 4 (économie) terminées ; rien n'est publié.
 
 ## Sommaire
 
@@ -21,6 +20,7 @@
 4 quater. [Hoop Pass et gemmes](#4-quater-hoop-pass-et-gemmes-saison-1--noël)
 4 quinquies. [Mode Fantôme](#4-quinquies-mode-fantôme-phase-3)
 4 sexies. [Économie](#4-sexies-économie-phase-4)
+4 septies. [Succès](#4-septies-succès-phase-5)
 5. [Progression](#5-progression)
 5 bis. [Publication Google Play](#5-bis-publication-google-play-version-100)
 5 ter. [Version iPhone (iOS)](#5-ter-version-iphone-ios)
@@ -436,6 +436,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `collection-view.js` | Page Collection : articles possédés par catégorie, aperçu animé, Équiper / Déséquiper, badge « Équipé ». |
 | `live-views.js` | Pages Récompense quotidienne (calendrier de 7 jours), Missions (3 par jour) et Succès (4 paliers), pastilles de l'accueil. |
 | `about-page.js` | Page « À propos » (étape 16) : identité du jeu, version, créateur, copyright, crédits, liens (politique de confidentialité, conditions d'utilisation). |
+| `achievements-view.js` | ★ Phase 5 : **page Succès** (panneau de l'emblème, onglets des catégories, cartes animées, défis cachés, « Tout récupérer », choix de l'emblème). |
 | `bonus-view.js` | Page Roulette quotidienne (étape 13, refaite à la phase 4) : roue de la chance seule (rotation, ralentissement, clics, pointeur), lancer gratuit, compte à rebours, 3 lancers avec publicité (pastilles), état « revenez demain ». |
 | `rewards-fx.js` | Révélation d'une récompense : coffre qui tombe, tremble et s'ouvre, rayons, butin (pièces, 💎 gemmes, un ou plusieurs objets), pluie de pièces, pièces qui filent vers le compteur. Aussi utilisée par la boutique (coffres en gemmes). |
 | `pass-view.js` | Page **Hoop Pass** : en-tête de saison, niveau et XP, carte Premium, piste défilante des 50 niveaux (Premium / Gratuit), montées de niveau animées, récupération, « Tout récupérer », « Mon niveau », étincelles. État du bouton de l'accueil (`passHomeState`). |
@@ -457,7 +458,8 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `rewards.js` | Récompenses communes : pièces, gemmes, coffres (commun, rare, épique, premium, légendaire ; tables de chances `CHESTS`, `chestOdds`, `pickRarity` depuis la phase 4), articles exclusifs, article au hasard ; doublons convertis en pièces. |
 | `daily.js` | Récompense quotidienne : calendrier de 7 jours (`DAILY_CALENDAR`, phase 4 : pièces, gemmes, coffres, gros lot du 7e jour qui change selon la semaine), une récompense par jour, mémorisée, nouveau cycle après le 7e jour, `week()` pour l'affichage. |
 | `missions.js` | Missions quotidiennes : 9 modèles, 3 missions tirées par jour (facile, moyenne, difficile), progression, récompenses. |
-| `achievements.js` | Succès : 40 succès sur 4 paliers, mesure de la progression, récompenses à récupérer. |
+| `achievements.js` | ★ Phase 5 : **succès** : 62 succès en 7 catégories (Progression, Maîtrise, Trickshot, Fantôme, Collection, Fidélité, Défis) et 4 paliers, mesure de la progression, états (verrouillé, en cours, débloqué, obtenu, secret), défis cachés, emblèmes, XP du Pass par palier, sauvegarde v2 fusionnée. |
+| `unlock-card.js` | ★ Phase 5 : **animation de déblocage** d'un succès (carte, médaille, nom, récompense, particules, son, vibration), partagée par le jeu, le Trickshot, le menu et la boutique. |
 | `live-i18n.js` | Textes des missions, des succès, des paliers, des coffres et de la page Bonus (FR / EN / ES), partagés par le menu et le jeu. |
 | `ads-config.js` | ★ **Configuration des publicités** (étape 13) : identifiants AdMob de test et de production, limites par jour, public et classification. **Le seul fichier à modifier avant la publication.** |
 | `ads.js` | Gestionnaire centralisé des publicités récompensées : chargement à l'avance, affichage, validation de la récompense, erreurs, absence d'annonce, nouvelles tentatives, moments interdits, limites du jour. Fournisseurs AdMob (Android) et annonce de test (navigateur). |
@@ -481,6 +483,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tests/menu.test.mjs` | Textes du menu dans les trois langues, réglages. |
 | `tests/about.test.mjs` | Page À propos : version 1.0.0, créateur, copyright, crédits demandés et traduits, liens intégrés / « Bientôt » sans adresse, vrais liens externes avec adresse. |
 | `tests/ads.test.mjs` | Publicités : identifiants test / production, récompense seulement si l'annonce va au bout, moments interdits, limites du jour sauvegardées, coffre bonus supprimé (ancienne sauvegarde ignorée), roulette (lancer gratuit, 3 lancers avec publicité au plus, rien avant le gratuit, remise à zéro à minuit, tirage pondéré). |
+| `tests/achievements.test.mjs` | ★ Phase 5 : **succès** : catégories et objectifs demandés, états, déblocage automatique et annoncé une fois, récompenses une seule fois (XP, gemmes, objets, emblèmes), défis cachés invisibles, détection des exploits (jeu et Trickshot), compteurs Trickshot / Fantôme, ancienne sauvegarde, fusion entre pages, performances. |
 | `tests/economy.test.mjs` | ★ Phase 4 : **équilibrage de l'économie** sur des joueurs simulés pendant 30 jours (4 graines) : progression régulière, collection jamais finie, légendaires très rares, gemmes rares, effet des publicités ; chances des coffres ; sources de gemmes ; achat du Pass (gemmes / magasin). |
 | `tests/live.test.mjs` | Statistiques (jour, minuit), coffres et doublons, récompense quotidienne (une par jour, 7 jours, cycle), missions (tirage, renouvellement, récompense unique), succès (paliers, progression, récupération), textes. |
 | `tests/routes.test.mjs` | Chaque passage de chaque niveau reste faisable (solutions enregistrées + solutions expertes). |
@@ -717,14 +720,10 @@ Même style que le reste du menu (verre sombre, accent orange, ressorts) ; chaqu
   récompenses (pièces, coffre, article), puis « Récupérer » (bouton qui pulse) ou « ✓ Récupérée ».
   **Mission terminée** : la carte s'entoure de vert, un **éclat lumineux** la traverse, son de validation.
   En-tête : « 1/3 accomplies » et « Nouvelles missions dans 13 h 18 min ».
-- **Succès** : progression totale (barre, « 12/40 obtenus »), « 3 à récupérer », onglets **Tous / Débutant /
-  Intermédiaire / Expert / Légende** (chacun avec son compte et un point rouge s'il y a quelque chose à
-  récupérer), grille de cartes : **médaille hexagonale** à la couleur du palier (bronze, argent, or, violet) avec
-  son icône, nom, description, **barre de progression**, récompense, « Récupérer ». Pas encore atteint :
-  médaille grisée et valeur (« 240/1 000 ») ; **prêt** : médaille qui brille et carte balayée par un reflet doré ;
-  obtenu : « ✓ Obtenu ». Les succès prêts sont en tête de liste.
-- **Pendant la partie** : une bannière glisse en haut de l'écran — « **Mission terminée !** » (vert) ou
-  « **Succès débloqué !** » (or) — avec un arpège lumineux et une vibration.
+- **Succès** : page refaite à la phase 5 — voir [Succès](#4-septies-succès-phase-5).
+- **Pendant la partie** : une bannière glisse en haut de l'écran — « **Mission terminée !** » (vert), avec un
+  arpège lumineux et une vibration. Les succès ont leur propre carte animée depuis la phase 5 (voir
+  [Le déblocage](#le-déblocage)).
 
 ### Roulette quotidienne (`index.html#bonus`) — refaite à la phase 4
 
@@ -1317,7 +1316,7 @@ repart du niveau 1, l'ancienne est gardée.
 | Terminer un niveau | 50 la première fois, 10 en rejouant | 60 / 15 |
 | Réussir un Trickshot | 60 la première fois, 15 en rejouant | 80 / 20 |
 | Récupérer une mission quotidienne | 60 | 100 |
-| Récupérer un succès | 100 | 150 |
+| Récupérer un succès | selon le palier (phase 5) : 50 · 75 · 100 · 150 | 150 |
 
 - Niveau n → n+1 : `200 + 4 × (n+1)` XP (208 … 400) ; **14 896 XP** pour le niveau 50.
 - Rythme visé (simulateur, voir [Économie](#4-sexies-économie-phase-4)) : un joueur actif atteint le niveau ≈ 47 au
@@ -1355,7 +1354,7 @@ missions.** Seules sources :
 - **Récompense quotidienne** : 45 💎 par semaine (jours 3, 5 et 7) ;
 - **Quelques grands succès** (paliers Expert et Légende, 10 à 40 💎) : À mi-chemin 15, Volcanologue 10,
   Gardien de la forêt 15, Au-delà des étoiles 40, Constellation 30, Astronaute 20, Fidèle 10, Légende des
-  missions 15 ;
+  missions 15, Mission impossible 20 et Chasseur de fantômes 15 (phase 5) ;
 - **Récompenses spéciales** : case 10 💎 de la roulette (5 %), coffres premium (5–15) et légendaires (15–25).
 
 Ordre de grandeur (simulateur) : ≈ 620 💎 gagnées en 30 jours par un joueur actif, ≈ 490 par un joueur
@@ -1469,14 +1468,15 @@ facultatif, et il ne change **rien** au jeu (physique, niveaux, scores, récompe
 
 Des joueurs types jouent 30 jours avec **le vrai code du jeu** (porte-monnaie, coffres, calendrier, roulette,
 missions, succès, Hoop Pass, boutique) et une horloge simulée ; ils achètent l'objet le moins cher dès qu'ils
-peuvent. `node tools/economy-sim.mjs 30` affiche le tableau jour par jour. Résultats (graine 7) :
+peuvent. `node tools/economy-sim.mjs 30` affiche le tableau jour par jour. Résultats (graine 7, relancé à la
+phase 5 avec les nouveaux succès) :
 
 | Profil (30 jours) | Pièces gagnées | 💎 gagnées | 1er achat | Premium | Pass | Objets (sur 41) |
 |---|---|---|---|---|---|---|
-| Actif | 106 858 | 621 | jour 2 | jour 13 | niv. 47 | 27 (2 légendaires) |
-| Actif + publicités | 136 520 | 650 | jour 2 | jour 13 | niv. 47 | 23 (1 légendaire) |
-| Occasionnel | 66 945 | 490 | jour 4 | jour 20 | niv. 31 | 19 |
-| Occasionnel + publicités | 94 994 | 540 | jour 3 | jour 17 | niv. 31 | 22 |
+| Actif | 106 799 | 640 | jour 3 | jour 12 | niv. 46 | 28 (1 légendaire) |
+| Actif + publicités | 144 902 | 649 | jour 2 | jour 12 | niv. 46 | 26 (1 légendaire) |
+| Occasionnel | 67 038 | 490 | jour 4 | jour 20 | niv. 30 | 19 |
+| Occasionnel + publicités | 99 925 | 530 | jour 3 | jour 20 | niv. 31 | 24 |
 
 Les objets tombés des coffres dépendent du hasard : sur une graine, le joueur avec publicités peut finir avec
 moins d'objets que sans (il en achète autant ou plus, mais en reçoit moins des coffres). Les tests vérifient
@@ -1485,6 +1485,118 @@ donc des **moyennes sur 4 graines** et des bornes (`tests/economy.test.mjs`).
 **Avant les réglages**, le premier passage du simulateur montrait une économie beaucoup trop généreuse :
 41 objets sur 41 en 15 jours et 1 334 💎 en un mois (la rareté « remontait » quand les objets communs étaient
 possédés, trop de coffres, trop de gemmes dans le Pass).
+
+## 4 septies. Succès (phase 5)
+
+> Un véritable système de succès, qui donne envie de continuer **après les 50 niveaux** : essayer le Trickshot,
+> battre son fantôme, compléter sa collection, revenir chaque jour, et chercher des **défis cachés**. Il
+> récompense seulement : **aucun** changement de gameplay, de physique ni de niveau.
+
+### Les catégories (62 succès)
+
+| Catégorie | Succès | Exemples |
+|---|---|---|
+| 🏀 **Progression** | 14 | **Terminer le niveau 10 · 20 · 30 · 40 · 50** (anciens succès de monde, mêmes récompenses), 1er niveau, 10 · 25 · 50 niveaux, 10 · 50 · 100 · 150 étoiles, un monde parfait |
+| 🎯 **Maîtrise** | 13 | rebonds, paniers, swish, niveaux sans mourir, parties, temps de jeu, « Ne lâche rien » |
+| 🎯 **Trickshot** | 5 | Premier Trickshot, **10 · 25 · 50 Trickshots réussis**, **Mission impossible** (un Trickshot impossible) |
+| 👻 **Fantôme** | 4 | **Battre son fantôme** 1 · **5 · 20 · 50** fois |
+| 💰 **Collection** | 11 | **Ouvrir 10 · 50 coffres** (et 5), **acheter un skin**, 5 · 10 skins achetés, **posséder 10 skins**, **posséder tous les skins**, pièces gagnées |
+| 📅 **Fidélité** | 6 | récompenses quotidiennes (1 · 7 · 30), missions (1 · 15 · 30) |
+| ⭐ **Défis** | 9 | 8 défis **cachés** + « Maître des défis » (tous les découvrir) |
+
+Chaque succès a aussi un **palier** (couleur de sa médaille) : Débutant (bronze), Intermédiaire (argent), Expert
+(or), Légende (violet). Le palier fixe l'**XP du Hoop Pass** donnée en plus de la récompense : 50 · 75 · 100 ·
+150 XP.
+
+**Interprétations retenues** (à valider) :
+- « Terminer le niveau N » : le niveau N se débloque dans l'ordre, ce sont donc les anciens succès de fin de
+  monde (Roi de la ville, Montagnard, Volcanologue, Gardien de la forêt, Astronaute) : identifiants, récompenses et
+  états gardés.
+- « Réussir 50 Trickshots » : il n'y a que 20 cartes ; chaque réussite compte, rejouer compris. Pour les anciennes
+  sauvegardes, le compteur part au moins du nombre de cartes déjà réussies.
+- « Un Trickshot Impossible » : aucune carte n'est classée « Impossible » ; le succès demande une carte **Très
+  difficile réussie du premier tir** (3 étoiles).
+- « Battre son fantôme » : finir un niveau plus vite que son fantôme enregistré (le fantôme est alors
+  remplacé), qu'il soit affiché ou non. Compté à partir de cette version.
+- « Acheter un skin » / « Posséder 10 skins » : un skin = n'importe quel objet de personnalisation (ballon, effet,
+  traînée, animation) ; « posséder » compte aussi les objets gagnés, sauf les 4 offerts au départ.
+
+### Les défis cachés
+
+Invisibles tant qu'ils ne sont pas réussis : la page n'affiche que leur nombre (« 8 défis cachés à découvrir ·
+Ils restent invisibles jusqu'à leur découverte »). Repérés pendant la partie par `src/game/challenge-tracker.js`,
+**en lecture seule** (le traqueur écoute les événements et regarde les contacts du ballon, sans rien modifier).
+
+| Défi | Condition | Récompense |
+|---|---|---|
+| **Dribble infini** | enchaîner **10 rebonds** sans que le ballon se repose au sol (ni tombe), puis marquer | 400 |
+| **Téléportation express** | marquer **moins de 15 s** après être passé par un téléporteur | 400 |
+| **Sans un mur** | terminer un niveau **sans toucher un mur** (contact sur le côté avec le décor fixe ; pousser une caisse ne compte pas) | 500 |
+| **Perfection absolue** | 3 étoiles, un swish et aucune chute dans le même niveau | coffre rare |
+| **Photo finish** | battre son fantôme de **moins d'un dixième de seconde** | coffre rare |
+| **Dernière chance** | réussir un Trickshot avec le **tout dernier tir** (interprétation de « panier au dernier rebond ») | 400 |
+| **Du premier coup** | réussir un Trickshot **jamais tenté, dès le premier tir** | coffre rare |
+| **Billard** | réussir un Trickshot après **au moins 5 rebonds** | 400 |
+| **Maître des défis** (visible) | découvrir les 8 | animation **Énigme** + emblème **Sphinx** |
+
+Faisabilité vérifiée sur les solutions expertes des 50 niveaux : 10 rebonds d'affilée avant le panier dans
+4 niveaux (Volcan 1, 4, 7, Forêt 6), téléporteur à moins de 15 s du panier dans 3 niveaux (Volcan 9, Forêt 9,
+Espace 3), presque tous les niveaux se finissent sans toucher de mur.
+
+### Les récompenses
+
+Pièces, **gemmes** (2 nouveaux grands succès seulement : Mission impossible 20, Chasseur de fantômes 15 ; jamais
+dans les missions), **XP du Hoop Pass** (selon le palier), **coffres**, **effets visuels exclusifs** (3 nouveaux :
+effet de rebond **Labo**, traînée **Spectre**, animation de panier **Énigme**) et **emblèmes**. Une récompense ne
+se récupère **qu'une seule fois** (bouton « Récupérer », ou « Tout récupérer » quand il y en a plusieurs).
+
+**Emblèmes** (icônes de profil, `EMBLEMS`) : Recrue (offert), Fantôme (5 fantômes battus), Labo (25 Trickshots),
+Collectionneur (10 skins), Fidèle (30 récompenses quotidiennes), Impossible (Mission impossible), Légende (les
+50 niveaux), Sphinx (tous les défis). Ils se déduisent des succès récupérés (rien à migrer) ; le joueur choisit le
+sien dans la page Succès.
+
+Économie : relancé, le simulateur reste dans les objectifs de la phase 4 (joueur actif : ≈ 640 💎 et 28 objets
+sur 41 en 30 jours, Premium au 12e jour).
+
+### Le déblocage
+
+Dès qu'un succès est atteint (fin de niveau, fin de Trickshot, récompense quotidienne, mission, coffre, achat) :
+une **carte glisse du haut de l'écran** (`src/shared/unlock-card.js`, `css/unlock.css`) — médaille hexagonale qui
+éclot en tournant, icône, « Succès débloqué ! · Expert » (ou « **Défi caché découvert !** », en violet), nom,
+récompense (pièces, gemmes, coffre, objet, emblème, XP), **reflet** qui balaie la carte, **petites particules**
+autour de la médaille, **son** dédié (`achievement()` de la voix d'interface : souffle et cloches ; plus
+mystérieux pour un défi caché) et **vibration légère**. Les cartes passent l'une après l'autre ; au-delà de 3
+d'un coup, la dernière annonce « + N autres succès ». Chaque succès n'est annoncé qu'une fois. La carte ne bloque
+jamais le toucher.
+
+### La page (`index.html#succes`)
+
+Même langage que le Hoop Pass (verre bleu nuit, or, profondeur, lumière) :
+- **à gauche** : l'**emblème** du joueur (touche pour en changer), la progression totale (« 26 / 62 », barre,
+  pourcentage), « N débloqués · N en cours », bouton **Tout récupérer** ;
+- **à droite** : les **onglets des catégories** (icône, couleur, « 6/14 », point rouge s'il y a quelque chose à
+  récupérer) et les **cartes** : médaille à la couleur du palier, nom, description, **barre de progression
+  animée** (« 3 / 10 », « 27 / 50 », « 98 / 100 », reflet qui la parcourt), récompense, **état** : Verrouillé
+  (médaille grise et cadenas), En cours (bleu), Débloqué (carte dorée qui brille, bouton « Récupérer »),
+  Obtenu (✓). Ordre : à récupérer, en cours (les plus avancés d'abord), verrouillés, obtenus ;
+- onglet **Défis** : les défis découverts, le méta-succès et une carte « N défis cachés à découvrir ».
+
+### Sauvegarde
+
+Clé `hoopbounce.achievements`, **version 2** : `claimed` (récupérés), `notified` (déjà annoncés), `unlocked`
+(date du déblocage), `challenges` (défis cachés réussis, avec la date), `emblem` (emblème choisi). La version 1
+est relue telle quelle. Chaque écriture **fusionne** avec ce qui est enregistré (union) : deux pages ne
+s'effacent jamais. Nouveaux compteurs dans `hoopbounce.stats` : `trickshots` (Trickshots réussis), `ghostBeaten`
+(fantômes battus). La plupart des succès sont **mesurés** sur la sauvegarde : un ancien joueur débloque
+automatiquement ceux qu'il a déjà mérités.
+
+### Code et tests
+
+`src/shared/achievements.js` (définitions, mesures, états, emblèmes, sauvegarde), `src/game/challenge-tracker.js`
+(défis cachés), `src/shared/unlock-card.js` + `css/unlock.css` (déblocage), `src/menu/achievements-view.js` +
+`css/achievements.css` (page), textes dans `src/shared/live-i18n.js`, effets dans `src/render/cosmetics.js`.
+`tests/achievements.test.mjs` : 12 tests (catégories, états, déblocage automatique, récompenses une seule fois,
+défis cachés, détection, sauvegarde, performances).
 
 ## 5. Progression
 
@@ -1720,14 +1832,8 @@ Pièces **réduites d'environ 20 %** à la phase 4 (les valeurs ci-dessus sont l
 ajoute parfois un coffre : **commun 20 %**, **rare 8 %**, **épique 2 %** (sinon des pièces seulement) ; la
 moyenne ajoute un coffre commun 8 % du temps. **Jamais de gemmes** dans les missions.
 
-**Succès** — 40 succès sur 4 paliers ; chacun a sa récompense à récupérer :
-
-| Palier | Succès (objectif → récompense) |
-|---|---|
-| **Débutant** (bronze) | Premier panier (1er niveau → 100) · Échauffement (100 rebonds → 100) · Chasseur d'étoiles (10 étoiles → 150) · Sans faute (1 niveau sans mourir → 150) · Premier achat (1 article → coffre commun) · Habitué (10 parties → 100) · Roi de la ville (monde Ville → coffre commun) · Tirelire (1 000 pièces gagnées → 150) · Bienvenue ! (1 récompense quotidienne → 100) · En mission (1 mission → 100) |
-| **Intermédiaire** (argent) | Dix sur dix (10 niveaux → 300) · Pluie d'étoiles (50 étoiles → coffre rare) · Dribbleur (1 000 rebonds → 300) · Tireur (100 paniers → 300) · Swish ! (25 swish → article rare) · Accro du shopping (5 articles → 400) · Montagnard (monde Neige → coffre rare) · Ne lâche rien (100 chutes → 200) · Passionné (30 min → 300) · Économe (5 000 pièces → 500) · Chasseur de trésors (5 coffres → 300) |
-| **Expert** (or) | À mi-chemin (25 niveaux → coffre épique + 15 💎) · Volcanologue (monde Volcan → 600 + 10 💎) · Gardien de la forêt (monde Forêt → 700 + 15 💎) · **Perfection** (un monde avec toutes les étoiles → traînée exclusive **Aurore**) · Tireur d'élite (500 paniers → 800) · Collectionneur (10 articles → coffre épique) · Infatigable (5 000 rebonds → 800) · Impeccable (20 niveaux sans mourir → 800) · Fortune (20 000 pièces → 1 000) · Constellation naissante (100 étoiles → 800) · Agent spécial (15 missions → coffre rare) |
-| **Légende** (violet) | **Au-delà des étoiles** (les 50 niveaux → ballon exclusif **Légende** + 40 💎) · **Constellation** (150 étoiles → animation de panier exclusive **Constellation** + 30 💎) · **Maître du swish** (100 swish → effet de rebond exclusif **Couronne**) · Astronaute (monde Espace → coffre épique + 20 💎) · Fidèle (7 récompenses quotidiennes → coffre épique + 10 💎) · Légende des missions (30 missions → 1 500 + 15 💎) · Marathonien (3 h → 2 000) · Collection complète (tous les articles de la boutique → 3 000) |
+**Succès** — depuis la phase 5 : 62 succès en 7 catégories, défis cachés et emblèmes — voir
+[Succès](#4-septies-succès-phase-5). Les 40 succès d'avant gardent leur identifiant, leur récompense et leur état.
 
 **Articles exclusifs** (jamais en vente ; dans la boutique, ils portent l'étiquette « Exclusif · Récompense
 quotidienne » ou « Exclusif · Succès ») :
@@ -1740,6 +1846,9 @@ quotidienne » ou « Exclusif · Succès ») :
 | Aurore (voiles verts, turquoise et violets qui ondulent) | Traînée | Légendaire | Succès « Perfection » |
 | Couronne (anneau d'or et pointes d'étoiles) | Effet de rebond | Légendaire | Succès « Maître du swish » |
 | Constellation (étoiles reliées par des fils de lumière) | Animation de panier | Légendaire | Succès « Constellation » |
+| **Labo** (deux hexagones électriques, arcs et étincelles cyan) — phase 5 | Effet de rebond | Légendaire | Succès « Virtuose du Trickshot » (50 Trickshots) |
+| **Spectre** (voile pâle et échos translucides du ballon) — phase 5 | Traînée | Légendaire | Succès « Chasseur de fantômes » (fantôme battu 50 fois) |
+| **Énigme** (sceau violet et or qui s'ouvre au-dessus du panier) — phase 5 | Animation de panier | Légendaire | Succès « Maître des défis » (tous les défis cachés) |
 
 ### Publicités récompensées (étape 13)
 
@@ -1822,10 +1931,11 @@ objets sont de **vrais objectifs à long terme** :
 - les **gains du jeu n'ont pas changé** : pièces des niveaux, récompense quotidienne, missions, succès, coffres,
   roue.
 
-**51 articles** en 5 onglets :
+**54 articles** en 5 onglets (51 avant la phase 5) :
 - 4 offerts et équipés au départ ;
 - **41 en vente** ;
-- 6 exclusifs, gagnés avec les récompenses quotidiennes et les succès, présentés à la fin de chaque onglet.
+- 9 exclusifs (6 avant la phase 5), gagnés avec les récompenses quotidiennes et les succès, présentés à la fin
+  de chaque onglet (plus les objets du Hoop Pass et ceux vendus en gemmes).
 
 | Rareté | Fourchette de prix | Articles en vente | Total |
 |---|---|---|---|
@@ -2011,9 +2121,17 @@ niveaux plus longs et plus difficiles rapportent un peu plus.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v10.apk` (≈ 0,6 Mo, **1.9.0-test10**, économie rééquilibrée) —
+**Fichier actuel :** `dist/HoopBounce_Test_v11.apk` (≈ 0,6 Mo, **1.10.0-test11**, système de succès) —
 une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
+
+**Mise à jour v11 (phase 5) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé identique
+(SHA-256 `894f0b7d…`, contrôlée par le script), versionCode 11, versionName 1.10.0-test11, `apksigner verify`
+valide (v2 + v3). **Simulation de mise à jour v10 → v11 sur la même origine** (sauvegarde d'un joueur avancé faite
+avec le code de la phase 4 : 23 niveaux, statistiques, pièces et gemmes, achats, 12 succès récupérés, Trickshot,
+Pass, récompense quotidienne, vrai fantôme) : les **12 clés** sont toutes présentes, **11 identiques à l'octet
+près**, seule `hoopbounce.achievements` change (passage en v2, les 12 succès récupérés le restent, aucune
+récompense en double) ; 14 succès déjà mérités se débloquent d'eux-mêmes ; 0 erreur.
 
 **Mise à jour v10 (phase 4) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé identique
 (SHA-256 `894f0b7d…`, contrôlée par le script), versionCode 10, versionName 1.9.0-test10, `apksigner verify`
@@ -2042,7 +2160,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · **v10 : `1.9.0-test10` (10)** ; « 1.8.0 (test 9) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · v10 : `1.9.0-test10` (10) · **v11 : `1.10.0-test11` (11)** ; « 1.8.0 (test 9) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -2293,6 +2411,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 🔴 Retours du porteur du projet sur téléphone (rythme ressenti, envie de revenir, prix du Premium)
 - 🔴 Plus tard : brancher Google Play Billing (`PlayBillingProvider`) et la vérification des achats
 
+### Phase 6 undecies — Phase 5 : succès ✅ (en attente de validation)
+- ✅ 62 succès en 7 catégories (Progression, Maîtrise, Trickshot, Fantôme, Collection, Fidélité, Défis), 4 paliers
+- ✅ 8 défis cachés repérés en partie (lecture seule) + méta-succès ; invisibles avant leur découverte
+- ✅ Récompenses : pièces, gemmes (rares), XP du Pass, coffres, 3 effets exclusifs, 8 emblèmes ; une seule fois
+- ✅ Carte de déblocage animée (son, particules, vibration) dans le jeu, le Trickshot, le menu et la boutique
+- ✅ Page Succès refaite (style Hoop Pass), sauvegarde v2 fusionnée, 12 tests
+- 🔴 Retours du porteur du projet (interprétations des défis, envie de jouer après les 50 niveaux)
+
 ### Phase 7 bis — Saisons 🟡
 - ✅ Interrupteur de saison ; **Saison 1 — Noël, étape 1** : menu principal décoré et ambiance d'hiver
 - ✅ **Hoop Pass « Saison 1 · Noël »** : 50 niveaux, lignes Gratuit / Premium, XP en jouant, 9 objets
@@ -2401,6 +2527,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation des succès** (phase 5) avec `HoopBounce_Test_v11.apk` : page Succès, carte de déblocage,
+  défis cachés (interprétations), emblèmes, récompenses
 - 🟡 **Validation de l'économie** (phase 4) avec `HoopBounce_Test_v10.apk` : roulette (lancer gratuit, 3 lancers
   avec publicité de test, compte à rebours), calendrier, rythme des pièces et des gemmes, coffres, Pass Premium
 - 🟡 **Validation du Mode Fantôme** avec `HoopBounce_Test_v9.apk` : lisibilité du fantôme dans les 5 mondes,
@@ -2490,6 +2618,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 9. Optimisations
+
+**Succès (phase 5)**
+- Calcul de tous les succès ≈ 0,04 ms (navigateur) : vérification après chaque niveau sans effet sur la fluidité ;
+  rendu complet de la page ≈ 2,3 ms.
+- Traqueur des défis cachés : un balayage des contacts du ballon par pas de simulation, sans aucune allocation
+  (100 000 balayages < 100 ms dans les tests).
+- Carte de déblocage : éléments DOM animés par transform / opacity seulement ; particules en CSS (aucun canvas).
 
 **Économie (phase 4)**
 - Simulateur (`tools/economy-sim.mjs`) : stockage en mémoire et horloge simulée, aucune attente ; 30 jours d'un
@@ -2651,6 +2786,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | Info | Hoop Pass : le Premium coûtait 250 💎 et ne se débloquait qu’au **niveau 50** du Pass. | ✅ Résolu (phase 4) : gemmes du calendrier et des grands succès ; Premium vers le 13e jour (joueur actif), 17e–20e (occasionnel), prix inchangé |
 | Info | Phase 4 : les gains déjà reçus avant la mise à jour (pièces, gemmes, objets) sont gardés tels quels ; seuls les gains à venir suivent le nouveau barème. Un joueur qui a déjà beaucoup de gemmes peut donc acheter le Premium tout de suite. | 🟡 Normal (les sauvegardes ne sont jamais modifiées) |
 | Info | Phase 4 : le calendrier reprend au même jour de la semaine après la mise à jour (série conservée) mais affiche les nouvelles récompenses ; un ancien coffre bonus du jour déjà ouvert n'est pas remplacé par un lancer. | 🟡 Normal |
+| Info | Phase 5 : à la première ouverture après la mise à jour, un ancien joueur débloque d'un coup les succès déjà mérités (jusqu'à une quinzaine) : 3 cartes puis « + N autres succès ». | 🟡 Voulu (rien n'est perdu, tout est à récupérer dans la page) |
+| Info | Phase 5 : les fantômes battus sont comptés à partir de cette version (aucun historique avant). | 🟡 Normal |
+| Info | Phase 5 : « panier au dernier rebond » et « Trickshot Impossible » sont interprétés (dernier tir ; carte Très difficile du premier tir), aucune carte n'étant classée Impossible. | 🔴 À valider par le porteur du projet |
 | Info | Phase 4 : l'achat réel du Premium (Google Play Billing) n'est pas branché ; en mode `store`, l'achat répond `unavailable`. | 🔴 À faire avant la publication d'un Pass payant |
 | Info | Hoop Pass : les dates suivent l'heure de l'appareil (comme la récompense quotidienne). | 🟡 Normal hors ligne |
 | ✅ | Hoop Pass (en développement) : pastille du bouton de l'accueil coupée après un toucher, accueil pas rafraîchi au retour de la page, son du Premium qui plantait, étiquette « rarity.mythic ». | ✅ Corrigé avant validation |
@@ -2700,6 +2838,51 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 24/11/2026 — Phase 5 : système de succès (v1.8.0-dev, APK de test v11)
+
+> Un véritable système de succès qui donne envie de continuer après les 50 niveaux. **Aucun** changement de
+> gameplay, de physique ni de niveau : il récompense seulement.
+
+**Ajouté**
+- **62 succès en 7 catégories** : Progression (dont « Terminer le niveau 10 · 20 · 30 · 40 · 50 »), Maîtrise,
+  **Trickshot** (1 · 10 · 25 · 50 réussis, Mission impossible), **Fantôme** (battre son fantôme 1 · 5 · 20 · 50
+  fois), **Collection** (coffres 10 · 50, acheter un skin, posséder 10 skins / tous les skins), Fidélité (dont
+  30 récompenses quotidiennes), **Défis** : 8 défis cachés + Maître des défis.
+- **Défis cachés** (`src/game/challenge-tracker.js`, lecture seule) : Dribble infini, Téléportation express, Sans
+  un mur, Perfection absolue, Photo finish, Dernière chance, Du premier coup, Billard. Invisibles avant leur
+  découverte.
+- **États** : verrouillé, en cours, débloqué (à récupérer), obtenu ; secret pour les défis cachés.
+- **Récompenses** : pièces, gemmes (2 grands succès), **XP du Hoop Pass selon le palier** (50 · 75 · 100 · 150),
+  coffres, **3 effets exclusifs** (rebond **Labo**, traînée **Spectre**, animation **Énigme**), **8 emblèmes**
+  (icônes de profil) ; récupérées une seule fois, « Tout récupérer ».
+- **Carte de déblocage animée** (`src/shared/unlock-card.js`, `css/unlock.css`) : médaille qui éclot, nom,
+  récompense, reflet, particules, son `achievement()`, vibration ; dans le jeu, le Trickshot, le menu et la
+  boutique ; file d'attente (3 cartes puis « + N autres »).
+- **Page Succès refaite** (`src/menu/achievements-view.js`, `css/achievements.css`) dans le style du Hoop Pass :
+  emblème, progression totale, onglets des catégories, cartes à barres animées, choix de l'emblème.
+- Compteurs `trickshots` et `ghostBeaten` ; icônes `ghost` et `mystery` ; textes FR / EN / ES.
+- `tests/achievements.test.mjs` (12 tests). Section [4 septies. Succès](#4-septies-succès-phase-5).
+
+**Modifié**
+- `src/shared/achievements.js` réécrit (catégories, défis, emblèmes, sauvegarde v2 fusionnée) ; les 40 anciens
+  succès gardent leur identifiant, leur récompense et leur état. Textes : « Terminer le niveau N », « skins ».
+- Dans le jeu, les succès ne passent plus par la petite bannière (gardée pour les missions) mais par la carte.
+- Catalogue : 54 objets (9 exclusifs). Ancien style de la page Succès retiré de `css/live.css`.
+
+**Vérifié**
+- **525 tests** passent (12 nouveaux). Simulateur de l'économie relancé : toujours dans les objectifs de la phase 4.
+- Navigateur : page Succès (anglais et français, 7 onglets, états, défis cachés, choix de l'emblème, récupération
+  et révélation), cartes de déblocage (succès et défi caché), fin de niveau (Premier panier, Sans un mur, fantôme
+  battu au 2e essai plus rapide), fin de Trickshot (Premier Trickshot, Du premier coup), 3 nouveaux effets ;
+  0 erreur. Page Missions inchangée.
+- **Aucune sauvegarde perdue** : mise à jour v10 → v11 simulée sur la même origine (code de la phase 4 puis de
+  la phase 5) : 12 clés présentes, 11 identiques, succès récupérés gardés sans doublon.
+- `dist/HoopBounce_Test_v11.apk` (1.10.0-test11) : même identifiant, même clé de test, versionCode 11.
+
+**Reste à faire**
+- Retours du porteur du projet : interprétations (« dernier rebond », « Trickshot Impossible »), rythme des
+  succès après les 50 niveaux, emblèmes (afficher l'emblème ailleurs que dans la page Succès ?).
 
 ### 24/11/2026 — Phase 4 : économie rééquilibrée (v1.7.0-dev, APK de test v10)
 

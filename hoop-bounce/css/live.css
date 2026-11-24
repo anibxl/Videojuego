@@ -447,94 +447,9 @@ html.fit-760 .hub { padding: 0 9px; }
 @keyframes card-flash { to { transform: translateX(100%); } }
 @keyframes icon-pop { 40% { transform: scale(1.25) rotate(-8deg); } }
 .mcard.claiming,
-.acard.claiming { animation: card-claim 0.45s var(--ease-spring); }
 @keyframes card-claim { 40% { transform: scale(1.03); box-shadow: 0 0 40px rgba(63, 224, 184, 0.6); } }
 
-/* ── Succès ─────────────────────────────────────────────────────────────── */
-
-.av-body { padding-top: clamp(6px, 1.6vh, 10px); }
-.av-tabs { margin-bottom: 10px; }
-.av-tabs button { position: relative; display: inline-flex; align-items: center; gap: 6px; }
-.av-tabs button small { font-size: 11px; font-weight: 700; opacity: 0.7; }
-.av-tabs button[style*="--t"]:not([aria-selected="true"]) { color: rgb(var(--t)); }
-.av-tabs button[aria-selected="true"][style*="--t"] { background: rgb(var(--t)); border-color: rgb(var(--t)); color: #0b1020; }
-.av-tabs .dot { position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: #ff4f63; box-shadow: 0 0 0 2px var(--bg); }
-
-.av-grid {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-  grid-auto-rows: max-content;
-  gap: 10px;
-  padding: 2px 2px 8px;
-  scrollbar-width: none;
-}
-.av-grid::-webkit-scrollbar { display: none; }
-
-.acard {
-  --tc: var(--t);
-  position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(90deg, rgba(var(--t), 0.12), rgba(255, 255, 255, 0.02) 55%), var(--surface);
-  border: 1px solid rgba(var(--t), 0.28);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), var(--shadow-soft);
-  animation: tile-in 0.45s var(--ease-spring) both;
-  animation-delay: calc(0.08s + var(--i) * 0.03s);
-  overflow: hidden;
-}
-.a-medal {
-  position: relative;
-  width: 52px;
-  height: 52px;
-  display: grid;
-  place-items: center;
-  font-size: 24px;
-  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
-  background: linear-gradient(160deg, rgba(var(--t), 1), rgba(var(--t), 0.45));
-}
-.a-medal span {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
-  background: radial-gradient(circle at 40% 30%, #1e2b4c, #0b1222);
-}
-.a-main { display: grid; gap: 2px; min-width: 0; }
-.a-tier { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(var(--t)); }
-.a-name { margin: 0; font-size: 14.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.a-desc { margin: 0 0 3px; font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.a-bar { height: 6px; }
-.a-side { display: grid; justify-items: end; gap: 6px; }
-.a-reward { display: flex; gap: 4px; }
-.a-val { font-size: 12px; font-weight: 700; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.a-claim { height: 32px; padding: 0 13px; font-size: 11.5px; border-radius: var(--r-sm); background: linear-gradient(180deg, #ffd36b, #ffab2e); color: #2a1400; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 8px 20px rgba(255, 171, 46, 0.35); }
-
-/* Prêt à récupérer : la médaille brille et la carte pulse */
-.acard[data-state="ready"] { border-color: rgba(255, 201, 77, 0.85); box-shadow: 0 0 26px rgba(255, 201, 77, 0.25), var(--shadow-soft); }
-.acard[data-state="ready"] .a-medal { animation: medal-glow 1.6s ease-in-out infinite; }
-@keyframes medal-glow { 50% { transform: scale(1.08) rotate(-4deg); filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 201, 77, 0.9)); } }
-.acard[data-state="ready"]::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(100deg, transparent 35%, rgba(255, 230, 150, 0.18) 50%, transparent 65%);
-  background-size: 250% 100%;
-  animation: legend-sheen 2.4s linear infinite;
-  pointer-events: none;
-}
-/* Pas encore atteint : médaille grisée */
-.acard[data-state="progress"] .a-medal { filter: grayscale(0.85) brightness(0.7); }
-.acard[data-state="progress"] .a-medal span { font-size: 21px; opacity: 0.75; }
-/* Obtenu : badge à la couleur du palier */
-.acard[data-state="claimed"] .a-bar i { background: rgb(var(--t)); }
+/* ── Succès : page refaite à la phase 5 (css/achievements.css) ─────────── */
 
 /* ── Révélation d'une récompense ────────────────────────────────────────── */
 
@@ -755,7 +670,7 @@ html.fit-760 .hub { padding: 0 9px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rfx *, .dday, .mcard, .acard, .hub-icon, .dv-claim { animation: none !important; }
+  .rfx *, .dday, .mcard, .hub-icon, .dv-claim { animation: none !important; }
   .m-bar i, .a-bar i { width: calc(var(--p) * 100%); }
 }
 

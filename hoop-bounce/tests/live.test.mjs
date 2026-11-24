@@ -156,7 +156,7 @@ test('succès : nombreux, 4 paliers, progression, récompense récupérable une 
   const ach = new Achievements(store);
   const ctx = { stats, progress, wallet };
   let first = ach.view(ctx).find((a) => a.id === 'first-level');
-  assert.equal(first.state, 'progress');
+  assert.equal(first.state, 'locked', 'rien de fait : verrouillé');
   progress.complete('first-shot', 2, 12);
   stats.add('bounces', 150);
   first = ach.view(ctx).find((a) => a.id === 'first-level');

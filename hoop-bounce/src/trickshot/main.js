@@ -31,6 +31,12 @@ import { TrickshotProgress } from './progress.js';
 import { ArenaRenderer } from './render.js';
 import { tt, pick } from './i18n.js';
 import { awardPassXp } from '../shared/pass.js';
+import { Stats } from '../shared/stats.js';
+import { Achievements } from '../shared/achievements.js';
+import { UnlockCards } from '../shared/unlock-card.js';
+import { Progress } from '../game/progress.js';
+import { WORLDS } from '../game/worlds.js';
+import { trickshotChallenges } from '../game/challenge-tracker.js';
 
 const $ = (id) => document.getElementById(id);
 const settings = new Settings();
@@ -57,6 +63,21 @@ const canvas = $('game');
 let def = TS_LEVELS[n - 1];
 let game = new TrickshotGame(def);
 const wallet = new Wallet();
+// Succès (phase 5) : Trickshots réussis, défis cachés, animation de déblocage
+const stats = new Stats();
+const achievements = new Achievements();
+const tsLaunches = new Map(); // tirs lancés sur chaque carte depuis l'ouverture de la page
+let unlockCards = null;
+function announceAchievements() {
+  try {
+    const fresh = achievements.newlyUnlocked({ stats, wallet: new Wallet(), progress: new Progress(WORLDS), trickshot: progress });
+    if (!fresh.length) return;
+    unlockCards ??= new UnlockCards({ lang: () => lang, sound: (hidden) => sfx.achievement?.(hidden), vibrate: () => haptics.success?.() });
+    unlockCards.show(fresh);
+  } catch {
+    /* sauvegarde indisponible */
+  }
+}
 const look = { ball: wallet.equipped('ball'), bounce: wallet.equipped('bounce'), trail: wallet.equipped('trail'), goal: wallet.equipped('goal') };
 const renderer = new ArenaRenderer(canvas, game.level, { accent: chapterOf(n).accent, number: n });
 renderer.setBallSkin(look.ball);
@@ -262,6 +283,7 @@ window.addEventListener('keydown', (e) => {
 function bindGame() {
   const ev = game.events;
   ev.on('launch', (e) => {
+    tsLaunches.set(n, (tsLaunches.get(n) ?? 0) + 1);
     sfx.launch?.(e.power);
     haptics.bounce(e.power > 0.8 ? 5 : 3);
     visual.onBounce();
@@ -426,7 +448,17 @@ function onWin(e) {
   timeFx.clear();
   timeFx.slowmo(perfect || spectacular ? 0.18 : 0.3, perfect || spectacular ? 0.5 : 0.3, 0.8, 0.06);
   const firstWin = !progress.isDone(n);
+  const before = progress.level(n);
   const rec = progress.record(n, { stars: r.stars, score: r.score });
+  // Succès : un Trickshot de plus, défis cachés (dernier tir, premier coup, billard)
+  try {
+    stats.add('trickshots');
+    const playsBefore = before.plays + Math.max(0, (tsLaunches.get(n) ?? 1) - r.shots);
+    for (const id of trickshotChallenges(r, { maxShots: TRICKSHOT.shots, playsBefore, wasDone: before.stars > 0 })) achievements.recordChallenge(id);
+  } catch {
+    /* sauvegarde indisponible */
+  }
+  setTimeout(announceAchievements, 2600);
   rec.passXp = awardPassXp('trickshot', { first: firstWin }); // Hoop Pass : XP d'un Trickshot réussi
   setTimeout(() => showWin(r, rec), 1500);
 }

@@ -33,6 +33,8 @@ import { lt } from './shared/live-i18n.js';
 import { getAds } from './shared/ads.js';
 import { awardPassXp } from './shared/pass.js';
 import { GhostRecorder, GhostPlayer, GhostStore } from './game/ghost.js';
+import { ChallengeTracker } from './game/challenge-tracker.js';
+import { UnlockCards } from './shared/unlock-card.js';
 
 const R = CONFIG.ball.radius;
 const DT = CONFIG.physics.fixedDt;
@@ -146,7 +148,10 @@ game.events.on('restart', () => {
   recorder.reset();
   recorder.step(game);
   ghostState.doneAt = -1;
+  tracker.reset();
 });
+// Succès (phase 5) : repérage des défis cachés pendant la partie (lecture seule, aucun effet sur le jeu)
+const tracker = new ChallengeTracker();
 game.events.on('impact', (e) => recorder.bounce(game.runTime, e.speed));
 const renderer = new Renderer(canvas, game.level);
 renderer.particleDensity = QUALITY_PARTICLES[settings.get('quality')] ?? 1;
@@ -217,6 +222,7 @@ const state = {
 // ─── Missions et succès annoncés pendant la partie ─────────────────────────
 
 const banner = { queue: [], busy: false };
+const unlockCards = new UnlockCards({ lang: () => lang, sound: (hidden) => sfx.achievement?.(hidden), vibrate: () => haptics.success() });
 
 /** Vérifie les missions terminées et les succès atteints depuis la dernière fois, et les annonce. */
 function checkLive() {
@@ -224,9 +230,8 @@ function checkLive() {
     for (const m of missions.newlyCompleted(stats, unlockedWorlds())) {
       banner.queue.push({ kind: 'mission', title: lt(lang, 'live.mission'), text: missionText(m) });
     }
-    for (const a of achievements.newlyUnlocked({ stats, progress, wallet })) {
-      banner.queue.push({ kind: 'achievement', title: lt(lang, 'live.achievement'), text: lt(lang, `ach.${a.id}`) });
-    }
+    const fresh = achievements.newlyUnlocked({ stats, progress, wallet });
+    if (fresh.length) banner.queue.push({ kind: 'achievement', list: fresh });
   } catch {
     /* sauvegarde indisponible : rien à annoncer */
   }
@@ -242,6 +247,14 @@ function showNextBanner() {
   if (banner.busy || !banner.queue.length) return;
   const b = banner.queue.shift();
   banner.busy = true;
+  if (b.kind === 'achievement') {
+    // Succès débloqués : grande carte animée (src/shared/unlock-card.js), puis la suite de la file
+    unlockCards.show(b.list).then(() => {
+      banner.busy = false;
+      showNextBanner();
+    });
+    return;
+  }
   const el = $('live-banner');
   el.dataset.kind = b.kind;
   $('live-title').textContent = b.title;
@@ -375,6 +388,7 @@ game.events.on('impact', (e) => {
 
 game.events.on('bounce', (e) => {
   stats.add('bounces', 1, false);
+  tracker.onBounce();
   visual.onBounce();
   sfx.bounce(e.level, e.x);
   haptics.bounce(e.level);
@@ -416,7 +430,10 @@ game.events.on('slam', (e) => {
   particles.streaks(e.x, e.y + R * 0.6, 0, 1, 3, 3.5, 'rgba(255,255,255,0.55)');
 });
 
-game.events.on('powerDown', () => sfx.powerDown());
+game.events.on('powerDown', () => {
+  sfx.powerDown();
+  tracker.onRest();
+});
 
 game.events.on('trampoline', (e) => {
   sfx.trampoline();
@@ -443,6 +460,7 @@ game.events.on('teleport', (e) => {
   particles.sparkle(e.to.x, e.to.y, 14, '#d6c8ff', 3.5);
   state.sinceTeleport = 0;
   state.groundY = Math.min(state.groundY, e.to.y - R);
+  tracker.onTeleport(game.runTime);
 });
 
 game.events.on('fanEnter', () => sfx.wind(true));
@@ -539,6 +557,7 @@ game.events.on('star', (e) => {
 
 game.events.on('death', (e) => {
   stats.add('deaths', 1, false);
+  tracker.onDeath();
   state.runDeaths++;
   particles.burst(e.x, e.y, e.vx, e.vy);
   if (e.cause === 'lava' || e.cause === 'fire') particles.sparkle(e.x, e.y, 22, '#ffb35c', 4);
@@ -628,7 +647,17 @@ function showWin(r) {
   const world = WORLDS[def.worldIndex];
   const res = progress.complete(def.id, r.stars, r.time);
   // Mode Fantôme : l'essai remplace l'ancien fantôme seulement s'il est plus rapide
-  const ghostRes = ghostStore.offer(def.id, recorder.finish(r));
+  const newGhost = recorder.finish(r);
+  const prevGhost = ghostStore.get(def.id);
+  const ghostRes = ghostStore.offer(def.id, newGhost);
+  // Succès : fantôme battu, défis cachés réussis pendant ce niveau
+  if (ghostRes === 'record') stats.add('ghostBeaten', 1, false);
+  try {
+    const feats = tracker.onWin({ time: r.time, stars: r.stars, totalStars: r.totalStars, deaths: state.runDeaths, swish: !!state.swish, ghostBefore: ghostRes === 'record' ? prevGhost?.t : null, ghostAfter: newGhost?.t ?? r.time });
+    for (const id of feats) achievements.recordChallenge(id);
+  } catch {
+    /* sauvegarde indisponible */
+  }
   const earned = wallet.reward(def.id, def.worldIndex, r.stars, !!state.swish, def.difficulty);
   // Hoop Pass (saison en cours) : XP pour un niveau terminé, plus la première fois
   showPassXp(awardPassXp('level', { first: earned.lines.some(([k]) => k === 'first') }));
@@ -1423,6 +1452,7 @@ const loop = new FixedLoop({
     if (state.intro) return;
     game.fixedUpdate(dt);
     recorder.step(game); // Mode Fantôme : relevé de la position (lecture seule)
+    tracker.scanContacts(game.body); // Succès : un mur touché ? (lecture seule)
   },
   render,
 });

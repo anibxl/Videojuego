@@ -22,6 +22,10 @@ import { Stats } from '../shared/stats.js';
 import { RewardFx, chestHtml } from '../menu/rewards-fx.js';
 import { ICONS } from '../menu/icons.js';
 import { lt } from '../shared/live-i18n.js';
+import { Achievements } from '../shared/achievements.js';
+import { UnlockCards } from '../shared/unlock-card.js';
+import { Progress } from '../game/progress.js';
+import { WORLDS } from '../game/worlds.js';
 
 const $ = (id) => document.getElementById(id);
 const settings = new Settings();
@@ -300,6 +304,7 @@ function buyItem(id) {
     return;
   }
   if (res !== 'ok') return;
+  setTimeout(announceUnlocks, 1400); // Succès : premier achat, 10 skins, collection complète…
   // Achat : les pièces défilent, l'objet se débloque avec l'animation de sa rareté et il est équipé.
   // Épique : rayons violets. Légendaire : rayons dorés, éclats, son et vibration plus forts.
   wallet.equip(id);
@@ -372,6 +377,21 @@ async function buyOffer(id, card) {
   $('coin-n').textContent = chipFmt(wallet.coins);
   $('gem-n').textContent = chipFmt(wallet.gems);
   render(false);
+  announceUnlocks();
+}
+
+// ─── Succès débloqués dans la boutique (phase 5) ───────────────────────────
+let unlockCards = null;
+function announceUnlocks() {
+  try {
+    const ctx = { stats: new Stats(), wallet: new Wallet(), progress: new Progress(WORLDS) };
+    const fresh = new Achievements().newlyUnlocked(ctx);
+    if (!fresh.length) return;
+    unlockCards ??= new UnlockCards({ lang: () => lang, sound: (hidden) => sfx.achievement?.(hidden), vibrate: () => vibrate([12, 50, 18]) });
+    unlockCards.show(fresh);
+  } catch {
+    /* sauvegarde indisponible */
+  }
 }
 
 function rollGems(from, to) {

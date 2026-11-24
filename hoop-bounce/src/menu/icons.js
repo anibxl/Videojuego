@@ -75,6 +75,9 @@ export const ICONS = {
   sparkle: svg('<path d="M12 3.5c.6 4.1 2.4 5.9 6.5 6.5-4.1.6-5.9 2.4-6.5 6.5-.6-4.1-2.4-5.9-6.5-6.5 4.1-.6 5.9-2.4 6.5-6.5z"/><path d="M18.5 15.5c.3 1.7 1 2.4 2.7 2.7-1.7.3-2.4 1-2.7 2.7-.3-1.7-1-2.4-2.7-2.7 1.7-.3 2.4-1 2.7-2.7z"/>'),
   trail: svg('<circle cx="16.5" cy="9" r="4.2"/><path d="M12.4 10.4L3.5 15M13 12.6l-7.2 6M12 8L5 9.2"/>'),
   // Modes
+  // Phase 5 : succès (Fantôme, défis cachés)
+  ghost: svg('<path d="M5.5 20.5V11a6.5 6.5 0 0 1 13 0v9.5l-2.2-1.6-2.1 1.6-2.2-1.6-2.2 1.6-2.1-1.6z"/><circle cx="9.6" cy="11.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="14.4" cy="11.2" r="1.15" fill="currentColor" stroke="none"/>'),
+  mystery: svg('<path d="M12 2.8l7.8 4.5v9.4L12 21.2l-7.8-4.5V7.3z"/><path d="M9.8 9.7a2.3 2.3 0 1 1 3.4 2c-.8.5-1.2 1-1.2 1.9"/><circle cx="12" cy="16.5" r=".7" fill="currentColor" stroke="none"/>'),
   trickshot: svg('<circle cx="17" cy="7" r="3.2"/><path d="M3.5 19.5c1.6-6.6 5.7-10.5 10.4-11.6"/><path d="M11.5 6.2l2.6 1.7-1.3 2.8"/>'),
   endless: svg('<path d="M12 12c-1.9-2.6-3.4-3.9-5.2-3.9a3.9 3.9 0 0 0 0 7.8c1.8 0 3.3-1.3 5.2-3.9zm0 0c1.9 2.6 3.4 3.9 5.2 3.9a3.9 3.9 0 0 0 0-7.8c-1.8 0-3.3 1.3-5.2 3.9z"/>'),
   daily: svg('<rect x="3.8" y="5.2" width="16.4" height="15.3" rx="2.8"/><path d="M3.8 9.8h16.4M8.2 3.2v4M15.8 3.2v4"/><path d="M12 12.6l.9 1.9 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z" fill="currentColor"/>'),

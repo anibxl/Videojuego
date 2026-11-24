@@ -1,0 +1,394 @@
+/* PAGE « SUCCÈS » (phase 5) — src/menu/achievements-view.js.
+   Même langage que le Hoop Pass : verre bleu nuit, profondeur, or, lumière ; médailles hexagonales à la
+   couleur du palier (bronze, argent, or, violet). Animations : transform / opacity seulement. */
+
+.ac-body {
+  flex-direction: row;
+  gap: clamp(10px, 1.8vw, 16px);
+  padding-top: clamp(6px, 1.6vh, 10px);
+}
+
+/* ── Panneau de gauche ─────────────────────────────────────────────────── */
+
+.ac-side-panel {
+  flex: none;
+  width: clamp(176px, 24vw, 232px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 2vh, 12px);
+  min-height: 0;
+}
+
+.ac-emblem {
+  --e: 255, 150, 70;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--r-lg);
+  text-align: left;
+  color: var(--ink);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(var(--e), 0.25), transparent 60%),
+    linear-gradient(180deg, rgba(24, 37, 70, 0.92), rgba(11, 18, 36, 0.92));
+  border: 1px solid rgba(var(--e), 0.45);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.ac-emblem-medal {
+  position: relative;
+  flex: none;
+  width: clamp(48px, 13vh, 60px);
+  height: clamp(48px, 13vh, 60px);
+  display: grid;
+  place-items: center;
+  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  background: linear-gradient(160deg, rgb(var(--e)), rgba(var(--e), 0.4));
+  filter: drop-shadow(0 0 10px rgba(var(--e), 0.45));
+}
+.ac-emblem-medal > span {
+  width: 84%;
+  height: 84%;
+  display: grid;
+  place-items: center;
+  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  background: radial-gradient(circle at 40% 30%, #22325a, #0b1222);
+  color: rgb(var(--e));
+}
+.ac-emblem-medal svg { width: 52%; height: 52%; }
+.ac-emblem .ac-emblem-medal { animation: ac-emblem-float 4s ease-in-out infinite; }
+@keyframes ac-emblem-float { 50% { transform: translateY(-2px) rotate(-3deg); } }
+.ac-emblem-text { display: grid; gap: 1px; min-width: 0; }
+.ac-emblem-text small { font-size: var(--t-label); font-weight: 700; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-3); }
+.ac-emblem-text b { font-size: clamp(15px, 4.4vh, 18px); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgb(var(--e)); }
+.ac-emblem-text em { font-style: normal; font-size: 11.5px; font-weight: 600; color: var(--ink-2); }
+
+.ac-total {
+  padding: 12px 14px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, rgba(24, 37, 70, 0.85), rgba(11, 18, 36, 0.85));
+  border: 1px solid var(--hairline);
+}
+.ac-total-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ac-total-row b { font-size: clamp(22px, 6.4vh, 28px); font-weight: 800; letter-spacing: -0.02em; color: #ffd36b; }
+.ac-total-row b small { font-size: 0.55em; font-weight: 700; color: var(--ink-3); }
+.ac-total-row span { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.ac-total-bar { display: block; height: 7px; margin: 6px 0 7px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.ac-total-bar i {
+  display: block;
+  height: 100%;
+  width: calc(var(--p) * 100%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffab2e, #ffd36b);
+  box-shadow: 0 0 10px rgba(255, 201, 77, 0.6);
+  transform-origin: left;
+  animation: ac-fill 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s both;
+}
+.ac-counts { margin: 0; font-size: 11.5px; font-weight: 600; color: var(--ink-3); }
+.ac-counts .u { color: var(--ink-2); }
+
+.ac-claim-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  border-radius: var(--r-md);
+  font-weight: 800;
+  font-size: 13px;
+  color: #2a1400;
+  background: linear-gradient(180deg, #ffd36b, #ffab2e);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 10px 24px rgba(255, 171, 46, 0.35);
+  animation: ac-pulse 1.8s ease-in-out infinite;
+}
+.ac-claim-all span { min-width: 22px; height: 22px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: 99px; background: rgba(42, 20, 0, 0.18); font-size: 12px; }
+.ac-ready-chip { margin: 0; text-align: center; font-size: 12px; font-weight: 700; color: #ffd36b; }
+@keyframes ac-pulse { 50% { transform: scale(1.03); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 12px 30px rgba(255, 171, 46, 0.55); } }
+
+/* ── Onglets des catégories ────────────────────────────────────────────── */
+
+.ac-content { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.ac-tabs { display: flex; gap: 6px; flex: none; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 4px; }
+.ac-tabs::-webkit-scrollbar { display: none; }
+.ac-tabs button {
+  --c: 255, 255, 255;
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px 0 9px;
+  border-radius: var(--r-pill);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hairline);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.ac-tab-ic { width: 17px; height: 17px; display: grid; place-items: center; color: rgb(var(--c)); }
+.ac-tab-ic svg { width: 17px; height: 17px; }
+.ac-tabs button small { font-size: 11px; font-weight: 700; opacity: 0.7; }
+.ac-tabs button[aria-selected="true"] {
+  color: #0b1020;
+  background: linear-gradient(180deg, rgba(var(--c), 1), rgba(var(--c), 0.8));
+  border-color: rgb(var(--c));
+  box-shadow: 0 6px 18px rgba(var(--c), 0.3);
+}
+.ac-tabs button[aria-selected="true"] .ac-tab-ic { color: #0b1020; }
+.ac-tabs .dot { position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; background: #ff4f63; box-shadow: 0 0 0 2px var(--bg); }
+
+/* ── Cartes ────────────────────────────────────────────────────────────── */
+
+.ac-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 248px), 1fr));
+  grid-auto-rows: max-content; /* hauteur des cartes : leur contenu (la grille défile) */
+  gap: 10px;
+  align-content: start;
+  padding: 2px 4px 18px 2px;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 22px), transparent);
+}
+.ac-grid::-webkit-scrollbar { display: none; }
+
+.ac-card {
+  --t: 205, 140, 90;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px 11px 14px;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background:
+    radial-gradient(90% 120% at 0% 0%, rgba(var(--t), 0.12), transparent 55%),
+    linear-gradient(180deg, rgba(25, 38, 70, 0.9), rgba(12, 19, 38, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: ac-card-in 0.5s var(--ease-spring, cubic-bezier(0.2, 1.3, 0.4, 1)) calc(var(--i) * 40ms) both;
+}
+/* Liseré vertical à la couleur du palier */
+.ac-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, rgb(var(--t)), rgba(var(--t), 0.2));
+}
+@keyframes ac-card-in { from { opacity: 0; transform: translateY(10px) scale(0.98); } }
+
+.ac-medal {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  background: linear-gradient(160deg, rgb(var(--t)), rgba(var(--t), 0.45));
+}
+.ac-medal > span {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  background: radial-gradient(circle at 40% 30%, #1e2b4c, #0b1222);
+  color: rgb(var(--t));
+}
+.ac-medal svg { width: 23px; height: 23px; }
+.ac-lock {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #0b1222;
+  color: var(--ink-2);
+}
+.ac-lock svg { width: 11px; height: 11px; }
+
+.ac-main { display: grid; gap: 2px; min-width: 0; }
+.ac-tier { margin: 0; font-size: 10px; font-weight: 750; letter-spacing: 0.1em; text-transform: uppercase; color: rgb(var(--t)); }
+.ac-name { margin: 0; font-size: 14.5px; font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-desc { margin: 0; font-size: 12px; color: var(--ink-2); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ac-progress { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.ac-bar { position: relative; flex: 1; height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.ac-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--p) * 100%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(var(--t), 0.75), rgb(var(--t)));
+  box-shadow: 0 0 8px rgba(var(--t), 0.5);
+  transform-origin: left;
+}
+.ac-card.anim .ac-bar i { animation: ac-fill 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) calc(0.15s + var(--i) * 45ms) both; }
+@keyframes ac-fill { from { transform: scaleX(0); } }
+/* Reflet qui parcourt les barres en cours */
+.ac-card[data-state="progress"] .ac-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: translateX(-100%);
+  animation: ac-bar-shine 2.6s ease-in-out calc(1s + var(--i) * 80ms) infinite;
+}
+@keyframes ac-bar-shine { 60%, 100% { transform: translateX(100%); } }
+.ac-progress b { font-size: 11.5px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ac-foot { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+.ac-reward { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
+.ac-foot .ac-state, .ac-foot .ac-claim { flex: none; margin-left: auto; }
+.ac-reward .au-chip { height: 21px; font-size: 11px; padding: 0 7px; }
+
+.ac-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--ink-3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hairline);
+}
+.ac-state svg { width: 12px; height: 12px; }
+.ac-state.s-progress { color: #8fc8ff; border-color: rgba(96, 180, 255, 0.35); background: rgba(96, 180, 255, 0.1); }
+.ac-state.s-claimed { color: #9ff0b5; border-color: rgba(120, 230, 150, 0.35); background: rgba(120, 230, 150, 0.1); }
+.ac-claim {
+  height: 32px;
+  padding: 0 13px;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: var(--r-sm);
+  color: #2a1400;
+  background: linear-gradient(180deg, #ffd36b, #ffab2e);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 8px 20px rgba(255, 171, 46, 0.35);
+  animation: ac-pulse 1.6s ease-in-out infinite;
+}
+
+/* États */
+.ac-card[data-state="locked"] .ac-medal { filter: grayscale(1) brightness(0.55); }
+.ac-card[data-state="locked"] .ac-name { color: var(--ink-2); }
+.ac-card[data-state="progress"] .ac-medal { filter: grayscale(0.55) brightness(0.8); }
+.ac-card[data-state="ready"] {
+  border-color: rgba(255, 201, 77, 0.85);
+  box-shadow: 0 0 26px rgba(255, 201, 77, 0.22), var(--shadow-soft);
+}
+.ac-card[data-state="ready"] .ac-medal { animation: ac-medal-glow 1.6s ease-in-out infinite; }
+@keyframes ac-medal-glow { 50% { transform: scale(1.08) rotate(-4deg); filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 201, 77, 0.9)); } }
+.ac-card[data-state="ready"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 35%, rgba(255, 230, 150, 0.16) 50%, transparent 65%);
+  background-size: 250% 100%;
+  animation: ac-sheen 2.4s linear infinite;
+  pointer-events: none;
+}
+@keyframes ac-sheen { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+.ac-card[data-state="claimed"] { border-color: rgba(var(--t), 0.35); }
+.ac-card[data-state="claimed"] .ac-medal { filter: drop-shadow(0 0 6px rgba(var(--t), 0.5)); }
+.ac-card.claiming { animation: ac-claim 0.45s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes ac-claim { 50% { transform: scale(1.04); filter: brightness(1.3); } }
+
+/* Défi caché découvert */
+.ac-card[data-hidden] {
+  background:
+    radial-gradient(90% 120% at 0% 0%, rgba(180, 107, 255, 0.22), transparent 55%),
+    linear-gradient(180deg, rgba(32, 24, 66, 0.92), rgba(13, 12, 34, 0.94));
+}
+
+/* Défis encore cachés : seulement leur nombre */
+.ac-mystery {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: var(--r-lg);
+  border: 1.5px dashed rgba(180, 107, 255, 0.5);
+  background: radial-gradient(120% 140% at 0% 0%, rgba(180, 107, 255, 0.16), transparent 60%), rgba(12, 12, 32, 0.7);
+  animation: ac-card-in 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) calc(var(--i) * 40ms) both;
+}
+.ac-mystery-ic { flex: none; width: 46px; height: 46px; display: grid; place-items: center; color: #c9a2ff; animation: ac-mystery 3s ease-in-out infinite; }
+.ac-mystery-ic svg { width: 40px; height: 40px; }
+@keyframes ac-mystery { 50% { transform: rotate(8deg) scale(1.06); opacity: 0.8; } }
+.ac-mystery h2 { margin: 0; font-size: 14px; font-weight: 750; color: #e3d2ff; }
+.ac-mystery p { margin: 2px 0 0; font-size: 12px; color: var(--ink-2); }
+
+/* ── Choix de l'emblème ────────────────────────────────────────────────── */
+
+.ac-picker { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; }
+.ac-picker-back { position: absolute; inset: 0; background: rgba(3, 6, 15, 0.7); backdrop-filter: blur(4px); animation: ac-fade 0.25s both; }
+@keyframes ac-fade { from { opacity: 0; } }
+.ac-picker-sheet {
+  position: relative;
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 14px 16px 16px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, rgba(24, 37, 70, 0.98), rgba(10, 16, 33, 0.98));
+  border: 1px solid rgba(255, 201, 77, 0.35);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  animation: ac-card-in 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.ac-picker-sheet header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.ac-picker-sheet h2 { margin: 0; font-size: 17px; font-weight: 800; }
+.ac-picker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.ac-em {
+  --e: 255, 255, 255;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px 6px 8px;
+  border-radius: var(--r-md);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hairline);
+}
+.ac-em .ac-emblem-medal { width: 46px; height: 46px; }
+.ac-em b { font-size: 12.5px; font-weight: 750; }
+.ac-em small { min-height: 14px; display: flex; align-items: center; gap: 3px; font-size: 10px; color: var(--ink-3); text-align: center; line-height: 1.2; }
+.ac-em small svg { flex: none; width: 11px; height: 11px; }
+.ac-em.on { border-color: rgb(var(--e)); box-shadow: 0 0 18px rgba(var(--e), 0.3); }
+.ac-em.on small { color: #9ff0b5; }
+.ac-em:disabled { opacity: 1; cursor: default; }
+.ac-em:disabled .ac-emblem-medal { filter: grayscale(1) brightness(0.45); }
+.ac-em:disabled b { color: var(--ink-3); }
+
+/* ── Petits écrans ─────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  .ac-body { flex-direction: column; }
+  .ac-side-panel { width: auto; flex-direction: row; align-items: stretch; }
+  .ac-side-panel > * { flex: 1; min-width: 0; }
+  .ac-total { padding: 8px 12px; }
+  .ac-picker-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-height: 360px) {
+  .ac-counts { display: none; }
+  .ac-emblem { padding: 8px 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ac-card, .ac-mystery, .ac-picker-sheet, .ac-card .ac-bar i, .ac-total-bar i, .ac-emblem .ac-emblem-medal,
+  .ac-claim, .ac-claim-all, .ac-mystery-ic, .ac-card[data-state="ready"] .ac-medal,
+  .ac-card[data-state="ready"]::after, .ac-card .ac-bar::after { animation: none !important; }
+}
