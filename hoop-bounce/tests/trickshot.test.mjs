@@ -1,9 +1,9 @@
-// Étapes 22-23 — mode TRICKSHOT (laboratoire) : 20 cartes résolubles en un tir, chaque mécanique indispensable,
+// Étapes 22-23 + refonte de la campagne — mode TRICKSHOT (laboratoire, mode expert) : 50 cartes résolubles en un tir, chaque mécanique indispensable,
 // essais, étoiles, score, visée limitée, progression (et migration de l'ancienne sauvegarde).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { TS_LEVELS } from '../src/trickshot/levels.js';
+import { TS_LEVELS, TS_BANDS } from '../src/trickshot/levels.js';
 import { TrickshotGame, simulateShot, DT } from '../src/trickshot/game.js';
 import { TS_CONFIG, TRICKSHOT, DIFFICULTIES, CHAPTERS, chapterOf } from '../src/trickshot/config.js';
 import { TrickshotProgress, TS_KEY } from '../src/trickshot/progress.js';
@@ -21,9 +21,10 @@ function memStorage() {
   return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), map: m };
 }
 
-test('20 cartes uniques, 4 par chapitre, textes en 3 langues, difficulté valide', () => {
-  assert.equal(TS_LEVELS.length, 20);
-  assert.equal(new Set(TS_LEVELS.map((l) => l.id)).size, 20);
+test('50 cartes uniques, 10 chapitres de 5, textes en 3 langues, difficulté valide', () => {
+  assert.equal(TS_LEVELS.length, 50);
+  assert.equal(new Set(TS_LEVELS.map((l) => l.id)).size, 50);
+  assert.equal(CHAPTERS.length, 10);
   TS_LEVELS.forEach((l, i) => {
     assert.equal(l.n, i + 1);
     assert.ok(l.diff in DIFFICULTIES, `${l.n} : difficulté ${l.diff}`);
@@ -31,26 +32,32 @@ test('20 cartes uniques, 4 par chapitre, textes en 3 langues, difficulté valide
     if (l.hint) for (const lang of ['fr', 'en', 'es']) assert.ok(l.hint[lang], `${l.n} : indice ${lang}`);
     for (const m of l.intro ?? []) for (const lang of ['fr', 'en', 'es']) assert.ok(TS_STRINGS[lang][`mech.${m}`], `${l.n} : mécanique ${m} (${lang})`);
   });
-  for (const c of CHAPTERS) assert.equal(TS_LEVELS.filter((l) => chapterOf(l.n) === c).length, 4);
+  for (const c of CHAPTERS) assert.equal(TS_LEVELS.filter((l) => chapterOf(l.n) === c).length, 5);
   for (const c of CHAPTERS) for (const lang of ['fr', 'en', 'es']) assert.ok(TS_STRINGS[lang][`chapter.${c.id}`], `chapitre ${c.id} (${lang})`);
 });
 
-test('la difficulté monte : chapitre 1 surtout facile, chapitre 5 le plus dur', () => {
-  const mean = (c) => TS_LEVELS.filter((l) => chapterOf(l.n) === c).reduce((a, l) => a + RANK[l.diff], 0) / 4;
-  const means = CHAPTERS.map(mean);
-  assert.ok(means[0] < 1, `chapitre 1 : ${means[0]}`);
-  assert.ok(means[4] >= 1.5, `chapitre 5 : ${means[4]}`);
-  assert.equal(Math.max(...means), means[4], 'le dernier chapitre est le plus difficile');
-  assert.equal(TS_LEVELS.slice(0, 4).filter((l) => l.diff === 'impossible' || l.diff === 'very').length, 0);
+test('5 paliers de 10 cartes : Facile, Moyen, Difficile, Très difficile, Impossible', () => {
+  assert.deepEqual(TS_BANDS, ['easy', 'medium', 'hard', 'very', 'impossible']);
+  assert.deepEqual(Object.keys(DIFFICULTIES), TS_BANDS);
+  TS_LEVELS.forEach((l, i) => assert.equal(l.diff, TS_BANDS[Math.floor(i / 10)], `carte ${l.n}`));
+  for (const d of TS_BANDS) for (const lang of ['fr', 'en', 'es']) assert.ok(TS_STRINGS[lang][`diff.${d}`], `diff.${d} (${lang})`);
+});
+
+test('la difficulté mesurée monte d’un palier à l’autre (le solveur le confirme)', () => {
+  // Taux de réussite moyen (part des tirs de la grille qui marquent) : il baisse à chaque palier
+  const rate = TS_BANDS.map((_, b) => TS_LEVELS.slice(b * 10, b * 10 + 10).reduce((a, l) => a + (FIX[l.n]?.frac ?? 0), 0) / 10);
+  for (let b = 1; b < rate.length; b++) assert.ok(rate[b] < rate[b - 1], `palier ${b + 1} plus facile que le précédent`);
+  // Les cartes Impossibles sont vraiment dures… mais ont toutes une solution (rejouée plus bas)
+  assert.ok(TS_LEVELS.slice(40).every((l) => FIX[l.n].frac < 0.001), 'Impossible : moins d’un tir sur 1 000 marque');
 });
 
 test('cartes du laboratoire : pas de grand sol plat partout, départs et paniers variés', () => {
   const fullFloor = (l) => l.solids.some((s) => s.style === 'ground' && s.x <= -0.5 && s.x + s.w >= 24.5);
-  assert.ok(TS_LEVELS.filter(fullFloor).length <= 6, 'la plupart des cartes ont du vide');
-  assert.ok(TS_LEVELS.filter((l) => l.start.y > 2.5).length >= 8, 'des départs en hauteur');
-  assert.ok(TS_LEVELS.filter((l) => l.hoop.x < 12).length >= 5, 'des paniers à gauche');
-  assert.ok(TS_LEVELS.filter((l) => l.hoop.hang).length >= 4, 'des paniers suspendus');
-  assert.ok(TS_LEVELS.filter((l) => l.hoop.facing === 1).length >= 5, 'des paniers tournés vers la droite');
+  assert.ok(TS_LEVELS.filter(fullFloor).length <= 20, 'la plupart des cartes ont du vide');
+  assert.ok(TS_LEVELS.filter((l) => l.start.y > 2.5).length >= 20, 'des départs en hauteur');
+  assert.ok(TS_LEVELS.filter((l) => l.hoop.x < 12).length >= 10, 'des paniers à gauche');
+  assert.ok(TS_LEVELS.filter((l) => l.hoop.hang).length >= 10, 'des paniers suspendus');
+  assert.ok(TS_LEVELS.filter((l) => l.hoop.facing === 1).length >= 10, 'des paniers tournés vers la droite');
 });
 
 test('chaque mécanique sert : sans elle, la solution enregistrée ne marque plus', () => {
@@ -72,7 +79,7 @@ test('chaque mécanique sert : sans elle, la solution enregistrée ne marque plu
       checked++;
     }
   }
-  assert.ok(checked >= 18, `${checked} mécaniques vérifiées`);
+  assert.ok(checked >= 40, `${checked} mécaniques vérifiées`);
 });
 
 test('chaque niveau se gagne en un seul tir (3 étoiles possibles) : solution rejouée', () => {
@@ -195,21 +202,28 @@ test('progression indépendante : déblocage séquentiel, meilleur score, résum
   const s = p.summary();
   assert.equal(s.done, 1);
   assert.equal(s.stars, 2);
-  assert.equal(s.maxStars, 60);
-  assert.equal(s.percent, 3); // 2 étoiles sur 60
+  assert.equal(s.maxStars, 150);
+  assert.equal(s.percent, 1); // 2 étoiles sur 150
   // Sauvegarde à part, relue telle quelle
   assert.equal(TS_KEY, 'hoopbounce.trickshot');
   assert.deepEqual([...st.map.keys()], [TS_KEY]);
   assert.deepEqual(new TrickshotProgress({ storage: st }).level(1), p.level(1));
-  // Ancienne sauvegarde (v1, anciennes cartes) : les déblocages sont conservés, rien ne plante
-  const old = memStorage();
-  old.setItem(TS_KEY, JSON.stringify({ v: 1, levels: { 1: { stars: 3, best: 4000, plays: 2 }, 2: { stars: 1, best: 1200, plays: 5 }, 3: { stars: 0, best: 0, plays: 3 } } }));
-  const m = new TrickshotProgress({ storage: old, total: 20 });
-  assert.equal(m.data.v, 2);
-  assert.equal(m.isUnlocked(3), true, '2 anciennes cartes réussies → les 3 premières nouvelles ouvertes');
-  assert.equal(m.isUnlocked(4), false);
-  assert.equal(m.summary().stars, 0, 'pas d’étoiles fantômes sur des cartes jamais jouées');
-  assert.equal(JSON.parse(old.getItem(TS_KEY)).legacy[1].best, 4000, 'ancienne sauvegarde conservée');
+  // Anciennes sauvegardes (v1, v2 : anciennes cartes) : la nouvelle campagne repart de la carte 1, l'ancienne
+  // sauvegarde est gardée de côté, et aucune autre clé n'est touchée
+  for (const v of [1, 2]) {
+    const old = memStorage();
+    old.setItem('hoopbounce.coins', '777');
+    old.setItem(TS_KEY, JSON.stringify({ v, levels: { 1: { stars: 3, best: 4000, plays: 2 }, 2: { stars: 1, best: 1200, plays: 5 }, 3: { stars: 0, best: 0, plays: 3 } }, carry: v === 2 ? 5 : undefined }));
+    const m = new TrickshotProgress({ storage: old, total: 50 });
+    assert.equal(m.data.v, 3);
+    assert.equal(m.isUnlocked(1), true);
+    assert.equal(m.isUnlocked(2), false, `v${v} : on repart de la première carte`);
+    assert.equal(m.summary().stars, 0, 'pas d’étoiles fantômes sur des cartes jamais jouées');
+    assert.equal(JSON.parse(old.getItem(TS_KEY)).legacy.levels[1].best, 4000, 'ancienne sauvegarde conservée');
+    assert.equal(old.getItem('hoopbounce.coins'), '777', 'les autres sauvegardes ne bougent pas');
+    m.record(1, { stars: 3, score: 3500 });
+    assert.equal(new TrickshotProgress({ storage: old, total: 50 }).isUnlocked(2), true, 'la nouvelle progression est gardée');
+  }
   // Sauvegarde abîmée : on repart de zéro sans planter
   st.setItem(TS_KEY, '{oops');
   assert.equal(new TrickshotProgress({ storage: st }).summary().done, 0);

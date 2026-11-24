@@ -41,6 +41,8 @@ function shiftElement(group, el, dx) {
   for (const k of X_FIELDS[group] ?? ['x']) if (typeof e[k] === 'number') e[k] += dx;
   if (e.a) e.a = { ...e.a, x: e.a.x + dx };
   if (e.b) e.b = { ...e.b, x: e.b.x + dx };
+  // Pièges déclenchés : la zone de déclenchement suit la section
+  if (e.trigger) e.trigger = { ...e.trigger, x1: e.trigger.x1 + dx, x2: e.trigger.x2 + dx };
   return e;
 }
 
@@ -102,6 +104,12 @@ export function level(meta, build) {
   };
   build(c);
   const end = cursor;
+  // Toujours 3 étoiles par niveau : quand les étapes en proposent plus, on garde la première, celle du milieu et
+  // la dernière (réparties sur tout le niveau, de plus en plus difficiles à atteindre)
+  if (L.stars.length > 3) {
+    const st = [...L.stars].sort((a, b) => a.x - b.x);
+    L.stars = [st[0], st[Math.floor((st.length - 1) / 2)], st[st.length - 1]];
+  }
   // Murs aux deux bouts, limites de la caméra
   L.solids.push({ x: -4, y: -6, w: 4, h: 22, style: 'wall' }, { x: end, y: -6, w: 4, h: 22, style: 'wall' });
   L.bounds = { minX: -1.5, maxX: end + 1.5, minY: -4, maxY: meta.maxY ?? 10.5 };

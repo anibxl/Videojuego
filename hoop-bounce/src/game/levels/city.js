@@ -1,4 +1,4 @@
-// MONDE 1 — VILLE : DÉCOUVERTE (refonte phase 2). 20 à 30 s par niveau pour un joueur.
+// MONDE 1 — VILLE : TUTORIEL (refonte de la campagne). 20 à 30 s par niveau pour un joueur.
 // Chaque niveau présente UNE idée, avec très peu de pièges ; les mécaniques arrivent une à une.
 // Construits section par section avec le kit (./kit.js) ; format des éléments : ./README.md.
 //
@@ -9,14 +9,14 @@
 //  5 Le souffle          les ventilateurs des toits (détente)
 //  6 Le panier enfermé   l'interrupteur est tout en haut, la porte tout en bas (puzzle) ★
 //  7 La scierie          le rythme des scies (précision)
-//  8 Le métro            un réseau de téléporteurs (puzzle) ★
-//  9 L'usine             lasers et presses (rapide)
+//  8 Le métro            un réseau de téléporteurs, dont un caché (puzzle) ★
+//  9 L'usine             lasers, presses et le premier mur qui surgit (rapide)
 // 10 Grand final         caisse → interrupteur → ventilateur → téléporteur → panier ★
 
 import { level } from './kit.js';
 
 // 1 — Rouler, rebondir, puis charger la puissance pour monter de plus en plus haut.
-const L1 = level({ id: 'first-shot', difficulty: 'easy', number: 1, nameKey: 'lv.city.1', idea: 'tutoriel : rouler, rebondir, charger' }, (c) => {
+const L1 = level({ id: 'city-01', difficulty: 'easy', number: 1, nameKey: 'lv.city.1', idea: 'tutoriel : rouler, rebondir, charger' }, (c) => {
   c.section(14, (s) => {
     s.ground(0, 14);
     s.spawn(2);
@@ -57,7 +57,7 @@ const L1 = level({ id: 'first-shot', difficulty: 'easy', number: 1, nameKey: 'lv
 });
 
 // 2 — Les trampolines : passer les premiers pics, monter sur un balcon, enchaîner deux trampolines.
-const L2 = level({ id: 'the-wall', difficulty: 'easy', number: 2, nameKey: 'lv.city.2', idea: 'trampolines et premiers pics' }, (c) => {
+const L2 = level({ id: 'city-02', difficulty: 'easy', number: 2, nameKey: 'lv.city.2', idea: 'trampolines et premiers pics' }, (c) => {
   c.section(10, (s) => {
     s.ground(0, 10);
     s.spawn(2);
@@ -96,7 +96,7 @@ const L2 = level({ id: 'the-wall', difficulty: 'easy', number: 2, nameKey: 'lv.c
 
 
 // 3 — Le chantier : une nacelle au-dessus du vide, un monte-charge, une deuxième nacelle tout en haut.
-const L3 = level({ id: 'trampoline', difficulty: 'medium', number: 3, nameKey: 'lv.city.3', idea: 'plateformes mobiles et monte-charge' }, (c) => {
+const L3 = level({ id: 'city-03', difficulty: 'medium', number: 3, nameKey: 'lv.city.3', idea: 'plateformes mobiles et monte-charge' }, (c) => {
   c.section(6, (s) => {
     s.ground(0, 6);
     s.spawn(1.5);
@@ -134,7 +134,7 @@ const L3 = level({ id: 'trampoline', difficulty: 'medium', number: 3, nameKey: '
 
 // 4 — La caisse : s'en faire une marche pour atteindre la corniche, puis la pousser dans la fente du
 // tunnel pour s'en faire un pont (impossible de sauter : le plafond est trop bas).
-const L4 = level({ id: 'moving', difficulty: 'medium', number: 4, nameKey: 'lv.city.4', idea: 'caisse : une marche, puis un pont', maxY: 11 }, (c) => {
+const L4 = level({ id: 'city-04', difficulty: 'medium', number: 4, nameKey: 'lv.city.4', idea: 'caisse : une marche, puis un pont', maxY: 11 }, (c) => {
   c.section(18, (s) => {
     s.ground(0, 18);
     s.spawn(2);
@@ -167,7 +167,7 @@ const L4 = level({ id: 'moving', difficulty: 'medium', number: 4, nameKey: 'lv.c
 });
 
 // 5 — Le souffle : les ventilateurs des toits portent le ballon de toit en toit, jusqu'au belvédère.
-const L5 = level({ id: 'updraft', difficulty: 'easy', number: 5, nameKey: 'lv.city.5', idea: 'ventilateurs (détente)', maxY: 13 }, (c) => {
+const L5 = level({ id: 'city-05', difficulty: 'easy', number: 5, nameKey: 'lv.city.5', idea: 'ventilateurs (détente)', maxY: 13 }, (c) => {
   c.section(6, (s) => {
     s.ground(0, 6);
     s.spawn(2);
@@ -206,7 +206,7 @@ const L5 = level({ id: 'updraft', difficulty: 'easy', number: 5, nameKey: 'lv.ci
 });
 
 // 6 — Le panier enfermé : une porte le protège ; l'interrupteur est tout en haut de la tour.
-const L6 = level({ id: 'final', difficulty: 'medium', number: 6, nameKey: 'lv.city.6', idea: 'interrupteur en hauteur, porte du panier', maxY: 12.5 }, (c) => {
+const L6 = level({ id: 'city-06', difficulty: 'medium', number: 6, nameKey: 'lv.city.6', idea: 'interrupteur en hauteur, porte du panier', maxY: 12.5 }, (c) => {
   c.section(12, (s) => {
     s.ground(0, 12);
     s.spawn(2);
@@ -237,7 +237,7 @@ const L6 = level({ id: 'final', difficulty: 'medium', number: 6, nameKey: 'lv.ci
 
 // 7 — La scierie : des scies qui montent et descendent, une scie qui balaie le sol, une scie au-dessus
 // d'une marche. On observe leur rythme, puis on passe.
-const L7 = level({ id: 'city-crate', difficulty: 'medium', number: 7, nameKey: 'lv.city.7', idea: 'rythme des scies (précision)' }, (c) => {
+const L7 = level({ id: 'city-07', difficulty: 'medium', number: 7, nameKey: 'lv.city.7', idea: 'rythme des scies (précision)' }, (c) => {
   c.section(7, (s) => {
     s.ground(0, 7);
     s.spawn(2);
@@ -277,7 +277,7 @@ const L7 = level({ id: 'city-crate', difficulty: 'medium', number: 7, nameKey: '
 });
 
 // 8 — Le métro : trois stations, trois téléporteurs. Le dernier est au fond d'un puits.
-const L8 = level({ id: 'city-roofs', difficulty: 'medium', number: 8, nameKey: 'lv.city.8', idea: 'réseau de téléporteurs', maxY: 12 }, (c) => {
+const L8 = level({ id: 'city-08', difficulty: 'medium', number: 8, nameKey: 'lv.city.8', idea: 'réseau de téléporteurs', maxY: 12 }, (c) => {
   c.section(12, (s) => {
     s.ground(0, 12);
     s.spawn(2);
@@ -312,7 +312,8 @@ const L8 = level({ id: 'city-roofs', difficulty: 'medium', number: 8, nameKey: '
     s.ground(0, 5, 7.5);
     s.ground(5, 9, 2.5);
     s.ground(9, 14, 7.5);
-    s.add('teleporters', { a: { x: 7, y: 3.4 }, b: { x: 11, y: 8.4 }, r: 0.8 });
+    s.add('teleporters', { a: { x: 7, y: 3.4 }, b: { x: 11, y: 8.4 }, r: 0.8, hidden: true });
+    s.hint(7, 6.4, 'hint.hidden', 0.8);
     s.checkpoint(2, 7.5);
     s.pass('Au fond du puits', [-4, 7.5], ['on', 10.5, 14, 7.5], [['hold', 1, 5.6], ['goTo', 5.8], ['hold', 1, 6.8], ['run', 1, 10.5, 14, 7.5]]);
   });
@@ -325,7 +326,7 @@ const L8 = level({ id: 'city-roofs', difficulty: 'medium', number: 8, nameKey: '
 });
 
 // 9 — L'usine : barrière laser, presse, deux lasers en alternance, double presse. Rapide.
-const L9 = level({ id: 'city-site', difficulty: 'hard', number: 9, nameKey: 'lv.city.9', idea: 'lasers et presses (rapide)' }, (c) => {
+const L9 = level({ id: 'city-09', difficulty: 'hard', number: 9, nameKey: 'lv.city.9', idea: 'lasers et presses (rapide)' }, (c) => {
   c.section(10, (s) => {
     s.ground(0, 10);
     s.spawn(2);
@@ -355,6 +356,13 @@ const L9 = level({ id: 'city-site', difficulty: 'hard', number: 9, nameKey: 'lv.
     s.star(10.5, 2.2);
     s.pass('Double presse', [-3, 0], ['on', 10, 14, 0], [['goTo', 1.6], ['waitCycle', 2.2, 1.35, 1.45], ['run', 1, 10.2, 14, 0]]);
   });
+  // NOUVEAU — Le mur de l'usine : la grille rayée au sol annonce un mur qui surgit. On le saute.
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    const t = s.add('traps', { kind: 'rise', x: 9, y: 0, w: 0.8, h: 1.6, from: { dx: 0, dy: -1.6 }, trigger: { x1: 4.5, x2: 6.5 }, warn: 0.6 });
+    s.hint(3, 4.3, 'hint.trap');
+    s.pass('Le mur qui surgit', [-3, 0], ['on', 10.5, 16, 0], [['goTo', 5.5], ['waitTrap', t, 'out'], ['goTo', 6], ['hop', 3, 12.5, 0]]);
+  });
   c.section(18, (s) => {
     s.ground(0, 18);
     s.hoop(11, 3.4);
@@ -364,7 +372,7 @@ const L9 = level({ id: 'city-site', difficulty: 'hard', number: 9, nameKey: 'lv.
 
 // 10 — Grand final : la caisse pour atteindre l'interrupteur, la porte, le ventilateur, la barrière laser,
 // et le téléporteur qui dépose sur la place du panier.
-const L10 = level({ id: 'city-finale', difficulty: 'hard', number: 10, nameKey: 'lv.city.10', idea: 'finale : caisse → interrupteur → ventilateur → téléporteur', maxY: 12 }, (c) => {
+const L10 = level({ id: 'city-10', difficulty: 'hard', number: 10, nameKey: 'lv.city.10', idea: 'finale : caisse → interrupteur → ventilateur → téléporteur', maxY: 12 }, (c) => {
   c.section(18, (s) => {
     s.ground(0, 18);
     s.spawn(3.4);

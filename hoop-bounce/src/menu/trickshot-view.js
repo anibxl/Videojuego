@@ -24,7 +24,7 @@ export const TRICKSHOT_ART = () => `<svg viewBox="0 0 320 160" preserveAspectRat
     <radialGradient id="tsa-ball" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffb26b"/><stop offset=".5" stop-color="#ff7a2f"/><stop offset="1" stop-color="#c8430f"/></radialGradient>
   </defs>
   <rect width="320" height="160" fill="url(#tsa-bg)"/><rect width="320" height="160" fill="url(#tsa-grid)"/><rect width="320" height="160" fill="url(#tsa-glow)"/>
-  <text x="300" y="132" text-anchor="end" class="tsa-num">20</text>
+  <text x="300" y="132" text-anchor="end" class="tsa-num">${TS_LEVELS.length}</text>
   <rect x="0" y="136" width="320" height="24" fill="#141a36"/><rect x="0" y="136" width="320" height="2" fill="rgba(63,224,255,.8)"/>
   <rect x="150" y="62" width="14" height="74" rx="2" fill="#1d2448" stroke="rgba(63,224,255,.7)" stroke-width="1.5"/>
   <path class="tsa-arc" d="M52 118 Q 120 10 158 60 Q 196 22 252 74" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 9"/>
@@ -134,7 +134,7 @@ export class TrickshotView {
         <span class="tsl-summary"><span class="tsh-star">${STAR}</span>${s.stars}/${s.maxStars} · ${s.done}/${s.total}</span>
       </header>
       <div class="page-body tsl-body">
-        <p class="tsl-legend reveal" style="--i:0">${['easy', 'hard', 'very', 'impossible'].map((d) => `<span class="d-${d}" style="--d:${DIFFICULTIES[d].color}"><i></i>${t(`diff.${d}`)}</span>`).join('')}</p>
+        <p class="tsl-legend reveal" style="--i:0">${Object.keys(DIFFICULTIES).map((d) => `<span class="d-${d}" style="--d:${DIFFICULTIES[d].color}"><i></i>${t(`diff.${d}`)}</span>`).join('')}</p>
         ${groups}
       </div>`;
   }

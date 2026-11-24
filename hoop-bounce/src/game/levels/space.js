@@ -1,4 +1,4 @@
-// MONDE 5 — ESPACE : EXPERT (refonte phase 2). 50 à 70 s par niveau pour un joueur.
+// MONDE 5 — ESPACE : EXPERT, TRÈS LONG (refonte de la campagne). 90 à 120 s par niveau pour un joueur.
 // Gravité réduite (worlds.js : on retombe lentement, les rebonds montent 25 % plus haut), plateformes
 // flottantes, astéroïdes, portails à double sens, zones de gravité inversée, trous noirs, pistons et
 // lasers de la station. Les derniers niveaux combinent presque toutes les mécaniques du jeu.
@@ -8,27 +8,214 @@
 // 43 Les portails           portails à double sens : l'aller-retour vers l'interrupteur (★ puzzle)
 // 44 La tête en bas         gravité inversée : rouler au plafond, sauter vers le sol (★ mémorable)
 // 45 Les trous noirs        ils attirent : sauter assez haut, ou assez loin (précision)
-// 46 La station             pistons et lasers (rapide)
+// 46 La station farceuse    NIVEAU TROLL : pistons et lasers, sas, fausse arrivée (rapide)
 // 47 Le laboratoire         caisse, interrupteurs, portails (puzzle)
 // 48 Le monde à l'envers    zones inversées et astéroïdes (technique)
 // 49 Le grand vide          plateformes flottantes au-dessus du vide et des trous noirs (précision)
 // 50 L'odyssée              tout le jeu en un niveau (★ finale)
+//
+// Refonte de la campagne : 2 à 3 étapes de la boîte `stage` (plus bas) par niveau, toujours dans un ordre
+// différent (murs qui surgissent, dalles fantômes, rafales, marches qui jaillissent, sortie cachée, deux
+// leviers, faux sol, leviers sous les pistons, ressort). 46 « La station farceuse » est un NIVEAU TROLL
+// (sas qui se referme, fausse arrivée).
 
 import { level } from './kit.js';
 
 const glow = { skin: 'glow' };
 /** Plateforme flottante (mobile) de largeur w, qui monte et descend de dy. */
 const float = (x, y, w, dy, period, phase = 0) => ({ x, y, w, h: 0.5, style: 'float', path: { dx: 0, dy, period, phase } });
+// ─── Étapes de la campagne (monde 5) ──────────────────────────────────────────
+// Briques réglées pour la gravité lunaire : chaque niveau de l'espace en enchaîne plusieurs, dans un ordre et
+// avec des réglages qui lui sont propres, en plus de ses étapes d'origine. Toutes partent du sol (y = 0) et y
+// reviennent ; chacune a son point de contrôle.
+const stage = {
+  /** Deux murs qui surgissent (grilles rayées au sol), le second plus haut. */
+  walls(c, h1 = 2.6, h2 = 3.8) {
+    c.section(26, (s) => {
+      s.ground(0, 26);
+      const a = s.add('traps', { kind: 'rise', x: 8, y: 0, w: 0.8, h: h1, from: { dx: 0, dy: -h1 }, trigger: { x1: 4, x2: 6 }, warn: 0.45 });
+      const b = s.add('traps', { kind: 'rise', x: 18, y: 0, w: 0.8, h: h2, from: { dx: 0, dy: -h2 }, trigger: { x1: 14, x2: 15.5 }, warn: 0.45 });
+      s.checkpoint(0.8, 0);
+      s.star(13, 3);
+      s.pass('Premier mur qui surgit', [-2, 0], ['on', 9.5, 13.5, 0], [['goTo', 5], ['waitTrap', a, 'out'], ['goTo', 5.4], ['hop', 4, 11, 0], ['settle']]);
+      s.pass('Deuxième mur, plus haut', [11, 0], ['on', 19.5, 26, 0], [['goTo', 14.6], ['waitTrap', b, 'out'], ['goTo', 14.8], ['hop', 5, 22, 0], ['goTo', 23], ['wait', 2]]);
+    });
+  },
+  /** Passerelle de verre qui s'efface au-dessus des pics. */
+  vanish(c) {
+    c.section(26, (s) => {
+      s.ground(0, 26);
+      s.add('spikes', { x: 3, y: 0, w: 18, dir: 'up' });
+      for (const [x, top] of [[4.6, 0.8], [9, 1.6], [13.4, 2.4], [17.6, 1.2]]) s.add('crumbles', { x, y: top - 0.35, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 });
+      s.checkpoint(0.8, 0);
+      s.star(14.4, 5);
+      s.pass('La passerelle qui s’efface', [-2, 0], ['on', 21.3, 26, 0], [['goTo', 1.6], ['hop', 2, 5.6, 0.8], ['jump', 1, 10, 1.6], ['jump', 1, 14.4, 2.4], ['jump', 1, 18.6, 1.2], ['jump', 1, 23, 0], ['goTo', 23.4], ['wait', 2]]);
+    });
+  },
+  /** Coup de vent soudain au-dessus des pics : on l'attend, puis deux piliers. */
+  gust(c) {
+    c.section(26, (s) => {
+      s.ground(0, 26);
+      s.add('spikes', { x: 4, y: 0, w: 14, dir: 'up' });
+      s.block(6, 0, 2, 2, 'block', glow);
+      s.block(11, 0, 2, 2.6, 'block', glow);
+      s.add('winds', { x: 2, y: 0, w: 18, h: 10, force: -12, sudden: { warn: 0.8, dur: 1.4, rest: 9 } });
+      s.checkpoint(0.6, 0);
+      s.star(12, 6);
+      s.pass('Laisser passer le souffle', [-2, 0], ['on', 0.3, 4, 0], [['goTo', 2.8], ['wait', 2.7], ['goTo', 2.6]]);
+      s.pass('Les piliers dans le souffle', [2.6, 0], ['on', 18.3, 26, 0], [['hop', 3, 7, 2], ['settle'], ['hop', 3, 12, 2.6], ['settle'], ['hop', 3, 20, 0], ['goTo', 21], ['wait', 2]]);
+    });
+  },
+  /** Le mur aux marches : chaque marche atteinte fait sortir la suivante de la paroi (zigzag). */
+  popSteps(c) {
+    c.section(28, (s) => {
+      s.ground(0, 14);
+      s.block(7.6, 2.8, 1.4, 6.2);
+      s.block(14, 0, 8, 7);
+      s.ground(22, 28);
+      const a = s.add('traps', { kind: 'pop', x: 12.4, y: 1.6, w: 1.6, h: 0.5, from: { dx: 1.6, dy: 0 }, trigger: { x1: 10, x2: 12.6, y1: -1, y2: 1.4 }, warn: 0.4, speed: 6 });
+      const b = s.add('traps', { kind: 'pop', x: 9, y: 3.4, w: 1.4, h: 0.5, from: { dx: -1.4, dy: 0 }, trigger: { x1: 12.3, x2: 14.1, y1: 1.9, y2: 3.4 }, warn: 0.4, speed: 6 });
+      const d = s.add('traps', { kind: 'pop', x: 12.4, y: 5.2, w: 1.6, h: 0.5, from: { dx: 1.6, dy: 0 }, trigger: { x1: 8.8, x2: 10.6, y1: 3.7, y2: 5.2 }, warn: 0.4, speed: 6 });
+      s.checkpoint(0.8, 0);
+      s.star(9.7, 6.6);
+      s.pass('Première marche', [-2, 0], ['on', 12.5, 14, 2.1], [['goTo', 11], ['waitTrap', a, 'out'], ['hop', 2, 13.4, 2.1], ['settle']]);
+      s.pass('Deuxième marche', [13.2, 2.1], ['on', 9.1, 10.4, 3.9], [['waitTrap', b, 'out'], ['hop', 2, 9.7, 3.9], ['settle']]);
+      s.pass('Troisième marche', [9.7, 3.9], ['on', 12.5, 14, 5.7], [['waitTrap', d, 'out'], ['hop', 2, 13.2, 5.7], ['settle']]);
+      s.pass('Le haut de la paroi', [13.2, 5.7], ['on', 22.4, 28, 0], [['hop', 2, 15.6, 7], ['goTo', 21.4], ['hold', 1, 22.2], ['goTo', 25], ['wait', 2]]);
+    });
+  },
+  /** Le sas : la porte se referme derrière toi ; un portail caché derrière la caisse mène dehors. */
+  hiddenExit(c) {
+    c.section(28, (s) => {
+      s.ground(0, 28);
+      s.block(6, 3.4, 15, 1.2);
+      s.block(20, 0, 1, 3.4);
+      s.add('traps', { kind: 'close', x: 6.2, y: 0, w: 0.5, h: 3.4, from: { dx: 0, dy: 3.4 }, trigger: { x1: 8, x2: 10 }, warn: 0.35 });
+      s.block(12, 0, 1.4, 1);
+      s.add('teleporters', { a: { x: 16, y: 0.9 }, b: { x: 24, y: 0.9 }, r: 0.75, hidden: true });
+      s.checkpoint(1, 0);
+      s.star(16, 2.4);
+      s.pass('Dans le sas', [-2, 0], ['on', 8.6, 11, 0], [['goTo', 9.6]]);
+      s.pass('Le portail derrière la caisse', [9.6, 0], ['on', 22, 28, 0], [['wait', 2], ['hop', 1, 15, 0], ['hold', 1, 15.6], ['goTo', 25], ['wait', 2]]);
+    });
+  },
+  /** Deux leviers, deux portes : le ressort rouge mène au premier, la borne au second. */
+  twoSwitches(c, id) {
+    c.section(34, (s) => {
+      s.ground(0, 34);
+      s.add('trampolines', { x: 3, y: 0, w: 1.6, boost: 1.2 });
+      s.block(7, 0, 4, 8, 'block', glow);
+      const a = s.add('switches', { x: 8.4, y: 8, w: 1.2, target: `${id}A` });
+      s.add('doors', { id: `${id}A`, x: 15, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+      s.block(15, 3.2, 0.8, 9, 'wall');
+      s.block(18, 0, 2, 2, 'block', glow);
+      const b = s.add('switches', { x: 18.4, y: 2, w: 1.2, target: `${id}B` });
+      s.add('doors', { id: `${id}B`, x: 25, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+      s.block(25, 3.2, 0.8, 9, 'wall');
+      s.checkpoint(0.8, 0);
+      s.star(9, 10.6);
+      s.pass('Le ressort → premier levier', [-2, 0], ['switch', a], [['goTo', 1.2], ['hold', 1, 3.3], ['fly', 9]]);
+      s.pass('Première porte', [9, 8], ['on', 16, 17.6, 0], [['goTo', 10.4], ['hold', 1, 11.2], ['goTo', 14], ['wait', 0.4], ['goTo', 16.6]]);
+      s.pass('La borne → second levier', [16.6, 0], ['switch', b], [['wait', 1.5], ['hop', 3, 19, 2]]);
+      s.pass('Seconde porte', [19, 2], ['on', 26, 34, 0], [['goTo', 19.6], ['hold', 1, 20.3], ['goTo', 24], ['wait', 0.4], ['goTo', 29], ['wait', 2]]);
+    });
+  },
+  /** Le faux sol : fissuré, il cache des pics ; on saute sur le pilier. */
+  fakeFloor(c) {
+    c.section(24, (s) => {
+      s.ground(0, 4);
+      s.ground(4, 14, -1.2);
+      s.add('spikes', { x: 4, y: -1.2, w: 10, dir: 'up' });
+      s.add('crumbles', { x: 4, y: -0.5, w: 4.2, h: 0.5, look: 'fake', delay: 0.12, respawn: 3 });
+      s.block(8.4, -1.2, 2.2, 2.4, 'block', glow);
+      s.ground(14, 24);
+      s.checkpoint(0.8, 0);
+      s.hint(1.5, 4.3, 'hint.fake');
+      s.star(6.2, 4);
+      s.pass('Le faux sol', [-2, 0], ['on', 8.5, 10.5, 1.2], [['goTo', 3], ['hop', 4, 9.5, 1.2], ['settle']]);
+      s.pass('Pilier → la suite', [9.5, 1.2], ['on', 14.5, 24, 0], [['hop', 4, 16.4, 0], ['goTo', 17], ['wait', 2]]);
+    });
+  },
+  /** Deux leviers sous les pistons : chacun ouvre sa porte. */
+  pistonSwitches(c, id) {
+    c.section(34, (s) => {
+      s.ground(0, 34);
+      s.add('crushers', { x: 4, w: 2.4, top: 3.2, bottom: 0, period: 2.4, phase: 0 }, { x: 14, w: 2.4, top: 3.2, bottom: 0, period: 2.4, phase: 0 });
+      s.add('switches', { x: 4.6, y: 0, w: 1.2, target: `${id}A` }, { x: 14.6, y: 0, w: 1.2, target: `${id}B` });
+      s.add('doors', { id: `${id}A`, x: 10, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 },
+        { id: `${id}B`, x: 20, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+      s.block(10, 3.2, 0.8, 9, 'wall');
+      s.block(20, 3.2, 0.8, 9, 'wall');
+      s.checkpoint(0.6, 0);
+      s.star(15.2, 1.4);
+      s.pass('Le levier sous le premier piston', [-2, 0], ['on', 7, 9.4, 0], [['goTo', 1.6], ['waitCycle', 2.4, 1.8, 1.9], ['run', 1, 7.2, 9.4, 0], ['goTo', 8.4]]);
+      s.pass('Le levier sous le second piston', [8.4, 0], ['on', 17, 19.4, 0], [['goTo', 11.6], ['waitCycle', 2.4, 1.8, 1.9], ['run', 1, 17.2, 19.4, 0], ['goTo', 18.4]]);
+      s.pass('Les deux portes ouvertes', [18.4, 0], ['on', 22, 34, 0], [['goTo', 26], ['wait', 2]]);
+    });
+  },
+  /** Le ressort rouge envoie sur la falaise ; de là, on s'élance au-dessus des pics. */
+  boostSpring(c) {
+    c.section(30, (s) => {
+      s.ground(0, 30);
+      s.add('trampolines', { x: 3, y: 0, w: 1.6, boost: 1.3 });
+      s.block(9, 0, 8, 7.4, 'block', glow);
+      s.add('spikes', { x: 17, y: 0, w: 4.6, dir: 'up' });
+      s.checkpoint(0.8, 0);
+      s.hint(0.5, 4.3, 'hint.spring');
+      s.star(13, 11);
+      s.pass('Le ressort rouge → la falaise', [-2, 0], ['on', 9.3, 17, 7.4], [['goTo', 1.2], ['hold', 1, 3.3], ['fly', 12.5], ['settle']]);
+      s.pass('S’élancer au-dessus des pics', [12.5, 7.4], ['on', 22, 30, 0], [['goTo', 10], ['hold', 1, 16.6], ['run', 1, 22.2, 30, 0], ['goTo', 26], ['wait', 2]]);
+    });
+  },
+  /** TROLL — Le sas tentant : le couloir tout droit se referme et son portail renvoie au début ; le bon chemin est sur le toit. */
+  trollSas(c) {
+    c.section(32, (s) => {
+      s.ground(0, 32);
+      s.block(8, 2.2, 12, 1.2);
+      s.block(19.5, 0, 0.5, 2.2);
+      s.add('traps', { kind: 'close', x: 8.2, y: 0, w: 0.5, h: 2.2, from: { dx: 0, dy: 2.2 }, trigger: { x1: 10, x2: 12, y1: -1, y2: 2 }, warn: 0.3 });
+      s.add('teleporters', { a: { x: 17.5, y: 0.9 }, b: { x: 1, y: 0.9 }, r: 0.75 });
+      s.hint(14, 1.2, 'hint.troll2', 0.7);
+      s.hint(5, 4.6, 'hint.exit');
+      s.checkpoint(0.8, 0);
+      s.star(14, 5.4);
+      s.pass('Pas le couloir : le toit', [-2, 0], ['on', 8.2, 19.8, 3.4], [['goTo', 5], ['hop', 3, 9.8, 3.4], ['settle']]);
+      s.pass('Descendre du toit', [9.8, 3.4], ['on', 22, 32, 0], [['goTo', 19.4], ['hold', 1, 20.2], ['goTo', 24], ['wait', 2]]);
+    });
+  },
+  /** TROLL — « Arrivée » ? Le sol cède… sur un ressort qui envoie sur la vraie route, tout en haut. */
+  trollFakeEnd(c) {
+    c.section(30, (s) => {
+      s.ground(0, 6);
+      s.ground(6, 14, -3);
+      s.add('trampolines', { x: 6, y: -3, w: 8, boost: 1.3 });
+      s.add('crumbles', { x: 6, y: -0.5, w: 8, h: 0.5, look: 'fake', delay: 0.12, respawn: 999 });
+      s.block(14, -3, 8, 9, 'block', glow);
+      s.ground(22, 30);
+      s.hint(10, 2.4, 'hint.finish');
+      s.hint(18, 9.4, 'hint.troll4', 0.8);
+      s.checkpoint(0.8, 0);
+      s.star(10, 6);
+      s.pass('L’arrivée ?', [-2, 0], ['on', 14.3, 22, 6], [['hold', 1, 7], ['fly', 10], ['fly', 17], ['settle']]);
+      s.pass('La vraie route', [17, 6], ['on', 22.5, 30, 0], [['goTo', 21.4], ['hold', 1, 22.2], ['goTo', 25], ['wait', 2]]);
+    });
+  },
+};
+
 /** Plot lumineux fixe, dessus à `top`. */
 const pad = (s, x, top, w = 2.5) => s.block(x, top - 0.5, w, 0.5, 'block', glow);
 
 // 41 — Premiers pas lunaires
-const L41 = level({ id: 'space-1', difficulty: 'medium', number: 1, nameKey: 'lv.space.1', idea: 'gravité réduite : sauts lunaires, plateformes flottantes, premier trou noir', maxY: 12 }, (c) => {
+const L41 = level({ id: 'space-01', difficulty: 'medium', number: 1, nameKey: 'lv.space.1', idea: 'gravité réduite : sauts lunaires, plateformes flottantes, premier trou noir', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.space');
   });
+  // NOUVEAU — étapes de la campagne (voir `stage`)
+  stage.boostSpring(c);
+  stage.vanish(c);
+  stage.walls(c, 2.4, 3.2);
   c.section(22, (s) => {
     s.ground(0, 6);
     s.ground(12, 22);
@@ -73,12 +260,16 @@ const L41 = level({ id: 'space-1', difficulty: 'medium', number: 1, nameKey: 'lv
 });
 
 // 42 — La ceinture d'astéroïdes
-const L42 = level({ id: 'space-2', difficulty: 'hard', number: 2, nameKey: 'lv.space.2', idea: 'astéroïdes : passer entre eux, par-dessus, en dessous', maxY: 12 }, (c) => {
+const L42 = level({ id: 'space-02', difficulty: 'hard', number: 2, nameKey: 'lv.space.2', idea: 'astéroïdes : passer entre eux, par-dessus, en dessous', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.asteroids');
   });
+  // NOUVEAU — étapes de la campagne (voir `stage`)
+  stage.gust(c);
+  stage.fakeFloor(c);
+  stage.popSteps(c);
   // Entre les astéroïdes qui montent et descendent
   c.section(26, (s) => {
     s.ground(0, 2);
@@ -135,12 +326,16 @@ const L42 = level({ id: 'space-2', difficulty: 'hard', number: 2, nameKey: 'lv.s
 });
 
 // 43 — Les portails : à double sens
-const L43 = level({ id: 'space-3', difficulty: 'hard', number: 3, nameKey: 'lv.space.3', idea: 'portails à double sens : l’aller-retour vers l’interrupteur', maxY: 12 }, (c) => {
+const L43 = level({ id: 'space-03', difficulty: 'hard', number: 3, nameKey: 'lv.space.3', idea: 'portails à double sens : l’aller-retour vers l’interrupteur', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.portal');
   });
+  // NOUVEAU — étapes de la campagne (voir `stage`)
+  stage.hiddenExit(c);
+  stage.twoSwitches(c, 'p43');
+  stage.walls(c, 3, 3.8);
   // Le premier portail traverse la cloison
   c.section(20, (s) => {
     s.ground(0, 20);
@@ -211,12 +406,16 @@ const L43 = level({ id: 'space-3', difficulty: 'hard', number: 3, nameKey: 'lv.s
 });
 
 // 44 — La tête en bas : la gravité s'inverse dans les zones violettes
-const L44 = level({ id: 'space-4', difficulty: 'hard', number: 4, nameKey: 'lv.space.4', idea: 'gravité inversée : le plafond devient le sol', maxY: 12 }, (c) => {
+const L44 = level({ id: 'space-04', difficulty: 'hard', number: 4, nameKey: 'lv.space.4', idea: 'gravité inversée : le plafond devient le sol', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.inverted');
   });
+  // NOUVEAU — étapes de la campagne (voir `stage`)
+  stage.vanish(c);
+  stage.pistonSwitches(c, 't44');
+  stage.boostSpring(c);
   // Le premier plafond : on roule dessus, au-dessus des pics
   c.section(30, (s) => {
     s.ground(0, 30);
@@ -274,12 +473,16 @@ const L44 = level({ id: 'space-4', difficulty: 'hard', number: 4, nameKey: 'lv.s
 });
 
 // 45 — Les trous noirs : ils attirent le ballon
-const L45 = level({ id: 'space-5', difficulty: 'hard', number: 5, nameKey: 'lv.space.5', idea: 'trous noirs : sauter assez haut, assez loin, ou les contourner', maxY: 13 }, (c) => {
+const L45 = level({ id: 'space-05', difficulty: 'hard', number: 5, nameKey: 'lv.space.5', idea: 'trous noirs : sauter assez haut, assez loin, ou les contourner', maxY: 13 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.blackhole');
   });
+  // NOUVEAU — étapes de la campagne (voir `stage`)
+  stage.fakeFloor(c);
+  stage.gust(c);
+  stage.hiddenExit(c);
   // Deux trous noirs sous deux sauts
   c.section(30, (s) => {
     s.ground(0, 4);
@@ -332,12 +535,16 @@ const L45 = level({ id: 'space-5', difficulty: 'hard', number: 5, nameKey: 'lv.s
 const laser = (x, y0, y1, phase = 0, period = 3, on = 1.2) => ({ x1: x, y1: y0, x2: x, y2: y1, period, on, phase });
 
 // 46 — La station : pistons et lasers
-const L46 = level({ id: 'space-6', difficulty: 'hard', number: 6, nameKey: 'lv.space.6', idea: 'pistons et lasers de la station : le bon tempo', maxY: 12 }, (c) => {
+const L46 = level({ id: 'space-06', difficulty: 'hard', number: 6, nameKey: 'lv.space.6', idea: 'pistons et lasers de la station : le bon tempo', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.crusher');
   });
+  // NOUVEAU — étapes de la campagne (voir `stage`)
+  stage.trollSas(c);
+  stage.trollFakeEnd(c);
+  stage.pistonSwitches(c, 's46');
   c.section(18, (s) => {
     s.ground(0, 18);
     s.add('crushers', { x: 7, w: 2.4, top: 3, bottom: 0, period: 2.2, phase: 0 });
@@ -387,12 +594,16 @@ const L46 = level({ id: 'space-6', difficulty: 'hard', number: 6, nameKey: 'lv.s
 });
 
 // 47 — Le laboratoire : caisse, portail, deux leviers
-const L47 = level({ id: 'space-7', difficulty: 'hard', number: 7, nameKey: 'lv.space.7', idea: 'puzzle : la caisse mène au portail, le portail mène au levier', maxY: 13 }, (c) => {
+const L47 = level({ id: 'space-07', difficulty: 'hard', number: 7, nameKey: 'lv.space.7', idea: 'puzzle : la caisse mène au portail, le portail mène au levier', maxY: 13 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.lab');
   });
+  // NOUVEAU — étapes de la campagne (voir `stage`)
+  stage.twoSwitches(c, 'l47');
+  stage.popSteps(c);
+  stage.vanish(c);
   // La soute : la caisse sert de marche vers l'étagère du portail
   c.section(24, (s) => {
     s.ground(0, 24);
@@ -448,11 +659,15 @@ const L47 = level({ id: 'space-7', difficulty: 'hard', number: 7, nameKey: 'lv.s
 });
 
 // 48 — Le monde à l'envers : zones inversées, astéroïdes, pics des deux côtés
-const L48 = level({ id: 'space-8', difficulty: 'expert', number: 8, nameKey: 'lv.space.8', idea: 'gravité inversée et astéroïdes', maxY: 12 }, (c) => {
+const L48 = level({ id: 'space-08', difficulty: 'expert', number: 8, nameKey: 'lv.space.8', idea: 'gravité inversée et astéroïdes', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
   });
+  // NOUVEAU — étapes de la campagne (voir `stage`)
+  stage.walls(c, 2.8, 4);
+  stage.hiddenExit(c);
+  stage.gust(c);
   // Au plafond, sous les astéroïdes qui montent
   c.section(32, (s) => {
     s.ground(0, 32);
@@ -502,11 +717,15 @@ const L48 = level({ id: 'space-8', difficulty: 'expert', number: 8, nameKey: 'lv
 });
 
 // 49 — Le grand vide : plateformes au-dessus du vide et des trous noirs
-const L49 = level({ id: 'space-9', difficulty: 'expert', number: 9, nameKey: 'lv.space.9', idea: 'plateformes flottantes, astéroïdes et trous noirs au-dessus du vide', maxY: 13 }, (c) => {
+const L49 = level({ id: 'space-09', difficulty: 'expert', number: 9, nameKey: 'lv.space.9', idea: 'plateformes flottantes, astéroïdes et trous noirs au-dessus du vide', maxY: 13 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
   });
+  // NOUVEAU — étapes de la campagne (voir `stage`)
+  stage.popSteps(c);
+  stage.boostSpring(c);
+  stage.fakeFloor(c);
   // Cinq plateformes flottantes, un trou noir dessous
   c.section(32, (s) => {
     s.ground(0, 3);
@@ -565,6 +784,9 @@ const L50 = level({ id: 'space-10', difficulty: 'expert', number: 10, nameKey: '
     s.ground(0, 8);
     s.spawn(2);
   });
+  // NOUVEAU — étapes de la campagne (voir `stage`)
+  stage.walls(c, 3, 4);
+  stage.twoSwitches(c, 'o50');
   c.section(26, (s) => {
     s.ground(0, 3);
     const m = s.add('movers', float(6, 1.5, 2.6, 0.6, 3.4), float(11, 3.0, 2.6, 0.6, 3.8, 0.3), float(16, 2.0, 2.6, 0.6, 3.2, 0.6));
@@ -582,7 +804,7 @@ const L50 = level({ id: 'space-10', difficulty: 'expert', number: 10, nameKey: '
     s.add('spikes', { x: 12.6, y: 0, w: 12.4, dir: 'up' }, { x: 17.6, y: 6.4, w: 1.8, dir: 'down' });
     s.checkpoint(-3, 0);
     s.pass('Le portail', [-3, 0], ['on', 7, 10, 0], [['goTo', 1.2], ['hold', 1, 3.2], ['settle'], ['goTo', 8.6]]);
-    s.pass('Le plafond aux pics', [8.6, 0], ['on', 26, 36, 0], [['goTo', 8.6], ['jumpAt', 1, 15.8], ['run', 1, 26.2, 36, 0], ['goTo', 31]]);
+    s.pass('Le plafond aux pics', [8.6, 0], ['on', 26, 36, 0], [['goTo', 8.6], ['wait', 2], ['jumpAt', 1, 15.8], ['run', 1, 26.2, 36, 0], ['goTo', 31]]);
   });
   // La pluie d'astéroïdes, puis le trou noir
   c.section(36, (s) => {

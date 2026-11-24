@@ -1,4 +1,4 @@
-// MONDE 4 — FORÊT : PRÉCISION (refonte phase 2). 45 à 60 s par niveau pour un joueur.
+// MONDE 4 — FORÊT : TECHNIQUE ET OBJECTIFS MULTIPLES (refonte de la campagne). 60 à 90 s par niveau.
 // Champignons rebondissants, lianes, branches qui bougent ou qui cassent, troncs qui roulent ou qui
 // flottent, troncs-balanciers à pointes, troncs-marteaux, rivière. Les erreurs coûtent plus cher : moins
 // de points de contrôle, des chutes dans la rivière.
@@ -9,10 +9,14 @@
 // 34 Les troncs            troncs qui roulent, rondins qui dévalent, tronc flottant (rapide)
 // 35 Le bûcheron           balanciers à pointes et troncs-marteaux (précision)
 // 36 La cabane             deux leviers, deux portes, un champignon (puzzle)
-// 37 Les planches magiques planches qui apparaissent et disparaissent au-dessus de l'eau (rythme)
+// 37 Le sentier farceur   NIVEAU TROLL : planches magiques, faux raccourci, portail caché (rythme)
 // 38 La canopée            tout en hauteur : lianes, branches, champignons (technique)
 // 39 Les arbres creux      les troncs creux téléportent ; lequel prendre ? (★ puzzle)
 // 40 La forêt profonde     finale (★)
+//
+// Refonte de la campagne : deux étapes nouvelles par niveau (leviers et grilles, nénuphars qui s'effacent,
+// murs qui surgissent, pont qui s'effondre, marches qui jaillissent, grenier qui se referme, ressort → liane,
+// escalier de verre…). 37 « Le sentier farceur » est un NIVEAU TROLL (faux raccourci, portail caché).
 
 import { level } from './kit.js';
 
@@ -26,11 +30,44 @@ function river(s, x0, x1, top = 0) {
 }
 
 // 31 — La clairière : les champignons
-const L31 = level({ id: 'forest-1', difficulty: 'medium', number: 1, nameKey: 'lv.forest.1', idea: 'champignons : souche, ronces, rivière, grand champignon', maxY: 14 }, (c) => {
+const L31 = level({ id: 'forest-01', difficulty: 'medium', number: 1, nameKey: 'lv.forest.1', idea: 'champignons : souche, ronces, rivière, grand champignon', maxY: 14 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.mushroom');
+  });
+  // NOUVEAU — Les deux leviers : le champignon mène au premier levier, le tas de bûches au second (deux objectifs).
+  c.section(30, (s) => {
+    s.ground(0, 30);
+    s.add('mushrooms', { x: 3, y: 1, w: 1.8, height: 6 });
+    s.block(7, 0, 3, 4.4, wood);
+    const a = s.add('switches', { x: 8, y: 4.4, w: 1.2, target: 'clairA' });
+    s.add('doors', { id: 'clairA', x: 13, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+    s.block(13, 3.2, 0.8, 9, 'wall');
+    s.block(16, 0, 3, 2.2, wood);
+    const b = s.add('switches', { x: 17, y: 2.2, w: 1.2, target: 'clairB' });
+    s.add('doors', { id: 'clairB', x: 23, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+    s.block(23, 3.2, 0.8, 9, 'wall');
+    s.hint(1, 4.3, 'hint.switch');
+    s.star(8.6, 7.4);
+    s.pass('Champignon → premier levier', [-2, 0], ['switch', a], [['goTo', 1.2], ['hop', 2, 3.9], ['fly', 8.6]]);
+    s.pass('La première barrière', [8.6, 4.4], ['on', 14, 15.9, 0], [['wait', 0.6], ['hold', 1, 10.4], ['run', 1, 14.2, 15.9, 0], ['goTo', 14.6]]);
+    s.pass('Le tas de bûches → second levier', [14.6, 0], ['switch', b], [['hop', 3, 17.6, 2.2]]);
+    s.pass('La seconde barrière', [17.6, 2.2], ['on', 24.2, 30, 0], [['hold', 1, 19.4], ['run', 1, 19.6, 22.6, 0], ['goTo', 22], ['wait', 0.5], ['run', 1, 24.2, 30, 0]]);
+  });
+  // NOUVEAU — Les nénuphars lumineux : ils s'effacent peu après qu'on s'y pose.
+  c.section(24, (s) => {
+    s.ground(0, 3);
+    river(s, 3, 19);
+    s.add('crumbles', { x: 4.6, y: 0, w: 1.8, h: 0.3, look: 'vanish', delay: 0.7, respawn: 2.5 },
+      { x: 8.4, y: 0, w: 1.8, h: 0.3, look: 'vanish', delay: 0.7, respawn: 2.5 },
+      { x: 12.2, y: 0, w: 1.8, h: 0.3, look: 'vanish', delay: 0.7, respawn: 2.5 },
+      { x: 16, y: 0, w: 1.8, h: 0.3, look: 'vanish', delay: 0.7, respawn: 2.5 });
+    s.ground(19, 24);
+    s.checkpoint(1, 0);
+    s.hint(0.5, 4.3, 'hint.vanish');
+    s.star(11, 2.6);
+    s.pass('Les nénuphars lumineux', [-2, 0], ['on', 19.3, 24, 0], [['goTo', 1.6], ['hop', 2, 5.5, 0.3], ['jump', 1, 9.3, 0.3], ['jump', 1, 13.1, 0.3], ['jump', 1, 16.9, 0.3], ['jump', 1, 21, 0], ['settle'], ['wait', 2]]);
   });
   c.section(18, (s) => {
     s.ground(0, 18);
@@ -84,11 +121,39 @@ const L31 = level({ id: 'forest-1', difficulty: 'medium', number: 1, nameKey: 'l
 });
 
 // 32 — La rivière aux lianes
-const L32 = level({ id: 'forest-2', difficulty: 'medium', number: 2, nameKey: 'lv.forest.2', idea: 'lianes : une, trois, puis entre les balanciers', maxY: 12 }, (c) => {
+const L32 = level({ id: 'forest-02', difficulty: 'medium', number: 2, nameKey: 'lv.forest.2', idea: 'lianes : une, trois, puis entre les balanciers', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.6, 'hint.vine');
+  });
+  // NOUVEAU — La liane et le mur : à peine posé, un mur surgit de l'humus. On le saute.
+  c.section(30, (s) => {
+    s.ground(0, 4);
+    river(s, 4, 14);
+    s.add('vines', { x: 6.8, y: 9.4, len: 6.4 });
+    s.ground(14, 30);
+    const t = s.add('traps', { kind: 'rise', x: 22, y: 0, w: 0.8, h: 1.8, from: { dx: 0, dy: -1.8 }, trigger: { x1: 17.5, x2: 19.5 }, warn: 0.5 });
+    s.star(7.4, 4.6);
+    s.pass('La liane', [-2, 0], ['on', 14.2, 19.8, 0], [['goTo', 3.2], ['charge', 4], ['vines', 14.4], ['goTo', 18.6]]);
+    s.pass('Le mur qui surgit', [18.6, 0], ['on', 23.3, 30, 0], [['waitTrap', t, 'out'], ['goTo', 18.8], ['hop', 4, 25, 0], ['settle'], ['wait', 2]]);
+  });
+  // NOUVEAU — Les lianes et la herse : la herse retombe derrière toi ; le levier de la souche ouvre la sortie.
+  c.section(30, (s) => {
+    s.ground(0, 4);
+    river(s, 4, 15);
+    s.add('vines', { x: 5.6, y: 9.6, len: 6.4 }, { x: 11.4, y: 9.6, len: 6.4 });
+    s.ground(15, 30);
+    s.block(18.5, 4.6, 11.5, 1.4, wood);
+    s.add('traps', { kind: 'close', x: 18.7, y: 0, w: 0.5, h: 4.6, from: { dx: 0, dy: 4.6 }, trigger: { x1: 20, x2: 22 }, warn: 0.35 });
+    s.block(23, 0, 2, 1.4, wood);
+    const sw = s.add('switches', { x: 23.4, y: 1.4, w: 1.2, target: 'herse32' });
+    s.add('doors', { id: 'herse32', x: 27.5, y: 0, w: 0.8, h: 4.6, open: { dx: 0, dy: 4.6 }, duration: 0.8 });
+    s.checkpoint(1, 0);
+    s.star(24, 3.4);
+    s.pass('Deux lianes', [-2, 0], ['on', 19.3, 22.8, 0], [['goTo', 2.2], ['charge', 4], ['vines', 15.4], ['goTo', 21]]);
+    s.pass('Le levier de la souche', [21, 0], ['switch', sw], [['wait', 2], ['hop', 2, 24, 1.4]]);
+    s.pass('La sortie s’ouvre', [24, 1.4], ['on', 28.5, 30, 0], [['goTo', 24.6], ['hold', 1, 25.1], ['goTo', 26.6], ['wait', 0.4], ['goTo', 29.2], ['wait', 3.6]]);
   });
   c.section(20, (s) => {
     s.ground(0, 4);
@@ -135,7 +200,7 @@ const L32 = level({ id: 'forest-2', difficulty: 'medium', number: 2, nameKey: 'l
     s.ground(14, 20);
     s.checkpoint(1, 3);
     s.star(8.4, 6.4);
-    s.pass('Redescendre par la liane', [-4, 3], ['on', 14.2, 20, 0], [['goTo', 1.2], ['charge', 4], ['waitCycle', 3, 0.5, 0.6], ['vines', 14.4], ['goTo', 16]]);
+    s.pass('Redescendre par la liane', [-4, 3], ['on', 14.2, 20, 0], [['goTo', 1.2], ['waitCycle', 3, 2.4, 2.5], ['charge', 4], ['vines', 14.4], ['goTo', 16]]);
   });
   c.section(16, (s) => {
     s.ground(0, 16);
@@ -145,11 +210,37 @@ const L32 = level({ id: 'forest-2', difficulty: 'medium', number: 2, nameKey: 'l
 });
 
 // 33 — Les branches : elles montent, elles glissent, elles cassent
-const L33 = level({ id: 'forest-3', difficulty: 'hard', number: 3, nameKey: 'lv.forest.3', idea: 'branches mobiles, branches fragiles, jusqu’à la cabane', maxY: 17 }, (c) => {
+const L33 = level({ id: 'forest-03', difficulty: 'hard', number: 3, nameKey: 'lv.forest.3', idea: 'branches mobiles, branches fragiles, jusqu’à la cabane', maxY: 17 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.branches');
+  });
+  // NOUVEAU — Le levier des branches : on grimpe par les branches jusqu'au levier qui ouvre la barrière en bas.
+  c.section(30, (s) => {
+    s.ground(0, 30);
+    const b0 = s.add('branches', { x1: 4, x2: 6.5, y: 2.4, path: { dx: 0, dy: 1.2, period: 4, phase: 0 } });
+    const b1 = s.add('branches', { x1: 7.5, x2: 10, y: 4.6, path: { dx: 1, dy: 0, period: 3.6, phase: 0.25 } });
+    s.block(13, 0, 7, 6.6, wood);
+    const sw = s.add('switches', { x: 16, y: 6.6, w: 1.2, target: 'b33' });
+    s.add('doors', { id: 'b33', x: 24, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+    s.block(24, 3.2, 0.8, 12, 'wall');
+    s.star(9.2, 7.6);
+    s.pass('Les branches → le levier', [-2, 0], ['switch', sw], [['goTo', 5.25], ['hopTo', 4, 'branches', b0, 1.25], ['hopTo', 2, 'branches', b1, 1.25], ['hop', 2, 14.4, 6.6], ['hold', 1, 16.6]]);
+    s.pass('Redescendre → la barrière', [16.6, 6.6], ['on', 25.5, 30, 0], [['goTo', 19.4], ['hold', 1, 20.1], ['goTo', 23], ['wait', 0.6], ['run', 1, 25.5, 30, 0], ['settle'], ['wait', 2]]);
+  });
+  // NOUVEAU — Le coup de vent sur les branches fragiles : on laisse passer la rafale, puis on enchaîne.
+  c.section(26, (s) => {
+    s.ground(0, 3);
+    river(s, 3, 19);
+    s.add('fallers', { x: 4, y: 0.6, w: 2.4, h: 0.4 }, { x: 7.4, y: 0.6, w: 2.4, h: 0.4 }, { x: 10.8, y: 0.6, w: 2.4, h: 0.4 }, { x: 14.2, y: 0.6, w: 2.4, h: 0.4 });
+    s.ground(19, 26);
+    s.add('winds', { x: 1, y: 0, w: 20, h: 9, force: -15, sudden: { warn: 0.8, dur: 1.4, rest: 8 } });
+    s.checkpoint(0.6, 0);
+    s.hint(0.5, 4.3, 'hint.gust');
+    s.star(9, 3.4);
+    s.pass('Laisser passer la rafale', [-2, 0], ['on', 0.3, 3, 0], [['goTo', 1.8], ['wait', 2.7], ['goTo', 1.6]]);
+    s.pass('Les branches fragiles au vent', [1.6, 0], ['on', 19.3, 26, 0], [['hop', 2, 5.2, 1.0], ['jump', 1, 8.6, 1.0], ['jump', 1, 12, 1.0], ['jump', 1, 15.4, 1.0], ['jump', 1, 21, 0], ['settle'], ['wait', 2]]);
   });
   // On monte de branche en branche jusqu'au premier palier
   c.section(20, (s) => {
@@ -199,11 +290,36 @@ const L33 = level({ id: 'forest-3', difficulty: 'hard', number: 3, nameKey: 'lv.
 });
 
 // 34 — Les troncs : ils roulent, ils dévalent, ils flottent
-const L34 = level({ id: 'forest-4', difficulty: 'medium', number: 4, nameKey: 'lv.forest.4', idea: 'troncs qui roulent, rondins qui dévalent, tronc flottant' }, (c) => {
+const L34 = level({ id: 'forest-04', difficulty: 'medium', number: 4, nameKey: 'lv.forest.4', idea: 'troncs qui roulent, rondins qui dévalent, tronc flottant' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.log');
+  });
+  // NOUVEAU — Le tronc et le mur : sauter le tronc qui roule, puis le mur qui surgit.
+  c.section(30, (s) => {
+    s.ground(0, 30);
+    const k = s.add('logs', { x: 6, y: 0.6, r: 0.6, path: { dx: 6, dy: 0, period: 5, phase: 0 } });
+    const t = s.add('traps', { kind: 'rise', x: 22, y: 0, w: 0.8, h: 2, from: { dx: 0, dy: -2 }, trigger: { x1: 18, x2: 20 }, warn: 0.5 });
+    s.star(9, 3);
+    s.pass('Par-dessus le tronc', [-2, 0], ['on', 15, 20, 0], [['goTo', 3.2], ['waitMover', 'rollers', k, 'x', '<', 0.3], ['jumpOver', 'rollers', k], ['goTo', 19]]);
+    s.pass('Par-dessus le mur', [19, 0], ['on', 23.4, 30, 0], [['waitTrap', t, 'out'], ['goTo', 19], ['hop', 4, 25.5, 0], ['settle'], ['wait', 2]]);
+  });
+  // NOUVEAU — Le pont qui s'écroule et son levier : on roule sans s'arrêter, le levier de l'îlot ouvre la porte au bout.
+  c.section(32, (s) => {
+    s.ground(0, 2);
+    river(s, 2, 28);
+    for (let i = 0; i < 6; i++) s.add('fallers', { x: 2 + i * 2, y: -0.4, w: 2, h: 0.4 });
+    s.block(14, -1.2, 3, 1.2, wood);
+    const sw = s.add('switches', { x: 14.9, y: 0, w: 1.2, target: 'pont34' });
+    for (let i = 0; i < 5; i++) s.add('fallers', { x: 17 + i * 2, y: -0.4, w: 2, h: 0.4 });
+    s.ground(27, 32);
+    s.add('doors', { id: 'pont34', x: 29, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+    s.block(29, 3.2, 0.8, 9, 'wall');
+    s.checkpoint(0.8, 0);
+    s.star(15.5, 2);
+    s.pass('Le pont et son levier', [-2, 0], ['on', 30, 32, 0], [['goTo', 0.6], ['run', 1, 30.2, 32, 0], ['settle'], ['wait', 2]]);
+    void sw;
   });
   c.section(20, (s) => {
     s.ground(0, 20);
@@ -247,11 +363,37 @@ const L34 = level({ id: 'forest-4', difficulty: 'medium', number: 4, nameKey: 'l
 });
 
 // 35 — Le bûcheron : balanciers à pointes et troncs-marteaux
-const L35 = level({ id: 'forest-5', difficulty: 'hard', number: 5, nameKey: 'lv.forest.5', idea: 'balanciers à pointes et troncs-marteaux : le bon moment', maxY: 12 }, (c) => {
+const L35 = level({ id: 'forest-05', difficulty: 'hard', number: 5, nameKey: 'lv.forest.5', idea: 'balanciers à pointes et troncs-marteaux : le bon moment', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.mace');
+  });
+  // NOUVEAU — La marche du chêne : une marche sort du tronc quand on s'approche ; elle mène à la souche.
+  c.section(28, (s) => {
+    s.ground(0, 16);
+    s.block(16, 0, 8, 4.4, wood);
+    s.ground(24, 28);
+    const t = s.add('traps', { kind: 'pop', x: 14, y: 2, w: 2, h: 0.5, from: { dx: 2, dy: 0 }, trigger: { x1: 10.5, x2: 15, y1: -1, y2: 1.6 }, warn: 0.45, speed: 6 });
+    s.hint(4, 4.3, 'hint.trap');
+    s.star(15, 5);
+    s.pass('La marche sort du tronc', [-2, 0], ['on', 14.1, 16, 2.5], [['goTo', 12.4], ['waitTrap', t, 'out'], ['hop', 3, 15, 2.5], ['settle']]);
+    s.pass('Marche → souche', [15, 2.5], ['on', 24.3, 28, 0], [['hop', 3, 18, 4.4], ['goTo', 23.4], ['hold', 1, 24.1], ['goTo', 26], ['wait', 2]]);
+  });
+  // NOUVEAU — Deux leviers sous les marteaux : chaque levier est sous un tronc-marteau ; chacun ouvre sa porte.
+  c.section(34, (s) => {
+    s.ground(0, 34);
+    s.add('crushers', { x: 4, w: 2.4, top: 3.2, bottom: 0, period: 2.4, phase: 0 }, { x: 14, w: 2.4, top: 3.2, bottom: 0, period: 2.4, phase: 0 });
+    s.add('switches', { x: 4.6, y: 0, w: 1.2, target: 'm35a' }, { x: 14.6, y: 0, w: 1.2, target: 'm35b' });
+    s.add('doors', { id: 'm35a', x: 10, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 },
+      { id: 'm35b', x: 20, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+    s.block(10, 3.2, 0.8, 9, 'wall');
+    s.block(20, 3.2, 0.8, 9, 'wall');
+    s.checkpoint(0.6, 0);
+    s.star(15.2, 1.4);
+    s.pass('Le premier levier sous le marteau', [-2, 0], ['on', 7, 9.4, 0], [['goTo', 1.6], ['waitCycle', 2.4, 1.8, 1.9], ['run', 1, 7.2, 9.4, 0], ['goTo', 8.4]]);
+    s.pass('Le second levier sous le marteau', [8.4, 0], ['on', 17, 19.4, 0], [['goTo', 11.6], ['waitCycle', 2.4, 1.8, 1.9], ['run', 1, 17.2, 19.4, 0], ['goTo', 18.4]]);
+    s.pass('Les deux portes ouvertes', [18.4, 0], ['on', 22, 34, 0], [['run', 1, 22.2, 34, 0], ['settle'], ['wait', 2]]);
   });
   // Le premier balancier
   c.section(18, (s) => {
@@ -298,11 +440,37 @@ const L35 = level({ id: 'forest-5', difficulty: 'hard', number: 5, nameKey: 'lv.
 const blink = (x, y, w, phase, period = 3, on = 1.6) => ({ x, y, w, h: 0.4, period, on, phase });
 
 // 36 — La cabane : deux leviers, deux portes
-const L36 = level({ id: 'forest-6', difficulty: 'medium', number: 6, nameKey: 'lv.forest.6', idea: 'puzzle : levier du champignon, levier de la caisse, la cabane s’ouvre', maxY: 12 }, (c) => {
+const L36 = level({ id: 'forest-06', difficulty: 'medium', number: 6, nameKey: 'lv.forest.6', idea: 'puzzle : levier du champignon, levier de la caisse, la cabane s’ouvre', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.levers');
+  });
+  // NOUVEAU — Le levier perché : une marche sort du pilier, elle mène au levier qui ouvre la porte.
+  c.section(30, (s) => {
+    s.ground(0, 30);
+    s.block(12, 0, 2.4, 5.2, wood);
+    const sw = s.add('switches', { x: 12.6, y: 5.2, w: 1.2, target: 'perch36' });
+    const t = s.add('traps', { kind: 'pop', x: 10, y: 2.4, w: 2, h: 0.5, from: { dx: 2, dy: 0 }, trigger: { x1: 7, x2: 11.5, y1: -1, y2: 1.6 }, warn: 0.45, speed: 6 });
+    s.add('doors', { id: 'perch36', x: 22, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+    s.block(22, 3.2, 0.8, 9, 'wall');
+    s.star(13.2, 7.4);
+    s.pass('La marche sort du pilier', [-2, 0], ['on', 10.1, 12, 2.9], [['goTo', 8.8], ['waitTrap', t, 'out'], ['hop', 3, 11, 2.9], ['settle']]);
+    s.pass('Marche → levier perché', [11, 2.9], ['switch', sw], [['hop', 3, 13.2, 5.2]]);
+    s.pass('La porte s’ouvre', [13.2, 5.2], ['on', 24, 30, 0], [['goTo', 13.8], ['hold', 1, 14.6], ['goTo', 20], ['wait', 0.4], ['goTo', 26], ['wait', 2]]);
+  });
+  // NOUVEAU — Le grenier : la porte se referme derrière toi ; un portail caché derrière le tonneau mène dehors.
+  c.section(28, (s) => {
+    s.ground(0, 28);
+    s.block(6, 3.4, 15, 1.2, wood);
+    s.block(20, 0, 1, 3.4, wood);
+    s.add('traps', { kind: 'close', x: 6.2, y: 0, w: 0.5, h: 3.4, from: { dx: 0, dy: 3.4 }, trigger: { x1: 8, x2: 10 }, warn: 0.35 });
+    s.block(12, 0, 1.4, 1, wood);
+    s.add('teleporters', { a: { x: 16, y: 0.9 }, b: { x: 24, y: 0.9 }, r: 0.75, hidden: true });
+    s.checkpoint(1, 0);
+    s.star(16, 2.4);
+    s.pass('Dans le grenier', [-2, 0], ['on', 8.6, 11, 0], [['goTo', 9.6]]);
+    s.pass('Le portail derrière le tonneau', [9.6, 0], ['on', 22, 28, 0], [['wait', 2], ['hop', 2, 15, 0], ['hold', 1, 15.4], ['goTo', 25], ['wait', 2]]);
   });
   // Le premier levier est sur la planche, là-haut : seul le champignon y mène
   c.section(24, (s) => {
@@ -358,11 +526,33 @@ const L36 = level({ id: 'forest-6', difficulty: 'medium', number: 6, nameKey: 'l
 });
 
 // 37 — Les planches magiques : elles apparaissent et disparaissent au-dessus de l'eau
-const L37 = level({ id: 'forest-7', difficulty: 'hard', number: 7, nameKey: 'lv.forest.7', idea: 'planches qui clignotent : vague, escalier, descente', maxY: 12 }, (c) => {
+const L37 = level({ id: 'forest-07', difficulty: 'hard', number: 7, nameKey: 'lv.forest.7', idea: 'planches qui clignotent : vague, escalier, descente', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.blinkers');
+  });
+  // NOUVEAU (TROLL) — Le raccourci : le tunnel tout droit est tentant… la porte se referme et le portail renvoie au
+  // début. Le vrai chemin passe par le champignon, sur le toit du tunnel.
+  c.section(34, (s) => {
+    s.ground(0, 34);
+    s.add('mushrooms', { x: 3, y: 1, w: 1.8, height: 5 });
+    s.block(6, 2.2, 14, 1.2, wood);
+    s.block(19.5, 0, 0.5, 2.2, wood);
+    s.add('traps', { kind: 'close', x: 6.2, y: 0, w: 0.5, h: 2.2, from: { dx: 0, dy: 2.2 }, trigger: { x1: 9, x2: 11, y1: -1, y2: 2 }, warn: 0.3 });
+    s.add('teleporters', { a: { x: 17.5, y: 0.9 }, b: { x: 1, y: 0.9 }, r: 0.75 });
+    s.hint(13, 1.2, 'hint.troll2', 0.7);
+    s.star(12, 5.4);
+    s.pass('Pas le tunnel : le toit', [-2, 0], ['on', 6.2, 19.8, 3.4], [['goTo', 1.2], ['hop', 2, 3.9], ['fly', 9.5], ['settle']]);
+    s.pass('Descendre du toit', [9.5, 3.4], ['on', 22, 34, 0], [['goTo', 19.4], ['hold', 1, 20.2], ['goTo', 25], ['wait', 2]]);
+  });
+  // NOUVEAU (TROLL) — Tout droit ? Non ! : un portail presque invisible au milieu du chemin renvoie en arrière.
+  c.section(30, (s) => {
+    s.ground(0, 30);
+    s.add('teleporters', { a: { x: 14, y: 0.9 }, b: { x: 2, y: 0.9 }, r: 0.75, hidden: true });
+    s.hint(22, 4.3, 'hint.troll3');
+    s.star(14, 3.6);
+    s.pass('Sauter le scintillement', [-2, 0], ['on', 16, 30, 0], [['goTo', 11.2], ['hop', 4, 17, 0], ['goTo', 20], ['wait', 2]]);
   });
   // La vague : les planches apparaissent l'une après l'autre
   c.section(22, (s) => {
@@ -412,10 +602,35 @@ const L37 = level({ id: 'forest-7', difficulty: 'hard', number: 7, nameKey: 'lv.
 });
 
 // 38 — La canopée : tout se passe en haut des arbres ; la rivière est loin en dessous
-const L38 = level({ id: 'forest-8', difficulty: 'hard', number: 8, nameKey: 'lv.forest.8', idea: 'en haut des arbres : lianes, branches, champignons, branches fragiles', maxY: 18 }, (c) => {
+const L38 = level({ id: 'forest-08', difficulty: 'hard', number: 8, nameKey: 'lv.forest.8', idea: 'en haut des arbres : lianes, branches, champignons, branches fragiles', maxY: 18 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 6, wood);
     s.spawn(2, 6);
+  });
+  // NOUVEAU — Le ressort et la liane : la branche-ressort lance le ballon jusqu'à la liane, qui le dépose de l'autre côté.
+  c.section(26, (s) => {
+    s.ground(0, 5);
+    s.add('trampolines', { x: 2.6, y: 0, w: 1.6, boost: 1.15 });
+    river(s, 5, 19);
+    s.add('vines', { x: 9.5, y: 12.4, len: 5.6 });
+    s.ground(19, 26);
+    s.hint(0.5, 4.3, 'hint.spring');
+    s.star(9.5, 8);
+    s.pass('Le ressort → la liane', [-2, 0], ['on', 19.3, 26, 0], [['goTo', 1], ['hold', 1, 2.9], ['vines', 19.6, false], ['goTo', 22], ['wait', 2]]);
+  });
+  // NOUVEAU — L'escalier qui s'efface : des marches de verre qui montent, puis disparaissent sous le ballon.
+  c.section(26, (s) => {
+    s.ground(0, 3);
+    river(s, 3, 18);
+    s.add('crumbles', { x: 4.4, y: 0.6, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 },
+      { x: 8, y: 1.8, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 },
+      { x: 11.6, y: 3.0, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 });
+    s.block(15.2, -1.2, 5, 5.6, wood);
+    s.ground(20, 26, 6, wood);
+    s.checkpoint(1, 0);
+    s.star(12.6, 6);
+    s.pass('L’escalier qui s’efface', [-2, 0], ['on', 15.3, 20, 4.4], [['goTo', 1.4], ['hop', 3, 5.6, 0.95], ['jump', 1, 9, 2.15], ['jump', 1, 12.6, 3.35], ['jump', 1, 17, 4.4], ['settle']]);
+    s.pass('Monter dans la canopée', [17, 4.4], ['on', 20.3, 26, 6], [['goTo', 17.4], ['hop', 2, 22, 6], ['goTo', 23], ['wait', 2]]);
   });
   // Les lianes de la canopée
   c.section(26, (s) => {
@@ -452,7 +667,7 @@ const L38 = level({ id: 'forest-8', difficulty: 'hard', number: 8, nameKey: 'lv.
     s.add('vines', { x: 4.6, y: 16.8, len: 5.8 }, { x: 10, y: 16.8, len: 5.8 });
     s.ground(14, 18, 8, wood);
     s.checkpoint(1, 8);
-    s.pass('Deux lianes courtes', [-6, 8], ['on', 14.2, 18, 8], [['goTo', 1.2], ['charge', 4], ['vines', 14.4], ['goTo', 16]]);
+    s.pass('Deux lianes courtes', [-6, 8], ['on', 14.2, 18, 8], [['goTo', 1.2], ['waitCycle', 3, 2.4, 2.5], ['charge', 4], ['vines', 14.4], ['goTo', 16]]);
   });
   // Les branches fragiles, jusqu'au nid
   c.section(22, (s) => {
@@ -472,11 +687,38 @@ const L38 = level({ id: 'forest-8', difficulty: 'hard', number: 8, nameKey: 'lv.
 });
 
 // 39 — Les arbres creux : on entre dans un tronc, on ressort ailleurs
-const L39 = level({ id: 'forest-9', difficulty: 'hard', number: 9, nameKey: 'lv.forest.9', idea: 'puzzle : arbres creux (téléporteurs), le bon tronc, le levier du sommet', maxY: 14 }, (c) => {
+const L39 = level({ id: 'forest-09', difficulty: 'hard', number: 9, nameKey: 'lv.forest.9', idea: 'puzzle : arbres creux (téléporteurs), le bon tronc, le levier du sommet', maxY: 14 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.hollow');
+  });
+  // NOUVEAU — Le portail du levier : un arbre creux monte sur la souche du levier, un autre redescend derrière la grille.
+  c.section(32, (s) => {
+    s.ground(0, 32);
+    s.add('teleporters', { a: { x: 4, y: 0.9 }, b: { x: 10, y: 7.6 }, r: 0.75 });
+    s.block(8, 0, 6, 6.6, wood);
+    const sw = s.add('switches', { x: 11.4, y: 6.6, w: 1.2, target: 'grille39' });
+    s.add('teleporters', { a: { x: 13.2, y: 7.5 }, b: { x: 17, y: 0.9 }, r: 0.75 });
+    s.add('doors', { id: 'grille39', x: 22, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+    s.block(22, 3.2, 0.8, 9, 'wall');
+    s.star(10, 9.4);
+    s.pass('Arbre creux → souche du levier', [-2, 0], ['switch', sw], [['goTo', 2.6], ['hold', 1, 3.6], ['goTo', 11.6]]);
+    s.pass('Arbre creux → derrière la souche', [11.6, 6.6], ['on', 15, 21.6, 0], [['hold', 1, 12.6], ['goTo', 18.6]]);
+    s.pass('La grille s’ouvre', [18.6, 0], ['on', 24, 32, 0], [['wait', 0.4], ['goTo', 26], ['wait', 2]]);
+  });
+  // NOUVEAU — Les portails à double sens : passer la rivière, puis revenir chercher l'étoile ? Le bon chemin les enchaîne.
+  c.section(30, (s) => {
+    s.ground(0, 6);
+    river(s, 6, 24);
+    s.block(13, -1.2, 4, 2.4, wood);
+    s.add('teleporters', { a: { x: 4.5, y: 0.9 }, b: { x: 14, y: 2.1 }, r: 0.75, twoWay: true });
+    s.add('teleporters', { a: { x: 16.4, y: 2.1 }, b: { x: 26, y: 0.9 }, r: 0.75, twoWay: true });
+    s.ground(24, 30);
+    s.checkpoint(1, 0);
+    s.star(15, 4.2);
+    s.pass('Premier portail → îlot', [-2, 0], ['on', 13.2, 16, 1.2], [['goTo', 3.2], ['hold', 1, 4], ['goTo', 14.6]]);
+    s.pass('Deuxième portail → l’autre rive', [14.6, 1.2], ['on', 25, 30, 0], [['hold', 1, 15.9], ['goTo', 28], ['wait', 2]]);
   });
   // Le premier arbre creux traverse le grand mur moussu
   c.section(22, (s) => {
@@ -553,6 +795,33 @@ const L40 = level({ id: 'forest-10', difficulty: 'expert', number: 10, nameKey: 
   c.section(8, (s) => {
     s.ground(0, 8);
     s.spawn(2);
+  });
+  // NOUVEAU — Le mur et la liane : un mur surgit au bord de la rivière ; on le saute, puis la liane.
+  c.section(32, (s) => {
+    s.ground(0, 12);
+    const t = s.add('traps', { kind: 'rise', x: 8, y: 0, w: 0.8, h: 2, from: { dx: 0, dy: -2 }, trigger: { x1: 4, x2: 6 }, warn: 0.45 });
+    river(s, 12, 24);
+    s.add('vines', { x: 15.8, y: 9.4, len: 6.4 });
+    s.ground(24, 32);
+    s.star(16.4, 4.6);
+    s.pass('Le mur au bord de la rivière', [-2, 0], ['on', 9.5, 12, 0], [['goTo', 5], ['waitTrap', t, 'out'], ['goTo', 5.4], ['hop', 4, 10.6, 0], ['settle']]);
+    s.pass('La liane de la rivière', [10.6, 0], ['on', 24.2, 32, 0], [['wait', 2], ['goTo', 11.2], ['charge', 4], ['vines', 24.4], ['goTo', 27], ['wait', 2]]);
+  });
+  // NOUVEAU — Les nénuphars et le levier de l'îlot : le levier ouvre la dernière porte (deux objectifs).
+  c.section(28, (s) => {
+    s.ground(0, 3);
+    river(s, 3, 15);
+    s.add('crumbles', { x: 4.6, y: 0, w: 1.8, h: 0.3, look: 'vanish', delay: 0.7, respawn: 2.5 },
+      { x: 8.4, y: 0, w: 1.8, h: 0.3, look: 'vanish', delay: 0.7, respawn: 2.5 });
+    s.block(12, -1.2, 3, 1.5, wood);
+    const sw = s.add('switches', { x: 12.9, y: 0.3, w: 1.2, target: 'fin40' });
+    s.ground(15, 28);
+    s.add('doors', { id: 'fin40', x: 21, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+    s.block(21, 3.2, 0.8, 9, 'wall');
+    s.checkpoint(0.6, 0);
+    s.star(9.3, 3);
+    s.pass('Les nénuphars → le levier', [-2, 0], ['switch', sw], [['goTo', 1.6], ['hop', 2, 5.5, 0.3], ['jump', 1, 9.3, 0.3], ['jump', 1, 13.5, 0.3]]);
+    s.pass('La dernière porte', [13.5, 0.3], ['on', 22.5, 28, 0], [['settle'], ['goTo', 19], ['wait', 0.4], ['goTo', 24]]);
   });
   // Champignon → liane → souche
   c.section(24, (s) => {

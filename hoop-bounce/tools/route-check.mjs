@@ -217,6 +217,7 @@ export class Pilot {
 //   ['settle']                       freiner jusqu'à l'arrêt après un atterrissage (glace)
 //   ['waitCycle', période, a, b, phase?]  attendre que (temps + phase·période) mod période soit dans [a, b[
 //   ['waitMover', groupe, i, 'x'|'y', '<'|'>', v]  attendre la position d'un élément mobile (décalage)
+//   ['waitTrap', i, état]            attendre qu'un piège déclenché soit dans l'état donné ('out', 'idle'…)
 //   ['ride', i]                      traverser sur la plateforme mobile n° i (aller simple)
 //   ['jumpOver', groupe, i, d?]      rattraper un élément mobile en roulant et sauter par-dessus
 //   ['vines', x, press?]             (rebondir puis) se balancer de liane en liane jusqu'à se poser au-delà de x
@@ -293,6 +294,8 @@ const STEPS = {
     const u = (((g.time / period + phase) % 1) + 1) % 1 * period;
     return u >= a && u < b;
   }, period * 3 + 1),
+  // Piège déclenché n° i : attendre son état ('warn', 'out', 'idle'…)
+  waitTrap: (p, i, state) => p.until((g) => g.level.traps[i].state === state, 12),
   waitMover: (p, group, i, axis, op, v) => p.until((g) => {
     const m = moverOf(g, group, i);
     const val = axis === 'x' ? m.offsetX : m.offsetY;

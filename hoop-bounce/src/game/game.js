@@ -69,6 +69,8 @@ export class Game {
     for (const m of L.mushrooms) m.flex = 0;
     for (const f of L.fallers) f.reset();
     for (const b of L.blinkers) b.reset();
+    for (const tp of L.traps) tp.reset();
+    for (const w of L.winds) w.reset();
     this._cannonFired = L.cannons.map(() => -1);
     this._laserOn = L.lasers.map(() => false);
     this._crusherDown = L.crushers.map(() => false);
@@ -254,10 +256,11 @@ export class Game {
           if (c.impactSpeed > 3) crate.hit(dir, c.impactSpeed);
         }
         if (tag === 'trampoline' && c.ny > 0.5) {
-          this.controller.launch(this.cfg.controls.trampolineVelocity * Math.sqrt(L.gravityScale));
           const t = L.trampolines.find((tt) => c.px >= tt.x - 0.05 && c.px <= tt.x + tt.w + 0.05);
+          // `boost` (campagne) : ressort surpuissant, reconnaissable à ses ressorts rouges
+          this.controller.launch(this.cfg.controls.trampolineVelocity * Math.sqrt(L.gravityScale) * (t?.boost ?? 1));
           if (t) t.flex = 1;
-          this.events.emit('trampoline', { x: b.x, y: b.y - b.radius });
+          this.events.emit('trampoline', { x: b.x, y: b.y - b.radius, boost: t?.boost ?? 1 });
           continue;
         }
         if (tag === 'switch' && c.ny > 0.5) this._pressSwitch(L.switches[c.collider.switchIndex]);
@@ -292,6 +295,8 @@ export class Game {
     for (const f of L.fallers) f.reset();
     for (const i of L.icicles) i.reset();
     for (const v of L.vines) v.reset();
+    for (const tp of L.traps) tp.reset();
+    for (const w of L.winds) w.reset();
     this.vine = null;
     this._respawn();
   }
@@ -330,6 +335,15 @@ export class Game {
     for (const bl of L.blinkers) {
       const e = bl.update(this.time, b);
       if (e) this.events.emit('blinker', { x: bl.x + bl.w / 2, y: bl.y + bl.h / 2, on: e === 'on' });
+    }
+    // Pièges surprises : avertissement (son, lumière) puis mise en place
+    for (const tp of L.traps) {
+      const e = tp.update(dt, b);
+      if (e === 'warn' || e === 'move') this.events.emit(e === 'warn' ? 'trapWarn' : 'trapMove', { x: tp.x + tp.w / 2, y: tp.y + tp.h / 2, kind: tp.kind });
+    }
+    for (const w of L.winds) {
+      const e = w.update(dt, b);
+      if (e) this.events.emit(e === 'warn' ? 'gustWarn' : 'gust', { x: b.x, y: b.y, dir: Math.sign(w.force) });
     }
     L.cannons.forEach((c, i) => {
       const n = Math.floor(this.time / c.period + c.phase);

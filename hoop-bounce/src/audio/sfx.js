@@ -835,6 +835,43 @@ export class Sfx {
     this._tone(400, 90, 0.5, 0.12, 'triangle');
   }
 
+  /** Piège surprise — avertissement : double bip d'alarme (on l'entend avant de le voir bouger). */
+  trapWarn(volume = 1, x = null) {
+    if (!this.ready || volume <= 0.03) return;
+    this._at(x);
+    this._tone(980, 980, 0.07, 0.05 * volume, 'square');
+    this._tone(980, 980, 0.07, 0.05 * volume, 'square', 0.13);
+    this._noiseBurst(0.25, 0.06 * volume, 'bandpass', 700, 2, 300);
+    this._at(null);
+  }
+
+  /** Piège surprise — le bloc glisse et claque en place. */
+  trapMove(volume = 1, x = null) {
+    if (!this.ready || volume <= 0.03) return;
+    this._at(x, 0.2);
+    this._noiseBurst(0.22, 0.16 * volume, 'lowpass', 1200, 0.8, 200);
+    this._tone(140, 70, 0.22, 0.22 * volume, 'triangle', 0.12);
+    this._at(null);
+  }
+
+  /** Coup de vent soudain : sifflement qui monte (avertissement), puis souffle. */
+  gust(warn = false) {
+    if (!this.ready) return;
+    if (warn) {
+      this._tone(500, 1400, 0.6, 0.035, 'sine');
+      this._noiseBurst(0.6, 0.06, 'bandpass', 1600, 3, 2600);
+    } else {
+      this._noiseBurst(1.1, 0.2, 'bandpass', 900, 1.2, 500);
+    }
+  }
+
+  /** Ressort surpuissant : « boïng » plus grave et plus long que le trampoline. */
+  springBoost() {
+    if (!this.ready) return;
+    this._tone(120, 620, 0.35, 0.14, 'triangle');
+    this._tone(240, 1240, 0.3, 0.05, 'sine', 0.02);
+  }
+
   blinker(on, volume = 1, x = null) {
     if (!this.ready || volume <= 0.03) return;
     this._at(x);

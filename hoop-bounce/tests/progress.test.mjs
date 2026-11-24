@@ -73,14 +73,27 @@ test('animation de déblocage : chaque monde ouvert n\'est annoncé qu\'une fois
   assert.deepEqual(new Progress(W, store).pendingUnlocks(), []);
 });
 
-test('ancienne progression (étape 5) convertie : niveaux terminés et étoiles conservés', () => {
+test('nouvelle campagne : la progression d’une campagne précédente repart de zéro, sans rien effacer', () => {
   const store = memory();
-  store.setItem('hoopbounce.progress', JSON.stringify({ unlocked: 2, stars: { a: 3, b: 2 }, best: { a: 9.5, b: 12 } }));
+  store.setItem('hoopbounce.progress', JSON.stringify({ v: 2, done: { a: true, b: true }, stars: { a: 3, b: 2 }, best: { a: 9.5, b: 12 }, seen: { w2: true } }));
+  store.setItem('hoopbounce.coins', '1234');
   const p = new Progress(W, store);
-  assert.equal(p.isDone('a'), true);
-  assert.equal(p.isDone('b'), true);
-  assert.equal(p.starsFor('a'), 3);
-  assert.equal(p.isWorldUnlocked(1), true);
+  assert.equal(p.isDone('a'), false, 'niveaux à refaire');
+  assert.equal(p.starsFor('a'), 0);
+  assert.equal(p.isWorldUnlocked(1), false);
+  const saved = JSON.parse(store.getItem('hoopbounce.progress'));
+  assert.equal(saved.campaign, 3);
+  assert.deepEqual(saved.legacy.stars, { a: 3, b: 2 }, 'ancienne progression gardée de côté');
+  assert.equal(store.getItem('hoopbounce.coins'), '1234', 'les autres sauvegardes ne sont pas touchées');
+  // Une progression de la nouvelle campagne est gardée telle quelle
+  p.complete('a', 2, 10);
+  const again = new Progress(W, store);
+  assert.equal(again.isDone('a'), true);
+  assert.equal(again.starsFor('a'), 2);
+  // Ancien format (étape 5) : remis à zéro lui aussi
+  const old = memory();
+  old.setItem('hoopbounce.progress', JSON.stringify({ unlocked: 2, stars: { a: 3 }, best: { a: 9.5 } }));
+  assert.equal(new Progress(W, old).isDone('a'), false);
 });
 
 test('tout terminé : on reprend au dernier niveau du dernier monde', () => {

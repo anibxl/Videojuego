@@ -1,4 +1,4 @@
-// MONDE 2 — NEIGE : PREMIÈRES COMBINAISONS (refonte phase 2). 30 à 40 s par niveau pour un joueur.
+// MONDE 2 — NEIGE : PREMIERS PIÈGES (refonte de la campagne). 30 à 45 s par niveau pour un joueur.
 // Glace (on garde son élan), vent (en rafales), stalactites, plaques qui cèdent, boules de neige,
 // blocs de glace qui s'écrasent. Les premiers niveaux présentent une idée ; les suivants les combinent.
 //
@@ -10,8 +10,12 @@
 // 16 Patinoire au vent    glace + vent : freiner à temps (technique)
 // 17 Le glacier           blocs de glace qui s'écrasent sur la glace (précision)
 // 18 Le chalet            le panier est enfermé : tremplin de glace → interrupteur → porte (puzzle)
-// 19 Le sommet            trampolines, plaques qui cèdent et stalactites, en montée (technique)
+// 19 Trop facile ?        NIVEAU TROLL : le panier est juste là… puis le sol disparaît ★
 // 20 Tempête de neige     vent, avalanche, pont qui cède, stalactites (finale) ★
+//
+// Refonte de la campagne : chaque niveau gagne une étape « surprise » annoncée par un signe visible
+// (sol fissuré qui cède, rafale soudaine annoncée par des chevrons, mur qui surgit d'une fente qui clignote,
+// dalles de verre qui s'effacent, ressort rouge, marche qui jaillit, porte qui se ferme derrière, portail caché).
 
 import { level } from './kit.js';
 
@@ -19,7 +23,7 @@ const snow = 'snow';
 const ice = 'ice';
 
 // 11 — Premières glissades
-const L11 = level({ id: 'snow-1', difficulty: 'easy', number: 1, nameKey: 'lv.snow.1', idea: 'la glace : élan, freinage, piliers, tremplin' }, (c) => {
+const L11 = level({ id: 'snow-01', difficulty: 'easy', number: 1, nameKey: 'lv.snow.1', idea: 'la glace : élan, freinage, piliers, tremplin' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, snow);
     s.spawn(2);
@@ -55,6 +59,17 @@ const L11 = level({ id: 'snow-1', difficulty: 'easy', number: 1, nameKey: 'lv.sn
     s.pass('Remonter sur la terrasse', [-2, 0], ['on', 0.3, 3, 2.2], [['goTo', -1.4], ['hop', 3, 1.4, 2.2]]);
     s.pass('Pente de glace → tremplin', [1.4, 2.2], ['on', 17.2, 22, 0], [['goTo', 1.2], ['jumpAt', 1, 11.4, 19]]);
   });
+  // NOUVEAU — Le lac trompeur : la glace fissurée cède (premier faux sol). On tombe dans un creux sans danger.
+  c.section(20, (s) => {
+    s.ground(0, 4, 0, snow);
+    s.ground(4, 10, -1.6, snow);
+    s.add('crumbles', { x: 4, y: -0.4, w: 6, h: 0.4, look: 'fake', style: ice, delay: 0.25, respawn: 60 });
+    s.ground(10, 20, 0, snow);
+    s.hint(1.5, 4.3, 'hint.fake');
+    s.star(7, 1.6);
+    s.pass('Le lac trompeur', [-3, 0], ['on', 4.5, 9.6, -1.6], [['hold', 1, 5]]);
+    s.pass('Sortir du creux', [6, -1.6], ['on', 10.5, 20, 0], [['goTo', 7.4], ['hop', 3, 12.5, 0]]);
+  });
   c.section(16, (s) => {
     s.ground(0, 16, 0, snow);
     s.hoop(10, 3.4);
@@ -63,7 +78,7 @@ const L11 = level({ id: 'snow-1', difficulty: 'easy', number: 1, nameKey: 'lv.sn
 });
 
 // 12 — Col venteux
-const L12 = level({ id: 'snow-2', difficulty: 'medium', number: 2, nameKey: 'lv.snow.2', idea: 'vent de face, vent dans le dos, rafales' }, (c) => {
+const L12 = level({ id: 'snow-02', difficulty: 'medium', number: 2, nameKey: 'lv.snow.2', idea: 'vent de face, vent dans le dos, rafales' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, snow);
     s.spawn(2);
@@ -103,6 +118,19 @@ const L12 = level({ id: 'snow-2', difficulty: 'medium', number: 2, nameKey: 'lv.
     s.pass('Pilier 3', [9.8, 3.2], ['on', 13.1, 14.9, 2.4], [['goTo', 9.8], ['hop', 2, 14, 2.4], ['settle']]);
     s.pass('Retour sur la neige', [14, 2.4], ['on', 16.8, 20, 0], [['goTo', 14], ['hop', 2, 18.4, 0]]);
   });
+  // NOUVEAU — Le coup de vent : les chevrons annoncent une rafale soudaine. On l'attend, puis on passe.
+  c.section(22, (s) => {
+    s.ground(0, 22, 0, snow);
+    s.add('spikes', { x: 4, y: 0, w: 12, dir: 'up' });
+    s.block(6, 0, 2, 2, snow);
+    s.block(11, 0, 2, 2, snow);
+    s.add('winds', { x: 2, y: 0, w: 16, h: 9, force: -16, sudden: { warn: 0.8, dur: 1.4, rest: 9 } });
+    s.checkpoint(0.6, 0);
+    s.hint(0.5, 4.3, 'hint.gust');
+    s.star(9.5, 4.2);
+    s.pass('Laisser passer le coup de vent', [-2, 0], ['on', 0.5, 4, 0], [['goTo', 2.8], ['wait', 2.7], ['goTo', 2.6]]);
+    s.pass('Les deux piliers', [2.6, 0], ['on', 16.4, 22, 0], [['hop', 4, 7, 2], ['settle'], ['hop', 4, 12, 2], ['settle'], ['hop', 4, 18.8, 0]]);
+  });
   c.section(16, (s) => {
     s.ground(0, 16, 0, snow);
     s.hoop(10, 3.4);
@@ -111,7 +139,7 @@ const L12 = level({ id: 'snow-2', difficulty: 'medium', number: 2, nameKey: 'lv.
 });
 
 // 13 — La grotte de glace
-const L13 = level({ id: 'snow-3', difficulty: 'medium', number: 3, nameKey: 'lv.snow.3', idea: 'stalactites : vitesse ou patience' }, (c) => {
+const L13 = level({ id: 'snow-03', difficulty: 'medium', number: 3, nameKey: 'lv.snow.3', idea: 'stalactites : vitesse ou patience' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, snow);
     s.spawn(2);
@@ -145,6 +173,17 @@ const L13 = level({ id: 'snow-3', difficulty: 'medium', number: 3, nameKey: 'lv.
     s.star(9, 2);
     s.pass('Le creux sous les stalactites', [-1, 1.4], ['on', 14.3, 18, 1.4], [['goTo', 1.6], ['hold', 1, 4.6], ['goTo', 12.8], ['hop', 3, 15.5, 1.4]]);
   });
+  // NOUVEAU — Les murs de glace : la grille rayée au sol annonce un mur qui surgit. Il faut le sauter.
+  c.section(22, (s) => {
+    s.ground(0, 22, 1.4, snow);
+    const a = s.add('traps', { kind: 'rise', x: 9, y: 1.4, w: 0.8, h: 1.8, from: { dx: 0, dy: -1.8 }, trigger: { x1: 5, x2: 7 }, warn: 0.5 });
+    const b = s.add('traps', { kind: 'rise', x: 16, y: 1.4, w: 0.8, h: 2.6, from: { dx: 0, dy: -2.6 }, trigger: { x1: 12, x2: 13.5 }, warn: 0.5 });
+    s.checkpoint(0.8, 1.4);
+    s.hint(1.5, 5.6, 'hint.trap');
+    s.star(16.4, 6);
+    s.pass('Premier mur qui surgit', [-2, 1.4], ['on', 10.5, 13.5, 1.4], [['goTo', 6], ['waitTrap', a, 'out'], ['goTo', 6.4], ['hop', 4, 12, 1.4], ['settle']]);
+    s.pass('Deuxième mur, plus haut', [11.8, 1.4], ['on', 17.5, 22, 1.4], [['goTo', 12.8], ['waitTrap', b, 'out'], ['goTo', 12.8], ['hop', 5, 19.5, 1.4]]);
+  });
   c.section(16, (s) => {
     s.ground(0, 16, 1.4, snow);
     s.hoop(10, 3.4, 1.4);
@@ -153,7 +192,7 @@ const L13 = level({ id: 'snow-3', difficulty: 'medium', number: 3, nameKey: 'lv.
 });
 
 // 14 — Le pont de glace : il s'effondre derrière toi
-const L14 = level({ id: 'snow-4', difficulty: 'medium', number: 4, nameKey: 'lv.snow.4', idea: 'le pont s’effondre : ne jamais s’arrêter' }, (c) => {
+const L14 = level({ id: 'snow-04', difficulty: 'medium', number: 4, nameKey: 'lv.snow.4', idea: 'le pont s’effondre : ne jamais s’arrêter' }, (c) => {
   c.section(10, (s) => {
     s.ground(0, 10, 0, snow);
     s.spawn(2);
@@ -190,6 +229,21 @@ const L14 = level({ id: 'snow-4', difficulty: 'medium', number: 4, nameKey: 'lv.
     s.star(8.7, 3.6);
     s.pass('La descente des plaques', [-2, 2.6], ['on', 14.2, 18, 0], [['goTo', 1.2], ['hop', 1, 5.1, 2.2], ['jump', 1, 8.7, 1.4], ['jump', 1, 12.3, 0.6], ['jump', 1, 15.5, 0]]);
   });
+  // NOUVEAU — Les dalles qui s'effacent : la glace lumineuse disparaît peu après qu'on l'a touchée.
+  c.section(22, (s) => {
+    s.ground(0, 2, 0, snow);
+    s.ground(2, 18, 0, snow);
+    s.add('spikes', { x: 2, y: 0, w: 16, dir: 'up' });
+    s.add('crumbles', { x: 3.4, y: 1.2, w: 2, h: 0.35, look: 'vanish', delay: 0.9, respawn: 2.5 },
+      { x: 7.4, y: 1.8, w: 2, h: 0.35, look: 'vanish', delay: 0.9, respawn: 2.5 },
+      { x: 11.4, y: 2.4, w: 2, h: 0.35, look: 'vanish', delay: 0.9, respawn: 2.5 },
+      { x: 15, y: 1.6, w: 2, h: 0.35, look: 'vanish', delay: 0.9, respawn: 2.5 });
+    s.ground(18, 22, 0, snow);
+    s.checkpoint(0.6, 0);
+    s.hint(1, 4.6, 'hint.vanish');
+    s.star(12.4, 4.6);
+    s.pass('Les dalles qui s’effacent', [-2, 0], ['on', 18.3, 22, 0], [['goTo', 0.8], ['hop', 2, 4.4, 1.55], ['jump', 1, 8.4, 2.15], ['jump', 1, 12.4, 2.75], ['jump', 1, 16, 1.95], ['jump', 1, 19.6, 0]]);
+  });
   c.section(16, (s) => {
     s.ground(0, 16, 0, snow);
     s.hoop(10, 3.4, 0);
@@ -198,7 +252,7 @@ const L14 = level({ id: 'snow-4', difficulty: 'medium', number: 4, nameKey: 'lv.
 });
 
 // 15 — L'avalanche
-const L15 = level({ id: 'snow-5', difficulty: 'medium', number: 5, nameKey: 'lv.snow.5', idea: 'boules de neige : sauter ou se cacher' }, (c) => {
+const L15 = level({ id: 'snow-05', difficulty: 'medium', number: 5, nameKey: 'lv.snow.5', idea: 'boules de neige : sauter ou se cacher' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, snow);
     s.spawn(2);
@@ -229,6 +283,18 @@ const L15 = level({ id: 'snow-5', difficulty: 'medium', number: 5, nameKey: 'lv.
     s.star(10, 1.4);
     s.pass('L’avalanche te poursuit', [-2, 0], ['on', 18.3, 24, 1.6], [['goTo', -1.2], ['waitCycle', 6, 5.0, 5.1], ['dribbleRun', 1, 2, 15.4, 19.5]]);
   });
+  // NOUVEAU — Le ressort rouge : un ressort surpuissant envoie sur la falaise, d'où l'on s'élance par-dessus les pics.
+  c.section(30, (s) => {
+    s.ground(0, 30, 1.6, snow);
+    s.add('trampolines', { x: 3, y: 1.6, w: 1.6, boost: 1.3 });
+    s.block(9, 1.6, 8, 7.4, 'rock');
+    s.add('spikes', { x: 17, y: 1.6, w: 4.6, dir: 'up' });
+    s.checkpoint(0.8, 1.6);
+    s.hint(0.5, 5.8, 'hint.spring');
+    s.star(13, 11);
+    s.pass('Le ressort rouge → la falaise', [-2, 1.6], ['on', 9.3, 17, 9], [['goTo', 1.2], ['hold', 1, 3.3], ['fly', 12.5]]);
+    s.pass('S’élancer au-dessus des pics', [12.5, 9], ['on', 22, 30, 1.6], [['goTo', 10], ['hold', 1, 16.6], ['run', 1, 22.2, 30, 1.6]]);
+  });
   c.section(16, (s) => {
     s.ground(0, 16, 1.6, snow);
     s.hoop(10, 3.4, 1.6);
@@ -237,7 +303,7 @@ const L15 = level({ id: 'snow-5', difficulty: 'medium', number: 5, nameKey: 'lv.
 });
 
 // 16 — Patinoire au vent
-const L16 = level({ id: 'snow-6', difficulty: 'hard', number: 6, nameKey: 'lv.snow.6', idea: 'glace + vent : freiner à temps' }, (c) => {
+const L16 = level({ id: 'snow-06', difficulty: 'hard', number: 6, nameKey: 'lv.snow.6', idea: 'glace + vent : freiner à temps' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, snow);
     s.spawn(2);
@@ -277,6 +343,18 @@ const L16 = level({ id: 'snow-6', difficulty: 'hard', number: 6, nameKey: 'lv.sn
     s.pass('Îlot 3', [10.4, 2.6], ['on', 14.5, 16.9, 1.8], [['goTo', 10.4], ['hop', 2, 15.2, 1.8], ['settle']]);
     s.pass('Berge', [15.2, 1.8], ['on', 19.3, 22, 0], [['goTo', 15.2], ['hop', 2, 20.4, 0]]);
   });
+  // NOUVEAU — Le pilier surprise : une fente lumineuse dans le pilier ; un bloc en sort et sert de marche.
+  c.section(22, (s) => {
+    s.ground(0, 13.5, 0, ice);
+    s.block(7, 2.4, 1, 5.6, 'rock');
+    s.block(13.5, 0, 8.5, 6, 'rock');
+    const t = s.add('traps', { kind: 'pop', x: 8, y: 2.4, w: 2.2, h: 0.6, from: { dx: -2.2, dy: 0 }, trigger: { x1: 8.6, x2: 13 }, warn: 0.5, speed: 6 });
+    s.checkpoint(1, 0);
+    s.star(9.1, 4.6);
+    s.pass('Passer sous le pilier', [-2, 0], ['on', 0.5, 6.5, 0], [['goTo', 5.6]]);
+    s.pass('Le bloc sort du pilier', [5.6, 0], ['on', 8.2, 10.2, 3], [['hold', 1, 10.3], ['goTo', 12.2], ['waitTrap', t, 'out'], ['wait', 1.5], ['hop', 4, 9, 3], ['settle']]);
+    s.pass('Bloc → falaise', [9.2, 3], ['on', 13.8, 22, 6], [['goTo', 8.6], ['hop', 4, 15.2, 6]]);
+  });
   c.section(16, (s) => {
     s.ground(0, 16, 0, snow);
     s.hoop(10, 3.4);
@@ -285,7 +363,7 @@ const L16 = level({ id: 'snow-6', difficulty: 'hard', number: 6, nameKey: 'lv.sn
 });
 
 // 17 — Le glacier : blocs de glace qui s'écrasent sur un sol glissant
-const L17 = level({ id: 'snow-7', difficulty: 'hard', number: 7, nameKey: 'lv.snow.7', idea: 'blocs de glace sur la glace (précision)' }, (c) => {
+const L17 = level({ id: 'snow-07', difficulty: 'hard', number: 7, nameKey: 'lv.snow.7', idea: 'blocs de glace sur la glace (précision)' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, snow);
     s.spawn(2);
@@ -322,6 +400,14 @@ const L17 = level({ id: 'snow-7', difficulty: 'hard', number: 7, nameKey: 'lv.sn
     s.star(11, 3.4);
     s.pass('Les deux derniers blocs', [-2, 1.6], ['on', 8.2, 14, 1.6], [['goTo', 1], ['waitCycle', 2.2, 1.65, 1.75], ['run', 1, 8.4, 14, 1.6]]);
   });
+  // NOUVEAU — Le mur qui surgit sur le glacier : la grille rayée prévient, le mur se dresse, on le saute.
+  c.section(22, (s) => {
+    s.ground(0, 22, 1.6, snow);
+    const b = s.add('traps', { kind: 'rise', x: 15, y: 1.6, w: 0.8, h: 2.6, from: { dx: 0, dy: -2.6 }, trigger: { x1: 11, x2: 12.5 }, warn: 0.45 });
+    s.checkpoint(0.8, 1.6);
+    s.star(11, 3.6);
+    s.pass('Le mur de glace qui surgit', [-2, 1.6], ['on', 16.5, 22, 1.6], [['goTo', 11.6], ['waitTrap', b, 'out'], ['goTo', 11.8], ['hop', 4, 18.6, 1.6]]);
+  });
   c.section(16, (s) => {
     s.ground(0, 16, 1.6, snow);
     s.hoop(10, 3.4, 1.6);
@@ -331,7 +417,7 @@ const L17 = level({ id: 'snow-7', difficulty: 'hard', number: 7, nameKey: 'lv.sn
 
 // 18 — Le chalet : le panier est enfermé. Le remonte-pente, la pente de glace, le tremplin… et
 // l'interrupteur sur le rocher. Ensuite seulement, la porte du chalet s'ouvre.
-const L18 = level({ id: 'snow-8', difficulty: 'medium', number: 8, nameKey: 'lv.snow.8', idea: 'deux interrupteurs : la barrière du remonte-pente, puis la porte du chalet', maxY: 12 }, (c) => {
+const L18 = level({ id: 'snow-08', difficulty: 'medium', number: 8, nameKey: 'lv.snow.8', idea: 'deux interrupteurs : la barrière du remonte-pente, puis la porte du chalet', maxY: 12 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, snow);
     s.spawn(2);
@@ -371,6 +457,20 @@ const L18 = level({ id: 'snow-8', difficulty: 'medium', number: 8, nameKey: 'lv.
     s.pass('Interrupteur', [19.4, 3.4], ['switch', sw], [['goTo', 19], ['hop', 1, 21.2, 3.4]]);
   });
   // Redescendre devant le chalet : la porte est ouverte
+  // NOUVEAU — La cave : la porte se referme derrière toi ; un portail caché derrière le tonneau mène dehors.
+  c.section(20, (s) => {
+    s.ground(0, 3, 3.4, 'rock');
+    s.ground(3, 17, 0, snow);
+    s.block(5.6, 3.4, 11.4, 2.6, 'rock');
+    s.add('traps', { kind: 'close', x: 5.6, y: 0, w: 0.5, h: 3.4, from: { dx: 0, dy: 3.4 }, trigger: { x1: 7.4, x2: 9.5 }, warn: 0.35 });
+    s.block(11, 0, 1.4, 1.0, 'wood');
+    s.add('teleporters', { a: { x: 14.6, y: 0.9 }, b: { x: 18.6, y: 4.3 }, r: 0.75, hidden: true });
+    s.ground(17, 20, 3.4, 'rock');
+    s.hint(8, 2.6, 'hint.hidden', 0.8);
+    s.star(14.6, 2.4);
+    s.pass('Descendre dans la cave', [-2, 3.4], ['on', 6.5, 10, 0], [['hold', 1, 3.6], ['run', 1, 6.6, 10, 0], ['goTo', 8.6]]);
+    s.pass('Le portail derrière le tonneau', [8.6, 0], ['on', 17.4, 20, 3.4], [['goTo', 9.4], ['wait', 2.5], ['hop', 2, 14, 0], ['hold', 1, 15.5]]);
+  });
   c.section(26, (s) => {
     s.ground(0, 26, 0, snow);
     s.add('doors', { id: 'chalet', x: 8, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
@@ -383,11 +483,26 @@ const L18 = level({ id: 'snow-8', difficulty: 'medium', number: 8, nameKey: 'lv.
   });
 });
 
-// 19 — Le sommet : on monte, encore et encore. Trampoline, plaques qui cèdent, stalactites du sommet.
-const L19 = level({ id: 'snow-9', difficulty: 'hard', number: 9, nameKey: 'lv.snow.9', idea: 'ascension : trampoline, plaques, corniche, stalactites', maxY: 17 }, (c) => {
-  c.section(8, (s) => {
-    s.ground(0, 8, 0, snow);
-    s.spawn(2);
+// 19 — NIVEAU TROLL « Trop facile ? » : le panier est juste là, à quelques mètres… mais le sol fissuré cède et
+// le plafond bas empêche de sauter par-dessus. Au fond du puits, un portail mène au vrai parcours : l'ascension
+// du sommet (trampoline, plaques qui cèdent, corniche venteuse, arête aux stalactites). Tout en haut, un
+// dernier portail ramène… à côté du panier du début.
+const L19 = level({ id: 'snow-09', difficulty: 'hard', number: 9, nameKey: 'lv.snow.9', idea: 'troll : le panier est juste là… puis le sol disparaît ; le vrai chemin passe par le sommet', maxY: 17 }, (c) => {
+  c.section(30, (s) => {
+    s.ground(0, 5, 6, snow);
+    s.add('crumbles', { x: 5, y: 5.6, w: 5.5, h: 0.4, look: 'fake', style: snow, delay: 0.12, respawn: 999 });
+    s.block(1, 7.4, 9.5, 1.2, 'rock');
+    s.ground(5, 10.5, 0, snow);
+    s.ground(10.5, 30, 6, snow);
+    s.block(10.5, 6, 0.35, 0.35, snow);
+    s.add('teleporters', { a: { x: 7.75, y: 0.9 }, b: { x: 30.8, y: 0.9 }, r: 0.75 });
+    s.spawn(2, 6);
+    s.hoop(15.5, 3.4, 6);
+    s.hint(15.5, 12.4, 'hint.troll1');
+    s.hint(7.75, 4, 'hint.troll1b', 0.75);
+    s.star(7.75, 2.6);
+    s.pass('Trop facile ?', [2, 6], ['on', 5.5, 10, 0], [['hold', 1, 6]]);
+    s.pass('Le portail du fond du puits', [9, 0], ['x', 30.2], [['hold', -1, 8.6]]);
   });
   c.section(14, (s) => {
     s.ground(0, 14, 0, snow);
@@ -430,10 +545,12 @@ const L19 = level({ id: 'snow-9', difficulty: 'hard', number: 9, nameKey: 'lv.sn
     s.star(9.5, 10.8);
     s.pass('L’arête aux stalactites', [-2, 9.8], ['on', 15, 18, 9.8], [['goTo', 2], ['run', 1, 15.2, 18, 9.8]]);
   });
+  // Tout en haut : le portail qui ramène à côté du panier du début
   c.section(16, (s) => {
     s.ground(0, 16, 9.8, snow);
-    s.hoop(10, 3.4, 9.8);
-    s.pass('Le panier du sommet', [-2, 9.8], ['win'], 'shot');
+    s.add('teleporters', { a: { x: 10, y: 10.7 }, b: { x: 12.4 - s.x0, y: 6.9 }, r: 0.75 });
+    s.pass('Le portail du sommet', [-2, 9.8], ['on', 11 - s.x0, 19 - s.x0, 6], [['goTo', 8.8], ['hold', 1, 9.4]]);
+    s.pass('Enfin, le panier', [12.4 - s.x0, 6], ['win'], 'shot');
   });
 });
 
@@ -478,6 +595,21 @@ const L20 = level({ id: 'snow-10', difficulty: 'hard', number: 10, nameKey: 'lv.
     s.checkpoint(0.8, 1.6);
     s.star(12, 3);
     s.pass('Le pont sous les stalactites', [0.6, 1.6], ['on', 24.2, 40, 1.6], [['goTo', 0.6], ['run', 1, 24.4, 40, 1.6]]);
+  });
+  // NOUVEAU — Les dalles dans la tempête : un coup de vent de face, puis trois dalles qui s'effacent.
+  c.section(24, (s) => {
+    s.ground(0, 4, 1.6, 'rock');
+    s.ground(4, 20, 0, snow);
+    s.add('spikes', { x: 4, y: 0, w: 16, dir: 'up' });
+    s.add('crumbles', { x: 6, y: 2.2, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 },
+      { x: 10.4, y: 2.8, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 },
+      { x: 14.8, y: 2.2, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 });
+    s.ground(20, 24, 1.6, 'rock');
+    s.add('winds', { x: 2, y: 0, w: 20, h: 10, force: -15, sudden: { warn: 0.8, dur: 1.4 } });
+    s.checkpoint(0.8, 1.6);
+    s.star(11.4, 5);
+    s.pass('Attendre la rafale', [-2, 1.6], ['on', 0.5, 4, 1.6], [['goTo', 2.8], ['wait', 2.7], ['goTo', 2.6]]);
+    s.pass('Les dalles dans la tempête', [2.6, 1.6], ['on', 20.3, 24, 1.6], [['hop', 3, 7, 2.55], ['jump', 1, 11.4, 3.15], ['jump', 1, 15.8, 2.55], ['jump', 1, 21.6, 1.6]]);
   });
   c.section(16, (s) => {
     s.ground(0, 16, 1.6, snow);

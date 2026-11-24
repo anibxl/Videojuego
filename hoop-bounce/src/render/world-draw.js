@@ -898,7 +898,24 @@ export function drawCrate(r, c) {
 export function drawWindZone(r, wz, time) {
   const ctx = r.ctx;
   const dir = Math.sign(wz.force);
-  const k = wz.strength(time);
+  // Coup de vent soudain : calme (quelques chevrons pâles = l'indice), puis la neige s'emballe (avertissement)
+  const k = wz.sudden ? (wz.state === 'blow' ? 1 : wz.state === 'warn' ? 0.25 + 0.5 * wz.warning : 0) : wz.strength(time);
+  if (wz.sudden && wz.state !== 'blow') {
+    const a = wz.state === 'warn' ? 0.45 + 0.5 * (Math.sin(time * 26) > 0 ? 1 : 0) : 0.16 + 0.06 * Math.sin(time * 2);
+    ctx.strokeStyle = `rgba(235,245,255,${a})`;
+    ctx.lineWidth = 0.07;
+    ctx.lineCap = 'round';
+    const cy = wz.y + Math.min(wz.h * 0.5, 2.2);
+    for (let i = 0; i < 3; i++) {
+      const cx = wz.x + wz.w * 0.5 + (i - 1) * 0.5 * dir;
+      ctx.beginPath();
+      ctx.moveTo(cx - dir * 0.18, cy + 0.26);
+      ctx.lineTo(cx + dir * 0.12, cy);
+      ctx.lineTo(cx - dir * 0.18, cy - 0.26);
+      ctx.stroke();
+    }
+    if (k <= 0) return;
+  }
   ctx.save();
   ctx.beginPath();
   ctx.rect(wz.x, wz.y, wz.w, wz.h);
@@ -1976,4 +1993,175 @@ export function drawBoulder(r, b, time) {
   ctx.lineTo(b.r * 0.1, -b.r * 0.2);
   ctx.stroke();
   ctx.restore();
+}
+
+// ─── Pièges surprises (campagne) ─────────────────────────────────────────────
+
+/** Couleur d'accent des pièges selon le monde. */
+function trapAccent(themeId) {
+  return themeId === 'space' ? '255,90,140' : themeId === 'forest' ? '255,170,60' : themeId === 'snow' ? '255,120,90' : themeId === 'volcano' ? '255,200,80' : '255,90,70';
+}
+
+/**
+ * Piège déclenché (bloc qui sort d'un mur, mur qui surgit du sol, porte qui se referme).
+ * Indice visible AVANT le déclenchement : une fente lumineuse le long de la face d'où il sortira, avec un
+ * petit voyant qui clignote lentement (on comprend après un premier essai). Avertissement : la fente
+ * s'allume, le voyant clignote vite, le décor tremble ; puis le bloc glisse hors de sa cachette.
+ */
+export function drawTrap(r, tp, time) {
+  const ctx = r.ctx;
+  const col = trapAccent(r.themeId);
+  const { dx, dy } = tp.from;
+  const horizontal = Math.abs(dx) > Math.abs(dy);
+  // Face d'où sort le bloc : [x1, y1, x2, y2]
+  const face = horizontal
+    ? (dx < 0 ? [tp.x, tp.y, tp.x, tp.y + tp.h] : [tp.x + tp.w, tp.y, tp.x + tp.w, tp.y + tp.h])
+    : (dy < 0 ? [tp.x, tp.y, tp.x + tp.w, tp.y] : [tp.x, tp.y + tp.h, tp.x + tp.w, tp.y + tp.h]);
+  const warn = tp.warning;
+  const idle = tp.state === 'idle';
+  // Fente et voyant (indice)
+  const slow = 0.35 + 0.35 * (Math.sin(time * 3.2) > 0.6 ? 1 : 0);
+  const pulse = warn > 0 ? (Math.sin(time * 34) > 0 ? 1 : 0.3) : slow;
+  if (idle || warn > 0) {
+    ctx.strokeStyle = `rgba(${col},${0.3 + 0.6 * warn})`;
+    ctx.lineWidth = 0.07 + 0.05 * warn;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(face[0], face[1]);
+    ctx.lineTo(face[2], face[3]);
+    ctx.stroke();
+    if (!horizontal) hazardStripe(ctx, Math.min(face[0], face[2]), face[1] - (dy < 0 ? 0.08 : 0), Math.abs(face[2] - face[0]), 0.08, `rgba(${col},${0.45 + 0.5 * warn})`, 'rgba(20,20,26,0.8)');
+    const lx = (face[0] + face[2]) / 2 + (horizontal ? (dx < 0 ? -0.18 : 0.18) : 0);
+    const ly = (face[1] + face[3]) / 2 + (horizontal ? 0 : dy < 0 ? -0.18 : 0.18);
+    r._drawGlow(col, lx, ly, 0.5 + 0.6 * warn, 0.35 * pulse + 0.5 * warn);
+    ctx.fillStyle = `rgba(${col},${pulse})`;
+    ctx.beginPath();
+    ctx.arc(lx, ly, 0.07, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (idle) return;
+  // Le bloc, découpé à la face : il sort de sa cachette
+  const shake = warn > 0 ? Math.sin(time * 70) * 0.03 * warn : 0;
+  const x = tp.x + tp.offsetX + shake;
+  const y = tp.y + tp.offsetY;
+  ctx.save();
+  ctx.beginPath();
+  const B = 50;
+  if (horizontal) ctx.rect(dx < 0 ? tp.x : tp.x + tp.w - B, tp.y - B, B, tp.h + 2 * B);
+  else ctx.rect(tp.x - B, dy < 0 ? tp.y : tp.y + tp.h - B, tp.w + 2 * B, B);
+  ctx.clip();
+  const g = ctx.createLinearGradient(0, y + tp.h, 0, y);
+  g.addColorStop(0, '#59647a');
+  g.addColorStop(1, '#2c3344');
+  ctx.fillStyle = g;
+  roundRect(ctx, x, y, tp.w, tp.h, 0.06);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 0.04;
+  roundRect(ctx, x + 0.04, y + 0.04, tp.w - 0.08, tp.h - 0.08, 0.05);
+  ctx.stroke();
+  // Bord d'attaque rayé (côté opposé à la cachette)
+  const lead = 0.16;
+  if (horizontal) hazardStripe(ctx, dx < 0 ? x + tp.w - lead : x, y, lead, tp.h, `rgba(${col},0.95)`, '#1b1d24');
+  else hazardStripe(ctx, x, dy < 0 ? y + tp.h - lead : y, tp.w, lead, `rgba(${col},0.95)`, '#1b1d24');
+  // Rivets
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  for (const [rx, ry] of [[0.18, 0.18], [tp.w - 0.18, 0.18], [0.18, tp.h - 0.18], [tp.w - 0.18, tp.h - 0.18]]) {
+    ctx.beginPath();
+    ctx.arc(x + rx, y + ry, 0.045, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** Ressort surpuissant (trampoline `boost`) : ressorts rouges et flèche double, pour qu'on s'en méfie. */
+export function drawBoostMark(r, tr, time) {
+  const ctx = r.ctx;
+  const cx = tr.x + tr.w / 2;
+  const top = tr.y + tr.h + 0.14;
+  r._drawGlow('255,80,70', cx, top, 1.3, 0.35 + 0.15 * Math.sin(time * 5));
+  ctx.strokeStyle = '#ff5a4a';
+  ctx.lineWidth = 0.07;
+  ctx.lineCap = 'round';
+  for (const sx of [tr.x + 0.05, tr.x + tr.w - 0.05]) {
+    ctx.beginPath();
+    for (let i = 0; i <= 6; i++) {
+      const yy = tr.y + 0.04 + (i / 6) * 0.3;
+      ctx.lineTo(sx + (i % 2 ? 0.08 : -0.08), yy);
+    }
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(255,140,120,0.9)';
+  ctx.lineWidth = 0.06;
+  for (let i = 0; i < 2; i++) {
+    const yy = top + 0.35 + i * 0.22 + ((time * 0.8) % 0.22);
+    ctx.beginPath();
+    ctx.moveTo(cx - 0.2, yy);
+    ctx.lineTo(cx, yy + 0.16);
+    ctx.lineTo(cx + 0.2, yy);
+    ctx.stroke();
+  }
+}
+
+/**
+ * Variantes de sol fragile (crumble `look`) :
+ *  'fake'   faux sol : il ressemble au sol du monde ; seules de fines fissures le trahissent ;
+ *  'vanish' dalle de verre lumineuse qui s'efface quelques secondes après avoir été touchée.
+ */
+export function drawCrumbleLook(r, cr, theme, time) {
+  const ctx = r.ctx;
+  const look = cr.def.look;
+  const k = cr.state === 'shake' ? 1 - clamp(cr.timer / (cr.def.delay ?? cr.cfg.delay), 0, 1) : 0;
+  if (look === 'fake') {
+    if (cr.state === 'gone') return true;
+    cr._solid ??= { x: cr.x, y: cr.y, w: cr.w, h: cr.h, style: cr.def.style ?? 'ground', box: true, x0: cr.x, x1: cr.x + cr.w, y0: cr.y, y1: cr.y + cr.h };
+    const shake = cr.state === 'shake' ? Math.sin(time * 60) * 0.03 : 0;
+    ctx.save();
+    ctx.translate(shake, 0);
+    ctx.globalAlpha = cr.appear;
+    drawSolid(r, cr._solid, theme, time);
+    // Fines fissures (l'indice) — bien plus visibles quand le sol cède
+    ctx.strokeStyle = `rgba(20,14,10,${0.28 + 0.6 * k})`;
+    ctx.lineWidth = 0.035 + 0.03 * k;
+    ctx.beginPath();
+    const top = cr.y + cr.h;
+    for (let i = 0; i < Math.max(2, Math.round(cr.w / 1.6)); i++) {
+      const cx = cr.x + 0.5 + i * 1.6 + hash(i * 7.1 + cr.x) * 0.6;
+      if (cx > cr.x + cr.w - 0.3) break;
+      ctx.moveTo(cx, top);
+      ctx.lineTo(cx + 0.15, top - 0.22);
+      ctx.lineTo(cx - 0.05, top - 0.42);
+      ctx.moveTo(cx + 0.15, top - 0.22);
+      ctx.lineTo(cx + 0.38, top - 0.3);
+    }
+    ctx.stroke();
+    ctx.restore();
+    return true;
+  }
+  if (look === 'vanish') {
+    const col = r.themeId === 'space' ? '150,210,255' : '150,240,230';
+    if (cr.state === 'gone') {
+      ctx.strokeStyle = `rgba(${col},0.3)`;
+      ctx.lineWidth = 0.04;
+      ctx.setLineDash([0.12, 0.12]);
+      ctx.strokeRect(cr.x, cr.y, cr.w, cr.h);
+      ctx.setLineDash([]);
+      return true;
+    }
+    const blink = cr.state === 'shake' ? (Math.sin(time * (16 + 24 * k)) > 0 ? 1 - 0.6 * k : 0.25) : 1;
+    ctx.globalAlpha = cr.appear * blink;
+    r._drawGlow(col, cr.x + cr.w / 2, cr.y + cr.h / 2, cr.w * 0.7, 0.3);
+    ctx.fillStyle = `rgba(${col},0.28)`;
+    roundRect(ctx, cr.x, cr.y, cr.w, cr.h, 0.07);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${col},0.95)`;
+    ctx.lineWidth = 0.05;
+    roundRect(ctx, cr.x, cr.y, cr.w, cr.h, 0.07);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillRect(cr.x + 0.1, cr.y + cr.h - 0.07, cr.w - 0.2, 0.04);
+    ctx.globalAlpha = 1;
+    return true;
+  }
+  return false;
 }

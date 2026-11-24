@@ -8,10 +8,15 @@
 //  - la carte joue une animation de déblocage la première fois qu'elle montre un monde ouvert
 //    (`seen`).
 //
-// Format enregistré (v2) : { v: 2, done: {id: true}, stars: {id: n}, best: {id: s}, seen: {worldId: true} }
-// L'ancien format (v1, étape 5 : { unlocked, stars, best }) est converti automatiquement.
+// Format enregistré (v2) : { v: 2, campaign: 3, done: {id: true}, stars: {id: n}, best: {id: s}, seen: {worldId: true} }
+//
+// CAMPAGNE 3 (refonte de la campagne : niveaux plus longs, nouveaux pièges) : une progression faite sur une
+// campagne précédente est remise à zéro une seule fois, pour que chacun découvre la nouvelle campagne depuis
+// le début. Rien n'est effacé : l'ancienne progression est rangée dans `legacy` (et les pièces, gemmes,
+// objets, succès, Hoop Pass, fantômes… sont dans d'autres sauvegardes, qui ne sont pas touchées).
 
 const KEY = 'hoopbounce.progress';
+export const CAMPAIGN = 3;
 
 export class Progress {
   /**
@@ -152,19 +157,23 @@ export class Progress {
   // ─── Stockage ─────────────────────────────────────────────────────────────
 
   _read() {
-    const empty = () => ({ v: 2, done: {}, stars: {}, best: {}, seen: {} });
+    const empty = () => ({ v: 2, campaign: CAMPAIGN, done: {}, stars: {}, best: {}, seen: {} });
     const obj = (o) => (o && typeof o === 'object' && !Array.isArray(o) ? o : {});
     try {
       const raw = JSON.parse(this.storage?.getItem(KEY) ?? 'null');
       if (!raw || typeof raw !== 'object') return empty();
-      const data = { v: 2, done: { ...obj(raw.done) }, stars: { ...obj(raw.stars) }, best: { ...obj(raw.best) }, seen: { ...obj(raw.seen) } };
-      if (raw.v !== 2) {
-        // Ancien format : un niveau qui a un record est terminé ; `unlocked` = nombre de niveaux
-        // terminés à la suite dans le 1er monde.
-        for (const id of Object.keys(data.best)) data.done[id] = true;
-        const n = Number.isInteger(raw.unlocked) ? Math.max(0, raw.unlocked) : 0;
-        this.worlds[0]?.levels.slice(0, n).forEach((l) => (data.done[l.id] = true));
+      if (raw.campaign !== CAMPAIGN) {
+        // Progression d'une campagne précédente : nouvelle campagne depuis le début, l'ancienne est gardée
+        const fresh = { ...empty(), legacy: { campaign: raw.campaign ?? 2, v: raw.v ?? 1, done: obj(raw.done), stars: obj(raw.stars), best: obj(raw.best), ...(raw.legacy ? { previous: raw.legacy } : {}) } };
+        try {
+          this.storage?.setItem(KEY, JSON.stringify(fresh));
+        } catch {
+          /* stockage indisponible */
+        }
+        return fresh;
       }
+      const data = { v: 2, campaign: CAMPAIGN, done: { ...obj(raw.done) }, stars: { ...obj(raw.stars) }, best: { ...obj(raw.best) }, seen: { ...obj(raw.seen) } };
+      if (raw.legacy) data.legacy = raw.legacy;
       return data;
     } catch {
       return empty();

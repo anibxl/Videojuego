@@ -8,7 +8,9 @@
 //
 // Usage : node tools/trickshot-check.mjs [niveaux, ex. 1-10 ou 7] [--quick] [--save]
 //   --quick : grille 2 fois plus grossière (conception rapide ; le taux est alors moins précis)
-//   --save : enregistre une solution par niveau dans tests/fixtures/trickshot.json (rejouée par les tests)
+//   --save : enregistre une solution par niveau dans tests/fixtures/trickshot.json (rejouée par les tests) ;
+//            on retient de préférence un tir qui se sert de TOUTES les mécaniques de la carte
+//            (« ⚠ mécanique contournée » sinon : la carte est à revoir)
 
 import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -83,12 +85,30 @@ function runParallel(index, shots, threads) {
 }
 
 export const CLASS_BANDS = [
-  ['easy', 0.008],      // ≥ 0,8 % des tirs de la grille marquent (un tir direct sans obstacle : ~1,5 %)
-  ['hard', 0.003],      // ≥ 0,3 %
-  ['very', 0.0008],     // ≥ 0,08 %
+  // Seuils calés sur les 50 cartes (refonte de la campagne) : chaque palier regroupe 10 cartes.
+  ['easy', 0.0147],     // ≥ 1,47 % des tirs de la grille marquent
+  ['medium', 0.006],    // ≥ 0,6 %
+  ['hard', 0.0026],     // ≥ 0,26 %
+  ['very', 0.0007],     // ≥ 0,07 %
   ['impossible', 0],    // moins : il faut trouver LE tir (mais il existe toujours)
 ];
 export const classOf = (frac) => CLASS_BANDS.find(([, min]) => frac >= min)?.[0] ?? 'impossible';
+
+/** Vrai si le tir ne marque plus dès qu'on retire n'importe laquelle des mécaniques de la carte. */
+export function usesAllMechanics(def, [a, p, r]) {
+  const shot = (d) => runShot(d, a * DEG, p, r).won;
+  for (const k of ['trampolines', 'fans', 'movers', 'switches', 'teleporters', 'breakables']) if (def[k]?.length && shot({ ...def, [k]: [] })) return false;
+  if (def.solids.some((x) => x.style === 'bumper') && shot({ ...def, solids: def.solids.filter((x) => x.style !== 'bumper') })) return false;
+  return true;
+}
+
+/** Parmi les tirs gagnants, celui qui se sert de toutes les mécaniques (en partant du milieu de la liste). */
+function pickSolution(def, wins) {
+  const mid = Math.floor(wins.length / 2);
+  const order = wins.map((w, i) => [Math.abs(i - mid), w]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+  for (const w of order.slice(0, 120)) if (usesAllMechanics(def, w)) return { sol: w, all: true };
+  return { sol: wins[mid], all: false };
+}
 
 async function checkLevel(index, threads, quick = false) {
   const def = TS_LEVELS[index];
@@ -101,7 +121,7 @@ async function checkLevel(index, threads, quick = false) {
   const res = await runParallel(index, grid, threads);
   const wins = res.filter((x) => x[3]);
   let frac = wins.length / res.length;
-  let sol = wins.length ? wins[Math.floor(wins.length / 2)] : null;
+  let { sol, all } = wins.length ? pickSolution(def, wins) : { sol: null, all: false };
   let refined = false;
   if (!sol) {
     // Recherche locale autour des tirs les plus proches du panier
@@ -111,13 +131,13 @@ async function checkLevel(index, threads, quick = false) {
     const lr = await runParallel(index, local, threads);
     const lw = lr.filter((x) => x[3]);
     if (lw.length) {
-      sol = lw[0];
+      ({ sol, all } = pickSolution(def, lw));
       refined = true;
       frac = Math.min(frac, 0.0005);
     }
   }
   const nearest = Math.min(...res.map((x) => x[4]));
-  return { n: def.n, id: def.id, declared: def.diff, measured: sol ? classOf(frac) : 'IMPOSSIBLE (aucune solution)', frac, sol, refined, nearest, ms: Date.now() - t0, samples: res.length };
+  return { all, n: def.n, id: def.id, declared: def.diff, measured: sol ? classOf(frac) : 'IMPOSSIBLE (aucune solution)', frac, sol, refined, nearest, ms: Date.now() - t0, samples: res.length };
 }
 
 async function main() {
@@ -138,7 +158,7 @@ async function main() {
     const ok = !!r.sol;
     if (!ok) bad++;
     const mark = !ok ? '❌' : r.measured === r.declared ? '✅' : '≈ ';
-    console.log(`${mark} ${String(r.n).padStart(2)} ${r.id.padEnd(22)} annoncé ${r.declared.padEnd(10)} mesuré ${r.measured.padEnd(10)} réussite ${(r.frac * 100).toFixed(2).padStart(6)} %${r.refined ? ' (fine)' : ''}  ${r.sol ? `tir ${r.sol[0]}° ${r.sol[1]} à ${r.sol[2]} s` : `au plus près ${r.nearest.toFixed(2)} u`}  (${(r.ms / 1000).toFixed(1)} s)`);
+    console.log(`${mark} ${String(r.n).padStart(2)} ${r.id.padEnd(22)} annoncé ${r.declared.padEnd(10)} mesuré ${r.measured.padEnd(10)} réussite ${(r.frac * 100).toFixed(2).padStart(6)} %${r.refined ? ' (fine)' : ''}  ${r.sol ? `tir ${r.sol[0]}° ${r.sol[1]} à ${r.sol[2]} s${r.all ? '' : ' ⚠ mécanique contournée'}` : `au plus près ${r.nearest.toFixed(2)} u`}  (${(r.ms / 1000).toFixed(1)} s)`);
     if (save && ok) fixture[r.n] = { angle: r.sol[0], power: r.sol[1], release: r.sol[2], frac: +r.frac.toFixed(5) };
   }
   if (save) {

@@ -19,7 +19,7 @@ import { themeOf } from './themes.js';
 import {
   drawSolid, drawSpikes, drawPlank, drawThemedMover, drawCrate, drawWindZone, drawIcicle, drawLiquid, drawCrumble,
   drawGeyser, drawRockfall, drawVine, drawMushroom, drawRoller, drawBranch, drawGravityZone,
-  drawFaller, drawBlinker, drawSaw, drawMace, drawLaser, drawMagnet, drawCannon, drawCrusher, drawBoulder,
+  drawFaller, drawBlinker, drawTrap, drawBoostMark, drawCrumbleLook, drawSaw, drawMace, drawLaser, drawMagnet, drawCannon, drawCrusher, drawBoulder,
 } from './world-draw.js';
 
 const C = {
@@ -160,14 +160,18 @@ export class Renderer {
     for (const d of L.doors) this._drawDoorLight(d);
     for (const f of L.fans) if (visible(f.x, f.x + f.w)) this._drawFanGrate(f);
     for (const p of L.planks) if (visible(p.x1, p.x2)) drawPlank(this, p);
-    for (const cr of L.crumbles) if (visible(cr.x, cr.x + cr.w)) drawCrumble(this, cr, time);
+    for (const cr of L.crumbles) if (visible(cr.x, cr.x + cr.w) && !drawCrumbleLook(this, cr, theme, time)) drawCrumble(this, cr, time);
     for (const m of L.movers) if (m.path.dy === 0 && !m.style) this._drawRail(m);
     for (const m of L.movers) if (!drawThemedMover(this, m, t, theme)) this._drawMover(m, t);
     for (const br of L.branches) drawBranch(this, br, t);
     for (const ro of L.rollers) drawRoller(this, ro, t);
     for (const c of L.crates) if (visible(c.x, c.x + c.w)) drawCrate(this, c);
     for (const m of L.mushrooms) if (visible(m.x - 0.5, m.x + m.w + 0.5)) drawMushroom(this, m);
-    for (const tr of L.trampolines) if (visible(tr.x, tr.x + tr.w)) this._drawTrampoline(tr);
+    for (const tr of L.trampolines) {
+      if (!visible(tr.x, tr.x + tr.w)) continue;
+      this._drawTrampoline(tr);
+      if (tr.boost > 1) drawBoostMark(this, tr, t);
+    }
     for (const sw of L.switches) if (visible(sw.x, sw.x + sw.w)) this._drawSwitch(sw, time);
     for (const sp of L.spikes) if (visible(sp.x, sp.x + sp.w)) drawSpikes(this, sp, time);
     for (const gy of L.geysers) if (visible(gy.x - 1, gy.x + 1)) drawGeyser(this, gy, t);
@@ -176,6 +180,7 @@ export class Renderer {
     for (const mg of L.magnets) if (visible(mg.x - mg.radius, mg.x + mg.radius)) drawMagnet(this, mg, time);
     for (const f of L.fallers) if (visible(f.x, f.x + f.w)) drawFaller(this, f, time);
     for (const bl of L.blinkers) if (visible(bl.x, bl.x + bl.w)) drawBlinker(this, bl, t);
+    for (const tp of L.traps) if (visible(tp.x - 3, tp.x + tp.w + 3)) drawTrap(this, tp, t);
     for (const sw of L.saws) if (visible(sw.cx - 1, sw.cx + 1) || (sw.path && visible(sw.x, sw.x + sw.path.dx))) drawSaw(this, sw, time);
     for (const l of L.lasers) if (visible(Math.min(l.x1, l.x2) - 1, Math.max(l.x1, l.x2) + 1)) drawLaser(this, l, t);
     for (const c of L.cannons) if (visible(Math.min(c.x, c.x + c.dx * c.range) - 1, Math.max(c.x, c.x + c.dx * c.range) + 1)) drawCannon(this, c, t);
@@ -492,7 +497,10 @@ export class Renderer {
       if (!visible(end.x - 1.5, end.x + 1.5)) continue;
       const r = tp.r;
       const recent = clamp(1 - (time - tp.lastUse) / 0.6, 0, 1);
-      this._drawGlow('157,123,255', end.x, end.y, r * 2.4, (inward ? 0.85 : 0.6) + 0.4 * recent);
+      // Portail caché (campagne) : à peine visible, un simple scintillement trahit sa présence
+      const hidden = tp.def.hidden && recent <= 0;
+      ctx.globalAlpha = hidden ? 0.28 + 0.12 * Math.sin(time * 4 + end.x) : 1;
+      this._drawGlow('157,123,255', end.x, end.y, r * (hidden ? 1.3 : 2.4), (inward ? 0.85 : 0.6) * (hidden ? 0.5 : 1) + 0.4 * recent);
       ctx.lineWidth = 0.07;
       ctx.lineCap = 'round';
       for (let ring = 0; ring < 3; ring++) {
@@ -513,7 +521,7 @@ export class Renderer {
         if (inward) u = 1 - u;
         const a = i * 2.4 + time * 2 * (inward ? 1 : -1);
         const rr = r * (0.2 + 0.9 * u);
-        ctx.globalAlpha = Math.sin(u * Math.PI);
+        ctx.globalAlpha = Math.sin(u * Math.PI) * (hidden ? 0.35 : 1);
         ctx.beginPath();
         ctx.arc(end.x + Math.cos(a) * rr, end.y + Math.sin(a) * rr, 0.045, 0, Math.PI * 2);
         ctx.fill();

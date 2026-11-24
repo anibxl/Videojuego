@@ -1,4 +1,4 @@
-// MONDE 3 — VOLCAN : ENCHAÎNEMENTS TECHNIQUES (refonte phase 2). 40 à 50 s par niveau pour un joueur.
+// MONDE 3 — VOLCAN : RÉFLEXION ET COMBINAISONS (refonte de la campagne). 45 à 60 s par niveau pour un joueur.
 // Lave mortelle, pierres qui s'effondrent, flammes, geysers de feu, chutes de pierres, canons à boules de
 // feu, rochers de lave, ascenseurs de pierre. Le rythme compte : chaque piège est parfaitement régulier,
 // on l'observe, puis on enchaîne.
@@ -13,6 +13,11 @@
 // 28 Les ascenseurs        ascenseurs de pierre au-dessus de la lave, pierres qui tombent (technique)
 // 29 Le cratère            téléporteurs de lave : choisir la bonne bouche (puzzle)
 // 30 Le cœur du volcan     tout le volcan en un niveau (★ finale)
+//
+// Refonte de la campagne : une étape-piège par niveau, juste après le départ (sol de cendre trompeur,
+// mur qui surgit + geyser, galerie qui se referme, dalles qui s'effacent dont une fausse, ressort au-dessus de
+// la lave, levier sur une enclume, pierres qui tombent, marches qui jaillissent en zigzag, faux portail et
+// vrai portail caché, mur + dalle fantôme).
 
 import { level } from './kit.js';
 
@@ -26,11 +31,23 @@ function pool(s, x0, x1, top = 0) {
 const flame = (x, y0, y1, phase = 0, period = 2.6, on = 1.2) => ({ x1: x, y1: y0, x2: x, y2: y1, period, on, phase, style: 'flame' });
 
 // 21 — Premières braises : la lave, puis tout ce qui en sort
-const L21 = level({ id: 'volcano-1', difficulty: 'easy', number: 1, nameKey: 'lv.volcano.1', idea: 'la lave : bassins, îlots, flammes, pierres fragiles' }, (c) => {
+const L21 = level({ id: 'volcano-01', difficulty: 'easy', number: 1, nameKey: 'lv.volcano.1', idea: 'la lave : bassins, îlots, flammes, pierres fragiles' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, rock);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.lava');
+  });
+  // NOUVEAU — Le sol de cendre : ce sol fissuré cache la lave. On saute par-dessus, sur le pilier.
+  c.section(24, (s) => {
+    s.ground(0, 4, 0, rock);
+    pool(s, 4, 14);
+    s.add('crumbles', { x: 4, y: -0.5, w: 3.6, h: 0.5, look: 'fake', style: rock, delay: 0.15, respawn: 3 });
+    s.block(7.6, -1.2, 2.4, 2, rock);
+    s.ground(14, 24, 0, rock);
+    s.hint(1.5, 4.3, 'hint.fake');
+    s.star(6.2, 3.4);
+    s.pass('Le sol de cendre', [-2, 0], ['on', 7.7, 9.9, 0.8], [['goTo', 3], ['hop', 4, 8.8, 0.8], ['settle']]);
+    s.pass('Pilier → rive', [8.8, 0.8], ['on', 14.5, 24, 0], [['goTo', 8.8], ['hop', 5, 16.4, 0]]);
   });
   c.section(22, (s) => {
     s.ground(0, 5, 0, rock);
@@ -80,11 +97,19 @@ const L21 = level({ id: 'volcano-1', difficulty: 'easy', number: 1, nameKey: 'lv
 });
 
 // 22 — Les geysers : un rythme à lire
-const L22 = level({ id: 'volcano-2', difficulty: 'medium', number: 2, nameKey: 'lv.volcano.2', idea: 'geysers : courir, s’arrêter, repartir' }, (c) => {
+const L22 = level({ id: 'volcano-02', difficulty: 'medium', number: 2, nameKey: 'lv.volcano.2', idea: 'geysers : courir, s’arrêter, repartir' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, rock);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.geyser');
+  });
+  // NOUVEAU — Le mur et le geyser : un mur surgit juste devant un geyser. On le saute entre deux jets.
+  c.section(24, (s) => {
+    s.ground(0, 24, 0, rock);
+    const t = s.add('traps', { kind: 'rise', x: 9, y: 0, w: 0.8, h: 1.8, from: { dx: 0, dy: -1.8 }, trigger: { x1: 5, x2: 7 }, warn: 0.5 });
+    s.add('geysers', { x: 11.6, y: 0 });
+    s.star(11.6, 6);
+    s.pass('Le mur et le geyser', [-2, 0], ['on', 14, 24, 0], [['goTo', 6], ['waitTrap', t, 'out'], ['goTo', 6.4], ['waitCycle', 3.2, 2.85, 2.95], ['hop', 4, 15.5, 0]]);
   });
   // Trois geysers : le deuxième est à contretemps, on l'attend entre deux jets
   c.section(26, (s) => {
@@ -127,11 +152,20 @@ const L22 = level({ id: 'volcano-2', difficulty: 'medium', number: 2, nameKey: '
 });
 
 // 23 — Chute de pierres : les ombres annoncent les pierres
-const L23 = level({ id: 'volcano-3', difficulty: 'medium', number: 3, nameKey: 'lv.volcano.3', idea: 'chutes de pierres : regarder les ombres', maxY: 11 }, (c) => {
+const L23 = level({ id: 'volcano-03', difficulty: 'medium', number: 3, nameKey: 'lv.volcano.3', idea: 'chutes de pierres : regarder les ombres', maxY: 11 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, rock);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.rocks');
+  });
+  // NOUVEAU — La galerie qui se referme : la porte tombe derrière toi ; trois pierres à passer pour sortir.
+  c.section(26, (s) => {
+    s.ground(0, 26, 0, rock);
+    s.block(4.6, 6, 18, 2, rock);
+    s.add('traps', { kind: 'close', x: 4.6, y: 0, w: 0.5, h: 6, from: { dx: 0, dy: 6 }, trigger: { x1: 6.6, x2: 8.4 }, warn: 0.35 });
+    s.add('rockfalls', { x: 10, y: 6, phase: 0 }, { x: 15, y: 6, phase: 0.2 }, { x: 20, y: 6, phase: 0.4 });
+    s.star(12.5, 1.2);
+    s.pass('La galerie qui se referme', [-2, 0], ['on', 23, 26, 0], [['goTo', 4], ['waitCycle', 2.8, 1.6, 1.7], ['run', 1, 23.2, 26, 0]]);
   });
   // La galerie : trois pierres l'une après l'autre ; on part juste après la première
   c.section(22, (s) => {
@@ -182,11 +216,23 @@ const L23 = level({ id: 'volcano-3', difficulty: 'medium', number: 3, nameKey: '
 });
 
 // 24 — Les canons : des boules de feu, d'abord de la lave, puis en face, puis du plafond
-const L24 = level({ id: 'volcano-4', difficulty: 'hard', number: 4, nameKey: 'lv.volcano.4', idea: 'canons : sous la lave, en face, du plafond' }, (c) => {
+const L24 = level({ id: 'volcano-04', difficulty: 'hard', number: 4, nameKey: 'lv.volcano.4', idea: 'canons : sous la lave, en face, du plafond' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, rock);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.cannon');
+  });
+  // NOUVEAU — Les dalles et la fausse dalle : l'une est fissurée (elle cède tout de suite) ; on la saute.
+  c.section(26, (s) => {
+    s.ground(0, 3, 0, rock);
+    pool(s, 3, 21);
+    s.add('crumbles', { x: 4.5, y: 0.25, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 },
+      { x: 7.8, y: 0.1, w: 1.6, h: 0.5, look: 'fake', style: rock, delay: 0.1, respawn: 2.5 },
+      { x: 10.4, y: 0.85, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 },
+      { x: 14.6, y: 0.25, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 });
+    s.ground(21, 26, 0, rock);
+    s.star(8.6, 2.6);
+    s.pass('Les dalles et la fausse dalle', [-2, 0], ['on', 21.3, 26, 0], [['goTo', 1.6], ['hop', 3, 5.5, 0.6], ['jump', 1, 11.4, 1.2], ['jump', 1, 15.6, 0.6], ['jump', 1, 22.4, 0]]);
   });
   // Les bouches de lave : des boules de feu jaillissent entre les îlots
   c.section(22, (s) => {
@@ -239,11 +285,23 @@ const L24 = level({ id: 'volcano-4', difficulty: 'hard', number: 4, nameKey: 'lv
 });
 
 // 25 — La coulée : les rochers de lave dévalent ; on saute, ou on se cache
-const L25 = level({ id: 'volcano-5', difficulty: 'hard', number: 5, nameKey: 'lv.volcano.5', idea: 'rochers de lave : sauter, ou se cacher' }, (c) => {
+const L25 = level({ id: 'volcano-05', difficulty: 'hard', number: 5, nameKey: 'lv.volcano.5', idea: 'rochers de lave : sauter, ou se cacher' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, rock);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.boulder');
+  });
+  // NOUVEAU — Le ressort au-dessus du lac : le ressort rouge envoie loin, il faut viser l'îlot.
+  c.section(26, (s) => {
+    s.ground(0, 5, 0, rock);
+    s.add('trampolines', { x: 3, y: 0, w: 1.6, boost: 1.25 });
+    pool(s, 5, 19);
+    s.block(13, -1.2, 3.4, 1.8, rock);
+    s.ground(19, 26, 0, rock);
+    s.hint(0.5, 4.3, 'hint.spring');
+    s.star(8, 7.5);
+    s.pass('Le ressort au-dessus du lac', [-2, 0], ['on', 13.1, 16.3, 0.6], [['goTo', 1.2], ['hold', 1, 3.3], ['fly', 14.7], ['settle']]);
+    s.pass('Îlot → rive', [14.5, 0.6], ['on', 19.4, 26, 0], [['goTo', 14.5], ['hop', 5, 21, 0]]);
   });
   c.section(22, (s) => {
     s.ground(0, 22, 0, rock);
@@ -281,11 +339,24 @@ const L25 = level({ id: 'volcano-5', difficulty: 'hard', number: 5, nameKey: 'lv
 });
 
 // 26 — La forge : le bloc de pierre fait un pont sous la hotte, le second une marche vers le soufflet
-const L26 = level({ id: 'volcano-6', difficulty: 'medium', number: 6, nameKey: 'lv.volcano.6', idea: 'puzzle : un bloc pour pont, un bloc pour marche, le soufflet ouvre la forge', maxY: 11 }, (c) => {
+const L26 = level({ id: 'volcano-06', difficulty: 'medium', number: 6, nameKey: 'lv.volcano.6', idea: 'puzzle : un bloc pour pont, un bloc pour marche, le soufflet ouvre la forge', maxY: 11 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, rock);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.forge');
+  });
+  // NOUVEAU — Le soufflet et la herse : l'interrupteur sur l'enclume ouvre la porte ; une herse retombe derrière.
+  c.section(26, (s) => {
+    s.ground(0, 26, 0, rock);
+    s.block(5, 0, 4, 2.6, rock);
+    const sw = s.add('switches', { x: 6.4, y: 2.6, w: 1.2, target: 'anvil' });
+    s.add('doors', { id: 'anvil', x: 14, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
+    s.block(14, 3.2, 0.8, 8, 'wall');
+    s.block(17, 4.2, 6, 1, rock);
+    s.add('traps', { kind: 'close', x: 17.2, y: 0, w: 0.5, h: 4.2, from: { dx: 0, dy: 4.2 }, trigger: { x1: 19.5, x2: 21.5 }, warn: 0.35 });
+    s.star(7, 5);
+    s.pass('L’enclume → interrupteur', [-2, 0], ['switch', sw], [['goTo', 3], ['hop', 3, 7, 2.6]]);
+    s.pass('La porte, puis la herse', [7, 2.6], ['on', 21.6, 26, 0], [['hold', 1, 9.4], ['run', 1, 10, 13, 0], ['goTo', 12], ['wait', 0.6], ['run', 1, 21.8, 26, 0]]);
   });
   // La rigole de lave sous la hotte : trop basse pour sauter, il faut un pont
   c.section(24, (s) => {
@@ -337,11 +408,24 @@ const L26 = level({ id: 'volcano-6', difficulty: 'medium', number: 6, nameKey: '
 });
 
 // 27 — Le pont des geysers : des pierres fragiles entre les geysers ; on souffle sur les piliers
-const L27 = level({ id: 'volcano-7', difficulty: 'hard', number: 7, nameKey: 'lv.volcano.7', idea: 'pont de pierres fragiles entre les geysers, piliers de repos' }, (c) => {
+const L27 = level({ id: 'volcano-07', difficulty: 'hard', number: 7, nameKey: 'lv.volcano.7', idea: 'pont de pierres fragiles entre les geysers, piliers de repos' }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, rock);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.geyser');
+  });
+  // NOUVEAU — Les plaques au-dessus de la lave : elles tombent quand on se pose ; on monte sans s'arrêter.
+  c.section(24, (s) => {
+    s.ground(0, 3, 0, rock);
+    pool(s, 3, 19);
+    s.add('fallers', { x: 4.6, y: 0.4, w: 2.2, h: 0.4 }, { x: 8.6, y: 1.2, w: 2.2, h: 0.4 }, { x: 12.6, y: 2.0, w: 2.2, h: 0.4 });
+    s.ground(19, 24, 2.4, rock);
+    s.star(9.7, 3.6);
+    s.pass('Les plaques au-dessus de la lave', [-2, 0], ['on', 19.3, 24, 2.4], [['goTo', 1.4], ['hop', 3, 5.9, 0.8], ['jump', 1, 9.7, 1.6], ['jump', 1, 13.7, 2.4], ['jump', 1, 20.6, 2.4]]);
+  });
+  c.section(4, (s) => {
+    s.ground(0, 4, 0, rock);
+    s.pass('Redescendre', [-2, 2.4], ['on', 0.5, 4, 0], [['hold', 1, 0.2], ['run', 1, 0.6, 4, 0]]);
   });
   // Une travée : deux pierres fragiles, deux geysers, un pilier au bout
   const span = (name, phases, star, wait) => c.section(14, (s) => {
@@ -372,11 +456,27 @@ const L27 = level({ id: 'volcano-7', difficulty: 'hard', number: 7, nameKey: 'lv
 });
 
 // 28 — Les ascenseurs : des pierres qui montent de la lave, des navettes, des pierres qui tombent
-const L28 = level({ id: 'volcano-8', difficulty: 'medium', number: 8, nameKey: 'lv.volcano.8', idea: 'ascenseurs et navettes de pierre au-dessus de la lave', maxY: 14 }, (c) => {
+const L28 = level({ id: 'volcano-08', difficulty: 'medium', number: 8, nameKey: 'lv.volcano.8', idea: 'ascenseurs et navettes de pierre au-dessus de la lave', maxY: 14 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, rock);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.elevator');
+  });
+  // NOUVEAU — Le mur aux marches : à chaque marche atteinte, la suivante sort de la paroi (en zigzag).
+  c.section(28, (s) => {
+    s.ground(0, 14, 0, rock);
+    s.block(7.6, 2.8, 1.4, 6.2, rock);
+    s.block(14, 0, 8, 7, rock);
+    s.ground(22, 28, 0, rock);
+    const a = s.add('traps', { kind: 'pop', x: 12.4, y: 1.6, w: 1.6, h: 0.5, from: { dx: 1.6, dy: 0 }, trigger: { x1: 10, x2: 12.6, y1: -1, y2: 1.4 }, warn: 0.4, speed: 6 });
+    const b = s.add('traps', { kind: 'pop', x: 9, y: 3.4, w: 1.4, h: 0.5, from: { dx: -1.4, dy: 0 }, trigger: { x1: 12.3, x2: 14.1, y1: 1.9, y2: 3.4 }, warn: 0.4, speed: 6 });
+    const d = s.add('traps', { kind: 'pop', x: 12.4, y: 5.2, w: 1.6, h: 0.5, from: { dx: 1.6, dy: 0 }, trigger: { x1: 8.8, x2: 10.6, y1: 3.7, y2: 5.2 }, warn: 0.4, speed: 6 });
+    s.hint(3, 4.3, 'hint.trap');
+    s.star(9.7, 6.6);
+    s.pass('Première marche', [-2, 0], ['on', 12.5, 14, 2.1], [['goTo', 11], ['waitTrap', a, 'out'], ['hop', 3, 13.4, 2.1], ['settle']]);
+    s.pass('Deuxième marche', [13.2, 2.1], ['on', 9.1, 10.4, 3.9], [['waitTrap', b, 'out'], ['hop', 3, 9.7, 3.9], ['settle']]);
+    s.pass('Troisième marche', [9.7, 3.9], ['on', 12.5, 14, 5.7], [['waitTrap', d, 'out'], ['hop', 3, 13.2, 5.7], ['settle']]);
+    s.pass('Le haut de la paroi', [13.2, 5.7], ['on', 22.4, 28, 0], [['hop', 3, 15.6, 7], ['hold', 1, 21.6], ['run', 1, 22.6, 28, 0]]);
   });
   c.section(16, (s) => {
     s.ground(0, 4, 0, rock);
@@ -426,11 +526,23 @@ const L28 = level({ id: 'volcano-8', difficulty: 'medium', number: 8, nameKey: '
 });
 
 // 29 — Le cratère : des bouches de lave qui téléportent ; regarder où chacune mène
-const L29 = level({ id: 'volcano-9', difficulty: 'hard', number: 9, nameKey: 'lv.volcano.9', idea: 'puzzle : choisir la bonne bouche (téléporteurs), interrupteur sur l’îlot', maxY: 11 }, (c) => {
+const L29 = level({ id: 'volcano-09', difficulty: 'hard', number: 9, nameKey: 'lv.volcano.9', idea: 'puzzle : choisir la bonne bouche (téléporteurs), interrupteur sur l’îlot', maxY: 11 }, (c) => {
   c.section(8, (s) => {
     s.ground(0, 8, 0, rock);
     s.spawn(2);
     s.hint(5, 4.3, 'hint.mouths');
+  });
+  // NOUVEAU — La bouche cachée : le portail bien visible ramène au départ ; le bon est caché derrière le rocher.
+  c.section(32, (s) => {
+    s.ground(0, 15, 0, rock);
+    s.add('teleporters', { a: { x: 5.5, y: 0.9 }, b: { x: 1, y: 0.9 }, r: 0.75 });
+    s.block(10.6, 0, 1.4, 1.6, rock);
+    s.add('teleporters', { a: { x: 13.4, y: 0.9 }, b: { x: 28, y: 0.9 }, r: 0.75, hidden: true });
+    pool(s, 15, 26);
+    s.ground(26, 32, 0, rock);
+    s.hint(4, 4.3, 'hint.hidden');
+    s.star(13.4, 3);
+    s.pass('Le portail caché derrière le rocher', [-2, 0], ['on', 26.5, 32, 0], [['goTo', 2.6], ['hop', 3, 8.8, 0], ['goTo', 9.3], ['hop', 2, 13.6, 0], ['hold', 1, 14.5], ['run', 1, 27, 32, 0]]);
   });
   // L'îlot aux deux bouches : la plus proche ramène au bord
   c.section(28, (s) => {
@@ -504,6 +616,17 @@ const L30 = level({ id: 'volcano-10', difficulty: 'expert', number: 10, nameKey:
   c.section(8, (s) => {
     s.ground(0, 8, 0, rock);
     s.spawn(2);
+  });
+  // NOUVEAU — L'épreuve du cœur : le mur qui surgit, puis la dalle qui s'efface au-dessus de la lave.
+  c.section(24, (s) => {
+    s.ground(0, 10, 0, rock);
+    const t = s.add('traps', { kind: 'rise', x: 7, y: 0, w: 0.8, h: 2.2, from: { dx: 0, dy: -2.2 }, trigger: { x1: 3, x2: 5 }, warn: 0.45 });
+    pool(s, 10, 17);
+    s.add('crumbles', { x: 12, y: 0.8, w: 2, h: 0.35, look: 'vanish', delay: 0.8, respawn: 2.5 });
+    s.ground(17, 24, 0, rock);
+    s.star(13, 4);
+    s.pass('Le mur du cœur', [-2, 0], ['on', 8.2, 10, 0], [['goTo', 4], ['waitTrap', t, 'out'], ['goTo', 4.4], ['hop', 4, 9, 0], ['settle']]);
+    s.pass('La dalle au-dessus de la lave', [9, 0], ['on', 17.3, 24, 0], [['goTo', 9], ['hop', 3, 13, 1.15], ['jump', 1, 19, 0], ['wait', 2]]);
   });
   // Le pont fragile sous les pierres
   c.section(22, (s) => {

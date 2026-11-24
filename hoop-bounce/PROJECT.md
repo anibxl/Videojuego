@@ -3,11 +3,12 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.8.0-dev (non publiée ; la version publiable reste
+> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.9.0-dev (non publiée ; la version publiable reste
 > 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1 : menu décoré + **Hoop Pass**) · **Version de
-> test Android :** **`HoopBounce_Test_v11.apk` (1.10.0-test11, mise à jour)** · **iOS :** projet Xcode prêt
-> (`ios/`) · **Phase en cours :** **phase 5 : succès** (62 succès en 7 catégories, défis cachés, emblèmes,
-> animation de déblocage) ; phases 2 (niveaux), 3 (Mode Fantôme) et 4 (économie) terminées ; rien n'est publié.
+> test Android :** **`HoopBounce_Test_v12.apk` (1.11.0-test12, mise à jour)** · **iOS :** projet Xcode prêt
+> (`ios/`) · **Phase en cours :** **refonte de la campagne** (50 niveaux plus longs à étapes, 11 pièges surprises
+> annoncés, 3 niveaux trolls, Trickshot expert en 50 cartes et 5 paliers, progression des niveaux remise à zéro) ;
+> phases 2 à 5 terminées ; rien n'est publié.
 
 ## Sommaire
 
@@ -218,6 +219,26 @@ paraisse mérité :
 Règle de placement : un rocher ne part jamais sous le ballon sans prévenir (son point de départ est une marche,
 une souche ou un rebord visible, et le grondement le précède), un pilon laisse toujours au moins ~1 s pour passer.
 
+**Pièges surprises (refonte de la campagne)** — ils surprennent la première fois, mais un **signe visible**
+les annonce toujours : au deuxième essai, le joueur sait quoi faire. Aucun ne touche à la physique du ballon.
+
+| Piège | Comportement | Le signe qui l'annonce |
+|---|---|---|
+| **Sol fragile / faux sol** (`crumbles`, `look: 'fake'`) | ressemble au sol du monde, cède sous le ballon | fines fissures dans le sol |
+| **Dalle qui s'efface** (`crumbles`, `look: 'vanish'`) | dalle de verre lumineuse qui disparaît peu après le contact, puis revient | verre brillant, différent du sol |
+| **Pont qui s'effondre** | pont de dalles fragiles, parfois relié à un levier | dalles fissurées |
+| **Mur qui surgit** (`traps`, `kind: 'rise'`) | un mur sort du sol quand le ballon arrive | fente lumineuse au sol, voyant qui clignote ; clignotement rapide et tremblement juste avant |
+| **Marche qui jaillit** (`traps`, `kind: 'pop'`) | un bloc sort d'un mur ou d'un pilier (il peut pousser le ballon… ou servir de marche) | fente et voyant dans la paroi |
+| **Porte qui se ferme derrière** (`traps`, `kind: 'close'`) | un volet tombe derrière le ballon : plus de retour | fente au plafond, voyant |
+| **Rafale soudaine** (`winds`, `sudden`) | un coup de vent bref après un temps calme, puis repos | chevrons pâles au repos, qui s'animent juste avant la rafale (son, vibration) |
+| **Super ressort** (`trampolines`, `boost`) | trampoline qui propulse 15 à 40 % plus haut | ressorts rouges et chevrons |
+| **Portail caché** (`teleporters`, `hidden`) | portail presque invisible | léger scintillement + aide « Un scintillement ? » |
+| **Faux raccourci** | un passage tentant qui ramène en arrière ou dans le vide | aide moqueuse affichée après (« Bien essayé ! ») |
+| **Laser clignotant** | (déjà présent) faisceau allumé une partie du cycle | grésillement avant l'allumage |
+
+Les pièges se réarment quand le ballon est sorti de leur zone ; ils se remettent en place au redémarrage et au
+retour au drapeau. Sons : `trapWarn`, `trapMove`, `gust`, `springBoost` ; vibrations courtes.
+
 Le moteur gère aussi, sans qu'il soit utilisé dans les niveaux actuels : le **panier fixé au mur**.
 
 ### Objets
@@ -380,11 +401,11 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `worlds.js` | Les 5 mondes : identité (nom, accroche, couleur), mécaniques présentées, réglages physiques, niveaux ; liste à plat `LEVELS`. |
 | `levels/city.js` … `space.js` | Les niveaux de chaque monde (données). `common.js` : briques communes ; `index.js` : compatibilité ; `README.md` : format. |
 | `elements.js` | Porte coulissante, ventilateur, téléporteur (sens unique ou double sens). |
-| `world-elements.js` | Éléments des mondes : caisse, vent, stalactite, lave/eau, plateforme fragile, geyser, chute de pierres, liane, zone de gravité ; pièges de l'étape 9 : plaque qui tombe, bloc temporisé, boulet, laser, aimant (et trou noir), canon ; pièges de l'étape 10 : pilon, rocher qui dévale. |
+| `world-elements.js` | Éléments des mondes : caisse, vent, stalactite, lave/eau, plateforme fragile, geyser, chute de pierres, liane, zone de gravité ; pièges de l'étape 9 : plaque qui tombe, bloc temporisé, boulet, laser, aimant (et trou noir), canon ; pièges de l'étape 10 : pilon, rocher qui dévale ; **refonte de la campagne** : `Trap` (mur qui surgit, marche qui jaillit, porte qui se ferme), rafale soudaine (`WindZone.sudden`). |
 | `hazards.js` | Tests de contact avec les pics et les scies (avec marge de tolérance). |
 | `hoop.js` | Le panier : formes de collision, détection d'un panier valide (en deux temps), filet. |
 | `net.js` | Filet simulé (Verlet + contraintes de cordes), qui réagit au ballon. |
-| `progress.js` | Progression enregistrée sur l'appareil : niveaux terminés, étoiles, meilleurs temps, mondes débloqués (et déjà annoncés), statistiques par monde ; conversion de l'ancien format. |
+| `progress.js` | Progression enregistrée sur l'appareil : niveaux terminés, étoiles, meilleurs temps, mondes débloqués (et déjà annoncés), statistiques par monde ; **numéro de campagne** (`CAMPAIGN = 3`) : la progression d'une campagne précédente repart de zéro et est gardée dans `legacy`. |
 | `ghost.js` | ★ **Mode Fantôme** (phase 3, sans navigateur) : `GhostRecorder` (position, rotation, rebonds à 60 Hz sur l'horloge du chronomètre), `encodeSamples` / `decodeSamples` (écarts sur 3 octets, échappement aux sauts, base64), `GhostPlayer` (relecture interpolée, traînée), `GhostStore` (une clé par niveau, meilleur essai seulement, place libérée si le stockage est plein). |
 | `i18n.js` | Textes de l'écran de jeu en français, anglais et espagnol. |
 
@@ -486,12 +507,13 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tests/achievements.test.mjs` | ★ Phase 5 : **succès** : catégories et objectifs demandés, états, déblocage automatique et annoncé une fois, récompenses une seule fois (XP, gemmes, objets, emblèmes), défis cachés invisibles, détection des exploits (jeu et Trickshot), compteurs Trickshot / Fantôme, ancienne sauvegarde, fusion entre pages, performances. |
 | `tests/economy.test.mjs` | ★ Phase 4 : **équilibrage de l'économie** sur des joueurs simulés pendant 30 jours (4 graines) : progression régulière, collection jamais finie, légendaires très rares, gemmes rares, effet des publicités ; chances des coffres ; sources de gemmes ; achat du Pass (gemmes / magasin). |
 | `tests/live.test.mjs` | Statistiques (jour, minuit), coffres et doublons, récompense quotidienne (une par jour, 7 jours, cycle), missions (tirage, renouvellement, récompense unique), succès (paliers, progression, récupération), textes. |
-| `tests/routes.test.mjs` | Chaque passage de chaque niveau reste faisable (solutions enregistrées + solutions expertes). |
+| `tests/routes.test.mjs` | Les 50 niveaux joués en entier, durée dans la fourchette du monde, mondes de plus en plus longs ; solutions enregistrées des passages rejouées. |
+| `tests/traps.test.mjs` | Pièges surprises : mur qui surgit, marche qui pousse, porte qui se ferme (et se rouvre au drapeau), rafale soudaine, super ressort, faux sol et dalle qui s'efface, portail caché. |
 | `tests/fixtures/test-yard.js` | Terrain d'essai pour les tests de mécanique (indépendant des niveaux). |
 | `tests/fixtures/routes.json` | Solutions enregistrées des passages (générées par l'outil). |
-| `tests/trickshot.test.mjs` | Mode TRICKSHOT : 20 cartes (textes, chapitres, montée de la difficulté, cartes variées), **chaque carte gagnée en un seul tir** (solution rejouée), **chaque mécanique indispensable** (solution rejouée sans elle), difficulté annoncée = mesure à une classe près, 3 essais, étoiles et score, décor conservé, visée et **pointillés limités**, progression séparée et **migration v1 → v2**, mode principal intact. |
+| `tests/trickshot.test.mjs` | Mode TRICKSHOT : 50 cartes en 5 paliers de 10 et 10 chapitres de 5 (textes, montée de la difficulté mesurée, cartes variées), **chaque carte gagnée en un seul tir** (solution rejouée), **chaque mécanique indispensable** (solution rejouée sans elle), difficulté annoncée = mesure à une classe près, 3 essais, étoiles et score, décor conservé, visée et **pointillés limités**, progression séparée et **remise à zéro v3** (anciennes sauvegardes gardées, autres clés intactes), mode principal intact. |
 | `tests/fixtures/trickshot.json` | Une solution en un tir par niveau TRICKSHOT (angle, puissance, instant) et la part de tirs gagnants mesurée. |
-| `tools/trickshot-check.mjs` | Solveur du mode TRICKSHOT : essaie des milliers de tirs par niveau (angles × puissances × instants, 4 processus), mesure la part de tirs gagnants → difficulté, cherche finement autour des tirs les plus proches ; `--quick`, `--save`, `N` ou `N-M`. |
+| `tools/trickshot-check.mjs` | Solveur du mode TRICKSHOT : essaie des milliers de tirs par niveau (angles × puissances × instants, 4 processus), mesure la part de tirs gagnants → difficulté, cherche finement autour des tirs les plus proches ; retient un tir qui se sert de **toutes** les mécaniques de la carte ; `--quick`, `--save`, `N` ou `N-M`. |
 | `tools/trickshot-atlas.html` | Atlas des cartes TRICKSHOT (`?from=1&to=25`) avec le trajet de la solution enregistrée, pour relire les niveaux d'un coup d'œil. |
 | `tools/ui-art.mjs` | Génère les illustrations d'interface `assets/ui/*.svg` (pièce, gemme, 6 coffres en deux pièces) dans un style commun (étape 25). |
 | `tools/route-check.mjs` | Outil de level design : essaie des centaines de séquences de commandes par passage et mesure la difficulté ; « pilote » pour écrire les solutions expertes (rouler jusqu'à, charger, sauter, viser, flotter, tirer au panier). `N`, `id` ou plage `a-b` ; `--save` ; `--part=` (calcul réparti). |
@@ -1085,7 +1107,9 @@ changé** (voir « Physique » plus bas).
 > du mode principal (même moteur, mêmes réglages : `TS_CONFIG` en dérive sans le toucher, test à l'appui).
 > Étape 22 : première version (50 cartes). **Étape 23 : refonte complète** — nouvelle visée, identité
 > « laboratoire de trickshots », **20 cartes** entièrement nouvelles et beaucoup plus travaillées (moins de
-> cartes, mais chacune est un vrai casse-tête). En attente de validation.
+> cartes, mais chacune est un vrai casse-tête). **Refonte de la campagne : le Trickshot devient un mode
+> expert** — **50 cartes** (les 20 du laboratoire + 30 nouvelles), rangées par difficulté **mesurée** en
+> 5 paliers de 10 (🟢 Facile, 🔵 Moyen, 🟠 Difficile, 🔴 Très difficile, ⚫ Impossible). En attente de validation.
 
 ### La visée (étape 23)
 
@@ -1132,12 +1156,12 @@ Un décor qui n'a rien à voir avec le mode principal : **un laboratoire de tric
 ### Les écrans
 
 1. **Carte du mode** dans « Modes de jeu » → **accueil du mode** (`index.html#trickshot`) : illustration,
-   description, cartes terminées, étoiles, pourcentage, les 5 chapitres et leur avancement, **Jouer**.
-2. **Sélection des cartes** (`index.html#trickshot-niveaux`) : légende des difficultés, les 5 chapitres côte à
-   côte (4 cartes chacun) ; chaque tuile : **numéro, étoiles, meilleur score, difficulté** (pastille), **cadenas**
+   description, cartes terminées, étoiles, pourcentage, les 10 chapitres et leur avancement, **Jouer**.
+2. **Sélection des cartes** (`index.html#trickshot-niveaux`) : légende des 5 difficultés, les 10 chapitres
+   (5 cartes chacun) ; chaque tuile : **numéro, étoiles, meilleur score, difficulté** (pastille), **cadenas**
    si verrouillée. Déblocage **séquentiel** ; la prochaine carte pulse ; une tuile verrouillée tremble.
 3. **Écran de jeu** (`trickshot.html?level=N`) : la salle entière à l'écran. HUD minimal : **difficulté** en
-   haut à gauche (🟢 Facile, 🟠 Difficile, 🔴 Très difficile, ⚫ Impossible), **essais restants** au centre,
+   haut à gauche (🟢 Facile, 🔵 Moyen, 🟠 Difficile, 🔴 Très difficile, ⚫ Impossible), **essais restants** au centre,
    **recommencer** et **pause** à droite. Carte d'introduction (nom, nouveauté, indice).
 4. **Victoire** (étoiles, score qui défile, bonus, record, carte débloquée ; deux colonnes sur écran bas),
    **échec** et **pause**.
@@ -1156,56 +1180,103 @@ Un décor qui n'a rien à voir avec le mode principal : **un laboratoire de tric
 
 ### Les difficultés
 
-Chaque carte est vérifiée par le **solveur** (`tools/trickshot-check.mjs`) : il essaie des milliers de tirs et
-mesure la **part des tirs qui marquent**. 🟢 Facile ≥ 0,8 % · 🟠 Difficile ≥ 0,3 % · 🔴 Très difficile ≥ 0,08 % ·
-⚫ Impossible en dessous. La difficulté affichée est celle mesurée (à une classe près, vérifié par les tests).
+Chaque carte est vérifiée par le **solveur** (`tools/trickshot-check.mjs`) : il essaie des milliers de tirs
+(angles × puissances × instants) et mesure la **part des tirs qui marquent**. Depuis la refonte de la campagne,
+**l'ordre des 50 cartes suit cette mesure** : les 10 plus accessibles forment le palier Facile, les 10 suivantes
+le palier Moyen, etc. Seuils obtenus : 🟢 Facile ≥ 1,47 % · 🔵 Moyen ≥ 0,6 % · 🟠 Difficile ≥ 0,26 % ·
+🔴 Très difficile ≥ 0,07 % · ⚫ Impossible en dessous (de 0,06 % à moins d'un tir sur 10 000 de la grille).
+Les tests vérifient que chaque carte est dans le bon palier (à une classe près), que le taux moyen baisse à
+chaque palier et que les cartes Impossibles marquent moins d'un tir sur 1 000.
 **Toutes les cartes ont une solution en un seul tir** (3 étoiles possibles), enregistrée et rejouée par les tests,
-et **chaque mécanique est indispensable** : un test rejoue la solution sans le trampoline, le ventilateur,
-l'ascenseur, le bouton, les portails, la caisse ou les bumpers, et vérifie qu'elle ne marque plus.
-Pendant la conception, une **recherche automatique de réglages** (positions, forces) qui rejette toute variante
-où la carte se gagne sans sa mécanique a servi à régler les cartes à mécanismes enchaînés.
+et **chaque mécanique est indispensable** à cette solution : un test la rejoue sans le trampoline, le ventilateur,
+la plateforme mobile, le bouton, les portails, la caisse ou les bumpers, et vérifie qu'elle ne marque plus. Le
+solveur choisit d'ailleurs, parmi les tirs gagnants, un tir qui se sert de toutes les mécaniques.
 
-### Les 5 chapitres et les 20 cartes
+Une nouveauté (« Nouveau : … » sur la carte d'introduction) s'annonce sur la **première carte du parcours** qui
+l'utilise (trampoline, ventilateur, plateforme mobile, caisse, bouton, portail, laser, dalles clignotantes, scies,
+bumpers, glace).
 
-| Chapitre | Cartes | Couleur | Idée |
+### Les 10 chapitres et les 50 cartes
+
+| Chapitre | Cartes | Palier | Couleur |
 |---|---|---|---|
-| 1 · Calibration | 1–4 | cyan | le tir, le rebond, la bande, le tunnel (plusieurs rebonds) |
-| 2 · Les machines | 5–8 | orange | trampoline, colonne d'air, deux machines enchaînées, ascenseur (le bon moment) |
-| 3 · Les circuits | 9–12 | vert | caisse-couvercle, pont qui tombe, porte à bouton, ventilateur à allumer |
-| 4 · Les portails | 13–16 | violet | portail (sortir d'une cage), deux portails et trois salles, laser + portail, portail + bande |
-| 5 · Les trickshots | 17–20 | or | réaction en chaîne, zigzag de bumpers, flipper, **le grand trickshot** |
+| 1 · Calibration | 1–5 | 🟢 Facile | cyan |
+| 2 · Machines | 6–10 | 🟢 Facile | vert |
+| 3 · Circuits | 11–15 | 🔵 Moyen | bleu |
+| 4 · Portails | 16–20 | 🔵 Moyen | violet |
+| 5 · Précision | 21–25 | 🟠 Difficile | orange |
+| 6 · Vertige | 26–30 | 🟠 Difficile | or |
+| 7 · Chaos | 31–35 | 🔴 Très difficile | rouge |
+| 8 · Trickshots | 36–40 | 🔴 Très difficile | rose |
+| 9 · Expert | 41–45 | ⚫ Impossible | acier |
+| 10 · Légende | 46–50 | ⚫ Impossible | or pâle |
 
-**Le grand trickshot (carte 20)** : rebond au sol → entrée dans le tunnel → **portail** → atterrissage sur le
-**bouton** (encastré dans le sol) → la **porte** du puits s'ouvre → le **ventilateur** propulse le ballon tout en
-haut → **rebond sur une rampe-bumper** → chute dans le **panier suspendu**, dans une chambre fermée accessible
-seulement par le haut du puits. Sans un seul de ces éléments, aucun tir ne marque.
+Les **30 nouvelles cartes** (🆕, `src/trickshot/cards-expert.js`) sont chacune construites autour d'une idée
+reconnaissable : la fenêtre, le plafond, les marches, le double trampoline, le mur de caisses, le portail du ciel,
+le trou de serrure, la cheminée (rouler dans la bouche d'un conduit soufflant), la navette, le tremplin, le
+labyrinthe, la niche, laser et portail, la guillotine, le flipper géant, les clignotants, le puits, le rebond du
+fond, le chas de l'aiguille, le double verrou (deux boutons, une porte et une trappe), portails en chaîne, lasers
+croisés, le coffre-fort (caisse → bouton → porte + ventilateur), l'horloge (deux ascenseurs à contretemps), le
+grand huit, l'abîme, la tour, la mécanique (portail → trampoline → bouton → porte → fosse), les scies, la glissade.
+Aucune carte ne se répète.
 
-| N° | Carte | Difficulté | Idée (indice affiché) | Éléments |
+| N° | Carte | Palier | Idée (indice affiché) | Éléments |
 |---|---|---|---|---|
 | 1 | Premier tir | 🟢 | Touche le ballon, puis tire vers l’arrière n’importe où sur l’écran. Relâche ! | rebonds |
-| 2 | Rebond | 🟢 | Le panier est sous une dalle : fais rebondir le ballon sur la plaque du milieu. | suspendu |
-| 3 | La bande | 🟢 | Le panier tourne le dos : renvoie le ballon contre le mur de gauche. | rebonds |
-| 4 | Le tunnel | 🟠 | Le seul passage est un tunnel bas : enchaîne les rebonds. | suspendu |
-| 5 | Trampoline | 🟢 | Tu es dans une cage basse : le trampoline te fera passer le mur. | trampoline, cage de verre, suspendu |
-| 6 | Colonne d’air | 🟢 | Le plafond est bas : seul le souffle du ventilateur monte jusqu’au panier. | ventilateur |
-| 7 | La machine | 🟢 | Trampoline, puis ventilateur : deux machines, un seul tir. | trampoline, ventilateur, suspendu |
-| 8 | L’ascenseur | 🟠 | Attends le bon moment : l’ascenseur renvoie le ballon vers le panier. | ascenseur |
-| 9 | Le couvercle | 🟢 | Le panier est dans une fosse fermée par une caisse : arrive assez vite pour la briser. | caisse |
-| 10 | Le pont | 🟢 | Passe sur le bouton : le pont descend dans le tunnel, au-dessus du vide. | bouton, porte/pont/trappe |
-| 11 | La porte | 🟠 | Touche le bouton : le volet s’ouvre… pendant que le ballon roule encore. | bouton, porte/pont/trappe |
-| 12 | Le souffleur | 🔴 | Le ventilateur est éteint : un bouton l’allume. | ventilateur, bouton, suspendu |
-| 13 | Le portail | 🟢 | Tu es enfermé : le portail est la seule sortie. On en ressort à la même vitesse. | portails, cage de verre |
-| 14 | Double portail | 🟠 | Trois salles fermées : le premier portail mène à droite, le second jusqu’au panier. | portails, cage de verre |
-| 15 | Rideau laser | 🟠 | Le laser garde l’entrée du portail : attends qu’il s’éteigne. | portails, laser, suspendu |
-| 16 | Portail et bande | 🟠 | À la sortie du portail, il faudra encore rebondir sur le mur. | portails |
-| 17 | Réaction en chaîne | 🟠 | Bande sur le mur, bouton, trappe, trampoline, fenêtre : tout s’enchaîne. | trampoline, bouton, porte/pont/trappe |
-| 18 | Zigzag | 🔴 | Les bumpers rendent toute l’énergie : va à droite, puis redescends à gauche. | bumpers |
-| 19 | Le flipper | 🟠 | Les rampes-bumpers font faire le tour de la salle au ballon. | bumpers |
-| 20 | Le grand trickshot | 🔴 | Rebond, portail, bouton, porte, ventilateur, bumper… panier. | ventilateur, bouton, porte/pont/trappe, portails, bumpers, suspendu |
+| 2 | Les marches 🆕 | 🟢 | De marche en marche : le panier attend tout en bas, à gauche. | rebonds |
+| 3 | Le double verrou 🆕 | 🟢 | Premier bouton : la porte. Second bouton : la trappe au-dessus du panier. Le ballon doit garder assez d’élan pour les deux. | bouton, porte/trappe |
+| 4 | La glissade 🆕 | 🟢 | La glace ne freine pas : le ballon doit quitter la piste juste au bord pour retomber dans le panier. | glace |
+| 5 | Trampoline | 🟢 | Tu es dans une cage basse : le trampoline te fera passer le mur. | trampoline, verre, suspendu |
+| 6 | Le couvercle | 🟢 | Le panier est dans une fosse fermée par une caisse : arrive assez vite pour la briser. | caisse |
+| 7 | Le portail | 🟢 | Tu es enfermé : le portail est la seule sortie. On en ressort à la même vitesse. | portails, verre |
+| 8 | Colonne d’air | 🟢 | Le plafond est bas : seul le souffle du ventilateur monte jusqu’au panier. | ventilateur |
+| 9 | Double portail | 🟢 | Trois salles fermées : le premier portail mène à droite, le second jusqu’au panier. | portails, verre |
+| 10 | Portail et bande | 🟢 | À la sortie du portail, il faudra encore rebondir sur le mur. | portails |
+| 11 | L’abîme 🆕 | 🔵 | La dalle au-dessus du puits clignote : elle doit être là pour le rebond, puis partie pour la chute. | dalles clignotantes |
+| 12 | La machine | 🔵 | Trampoline, puis ventilateur : deux machines, un seul tir. | trampoline, ventilateur, suspendu |
+| 13 | La bande | 🔵 | Le panier tourne le dos : renvoie le ballon contre le mur de gauche. | rebonds |
+| 14 | La navette 🆕 | 🔵 | La navette passe et repasse au-dessus du vide : rebondis dessus au bon moment. | plateforme mobile |
+| 15 | Réaction en chaîne | 🔵 | Bande sur le mur, bouton, trappe, trampoline, fenêtre : tout s’enchaîne. | trampoline, bouton, porte/trappe |
+| 16 | Double trampoline 🆕 | 🔵 | Deux trampolines au-dessus du vide : le premier lance vers le second. | trampoline, suspendu |
+| 17 | Le pont | 🔵 | Passe sur le bouton : le pont descend dans le tunnel, au-dessus du vide. | bouton, porte/trappe |
+| 18 | Rebond | 🔵 | Le panier est sous une dalle : fais rebondir le ballon sur la plaque du milieu. | rebonds |
+| 19 | La porte | 🔵 | Touche le bouton : le volet s’ouvre… pendant que le ballon roule encore. | bouton, porte/trappe |
+| 20 | Rideau laser | 🔵 | Le laser garde l’entrée du portail : attends qu’il s’éteigne. | portails, laser, suspendu |
+| 21 | Le plafond 🆕 | 🟠 | Le muret bloque les tirs tendus : fais rebondir le ballon sous la dalle. | rebonds |
+| 22 | Le puits 🆕 | 🟠 | Le panier est au fond du puits : il faut retomber pile dans l’ouverture. | rebonds |
+| 23 | Les scies 🆕 | 🟠 | Deux scies balaient le passage à contretemps : lance au moment où le chemin s’ouvre. | scies |
+| 24 | Le grand huit 🆕 | 🟠 | Les rampes font faire au ballon une boucle complète avant de le déposer au panier. | bumpers, suspendu |
+| 25 | Les clignotants 🆕 | 🟠 | Les dalles lumineuses apparaissent et disparaissent : la bonne doit être là au rebond. | dalles clignotantes |
+| 26 | Le flipper géant 🆕 | 🟠 | Bumpers en haut, bumpers en bas : trouve la trajectoire qui finit dans le panier. | bumpers, suspendu |
+| 27 | Le grand trickshot | 🟠 | Rebond, portail, bouton, porte, ventilateur, bumper… panier. | ventilateur, bouton, porte/trappe, portails, bumpers, suspendu |
+| 28 | L’ascenseur | 🟠 | Attends le bon moment : l’ascenseur renvoie le ballon vers le panier. | plateforme mobile |
+| 29 | Le souffleur | 🟠 | Le ventilateur est éteint : un bouton l’allume. | ventilateur, bouton, suspendu |
+| 30 | Portails en chaîne 🆕 | 🟠 | Trois salles fermées, deux portails : le même tir doit traverser les deux. | portails |
+| 31 | Lasers croisés 🆕 | 🔴 | Une navette, deux lasers : le tir doit passer entre les éclairs et rebondir sur la navette. | plateforme mobile, laser |
+| 32 | La mécanique 🆕 | 🔴 | Portail, trampoline, bouton, porte, fosse : chaque pièce de la mécanique doit s’enchaîner, du premier rebond à la fosse. | trampoline, bouton, porte/trappe, portails, verre |
+| 33 | Le tremplin 🆕 | 🔴 | Un tir tendu, au ras du sol : la rampe envoie le ballon sur la corniche du panier. | rebonds |
+| 34 | Le flipper | 🔴 | Les rampes-bumpers font faire le tour de la salle au ballon. | bumpers |
+| 35 | La cheminée 🆕 | 🔴 | Fais rouler le ballon dans la bouche du conduit : le souffle le monte et le dépose dans le panier. | ventilateur |
+| 36 | La fenêtre 🆕 | 🔴 | Un mur entier, une seule fenêtre : vise-la, le panier est juste derrière. | rebonds |
+| 37 | Le portail du ciel 🆕 | 🔴 | Le panier est enfermé : le portail du plafond est la seule entrée. | portails |
+| 38 | Zigzag | 🔴 | Les bumpers rendent toute l’énergie : va à droite, puis redescends à gauche. | bumpers |
+| 39 | Le tunnel | 🔴 | Le seul passage est un tunnel bas : enchaîne les rebonds. | rebonds |
+| 40 | La guillotine 🆕 | 🔴 | La lame monte et descend devant le panier : passe juste quand elle est en haut. | scies |
+| 41 | L’horloge 🆕 | ⚫ | Deux ascenseurs à contretemps : rebondis sur le premier quand le second est en haut. | plateforme mobile |
+| 42 | Le labyrinthe 🆕 | ⚫ | Par-dessus le premier mur, puis sous le second : le panier est au fond du labyrinthe. | rebonds |
+| 43 | Le rebond du fond 🆕 | ⚫ | La toile, au-dessus du vide, envoie le ballon contre le mur du fond : il revient vers le panier. | trampoline, verre, suspendu |
+| 44 | La niche 🆕 | ⚫ | Le panier tourne le dos, au fond d’une niche : fais rebondir le ballon contre le mur du fond. | rebonds |
+| 45 | Le coffre-fort 🆕 | ⚫ | Brise la caisse du couloir, roule sur le bouton : la porte s’ouvre et le ventilateur s’allume. | ventilateur, caisse, bouton, porte/trappe, suspendu |
+| 46 | Laser et portail 🆕 | ⚫ | Deux lasers à contretemps : un instant seulement, les deux sont éteints. | portails, laser, suspendu |
+| 47 | Le mur de caisses 🆕 | ⚫ | Une pile de caisses barre le chemin : frappe-la assez fort pour passer au travers. | caisse |
+| 48 | La tour 🆕 | ⚫ | De paroi en paroi, toujours plus haut : le panier est au sommet de la tour. | suspendu |
+| 49 | Le trou de serrure 🆕 | ⚫ | Une seule fente dans la dalle : passe par-dessus, puis tombe dedans. | rebonds |
+| 50 | Le chas de l’aiguille 🆕 | ⚫ | Une fenêtre à peine plus large que le ballon, tout au fond : un seul tir passe. | rebonds |
 
-**Sauvegarde** : les cartes de l'étape 22 n'existent plus ; la progression Trickshot passe au format v2. Avoir
-réussi N anciennes cartes ouvre d'office les N+1 premières nouvelles ; l'ancienne sauvegarde est gardée telle
-quelle (`legacy`). Le mode principal, les pièces, les skins et les récompenses ne sont pas touchés.
+**Sauvegarde** : la progression Trickshot passe au **format v3** et **repart de la carte 1** pour tout le monde
+(les numéros des cartes ont changé). L'ancienne sauvegarde (v1 ou v2) est gardée telle quelle dans `legacy` ; le
+mode principal, les pièces, gemmes, skins, Hoop Pass, collection et succès ne sont pas touchés (les compteurs de
+succès « Trickshots réussis » gardent leur total à vie).
 
 ### Le code (`src/trickshot/`)
 
@@ -1214,10 +1285,11 @@ quelle (`legacy`). Le mode principal, les pièces, les skins et les récompenses
 | `config.js` | `TS_CONFIG` (dérivé de `CONFIG` sans le modifier : matériaux `bumper` et `felt`, frein au sol, délai de mort), `TRICKSHOT` (3 essais, vitesse max 30 u/s, tirage max 3,2 u, fin de tir), difficultés, chapitres. |
 | `game.js` | `TrickshotGame` (hérite de `Game`) : états visée → vol → fin de tir → victoire ou échec, `launch(angle, puissance)`, décor conservé entre les essais, caisses cassables (`breakables`), ventilateurs allumés par un bouton (`fans[].target`), gravité du niveau (`gravityScale` : la vitesse de lancement suit sa racine, même portée, vol flottant), score et bonus. `simulateShot()` pour le solveur et les tests. |
 | `kit.js` | Boîte à outils des cartes : salle sans sol (`frame`), sols partiels (`floor`), plateformes posées ou **suspendues** (`plat`, `hang`), murs, verre (`glass`), murs inclinés (`slope`), bumpers et rampes-bumpers, paniers posés / au mur / **suspendus** (`hoopPole`, `hoopWall`, `hoopHang`). |
-| `levels.js` | Les 20 cartes du laboratoire. |
+| `levels.js` | Les 20 cartes du laboratoire, l'**ordre des 50 cartes** (`ORDER`, rangé par difficulté mesurée), les paliers (`TS_BANDS`) et l'annonce des nouveautés sur la première carte qui les utilise. |
+| `cards-expert.js` | Les 30 nouvelles cartes du mode expert. |
 | `aim.js` | Geste → tir (`aimFromDrag`), trajectoire prévue (`trajectory` : longueur d'arc limitée `maxLength`, arrêtée au premier bloc ou rampe). |
 | `render.js` | `ArenaRenderer` (hérite du rendu du jeu) : **laboratoire** (fond précalculé de panneaux rivetés, tuyaux, câbles, lampes, néon ; engrenage, écrans et gyrophares animés ; vide du bas), acier à liseré lumineux, verre, murs inclinés, câbles des plateformes et paniers suspendus, volets à voyant, ascenseurs, caisses, panier néon à planche de verre et filet qui s'illumine, pas de tir, élastique, pointillés et repère du geste. |
-| `progress.js` | Progression séparée (clé `hoopbounce.trickshot`, format v2 : étoiles, meilleur score, parties par carte ; migration de la v1), déblocage séquentiel, résumé. |
+| `progress.js` | Progression séparée (clé `hoopbounce.trickshot`, format v3 : étoiles, meilleur score, parties par carte ; les sauvegardes v1 / v2 repartent de zéro et sont gardées dans `legacy`), déblocage séquentiel, résumé. |
 | `i18n.js` | Textes du mode en français, anglais, espagnol (difficultés, chapitres, mécaniques, écrans). |
 | `main.js` | Écran de jeu : caméra, visée tactile et clavier, HUD, effets (ralenti, zoom, confettis, foule), sons, écrans de victoire / échec / pause, enchaînement des niveaux. |
 
@@ -1512,10 +1584,10 @@ Chaque succès a aussi un **palier** (couleur de sa médaille) : Débutant (bron
 - « Terminer le niveau N » : le niveau N se débloque dans l'ordre, ce sont donc les anciens succès de fin de
   monde (Roi de la ville, Montagnard, Volcanologue, Gardien de la forêt, Astronaute) : identifiants, récompenses et
   états gardés.
-- « Réussir 50 Trickshots » : il n'y a que 20 cartes ; chaque réussite compte, rejouer compris. Pour les anciennes
-  sauvegardes, le compteur part au moins du nombre de cartes déjà réussies.
-- « Un Trickshot Impossible » : aucune carte n'est classée « Impossible » ; le succès demande une carte **Très
-  difficile réussie du premier tir** (3 étoiles).
+- « Réussir 50 Trickshots » : chaque réussite compte, rejouer compris (depuis la refonte de la campagne, le mode
+  compte 50 cartes). Pour les anciennes sauvegardes, le compteur part au moins du nombre de cartes déjà réussies.
+- « Un Trickshot Impossible » : le succès demande une carte **Très difficile ou Impossible réussie du premier tir**
+  (3 étoiles) ; depuis la refonte, 10 cartes sont classées ⚫ Impossible (code des succès inchangé).
 - « Battre son fantôme » : finir un niveau plus vite que son fantôme enregistré (le fantôme est alors
   remplacé), qu'il soit affiché ou non. Compté à partir de cette version.
 - « Acheter un skin » / « Posséder 10 skins » : un skin = n'importe quel objet de personnalisation (ballon, effet,
@@ -1638,28 +1710,31 @@ radio**, souffles.
 
 ### Les niveaux
 
-**Refonte complète (phase 2, 24/11/2026).** Les 50 niveaux ont été refaits de zéro avec le **kit de construction**
-(`src/game/levels/kit.js`) : un niveau s'écrit de gauche à droite, section par section, chaque section ayant une
-idée et sa solution experte. Mêmes 5 mondes, mêmes mécaniques, même physique et même maniabilité ; les
-identifiants des niveaux n'ont pas changé (la progression enregistrée reste valable).
+**Refonte de la campagne (24/11/2026).** Les 50 niveaux et les 5 mondes sont gardés, mais chaque niveau est
+devenu **beaucoup plus long, découpé en étapes**, avec une idée par niveau et de **nouveaux pièges surprises**,
+toujours annoncés par un signe visible (voir [Pièges surprises](#interactions-et-obstacles)). Les étapes
+nouvelles sont construites avec le **kit** (`src/game/levels/kit.js`) et insérées entre les sections éprouvées de
+la phase 2 (souvent juste après le départ) ; la physique et la maniabilité n'ont **pas** changé.
 
-**Durée visée pour un joueur** (estimée à 1,4 × la solution experte jouée par le pilote ; moyenne mesurée) :
+**Durée visée pour un joueur** (estimée à 1,4 × la solution experte jouée en entier par le pilote) :
 
 | Monde | Visé | Mesuré | Rôle |
 |---|---|---|---|
-| Ville | 20 – 30 s | 20 – 33 s (moy. 27) | découverte, très peu de pièges |
-| Neige | 30 – 40 s | 30 – 36 s (moy. 33) | premières combinaisons |
-| Volcan | 40 – 50 s | 42 – 53 s (moy. 47) | enchaînements techniques |
-| Forêt | 45 – 60 s | 46 – 57 s (moy. 51) | précision, les erreurs coûtent plus cher (moins de drapeaux, rivière) |
-| Espace | 50 – 70 s | 52 – 68 s (moy. 59) | expert, presque toutes les mécaniques |
+| Ville | 20 – 30 s | 20 – 33 s (moy. 28) | tutoriel, très peu de pièges ; premiers pièges cachés (portail, mur) |
+| Neige | 30 – 45 s | 34 – 48 s (moy. 43) | premiers pièges et premières combinaisons ; **1 niveau troll** |
+| Volcan | 45 – 60 s | 50 – 63 s (moy. 55) | plus long, réflexion et combinaisons |
+| Forêt | 60 – 90 s | 61 – 93 s (moy. 78) | technique, plusieurs objectifs (leviers, grilles, portes) ; **1 niveau troll** |
+| Espace | 90 – 120 s | 101 – 124 s (moy. 112) | expert, très long, toutes les mécaniques ; **1 niveau troll** |
 
-**Principes appliqués** : une idée principale par niveau (jamais toutes les mécaniques à la fois, sauf les finales) ;
-chaque piège est présenté seul avant d'être combiné ; pièges réguliers et annoncés (le joueur comprend toujours
-pourquoi il a échoué) ; puzzles d'observation (attendre, observer, activer, détruire, faire tomber, téléporter,
-rebondir) ; rythme alterné facile / technique / puzzle / précision / rapide / détente ; drapeaux avant les
-passages longs ; **3 étoiles** par niveau, souvent sur un passage risqué.
+Campagne complète : **≈ 53 min** de jeu estimé pour un joueur (≈ 36 min avant la refonte).
 
-| # | Niveau | Idée | Palier | Joueur | Passages |
+**Principes appliqués** : une idée par niveau ; plusieurs étapes par niveau ; un piège surprise surprend une fois,
+puis le signe qui l'annonce permet de réussir au deuxième essai ; pas de répétition d'une étape à l'autre (les
+étapes de l'Espace sont tirées d'une boîte de 11 modèles, jamais dans le même ordre) ; **seulement 3 niveaux
+trolls** (19, 37, 46), drôles et courts dans leur farce ; drapeaux avant les étapes longues ; **3 étoiles** par
+niveau (le kit garde au plus 3 étoiles : la première, celle du milieu et la dernière).
+
+| # | Niveau | Idée (et étapes nouvelles en gras) | Palier | Joueur | Passages |
 |---|---|---|---|---|---|
 | 1 | **Premier tir** | tutoriel : rouler, rebondir, charger | F | ~26 s | 6 |
 | 2 | **Les trampolines** | trampolines et premiers pics | F | ~24 s | 5 |
@@ -1668,57 +1743,58 @@ passages longs ; **3 étoiles** par niveau, souvent sur un passage risqué.
 | 5 | **Le souffle des toits** | ventilateurs de toit en toit (détente) | F | ~33 s | 4 |
 | 6 | **Le panier verrouillé** | trampoline → toit → interrupteur de la tour → porte du panier | M | ~20 s | 4 |
 | 7 | **Les scies** | rythme des scies (précision) | M | ~30 s | 5 |
-| 8 | **Le métro** | réseau de téléporteurs, rame de métro, puits | M | ~24 s | 5 |
-| 9 | **Le chantier** | lasers et presses (rapide) | D | ~26 s | 5 |
+| 8 | **Le métro** | réseau de téléporteurs ; **le dernier est caché** (scintillement) | M | ~24 s | 5 |
+| 9 | **Le chantier** | lasers et presses ; **le premier mur qui surgit** | D | ~33 s | 6 |
 | 10 | **La grande finale** | caisse → interrupteur → porte → ventilateur → téléporteur | D | ~29 s | 7 |
-| 11 | **Premières glissades** | la glace : élan, freinage, piliers glissants, tremplin | F | ~30 s | 8 |
-| 12 | **Le col venteux** | vent de face, vent dans le dos, rafales | M | ~32 s | 8 |
-| 13 | **La grotte de glace** | stalactites : passer vite, ou les faire tomber et attendre | M | ~31 s | 4 |
-| 14 | **Le pont de glace** ★ | le pont s'effondre derrière toi : ne jamais s'arrêter | M | ~36 s | 5 |
-| 15 | **L'avalanche** ★ | boules de neige : sauter, ou se cacher dans un creux | M | ~35 s | 5 |
-| 16 | **Patinoire au vent** | glace + vent : freiner à temps | D | ~32 s | 7 |
-| 17 | **Le glacier** | blocs de glace qui s'écrasent (précision) | D | ~36 s | 6 |
-| 18 | **Le chalet** | deux interrupteurs : la barrière du remonte-pente, puis la porte du chalet | M | ~32 s | 7 |
-| 19 | **Le sommet** | ascension : trampolines, plaques, corniche venteuse, stalactites | D | ~34 s | 6 |
-| 20 | **Tempête de neige** | finale : tempête, avalanche, tunnel de glace, pont qui cède | D | ~33 s | 5 |
-| 21 | **Premières braises** | la lave : bassins, îlots, flammes, pierres fragiles | F | ~42 s | 5 |
-| 22 | **Les geysers** | courir, s'arrêter, repartir ; marches brûlantes ; lac de feu | M | ~50 s | 7 |
-| 23 | **Chute de pierres** | les ombres annoncent les pierres : galerie, abris, cheminée | M | ~44 s | 7 |
-| 24 | **Les canons** | boules de feu : sous la lave, en face, du plafond | D | ~47 s | 6 |
-| 25 | **La coulée** | rochers de lave : sauter, ou se cacher dans la niche | D | ~51 s | 5 |
-| 26 | **La forge** ★ | puzzle : bloc-pont sous la hotte, bloc-marche, soufflet, marteaux-pilons | M | ~44 s | 9 |
-| 27 | **Le pont des geysers** ★ | pierres fragiles entre les geysers, piliers de repos | D | ~45 s | 6 |
-| 28 | **Les ascenseurs** | ascenseurs et navettes de pierre, pierres qui tombent | M | ~49 s | 6 |
-| 29 | **Le cratère** | puzzle : choisir la bonne bouche (téléporteurs), interrupteur de l'îlot | D | ~45 s | 10 |
-| 30 | **Le cœur du volcan** ★ | finale : tout le volcan | E | ~53 s | 9 |
-| 31 | **La clairière** | champignons : souche, ronces, rivière, escalier, grand champignon | M | ~46 s | 7 |
-| 32 | **La rivière aux lianes** ★ | une liane, trois lianes, entre les balanciers | M | ~51 s | 6 |
-| 33 | **Les branches** | branches qui montent, qui glissent, qui cassent ; échelle de branches | D | ~47 s | 6 |
-| 34 | **Les troncs** | troncs qui roulent, rondins qui dévalent, tronc flottant | M | ~57 s | 6 |
-| 35 | **Le bûcheron** | balanciers à pointes et troncs-marteaux | D | ~46 s | 6 |
-| 36 | **La cabane** | puzzle : levier du champignon, levier de la caisse, monte-charge | M | ~51 s | 9 |
-| 37 | **Les planches magiques** | planches qui clignotent : vague, escalier, descente | D | ~54 s | 5 |
-| 38 | **La canopée** | tout en hauteur : lianes, branches, champignon, branches fragiles | D | ~50 s | 6 |
-| 39 | **Les arbres creux** ★ | puzzle : le bon tronc, rondin, marteau, levier du sommet | D | ~48 s | 12 |
-| 40 | **La forêt profonde** ★ | finale : toute la forêt | E | ~55 s | 8 |
-| 41 | **Premiers pas lunaires** | sauts lunaires, plateformes flottantes, premier trou noir | M | ~64 s | 5 |
-| 42 | **La ceinture d'astéroïdes** | entre les astéroïdes, par-dessus, dessous la pluie | D | ~61 s | 9 |
-| 43 | **Les portails** ★ | portails à double sens : l'aller-retour vers l'interrupteur | D | ~54 s | 13 |
-| 44 | **La tête en bas** ★ | gravité inversée : le plafond devient le sol, le pont invisible | D | ~56 s | 6 |
-| 45 | **Les trous noirs** | sauter assez haut, assez loin, ou les contourner | D | ~63 s | 8 |
-| 46 | **La station** | pistons et lasers : le bon tempo | D | ~54 s | 8 |
-| 47 | **Le laboratoire** | puzzle : la caisse mène au portail, le portail mène au levier | D | ~55 s | 9 |
-| 48 | **Le monde à l'envers** | gravité inversée, astéroïdes, pics des deux côtés | E | ~52 s | 5 |
-| 49 | **Le grand vide** | plateformes flottantes, astéroïdes et trous noirs au-dessus du vide | E | ~68 s | 8 |
-| 50 | **L'odyssée** ★ | finale : tout le jeu | E | ~61 s | 8 |
+| 11 | **Premières glissades** | la glace ; **le lac trompeur** (faux sol de glace au-dessus d’un creux) | F | ~34 s | 10 |
+| 12 | **Le col venteux** | vent ; **rafale soudaine** entre deux piliers | M | ~46 s | 10 |
+| 13 | **La grotte de glace** | stalactites ; **deux murs qui surgissent** | M | ~44 s | 6 |
+| 14 | **Le pont de glace ★** | le pont s’effondre ; **dalles qui s’effacent** | M | ~45 s | 6 |
+| 15 | **L’avalanche ★** | boules de neige ; **ressort rouge** vers une falaise, puis les pics | M | ~43 s | 7 |
+| 16 | **Patinoire au vent** | glace + vent ; **marche qui jaillit** d’un pilier suspendu | D | ~45 s | 10 |
+| 17 | **Le glacier** | blocs de glace ; **mur qui surgit** | D | ~45 s | 7 |
+| 18 | **Le chalet** | deux interrupteurs ; **cave** : porte qui se ferme, portail caché | M | ~41 s | 9 |
+| 19 | **Trop facile ? 🤡** | **TROLL** : le panier est là… le sol disparaît ; le vrai chemin passe par le sommet | D | ~36 s | 9 |
+| 20 | **Tempête de neige** | finale ; **rafale + dalles qui s’effacent** | D | ~48 s | 7 |
+| 21 | **Premières braises** | la lave ; **sol de cendre trompeur**, puis un pilier | F | ~50 s | 7 |
+| 22 | **Les geysers** | rythme des geysers ; **mur qui surgit + geyser** | M | ~63 s | 8 |
+| 23 | **Chute de pierres** | ombres des pierres ; **galerie qui se referme** | M | ~56 s | 8 |
+| 24 | **Les canons** | boules de feu ; **dalles qui s’effacent, dont une fausse** | D | ~54 s | 7 |
+| 25 | **La coulée** | rochers de lave ; **ressort au-dessus de la lave** | D | ~51 s | 7 |
+| 26 | **La forge ★** | puzzle du bloc ; **levier sur l’enclume + porte qui se ferme** | M | ~53 s | 11 |
+| 27 | **Le pont des geysers ★** | pierres fragiles ; **pierres qui tombent au-dessus de la lave** | D | ~50 s | 8 |
+| 28 | **Les ascenseurs** | ascenseurs de pierre ; **trois marches qui jaillissent en zigzag** | M | ~63 s | 10 |
+| 29 | **Le cratère** | bonne bouche ; **faux portail visible, vrai portail caché** | D | ~50 s | 11 |
+| 30 | **Le cœur du volcan ★** | finale ; **mur qui surgit + dalle fantôme** | E | ~63 s | 11 |
+| 31 | **La clairière** | champignons ; **deux leviers, deux grilles ; nénuphars qui s’effacent** | M | ~72 s | 12 |
+| 32 | **La rivière aux lianes ★** | lianes ; **mur qui surgit ; lianes et grenier qui se referme** | M | ~93 s | 11 |
+| 33 | **Les branches** | branches ; **levier perché + grille ; rafale sur les branches fragiles** | D | ~78 s | 10 |
+| 34 | **Les troncs** | troncs ; **mur qui surgit ; pont qui s’effondre (levier)** | M | ~79 s | 9 |
+| 35 | **Le bûcheron** | balanciers ; **marche qui jaillit ; deux leviers sous les marteaux** | D | ~71 s | 11 |
+| 36 | **La cabane** | deux leviers ; **marche vers un levier perché ; grenier piégé + portail caché** | M | ~79 s | 14 |
+| 37 | **Le sentier farceur 🤡** | **TROLL** : planches magiques, faux raccourci, portail caché sur le droit chemin | D | ~81 s | 8 |
+| 38 | **La canopée** | tout en hauteur ; **ressort → liane ; escalier de verre qui s’efface** | D | ~78 s | 9 |
+| 39 | **Les arbres creux ★** | troncs creux ; **portail aller-retour vers un levier ; portails sur la rivière** | D | ~61 s | 17 |
+| 40 | **La forêt profonde ★** | finale ; **mur + liane ; nénuphars, levier de l’îlot, dernière porte** | E | ~86 s | 12 |
+| 41 | **Premiers pas lunaires** | sauts lunaires ; **ressort, dalles fantômes, deux murs** | M | ~114 s | 10 |
+| 42 | **La ceinture d’astéroïdes** | astéroïdes ; **rafale, faux sol, marches qui jaillissent** | D | ~124 s | 17 |
+| 43 | **Les portails ★** | aller-retour ; **sortie cachée, deux leviers, deux murs** | D | ~108 s | 21 |
+| 44 | **La tête en bas ★** | gravité inversée ; **dalles fantômes, leviers sous les pistons, ressort** | D | ~107 s | 12 |
+| 45 | **Les trous noirs** | trous noirs ; **faux sol, rafale, sortie cachée** | D | ~111 s | 14 |
+| 46 | **La station farceuse 🤡** | **TROLL** : sas qui se referme, fausse arrivée, leviers sous les pistons | D | ~101 s | 15 |
+| 47 | **Le laboratoire** | caisse et portails ; **deux leviers, marches qui jaillissent, dalles fantômes** | D | ~121 s | 18 |
+| 48 | **Le monde à l’envers** | zones inversées ; **deux murs, sortie cachée, rafale** | E | ~107 s | 11 |
+| 49 | **Le grand vide** | au-dessus du vide ; **marches qui jaillissent, ressort, faux sol** | E | ~122 s | 16 |
+| 50 | **L’odyssée ★** | finale : tout le jeu ; **deux murs, deux leviers** | E | ~104 s | 14 |
 
-★ **14 niveaux marquants** : le pont qui s'effondre (14), l'avalanche et le creux (15), la forge (26), le pont des
-geysers (27), le cœur du volcan (30), la rivière aux lianes (32), les arbres creux (39), la forêt profonde (40), les
-portails aller-retour (43), le pont invisible (44), l'odyssée (50), et les finales de la Ville et de la Neige.
+★ niveaux marquants · 🤡 niveaux trolls.
 
-- Identifiants inchangés : `first-shot`, `the-wall`, `trampoline`, `moving`, `updraft`, `final`, `city-crate`,
-  `city-roofs`, `city-site`, `city-finale`, puis `snow-1` … `snow-10`, `volcano-1` … `volcano-10`,
-  `forest-1` … `forest-10`, `space-1` … `space-10`. Noms : clés `lv.<monde>.<n>` (3 langues).
+- Identifiants (refonte de la campagne) : `city-01` … `city-10`, `snow-01` … `snow-10`, `volcano-01` …,
+  `forest-01` …, `space-01` … `space-10`. Les anciens fantômes, rangés sous les anciens identifiants, ne sont
+  pas effacés (ils ne correspondent plus à aucun niveau). Noms : clés `lv.<monde>.<n>` (3 langues).
+- **Progression remise à zéro** : `CAMPAIGN = 3` dans `src/game/progress.js` ; une progression d'une campagne
+  précédente repart de zéro (tout le monde découvre la nouvelle campagne depuis le niveau 1) et est gardée dans
+  `legacy`. Pièces, gemmes, skins, Hoop Pass, collection, succès, fantômes et réglages ne sont pas touchés.
 - Chaque niveau décrit ses **passages** (`passages`) : départ, objectif et une **solution experte** (plan de
   manœuvres : rouler jusqu'à, charger, sauter en visant, attendre le bon moment, monter sur une plateforme, se
   balancer aux lianes, flotter dans un souffle…).
@@ -2121,9 +2197,17 @@ niveaux plus longs et plus difficiles rapportent un peu plus.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v11.apk` (≈ 0,6 Mo, **1.10.0-test11**, système de succès) —
+**Fichier actuel :** `dist/HoopBounce_Test_v12.apk` (≈ 0,6 Mo, **1.11.0-test12**, refonte de la campagne) —
 une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
+
+**Mise à jour v12 (refonte de la campagne) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé
+identique (SHA-256 `894f0b7d…`, contrôlée par le script), versionCode 12, versionName 1.11.0-test12, `apksigner
+verify` valide (v2 + v3). Les fichiers des niveaux, des pièges, du Trickshot et des deux progressions extraits de
+l'APK sont identiques aux sources testées. **Simulation de mise à jour** (sauvegarde d'un joueur avancé : 10 clés,
+dont pièces, gemmes, boutique, Pass, succès, fantômes, statistiques, réglages) : **seules** `hoopbounce.progress` et
+`hoopbounce.trickshot` changent (progression remise à zéro, ancienne gardée dans `legacy`) ; les 8 autres clés sont
+identiques à l'octet près.
 
 **Mise à jour v11 (phase 5) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé identique
 (SHA-256 `894f0b7d…`, contrôlée par le script), versionCode 11, versionName 1.10.0-test11, `apksigner verify`
@@ -2160,7 +2244,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · v10 : `1.9.0-test10` (10) · **v11 : `1.10.0-test11` (11)** ; « 1.8.0 (test 9) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · v10 : `1.9.0-test10` (10) · v11 : `1.10.0-test11` (11) · **v12 : `1.11.0-test12` (12)** ; « 1.11.0 (test 12) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -2419,6 +2503,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Page Succès refaite (style Hoop Pass), sauvegarde v2 fusionnée, 12 tests
 - 🔴 Retours du porteur du projet (interprétations des défis, envie de jouer après les 50 niveaux)
 
+### Phase 6 duodecies — Refonte de la campagne ✅ (en attente de validation)
+- ✅ 11 pièges surprises annoncés par un signe visible (moteur, dessin, sons, vibrations, 7 tests)
+- ✅ 50 niveaux plus longs, à étapes : Ville 20–30 s, Neige 30–45 s, Volcan 45–60 s, Forêt 60–90 s, Espace 90–120 s
+- ✅ 3 niveaux trolls (19 « Trop facile ? », 37 « Le sentier farceur », 46 « La station farceuse »)
+- ✅ Trickshot expert : 50 cartes (30 nouvelles), 5 paliers de 10 rangés par difficulté mesurée, 10 chapitres
+- ✅ Progression des niveaux (mode principal et Trickshot) remise à zéro, rien d'autre n'est touché ; APK v12
+- 🔴 Retours du porteur du projet et de vrais joueurs : durées réelles, pièges compris au 2e essai, trolls drôles,
+  cartes Impossibles jugées faisables
+
 ### Phase 7 bis — Saisons 🟡
 - ✅ Interrupteur de saison ; **Saison 1 — Noël, étape 1** : menu principal décoré et ambiance d'hiver
 - ✅ **Hoop Pass « Saison 1 · Noël »** : 50 niveaux, lignes Gratuit / Premium, XP en jouant, 9 objets
@@ -2474,6 +2567,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Refonte de la campagne** : 50 niveaux plus longs à étapes, 11 pièges surprises annoncés, 3 niveaux trolls,
+  Trickshot expert en 50 cartes et 5 paliers, progression des niveaux remise à zéro, APK de test v12
 - ✅ **Phase 3 — Mode Fantôme** : meilleur essai enregistré par niveau, ballon fantôme exact et discret, carte de
   départ, bouton Fantôme (départ et pause), nouveau record animé, sauvegarde séparée, APK de test v9
 - ✅ **Phase 2 — refonte des 50 niveaux** : 50 niveaux uniques et plus longs (Ville 20–30 s … Espace 50–70 s),
@@ -2527,6 +2622,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation de la refonte de la campagne** avec `HoopBounce_Test_v12.apk` : durées ressenties monde par
+  monde, pièges surprises (compris au 2e essai ?), niveaux trolls (drôles, pas frustrants), Trickshot 50 cartes
+  (paliers, cartes Impossibles faisables)
 - 🟡 **Validation des succès** (phase 5) avec `HoopBounce_Test_v11.apk` : page Succès, carte de déblocage,
   défis cachés (interprétations), emblèmes, récompenses
 - 🟡 **Validation de l'économie** (phase 4) avec `HoopBounce_Test_v10.apk` : roulette (lancer gratuit, 3 lancers
@@ -2618,6 +2716,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 9. Optimisations
+
+**Refonte de la campagne**
+- Pièges surprises : états calculés à chaque pas sans allocation ; un piège au repos n'a pas de collision
+  (aucun coût) ; dessin par une simple fente + voyant tant qu'il dort.
+- Vérification des niveaux : `route-check` en 5 processus parallèles (`--part=`), fusionnés par
+  `tools/route-merge.mjs` ; la partie complète des 50 niveaux (`level-run`) reste la preuve de référence.
+- Solveur Trickshot : les 50 cartes mesurées en ≈ 15 min (4 processus) ; le choix d'une solution qui utilise
+  toutes les mécaniques ne rejoue que quelques tirs gagnants.
 
 **Succès (phase 5)**
 - Calcul de tous les succès ≈ 0,04 ms (navigateur) : vérification après chaque niveau sans effet sur la fluidité ;
@@ -2776,6 +2882,11 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | Refonte de la campagne : les durées sont **estimées** (1,4 × la solution experte) ; l'Espace est au plafond de sa fourchette (niveau 42 ≈ 124 s pour 120 visées, toléré par le test). | 🔴 À éprouver avec de vrais joueurs |
+| Info | Refonte de la campagne : 51 passages sur 480 n'ont pas de solution « aléatoire » enregistrée (joués seuls, hors de l'état réel de la partie : porte pas encore ouverte, etc.). Ils sont tous couverts par la partie complète des 50 niveaux. | 🟡 Normal |
+| Info | Refonte de la campagne : les anciens fantômes et records restent dans la sauvegarde sous les anciens identifiants de niveaux (rien n'est effacé) mais ne s'affichent plus. | 🟡 Voulu |
+| Info | Trickshot : quelques cartes Impossibles n'ont qu'une petite fenêtre de tirs gagnants (la tour, le trou de serrure, le chas de l'aiguille) : faisables, solution enregistrée, mais exigeantes. | 🟡 Voulu (palier Impossible) |
+| Info | Navigateur : la vérification visuelle des nouvelles cartes et des nouveaux pièges n'a pas pu être refaite dans cette session (lancement d'un serveur local refusé par l'environnement) ; tout est couvert par les 661 tests. | 🔴 À regarder sur téléphone (v12) |
 | Info | Mode Fantôme : les essais sont enregistrés à partir de cette version ; un niveau terminé avant la mise à jour affiche « Terminez une première fois ce niveau… » jusqu'à la prochaine victoire. | 🟡 Normal (aucun parcours n'existait avant) |
 | Info | Mode Fantôme : le fantôme rejoue le temps de course ; s'il y a eu une chute avec retour au drapeau pendant le record, il se fige puis repart du drapeau, exactement comme pendant cet essai. | 🟡 Voulu |
 | Info | Phase 2 : les **records de temps** enregistrés avant la refonte ont été faits sur les anciens niveaux (deux fois plus courts) ; ils sont conservés tels quels (les sauvegardes ne sont pas modifiées), donc presque impossibles à battre. | 🟡 À décider : les garder, ou les effacer une fois à la mise à jour (étoiles et niveaux terminés seraient conservés) |
@@ -2838,6 +2949,44 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 24/11/2026 — Refonte de la campagne : niveaux plus longs, pièges surprises, Trickshot expert (v1.9.0-dev, APK de test v12)
+
+> Une campagne beaucoup plus longue, variée et mémorable. Les 50 niveaux et les 5 mondes sont gardés mais
+> redécoupés en étapes ; **aucune physique modifiée** ; menus, Hoop Pass, boutique, collection, Mode Fantôme,
+> succès et sauvegardes non modifiés (seules les deux progressions de niveaux repartent de zéro).
+
+**Ajouté**
+- **11 pièges surprises**, chacun annoncé par un signe visible : faux sol fissuré, dalle de verre qui s'efface,
+  pont qui s'effondre, **mur qui surgit**, **marche qui jaillit**, **porte qui se ferme derrière** (`Trap`),
+  **rafale soudaine** (chevrons), **super ressort** (ressorts rouges), **portail caché** (scintillement), faux
+  raccourci, laser clignotant. Dessin, sons (`trapWarn`, `trapMove`, `gust`, `springBoost`), vibrations, aides en
+  3 langues ; `tests/traps.test.mjs` (7 tests) ; pas `waitTrap` pour le pilote.
+- **Étapes nouvelles** dans les 50 niveaux (1 dans la Neige et le Volcan, 2 dans la Forêt, 2 à 3 dans l'Espace).
+- **3 niveaux trolls** : 19 « Trop facile ? », 37 « Le sentier farceur », 46 « La station farceuse ».
+- **Trickshot expert : 30 nouvelles cartes** (`src/trickshot/cards-expert.js`) → 50 cartes, **5 paliers** (🔵 Moyen
+  ajouté), **10 chapitres** (Précision, Vertige, Chaos, Expert, Légende ajoutés), ordre selon la difficulté
+  mesurée, nouveautés annoncées sur la première carte qui les utilise.
+
+**Modifié**
+- Durées : Ville 20–33 s, Neige 34–48 s, Volcan 50–63 s, Forêt 61–93 s, Espace 101–124 s (campagne ≈ 53 min au
+  lieu de ≈ 36). Identifiants des niveaux `city-01` … `space-10`.
+- Progression du mode principal : `CAMPAIGN = 3` (remise à zéro, ancienne gardée dans `legacy`) ; Trickshot :
+  format v3 (idem). Menu Trickshot : nombre de cartes et légende des difficultés lus dans les données.
+- Solveur : 5 classes, seuils recalés ; il retient un tir qui utilise toutes les mécaniques.
+- `tools/level-run.mjs` : nouvelles fourchettes de durée. Kit : au plus 3 étoiles par niveau.
+
+**Vérifié**
+- **661 tests** passent : les 50 niveaux joués en entier par le pilote (durées dans les fourchettes, mondes de
+  plus en plus longs), 429 solutions de passages rejouées, les 50 cartes Trickshot gagnées en un tir avec chaque
+  mécanique indispensable.
+- Sauvegardes : simulation sur 10 clés → seules `hoopbounce.progress` et `hoopbounce.trickshot` changent.
+- `dist/HoopBounce_Test_v12.apk` (1.11.0-test12) : même identifiant, même clé de test, versionCode 12, fichiers
+  identiques aux sources.
+
+**Reste à faire**
+- Retours du porteur du projet sur téléphone : durées réelles, pièges, trolls, cartes Impossibles.
+- Vérification visuelle dans le navigateur des nouveaux pièges et des nouvelles cartes (non refaite ici).
 
 ### 24/11/2026 — Phase 5 : système de succès (v1.8.0-dev, APK de test v11)
 

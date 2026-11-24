@@ -5,7 +5,7 @@ import { createPolygonEdges, createOneWay, createCircle, boxPoints } from '../ph
 import { Mover } from '../physics/mover.js';
 import { Hoop } from './hoop.js';
 import { Door, Fan, Teleporter } from './elements.js';
-import { Crate, WindZone, Icicle, Lava, Crumble, Geyser, RockFall, Vine, GravityZone, Faller, Blinker, Mace, Laser, Magnet, Cannon, Crusher, Boulder } from './world-elements.js';
+import { Crate, WindZone, Icicle, Lava, Crumble, Geyser, RockFall, Vine, GravityZone, Faller, Blinker, Mace, Laser, Magnet, Cannon, Crusher, Boulder, Trap } from './world-elements.js';
 
 /** Matériau par défaut selon le style d'un bloc. */
 const STYLE_MATERIAL = { ground: 'ground', wall: 'wall', ice: 'ice', snow: 'snow', rock: 'rock', wood: 'wood' };
@@ -128,6 +128,13 @@ export function buildLevel(def, config) {
     return new Blinker(b, edges, config.blinker);
   });
 
+  // Pièges déclenchés (campagne) : bloc qui sort d'un mur, mur qui surgit, porte qui se referme
+  const traps = (def.traps ?? []).map((tp) => {
+    const edges = createPolygonEdges(boxPoints(tp.x, tp.y, tp.w, tp.h), tp.h > 1.5 || tp.w > 1.5 ? M.wall : M.platform, 'trap');
+    world.add(edges);
+    return new Trap(tp, edges);
+  });
+
   const hoop = new Hoop({ floorY: 0, ...def.hoop }, config.hoop, config.ball.radius, M);
   world.add(hoop.colliders);
 
@@ -197,6 +204,7 @@ export function buildLevel(def, config) {
     saws,
     fallers,
     blinkers,
+    traps,
     maces,
     lasers,
     magnets,

@@ -16,7 +16,7 @@ import { Pilot, runPlan, GOAL_OF } from './route-check.mjs';
 const DT = CONFIG.physics.fixedDt;
 export const PLAYER_FACTOR = 1.4;
 /** Durées visées pour un joueur (secondes), par monde. */
-export const TARGETS = { city: [20, 30], snow: [30, 40], volcano: [40, 50], forest: [45, 60], space: [50, 70] };
+export const TARGETS = { city: [20, 30], snow: [30, 45], volcano: [45, 60], forest: [60, 90], space: [90, 120] };
 
 /** Joue le niveau en entier. @returns {{ ok, time, failedAt, deaths }} */
 export function runLevel(index, { verbose = false } = {}) {

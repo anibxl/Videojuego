@@ -141,16 +141,71 @@ export class WindZone {
     this.h = def.h;
     this.force = def.force;
     this.gust = def.gust ?? 2.4;
+    this.reset();
   }
 
-  /** Intensité (0..1) à l'instant t : souffle de fond + rafale. */
+  /** Intensité (0..1) à l'instant t : souffle de fond + rafale (ou coup de vent soudain). */
   strength(t) {
+    if (this.sudden) return this.state === 'blow' ? 1 : 0;
     return 0.62 + 0.38 * Math.sin((t / this.gust) * Math.PI * 2);
   }
 
   accelAt(x, y, t) {
     if (x < this.x || x > this.x + this.w || y < this.y || y > this.y + this.h) return 0;
-    return this.force * this.strength(t);
+    const k = this.strength(t);
+    return k ? this.force * k : 0;
+  }
+
+  // ── Coup de vent soudain (campagne) : `sudden: { warn, dur, rest }` ──
+  // Calme tant que le ballon n'entre pas dans la zone ; alors la neige / les feuilles se mettent à filer
+  // (avertissement `warn` s, son), puis le vent souffle d'un coup pendant `dur` s, suivi d'une accalmie de
+  // `rest` s (5 par défaut) pendant laquelle on passe ; ensuite la zone se réarme.
+  get sudden() {
+    return !!this.def.sudden;
+  }
+
+  reset() {
+    this.state = 'calm'; // calm → warn → blow → spent → calm
+    this.timer = 0;
+  }
+
+  /** Avertissement (0..1) avant le coup de vent. */
+  get warning() {
+    return this.state === 'warn' ? 1 - clamp(this.timer / (this.def.sudden.warn ?? 0.7), 0, 1) : 0;
+  }
+
+  /** @returns {'warn'|'blow'|null} */
+  update(dt, ball) {
+    if (!this.sudden) return null;
+    const inside = ball.x >= this.x && ball.x <= this.x + this.w && ball.y >= this.y && ball.y <= this.y + this.h;
+    this.state ??= 'calm';
+    switch (this.state) {
+      case 'calm':
+        if (!inside) return null;
+        this.state = 'warn';
+        this.timer = this.def.sudden.warn ?? 0.7;
+        return 'warn';
+      case 'warn':
+        this.timer -= dt;
+        if (this.timer > 0) return null;
+        this.state = 'blow';
+        this.timer = this.def.sudden.dur ?? 1.2;
+        return 'blow';
+      case 'blow':
+        this.timer -= dt;
+        if (this.timer <= 0) {
+          // Accalmie : on a le temps de passer avant que la zone ne se réarme
+          this.state = 'spent';
+          this.timer = this.def.sudden.rest ?? 5;
+        }
+        return null;
+      case 'spent':
+        this.timer -= dt;
+        if (this.timer <= 0) this.state = 'calm';
+        return null;
+      default:
+        return null;
+    }
   }
 }
 
@@ -888,5 +943,132 @@ export class Boulder {
     const s = this.state(t, this._s ?? (this._s = { active: false, x: 0, angle: 0, warn: 0 }));
     if (!s.active) return false;
     return Math.hypot(x - s.x, y - this.y) < r + this.r - forgiveness * 2;
+  }
+}
+
+// ─── Pièges surprises (campagne) ─────────────────────────────────────────────
+
+/**
+ * PIÈGE DÉCLENCHÉ : un bloc solide qui se met en place quand le ballon entre dans une zone.
+ *   kind 'pop'   bloc qui sort d'un mur (fente lumineuse visible avant) ;
+ *   kind 'rise'  mur qui surgit du sol (grille rayée au sol) ;
+ *   kind 'close' porte qui se referme derrière le joueur (porte suspendue, voyant au-dessus).
+ * Le bloc part de sa position de repos (x + from.dx, y + from.dy), où il n'est PAS solide, puis, après un
+ * avertissement (`warn` s : tremblement, voyants qui clignotent, son), glisse jusqu'à (x, y) à `speed` u/s.
+ * Il y reste `hold` secondes (Infinity : jusqu'à la réapparition du joueur) puis revient au repos.
+ * Remis à zéro à chaque recommencement et à chaque réapparition : on peut toujours réessayer.
+ *   def : { x, y, w, h, kind, from: { dx, dy }, trigger: { x1, x2, y1?, y2? }, warn, speed, hold, style }
+ */
+export class Trap {
+  constructor(def, colliders) {
+    this.def = def;
+    this.kind = def.kind ?? 'pop';
+    this.x = def.x;
+    this.y = def.y;
+    this.w = def.w;
+    this.h = def.h;
+    this.from = def.from ?? { dx: 0, dy: -def.h };
+    this.trigger = { y1: -Infinity, y2: Infinity, ...def.trigger };
+    this.warn = def.warn ?? 0.45;
+    this.speed = def.speed ?? 9;
+    this.hold = def.hold ?? Infinity;
+    this.colliders = colliders;
+    this.base = colliders.map((c) => ({ ax: c.ax, ay: c.ay, bx: c.bx, by: c.by }));
+    this.reset();
+  }
+
+  reset() {
+    this.state = 'idle'; // idle → warn → move → out → back → idle
+    this.timer = 0;
+    this.k = 0; // 0 = au repos, 1 = en place
+    this._apply(0, 0);
+  }
+
+  /** Décalage actuel par rapport à la position finale. */
+  get offsetX() {
+    return this.from.dx * (1 - this.k);
+  }
+
+  get offsetY() {
+    return this.from.dy * (1 - this.k);
+  }
+
+  /** Avertissement (0..1) pendant la phase `warn`. */
+  get warning() {
+    return this.state === 'warn' ? 1 - clamp(this.timer / this.warn, 0, 1) : 0;
+  }
+
+  get solid() {
+    return this.state !== 'idle';
+  }
+
+  inTrigger(ball) {
+    const t = this.trigger;
+    return ball.x >= t.x1 && ball.x <= t.x2 && ball.y >= t.y1 && ball.y <= t.y2;
+  }
+
+  /** @returns {'warn'|'move'|'out'|'back'|null} */
+  update(dt, ball) {
+    const dist = Math.hypot(this.from.dx, this.from.dy) || 1;
+    const step = (this.speed / dist) * dt;
+    switch (this.state) {
+      case 'idle':
+        if (!this.inTrigger(ball)) return null;
+        this.state = 'warn';
+        this.timer = this.warn;
+        return 'warn';
+      case 'warn':
+        this.timer -= dt;
+        if (this.timer > 0) return null;
+        this.state = 'move';
+        return 'move';
+      case 'move': {
+        const k0 = this.k;
+        this.k = Math.min(1, this.k + step);
+        this._apply((this.k - k0) / dt, 1);
+        if (this.k < 1) return null;
+        this.state = 'out';
+        this.timer = this.hold;
+        this._apply(0, 1);
+        return 'out';
+      }
+      case 'out':
+        if (!Number.isFinite(this.timer)) return null;
+        this.timer -= dt;
+        if (this.timer > 0) return null;
+        this.state = 'back';
+        return 'back';
+      case 'back': {
+        const k0 = this.k;
+        this.k = Math.max(0, this.k - step);
+        this._apply((this.k - k0) / dt, 1);
+        if (this.k > 0) return null;
+        // Réarmé seulement quand le ballon a quitté la zone de déclenchement
+        if (this.inTrigger(ball)) return null;
+        this.state = 'idle';
+        this._apply(0, 0);
+        return null;
+      }
+      default:
+        return null;
+    }
+  }
+
+  /** Place les bords du bloc (vitesse dk/dt pour pousser le ballon comme une plateforme mobile). */
+  _apply(dk, solid) {
+    const ox = this.offsetX;
+    const oy = this.offsetY;
+    for (let i = 0; i < this.colliders.length; i++) {
+      const c = this.colliders[i];
+      const b = this.base[i];
+      c.ax = b.ax + ox;
+      c.bx = b.bx + ox;
+      c.ay = b.ay + oy;
+      c.by = b.by + oy;
+      c.vx = -this.from.dx * dk;
+      c.vy = -this.from.dy * dk;
+      c.disabled = !solid;
+      updateBounds(c);
+    }
   }
 }

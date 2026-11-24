@@ -1,11 +1,16 @@
 // Progression du mode TRICKSHOT, indépendante du mode principal (clé de sauvegarde à part).
-//   { v: 2, levels: { "1": { stars: 3, best: 4350, plays: 4 }, … }, carry: 0 }
+//   { v: 3, levels: { "1": { stars: 3, best: 4350, plays: 4 }, … }, carry: 0 }
 // Un niveau est débloqué quand le précédent est terminé (au moins une étoile).
 //
 // v1 → v2 (étape 23) : les cartes ont été entièrement refaites (moins nombreuses, nouvelles). Les étoiles
 // des anciennes cartes ne correspondent à rien dans les nouvelles ; on garde donc la progression sous
 // forme de déblocages : avoir réussi N anciennes cartes ouvre d'office les N+1 premières nouvelles
 // (`carry`). L'ancienne sauvegarde est conservée telle quelle dans `legacy`.
+//
+// v2 → v3 (refonte de la campagne) : le Trickshot devient un mode expert de 50 cartes, rangées par
+// difficulté mesurée ; les numéros des cartes ont changé. La progression repart de zéro (tous les
+// joueurs découvrent le nouveau parcours depuis la carte 1), sans rien effacer : l'ancienne sauvegarde
+// est gardée dans `legacy`. Pièces, gemmes, succès, Hoop Pass… vivent dans d'autres clés et ne bougent pas.
 
 export const TS_KEY = 'hoopbounce.trickshot';
 
@@ -18,7 +23,7 @@ function safeStorage() {
 }
 
 export class TrickshotProgress {
-  constructor({ total = 20, storage = safeStorage() } = {}) {
+  constructor({ total = 50, storage = safeStorage() } = {}) {
     this.total = total;
     this.storage = storage;
     this.data = this._load();
@@ -27,18 +32,17 @@ export class TrickshotProgress {
   _load() {
     try {
       const d = JSON.parse(this.storage?.getItem(TS_KEY) ?? 'null');
-      if (d && d.v === 2 && d.levels && typeof d.levels === 'object') return d;
-      if (d && d.v === 1 && d.levels && typeof d.levels === 'object') {
-        const done = Object.values(d.levels).filter((l) => l && l.stars > 0).length;
-        const migrated = { v: 2, levels: {}, carry: Math.min(done, this.total - 1), legacy: d.levels };
-        this.data = migrated;
+      if (d && d.v === 3 && d.levels && typeof d.levels === 'object') return d;
+      if (d && (d.v === 1 || d.v === 2) && d.levels && typeof d.levels === 'object') {
+        const fresh = { v: 3, levels: {}, carry: 0, legacy: d };
+        this.data = fresh;
         this.save();
-        return migrated;
+        return fresh;
       }
     } catch {
       /* sauvegarde abîmée : on repart de zéro */
     }
-    return { v: 2, levels: {}, carry: 0 };
+    return { v: 3, levels: {}, carry: 0 };
   }
 
   save() {

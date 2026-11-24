@@ -37,21 +37,27 @@ export const TRICKSHOT = Object.freeze({
   outMargin: 3,          // sortie de l'écran (u) → fin du tir
 });
 
-/** Difficultés affichées (couleur, rang). */
+/** Difficultés affichées (couleur, rang) : 5 paliers de 10 cartes (mode expert, 50 cartes). */
 export const DIFFICULTIES = Object.freeze({
   easy: { rank: 0, color: '#3fe08a', emoji: '🟢' },
-  hard: { rank: 1, color: '#ff9a3d', emoji: '🟠' },
-  very: { rank: 2, color: '#ff4f63', emoji: '🔴' },
-  impossible: { rank: 3, color: '#1c1c22', emoji: '⚫' },
+  medium: { rank: 1, color: '#3f9dff', emoji: '🔵' },
+  hard: { rank: 2, color: '#ff9a3d', emoji: '🟠' },
+  very: { rank: 3, color: '#ff4f63', emoji: '🔴' },
+  impossible: { rank: 4, color: '#1c1c22', emoji: '⚫' },
 });
 
-/** Chapitres (4 cartes chacun) : couleur d'accent du laboratoire. */
+/** Chapitres (5 cartes chacun, 2 par palier) : couleur d'accent du laboratoire. */
 export const CHAPTERS = Object.freeze([
-  { id: 'basics', accent: '63,224,255', from: 1, to: 4 },
-  { id: 'machines', accent: '255,154,61', from: 5, to: 8 },
-  { id: 'circuits', accent: '120,255,170', from: 9, to: 12 },
-  { id: 'portals', accent: '170,130,255', from: 13, to: 16 },
-  { id: 'master', accent: '255,214,90', from: 17, to: 20 },
+  { id: 'basics', accent: '63,224,255', from: 1, to: 5 },
+  { id: 'machines', accent: '120,255,170', from: 6, to: 10 },
+  { id: 'circuits', accent: '90,170,255', from: 11, to: 15 },
+  { id: 'portals', accent: '170,130,255', from: 16, to: 20 },
+  { id: 'precision', accent: '255,154,61', from: 21, to: 25 },
+  { id: 'vertigo', accent: '255,214,90', from: 26, to: 30 },
+  { id: 'chaos', accent: '255,90,120', from: 31, to: 35 },
+  { id: 'master', accent: '255,110,200', from: 36, to: 40 },
+  { id: 'expert', accent: '200,210,235', from: 41, to: 45 },
+  { id: 'legend', accent: '255,230,150', from: 46, to: 50 },
 ]);
 
 export const chapterOf = (n) => CHAPTERS.find((c) => n >= c.from && n <= c.to) ?? CHAPTERS[0];

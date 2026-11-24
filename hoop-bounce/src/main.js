@@ -436,7 +436,11 @@ game.events.on('powerDown', () => {
 });
 
 game.events.on('trampoline', (e) => {
-  sfx.trampoline();
+  if (e.boost > 1) {
+    sfx.springBoost();
+    camera.addTrauma(0.18);
+    particles.ring(e.x, e.y, 1.6, 'rgba(255,120,100,0.95)', 0.5);
+  } else sfx.trampoline();
   haptics.impact(0.6);
   particles.ring(e.x, e.y, 1.0, 'rgba(166,255,230,0.95)', 0.45);
   visual.onImpact(14, 0, 1);
@@ -510,6 +514,25 @@ game.events.on('fallerShake', (e) => {
 });
 game.events.on('fallerFall', () => sfx.fallerFall());
 game.events.on('blinker', (e) => sfx.blinker(e.on, nearVolume(e.x)));
+// Pièges surprises (campagne) : l'avertissement s'entend et se sent avant que le piège ne bouge
+game.events.on('trapWarn', (e) => {
+  const v = nearVolume(e.x);
+  sfx.trapWarn(v);
+  if (v > 0.5) haptics.impact(0.25);
+});
+game.events.on('trapMove', (e) => {
+  const v = nearVolume(e.x);
+  sfx.trapMove(v);
+  if (v > 0.3) {
+    particles.dust(e.x, e.y, 0, 1, 0.6 * v, renderer.theme.surface.dust);
+    camera.addTrauma(0.14 * v);
+  }
+});
+game.events.on('gustWarn', () => sfx.gust(true));
+game.events.on('gust', () => {
+  sfx.gust(false);
+  haptics.impact(0.35);
+});
 game.events.on('cannonFire', (e) => {
   const v = nearVolume(e.x);
   sfx.cannon(v);
