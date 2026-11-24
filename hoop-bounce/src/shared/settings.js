@@ -14,6 +14,7 @@ export function defaultSettings(navigatorLanguage = 'fr') {
     vibration: true,
     lang: LANGUAGES.includes(lang) ? lang : 'fr',
     quality: 'high',     // low | medium | high
+    ghost: true,         // Mode Fantôme (phase 3) : rejouer contre son meilleur essai
   };
 }
 
@@ -27,6 +28,7 @@ export function sanitize(raw, defaults) {
   s.vibration = typeof raw.vibration === 'boolean' ? raw.vibration : defaults.vibration;
   s.lang = LANGUAGES.includes(raw.lang) ? raw.lang : defaults.lang;
   s.quality = QUALITY_LEVELS.includes(raw.quality) ? raw.quality : defaults.quality;
+  s.ghost = typeof raw.ghost === 'boolean' ? raw.ghost : defaults.ghost;
   return s;
 }
 

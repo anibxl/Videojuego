@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/polish.css">
   <link rel="stylesheet" href="css/type.css">
+  <link rel="stylesheet" href="css/ghost.css">
 </head>
 <body>
   <canvas id="game" aria-label="Zone de jeu"></canvas>
@@ -38,6 +39,14 @@
     </div>
   </div>
 
+  <!-- Mode Fantôme (phase 3) : carte de départ, s'efface dès qu'on s'élance -->
+  <div class="start-card" id="start-card" hidden aria-live="polite">
+    <p class="sc-level" id="sc-level"></p>
+    <p class="sc-row"><svg class="sc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v2h3v2.5a4.5 4.5 0 0 1-4.1 4.48A5 5 0 0 1 13 14.9V17h3v3H8v-3h3v-2.1a5 5 0 0 1-2.9-2.92A4.5 4.5 0 0 1 4 7.5V5h3zm0 4H6v.5a2.5 2.5 0 0 0 1.4 2.25A5 5 0 0 1 7 8zm10 0v1a5 5 0 0 1-.4 1.75A2.5 2.5 0 0 0 18 7.5V7z"/></svg><span data-t="ghost.best"></span><strong id="sc-best"></strong></p>
+    <p class="sc-row sc-ghost-row"><svg class="gh-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8a7.4 7.4 0 0 0-7.4 7.4v9.9a1.1 1.1 0 0 0 1.9.8l1.5-1.5 1.6 1.6a1.1 1.1 0 0 0 1.6 0L12 19.4l1.6 1.6a1.1 1.1 0 0 0 1.6 0l1.6-1.6 1.5 1.5a1.1 1.1 0 0 0 1.9-.8v-9.9A7.4 7.4 0 0 0 12 2.8z"/><circle cx="9.3" cy="10.4" r="1.35" fill="var(--gh-eye, #0b1630)"/><circle cx="14.7" cy="10.4" r="1.35" fill="var(--gh-eye, #0b1630)"/></svg><span id="sc-ghost"></span></p>
+    <button class="ghost-toggle" type="button" data-ghost-toggle aria-pressed="true"><svg class="gh-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8a7.4 7.4 0 0 0-7.4 7.4v9.9a1.1 1.1 0 0 0 1.9.8l1.5-1.5 1.6 1.6a1.1 1.1 0 0 0 1.6 0L12 19.4l1.6 1.6a1.1 1.1 0 0 0 1.6 0l1.6-1.6 1.5 1.5a1.1 1.1 0 0 0 1.9-.8v-9.9A7.4 7.4 0 0 0 12 2.8z"/><circle cx="9.3" cy="10.4" r="1.35" fill="var(--gh-eye, #0b1630)"/><circle cx="14.7" cy="10.4" r="1.35" fill="var(--gh-eye, #0b1630)"/></svg><span data-t="ghost.label"></span><em class="gt-state"></em></button>
+  </div>
+
   <!-- Commandes tactiles (dessin ; les touchers sont gérés sur tout l'écran) -->
   <div class="controls" aria-hidden="true">
     <div class="dpad">
@@ -59,6 +68,7 @@
       <div class="actions">
         <button class="primary" id="btn-resume"><svg viewBox="0 0 24 24"><path d="M8.5 5.8v12.4a1 1 0 0 0 1.5.86l10.1-6.2a1 1 0 0 0 0-1.72L10 4.94a1 1 0 0 0-1.5.86z"/></svg><span data-t="pause.resume"></span></button>
         <button class="secondary" id="btn-pause-restart"><span data-t="pause.restart"></span></button>
+        <button class="secondary ghost-toggle ghost-toggle-wide" type="button" data-ghost-toggle aria-pressed="true"><svg class="gh-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8a7.4 7.4 0 0 0-7.4 7.4v9.9a1.1 1.1 0 0 0 1.9.8l1.5-1.5 1.6 1.6a1.1 1.1 0 0 0 1.6 0L12 19.4l1.6 1.6a1.1 1.1 0 0 0 1.6 0l1.6-1.6 1.5 1.5a1.1 1.1 0 0 0 1.9-.8v-9.9A7.4 7.4 0 0 0 12 2.8z"/><circle cx="9.3" cy="10.4" r="1.35" fill="var(--gh-eye, #0b1630)"/><circle cx="14.7" cy="10.4" r="1.35" fill="var(--gh-eye, #0b1630)"/></svg><span data-t="ghost.label"></span><em class="gt-state"></em></button>
         <a class="secondary" id="btn-pause-map" href="index.html#mondes"><span data-t="pause.map"></span></a>
         <a class="secondary" id="btn-pause-menu" href="index.html"><span data-t="pause.menu"></span></a>
       </div>
@@ -75,6 +85,7 @@
       </div>
       <p class="win-body" id="win-body" hidden></p>
       <p class="win-time"><span data-t="win.time"></span> <strong id="win-time"></strong> <em id="win-record" hidden></em></p>
+      <p class="win-ghost" id="win-ghost" hidden><span class="wg-spark" aria-hidden="true"></span><b></b><small></small></p>
       <div class="win-reward" id="win-reward" hidden>
         <p class="win-coins" id="win-coins"><span class="reward-label" data-t="win.reward"></span><span class="coin-ico" aria-hidden="true"></span><b id="win-coins-n">+0</b><span class="x2" id="win-x2" aria-hidden="true">×2</span></p>
         <!-- Publicité récompensée (optionnelle) : doubler les pièces -->

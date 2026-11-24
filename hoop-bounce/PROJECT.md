@@ -3,11 +3,11 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.5.0-dev (non publiée ; la version publiable reste
+> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.6.0-dev (non publiée ; la version publiable reste
 > 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1 : menu décoré + **Hoop Pass**) · **Version de
-> test Android :** **`HoopBounce_Test_v8.apk` (1.7.0-test8, mise à jour)** · **iOS :** projet Xcode prêt
-> (`ios/`) · **Phase en cours :** qualité — **phase 2 : refonte complète des 50 niveaux** (mêmes 5 mondes, mêmes
-> mécaniques, niveaux deux fois plus longs et uniques) ; rien n'est publié.
+> test Android :** **`HoopBounce_Test_v9.apk` (1.8.0-test9, mise à jour)** · **iOS :** projet Xcode prêt
+> (`ios/`) · **Phase en cours :** **phase 3 : Mode Fantôme** (rejouer contre son meilleur essai, intégré au mode
+> principal) ; phase 2 (refonte des 50 niveaux) terminée ; rien n'est publié.
 
 ## Sommaire
 
@@ -18,6 +18,7 @@
 4 bis. [Mode TRICKSHOT](#4-bis-mode-trickshot-étapes-22-et-23)
 4 ter. [Saisons — Saison 1 : Noël](#4-ter-saisons--saison-1--noël)
 4 quater. [Hoop Pass et gemmes](#4-quater-hoop-pass-et-gemmes-saison-1--noël)
+4 quinquies. [Mode Fantôme](#4-quinquies-mode-fantôme-phase-3)
 5. [Progression](#5-progression)
 5 bis. [Publication Google Play](#5-bis-publication-google-play-version-100)
 5 ter. [Version iPhone (iOS)](#5-ter-version-iphone-ios)
@@ -127,6 +128,8 @@ compte **au moment du toucher** (aucune latence liée au relâcher).
 - Frottement de Coulomb couplé à la rotation (le ballon prend de l'effet, roule, « mord » les surfaces).
 - Inertie d'une sphère creuse (vrai ballon de basket : I = 2/3·m·r²).
 - Unités : 1 u ≈ 30 cm ; rayon du ballon 0,4 u (≈ 12 cm).
+- **Mode Fantôme** (phase 3) : en rejouant un niveau, un ballon fantôme rejoue le meilleur essai du joueur ; aide
+  visuelle seulement, sans collision ni effet sur la partie (voir [Mode Fantôme](#4-quinquies-mode-fantôme-phase-3)).
 
 ### Règles
 - Le panier n'est validé que lorsque le ballon est **entièrement passé** dans le cercle (centre sous le cercle
@@ -285,6 +288,7 @@ hoop-bounce/
 │   ├── trickshot-menu.css  Pages du menu du mode TRICKSHOT (carte des modes, accueil du mode, 50 niveaux)
 │   ├── polish.css          Finitions communes à toutes les pages (onde au toucher, boutons, transitions,
 │   │                       bouton « Regarder une publicité », annonce de test simulée)
+│   ├── ghost.css           ★ Mode Fantôme : carte de départ, bouton « Fantôme », bandeau « Nouveau record »
 │   └── style.css           Styles de l'écran de jeu (HUD, commandes, pause, victoire, tutoriel, intro de monde)
 ├── src/
 │   ├── config.js           ★ TOUS les réglages : physique, matériaux, commandes, caméra, sensations
@@ -294,6 +298,7 @@ hoop-bounce/
 │   ├── physics/            Moteur physique (sans navigateur)
 │   ├── game/               Règles du jeu (sans navigateur)
 │   │   ├── worlds.js       ★ Les 5 mondes (identité, mécaniques, réglages, niveaux)
+│   │   ├── ghost.js        ★ Mode Fantôme : enregistrement, format compact, relecture, stockage
 │   │   └── levels/         Les niveaux par monde (données) + README du format
 │   ├── render/             Rendu Canvas du jeu (thèmes des mondes)
 │   ├── audio/              Sons et musique du jeu
@@ -378,13 +383,15 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `hoop.js` | Le panier : formes de collision, détection d'un panier valide (en deux temps), filet. |
 | `net.js` | Filet simulé (Verlet + contraintes de cordes), qui réagit au ballon. |
 | `progress.js` | Progression enregistrée sur l'appareil : niveaux terminés, étoiles, meilleurs temps, mondes débloqués (et déjà annoncés), statistiques par monde ; conversion de l'ancien format. |
+| `ghost.js` | ★ **Mode Fantôme** (phase 3, sans navigateur) : `GhostRecorder` (position, rotation, rebonds à 60 Hz sur l'horloge du chronomètre), `encodeSamples` / `decodeSamples` (écarts sur 3 octets, échappement aux sauts, base64), `GhostPlayer` (relecture interpolée, traînée), `GhostStore` (une clé par niveau, meilleur essai seulement, place libérée si le stockage est plein). |
 | `i18n.js` | Textes de l'écran de jeu en français, anglais et espagnol. |
 
 **`src/render/`**
 
 | Fichier | Rôle |
 |---|---|
-| `renderer.js` | Dessine une image : décor du monde, éléments, panier (arrière puis avant pour que le ballon passe « dedans »), ballon, effets, particules d'ambiance de premier plan, vignette teintée, jauge, débogage. |
+| `renderer.js` | Dessine une image : décor du monde, éléments, panier (arrière puis avant pour que le ballon passe « dedans »), ballon, effets, particules d'ambiance de premier plan, vignette teintée, jauge, débogage ; le ballon fantôme sous le vrai ballon. |
+| `ghost-draw.js` | ★ Dessin du ballon fantôme : sprite précalculé (verre givré blanc bleuté, coutures, liseré), halo léger, traînée fine, anneau de rebond. |
 | `themes.js` | Identité visuelle des 5 mondes : ciel, astres, plans de décor, particules, lumière, couleurs des surfaces. |
 | `background.js` | Décor d'un monde : ciel précalculé (dégradés, nébuleuses, étoiles, soleil, lune, Terre, planète), plans en parallaxe (immeubles avec fenêtres, graffitis et lampadaires ; montagnes enneigées et sapins ; volcans en éruption et roches ; arbres, champignons et rivière ; astéroïdes et cratères), brume, rayons de lumière, particules d'ambiance ; effets d'identité (enseignes au néon, avions, nuages de froid, chaleur, papillons, débris en apesanteur). |
 | `world-draw.js` | Dessin des surfaces selon le monde (matériaux), des pics et plateformes thématiques, des éléments des mondes et des pièges (plaques, blocs temporisés, scies, boulets, lasers, aimants, canons). |
@@ -455,7 +462,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `about.js` | ★ **Contenu de la page « À propos »** (étape 16) : nom, créateur, première année du copyright, liste des crédits (rôle, noms, précision, icône), adresses des liens. **Le seul fichier à modifier pour ajouter un crédit ou relier un lien.** |
 | `bonus.js` | Coffre bonus quotidien et roue de la chance (8 cases pondérées) : disponibilité, tirage, récompenses, sauvegarde. |
 | `ui-polish.js` | Onde lumineuse au point touché sur les éléments interactifs de toutes les pages (sauf commandes de jeu). |
-| `settings.js` | Réglages du joueur (musique, effets, vibrations, langue, qualité), enregistrés et corrigés s'ils sont abîmés. |
+| `settings.js` | Réglages du joueur (musique, effets, vibrations, langue, qualité, **Fantôme**), enregistrés et corrigés s'ils sont abîmés. |
 | `safe-width.js` | Largeur réellement utilisable (encoche des iPhone, étape 21) : classes `fit-760` / `fit-1100` sur `<html>` pour les mises en page compactes. |
 | `version.js` | Numéro de version affiché dans les paramètres. |
 
@@ -580,10 +587,16 @@ et recule légèrement quand une page est ouverte.
 - **Commandes** : ◀ ▶ (bas gauche), grand bouton de rebond (bas droite) entouré de l'**anneau de puissance**
   (5 segments : blanc, ambre au niveau 4, or au niveau 5 ; le dernier cran clignote avant de redescendre).
 - **Jauge au-dessus du ballon** : 5 barres croissantes (même code couleur), visible dès que la puissance monte.
-- **Pause** : Reprendre, Recommencer, **Choisir un niveau** (ouvre directement les 10 niveaux du monde en cours
+- **Carte de départ** (phase 3) : au lancement et à chaque recommencement, une petite carte en haut au centre :
+  monde-niveau, 🏆 meilleur temps, 👻 « Fantôme disponible » (ou « Terminez une première fois ce niveau pour
+  débloquer le Fantôme. ») et le bouton **Fantôme · Activé / Désactivé**. Elle ne bloque rien et s'efface dès que
+  le joueur s'élance (ou après 6 s).
+- **Pause** : Reprendre, Recommencer, **Fantôme · Activé / Désactivé** (phase 3), **Choisir un niveau** (ouvre directement les 10 niveaux du monde en cours
   dans le menu), Menu principal. Pause automatique quand l'application passe en arrière-plan. La carte s'ouvre
   avec un ressort et ses boutons arrivent l'un après l'autre ; petit son à chaque bouton.
-- **Victoire** : niveau, « Panier ! », étoiles qui tombent une à une, temps (et « Nouveau record »),
+- **Victoire** : niveau, « Panier ! », étoiles qui tombent une à une, temps (et « Nouveau record »), bandeau du
+  Mode Fantôme : **« ✨ Nouveau record ! · Fantôme mis à jour »** (étincelle, reflet, petits confettis bleutés) ou
+  « Fantôme débloqué · Rejouez pour battre votre temps » la première fois,
   **« Récompense : 🪙 +45 »** (compteur qui défile), puis le bouton facultatif **« 🎁 Regarder une publicité →
   Doubler les pièces »** (étape 13). Il ne s'active qu'à la fin des animations de victoire. Après l'annonce
   validée, le compteur file jusqu'au double, un **« ×2 »** jaillit, des pièces éclatent autour du compteur et un
@@ -1344,6 +1357,65 @@ boutique, `src/shared/gem-offers.js`).
 
 ---
 
+## 4 quinquies. Mode Fantôme (phase 3)
+
+**Jouer contre son meilleur essai.** Ce n'est pas un nouveau mode : il est intégré au mode principal, totalement
+facultatif, et il ne change **rien** au jeu (physique, niveaux, scores, récompenses) : c'est une aide visuelle.
+
+### Le principe
+- À chaque partie, le jeu relève l'essai en cours. Quand le joueur marque le panier, l'essai devient le
+  **fantôme** du niveau s'il n'y en avait pas, ou s'il est **plus rapide** que l'ancien (on ne garde que le
+  meilleur). En rejouant le niveau, un **ballon fantôme** refait exactement ce parcours, en même temps que lui.
+- Le fantôme suit le **chronomètre du niveau** (temps de course : il s'arrête pendant une chute, comme le temps
+  affiché). Il part avec le joueur, se fige pendant une chute, repart avec lui ; au panier, il reste un instant
+  dans le cercle puis s'efface.
+- Il ne peut rien toucher : il est relevé en lecture seule et dessiné à part, jamais simulé (un test vérifie que la
+  partie est identique au millième avec ou sans enregistrement).
+
+### Ce qui est enregistré
+- Position et **rotation** du ballon **60 fois par seconde de course** (un relevé tous les 2 pas de simulation),
+  les **rebonds** (instants des chocs), le **temps**, le **résultat** (étoiles, chutes) et la date.
+- Format compact : chaque relevé est l'**écart** avec le précédent, au centième (3 octets : x, y, rotation) ; un
+  code d'échappement donne la position absolue après un saut (téléporteur, retour au drapeau). Rotation continue
+  reconstruite exactement (entiers modulo un tour).
+- **Poids** : 2 à 12 Ko par niveau, **≈ 370 Ko pour les 50 niveaux** ; encodage < 1 ms à la fin d'un niveau.
+- **Fidélité** : relecture interpolée entre deux relevés, sans interpolation à travers un saut ; écart avec la
+  vraie trajectoire **≤ 0,005 u** (moins d'un pixel), vérifié sur les 50 niveaux.
+
+### L'affichage
+- Ballon **translucide blanc bleuté** (verre givré, coutures de basket qui tournent comme pendant le record,
+  liseré clair doublé d'un fin trait bleu nuit pour rester lisible sur la neige), **léger halo**, **traînée
+  lumineuse fine** (≈ 1/3 s, interrompue aux sauts) et petit anneau à chaque rebond.
+- Toujours **dessiné sous le vrai ballon**, à 62 % d'opacité, et il **s'efface quand il s'en approche** (jusqu'à
+  20 %) : il ne masque jamais le vrai ballon. Apparition et disparition en fondu quand on change le réglage.
+
+### Le réglage
+- Bouton **Fantôme · Activé / Désactivé** sur la carte de départ et dans la pause ; modifiable à tout moment
+  (même en pleine partie), **enregistré automatiquement** (réglage `ghost`, activé par défaut, partagé avec le
+  menu). Le fantôme désactivé, les essais continuent d'être enregistrés.
+
+### Nouveau record
+- Si le joueur bat le temps de son fantôme, le nouveau fantôme **remplace aussitôt l'ancien** et l'écran de
+  victoire affiche **« ✨ Nouveau record ! · Fantôme mis à jour »**. Le meilleur temps de la carte de départ est
+  celui du fantôme (sinon, le meilleur temps enregistré par la progression).
+
+### Sauvegarde
+- Une entrée par niveau : `hoopbounce.ghost.<identifiant du niveau>` dans le stockage de l'appareil — une
+  **nouvelle clé** : progression, pièces, gemmes, objets et réglages existants ne sont jamais modifiés. Les
+  fantômes restent après fermeture du jeu et lors des mises à jour (même identifiant d'application).
+- Donnée abîmée : ignorée sans erreur. Stockage plein : les fantômes les plus anciens laissent la place (jamais
+  celui du niveau joué). Stockage indisponible : le jeu continue, sans fantôme.
+
+### Code et tests
+- `src/game/ghost.js` (logique, sans navigateur), `src/render/ghost-draw.js` (dessin), `src/main.js` (relevé
+  après chaque pas de simulation, relecture à chaque image, carte de départ, boutons, victoire), `css/ghost.css`,
+  textes `ghost.*` (FR / EN / ES), réglage `ghost` dans `src/shared/settings.js`.
+- `tests/ghost.test.mjs` (8 tests) : format aller-retour (sauts, rotation), **relecture exacte des 50 niveaux**
+  joués par le pilote, partie inchangée avec ou sans enregistrement, recommencement, interpolation et sauts,
+  meilleur essai seulement et persistance, stockage plein, réglage (y compris anciennes sauvegardes).
+
+---
+
 ## 5. Progression
 
 ### Les mondes
@@ -1842,7 +1914,7 @@ porte-monnaie.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v8.apk` (≈ 0,6 Mo, **1.7.0-test8**, refonte des 50 niveaux) —
+**Fichier actuel :** `dist/HoopBounce_Test_v9.apk` (≈ 0,6 Mo, **1.8.0-test9**, Mode Fantôme) —
 une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
 
@@ -1864,7 +1936,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · **v8 : `1.7.0-test8` (8)** ; « 1.7.0 (test 8) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · **v9 : `1.8.0-test9` (9)** ; « 1.8.0 (test 9) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -2099,6 +2171,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Test : les 50 niveaux joués en entier à chaque `npm test` ; difficulté croissante vérifiée
 - 🔴 Retours du porteur du projet et de vrais joueurs (durées réelles, passages trop durs)
 
+### Phase 6 nonies — Phase 3 : Mode Fantôme ✅ (en attente de validation)
+- ✅ Enregistrement du meilleur essai par niveau (60 Hz, format compact, ≈ 370 Ko pour 50 niveaux)
+- ✅ Ballon fantôme synchronisé sur le chronomètre (écart < 1 pixel), traînée, halo, anneau de rebond
+- ✅ Carte de départ (meilleur temps, état du fantôme), bouton Activé / Désactivé (départ et pause), enregistré
+- ✅ « ✨ Nouveau record ! Fantôme mis à jour » ; sauvegarde à part, conservée lors des mises à jour
+- 🔴 Retours du porteur du projet sur téléphone (lisibilité, discrétion, envie de rejouer)
+
 ### Phase 7 bis — Saisons 🟡
 - ✅ Interrupteur de saison ; **Saison 1 — Noël, étape 1** : menu principal décoré et ambiance d'hiver
 - ✅ **Hoop Pass « Saison 1 · Noël »** : 50 niveaux, lignes Gratuit / Premium, XP en jouant, 9 objets
@@ -2154,6 +2233,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Phase 3 — Mode Fantôme** : meilleur essai enregistré par niveau, ballon fantôme exact et discret, carte de
+  départ, bouton Fantôme (départ et pause), nouveau record animé, sauvegarde séparée, APK de test v9
 - ✅ **Phase 2 — refonte des 50 niveaux** : 50 niveaux uniques et plus longs (Ville 20–30 s … Espace 50–70 s),
   une idée et une petite histoire par niveau, puzzles, pièges introduits un par un, 14 niveaux marquants,
   vérification par partie complète, noms et aides en 3 langues, gains relevés, APK de test v8
@@ -2205,6 +2286,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation du Mode Fantôme** avec `HoopBounce_Test_v9.apk` : lisibilité du fantôme dans les 5 mondes,
+  discrétion, carte de départ, envie de rejouer
 - 🟡 **Validation de la refonte des 50 niveaux** (phase 2) avec `HoopBounce_Test_v8.apk` : durée et difficulté
   ressenties monde par monde, puzzles compris sans aide, passages trop durs ; décision sur les anciens records
 - 🟡 **Validation de la qualité visuelle** (étape 25) avec `HoopBounce_Test_v7.apk` : impression générale, lisibilité
@@ -2292,6 +2375,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 9. Optimisations
+
+**Mode Fantôme (phase 3)**
+- Relevé : 3 entiers écrits dans un tableau typé (agrandi par doublement) toutes les 2 étapes de simulation ;
+  aucun objet créé pendant la partie. Encodage par écarts (3 octets par relevé) : ≈ 11 Ko par minute de course.
+- Relecture : positions décodées une fois au chargement du niveau (3 tableaux `Float32Array`) ; à chaque image,
+  une interpolation et 10 points de traînée (aucune allocation). Sprite du fantôme dessiné une seule fois.
+- Une clé de stockage par niveau : une victoire n'écrit que le fantôme de ce niveau (pas les 50).
+- Mesuré dans Chromium (Pixel 7 émulé) : **60 images/s** (médiane 16,7 ms, p95 ≤ 16,8 ms) sur 15 niveaux avec les
+  50 fantômes enregistrés, identique au jeu sans fantôme.
 
 **Refonte des niveaux (phase 2)**
 - Vérification des 50 niveaux en partie complète : ≈ 6 s pour tout le jeu (simulation à pas fixe sans rendu),
@@ -2428,6 +2520,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | Mode Fantôme : les essais sont enregistrés à partir de cette version ; un niveau terminé avant la mise à jour affiche « Terminez une première fois ce niveau… » jusqu'à la prochaine victoire. | 🟡 Normal (aucun parcours n'existait avant) |
+| Info | Mode Fantôme : le fantôme rejoue le temps de course ; s'il y a eu une chute avec retour au drapeau pendant le record, il se fige puis repart du drapeau, exactement comme pendant cet essai. | 🟡 Voulu |
 | Info | Phase 2 : les **records de temps** enregistrés avant la refonte ont été faits sur les anciens niveaux (deux fois plus courts) ; ils sont conservés tels quels (les sauvegardes ne sont pas modifiées), donc presque impossibles à battre. | 🟡 À décider : les garder, ou les effacer une fois à la mise à jour (étoiles et niveaux terminés seraient conservés) |
 | Info | Phase 2 : les durées sont **estimées** (1,4 × la solution experte) ; à confirmer avec de vrais joueurs, surtout les puzzles (plus longs à comprendre) et l'Espace. | 🔴 À éprouver |
 | Info | Phase 2 : en gravité réduite, un ballon chargé au maximum (puissance 5) monte très haut ; quelques passages de l'Espace demandent de ne pas trop charger (les plans experts le font). | 🟡 Voulu (précision) |
@@ -2482,6 +2576,43 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 24/11/2026 — Phase 3 : Mode Fantôme (v1.6.0-dev, APK de test v9)
+
+> Rejouer contre son meilleur essai, directement dans le mode principal. Aide visuelle uniquement : **aucun**
+> changement de gameplay, de physique, de niveau ni de score.
+
+**Ajouté**
+- `src/game/ghost.js` : enregistrement du meilleur essai (position, rotation, rebonds à 60 Hz sur le chronomètre
+  du niveau, temps, résultat), format compact par écarts (≈ 11 Ko par minute), relecture interpolée, stockage
+  par niveau (`hoopbounce.ghost.<id>`, meilleur essai seulement, place libérée si le stockage est plein).
+- `src/render/ghost-draw.js` : ballon fantôme translucide blanc bleuté (coutures qui tournent, liseré lisible sur la
+  neige), halo léger, traînée fine, anneau de rebond ; dessiné sous le vrai ballon, effacé quand il s'en approche.
+- **Carte de départ** (meilleur temps, « Fantôme disponible » ou « Terminez une première fois ce niveau pour
+  débloquer le Fantôme. », bouton Fantôme), **bouton Fantôme dans la pause**, bandeau de victoire **« ✨ Nouveau
+  record ! · Fantôme mis à jour »** (ou « Fantôme débloqué ») ; `css/ghost.css` ; textes FR / EN / ES.
+- Réglage `ghost` (activé par défaut, enregistré) ; `tests/ghost.test.mjs` (8 tests).
+
+**Modifié**
+- `src/main.js` : relevé après chaque pas de simulation, relecture à chaque image, carte de départ, boutons,
+  victoire ; « Nouveau record » n'apparaît qu'une fois sur l'écran de victoire.
+- `src/render/renderer.js` : dessine le fantôme sous le vrai ballon ; `play.html` : carte, bouton, bandeau.
+- `tests/menu.test.mjs` : la liste des réglages comprend `ghost`.
+
+**Vérifié**
+- `npm test` : **507 tests** réussis, dont la **relecture exacte des 50 niveaux** (écart ≤ 0,005 u) et une partie
+  identique au millième avec ou sans enregistrement.
+- Navigateur (Pixel 7 émulé) : carte sans / avec fantôme, fantôme qui avance pendant que le joueur attend, bouton
+  dans la pause (réglage enregistré, conservé après rechargement), record battu → fantôme remplacé et bandeau
+  animé, nouveau fantôme chargé en rejouant ; fantôme dans les 5 mondes (téléporteurs, gravité inversée) ;
+  **60 images/s** sur 15 niveaux avec les 50 fantômes enregistrés ; aucune erreur.
+- **Mise à jour v8 → v9 simulée** : progression, pièces, gemmes, objets et anciens réglages conservés ; le fantôme
+  est activé par défaut.
+- `dist/HoopBounce_Test_v9.apk` (1.8.0-test9) : même identifiant, même clé de test (SHA-256 identique à la v1),
+  versionCode 9.
+
+**Reste à faire**
+- Avis du porteur du projet sur téléphone : lisibilité du fantôme, discrétion, carte de départ.
 
 ### 24/11/2026 — Qualité, phase 2 : refonte complète des 50 niveaux (v1.5.0-dev, APK de test v8)
 

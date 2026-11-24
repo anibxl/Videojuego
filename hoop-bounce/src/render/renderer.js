@@ -13,6 +13,7 @@ import { clamp, lerp } from '../core/math.js';
 import { pathState } from '../physics/mover.js';
 import { createBallTextures, skinInfo, drawFace, drawAura } from './ball-sprite.js';
 import { drawTrail } from './cosmetics.js';
+import { makeGhostSprite, drawGhostRun } from './ghost-draw.js';
 import { Background } from './background.js';
 import { themeOf } from './themes.js';
 import {
@@ -188,6 +189,11 @@ export class Renderer {
     if (s.goal) this._drawGoalBurst(s.goal, s.time);
     if (visible(L.hoop.leftX - 1, L.hoop.board.x + 2)) this._drawHoopBack(L.hoop, s.goal, s.time);
 
+    // Mode Fantôme : le meilleur essai, dessiné SOUS le vrai ballon
+    if (s.ghostRun && s.ghostRun.alpha > 0.01) {
+      this._ghostSprite ??= makeGhostSprite();
+      drawGhostRun(ctx, s.ghostRun, this._ghostSprite, (rgb, x, y, r, a) => this._drawGlow(rgb, x, y, r, a));
+    }
     if (s.ballVisible) {
       if (s.trail) drawTrail(ctx, s.trail.id, s.trail.pts, s.time, s.ball.r);
       else if (s.ghost) this._drawGhosts(s);

@@ -39,7 +39,7 @@ test('la langue par défaut suit celle de l\'appareil', () => {
 test('des réglages abîmés sont corrigés', () => {
   const d = defaultSettings('fr');
   const s = sanitize({ music: 7, sfx: 'fort', vibration: 'oui', lang: 'xx', quality: 'ultra' }, d);
-  assert.deepEqual(s, { music: 1, sfx: d.sfx, vibration: d.vibration, lang: 'fr', quality: 'high' });
+  assert.deepEqual(s, { music: 1, sfx: d.sfx, vibration: d.vibration, lang: 'fr', quality: 'high', ghost: true });
   assert.deepEqual(sanitize(null, d), d);
 });
 

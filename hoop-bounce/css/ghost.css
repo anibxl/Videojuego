@@ -1,0 +1,269 @@
+/* MODE FANTÔME (phase 3) : carte de départ, bouton « Fantôme », bandeau « Nouveau record ».
+   Couleur du fantôme : blanc bleuté (le même que le ballon fantôme dessiné dans le jeu). */
+
+:root {
+  --ghost: #cfe6ff;
+  --ghost-rgb: 207, 230, 255;
+}
+
+/* ── Carte de départ ─────────────────────────────────────────────────── */
+
+.start-card {
+  position: fixed;
+  top: calc(58px + var(--safe-top, 0px));
+  left: 50%;
+  z-index: 6;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 240px;
+  max-width: min(92vw, 380px);
+  padding: 10px 16px 12px;
+  border-radius: var(--r-lg);
+  background: var(--panel, rgba(13, 21, 42, 0.78));
+  border: 1px solid var(--panel-line-strong, rgba(255, 255, 255, 0.13));
+  box-shadow: var(--sh-3), var(--edge-light);
+  text-align: center;
+  pointer-events: auto;
+  transform: translate(-50%, -8px);
+  opacity: 0;
+}
+
+.start-card.in {
+  animation: sc-in 0.42s var(--ease-out) forwards;
+}
+
+.start-card.out {
+  animation: sc-out 0.35s var(--ease-soft) forwards;
+  pointer-events: none;
+}
+
+@keyframes sc-in {
+  from { opacity: 0; transform: translate(-50%, -10px) scale(0.97); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+@keyframes sc-out {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to { opacity: 0; transform: translate(-50%, -8px); visibility: hidden; }
+}
+
+body.overlay-open .start-card,
+body.intro-open .start-card {
+  visibility: hidden;
+}
+
+.sc-level {
+  margin: 0 0 2px;
+  font-size: var(--t-label, 10.5px);
+  font-weight: var(--w-title, 700);
+  letter-spacing: var(--track-label, 0.12em);
+  text-transform: uppercase;
+  color: var(--c-ink-3, #74809f);
+}
+
+.sc-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--t-small, 12.5px);
+  color: var(--c-ink-2, #b6c1dc);
+}
+
+.sc-row strong {
+  margin-left: 2px;
+  color: var(--c-ink, #f2f5ff);
+  font-weight: var(--w-strong, 650);
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-ico {
+  width: 15px;
+  height: 15px;
+  fill: var(--c-gold, #ffc94d);
+  flex: none;
+}
+
+.gh-ico {
+  width: 16px;
+  height: 16px;
+  fill: var(--ghost);
+  flex: none;
+  filter: drop-shadow(0 0 4px rgba(var(--ghost-rgb), 0.45));
+}
+
+.sc-ghost-row {
+  max-width: 300px;
+  line-height: 1.3;
+}
+
+.start-card:not(.has-ghost) .sc-ghost-row {
+  color: var(--c-ink-3, #74809f);
+}
+
+.start-card:not(.has-ghost) .sc-ghost-row .gh-ico {
+  opacity: 0.5;
+  filter: none;
+}
+
+/* ── Bouton « Fantôme » (deux états) ─────────────────────────────────── */
+
+.ghost-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 6px;
+  min-height: 34px;
+  padding: 0 14px 0 11px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-ink-2, #b6c1dc);
+  font: inherit;
+  font-size: var(--t-small, 12.5px);
+  font-weight: var(--w-strong, 650);
+  cursor: pointer;
+  transition: background-color var(--dur-fast, 0.18s) ease, border-color var(--dur-fast, 0.18s) ease, color var(--dur-fast, 0.18s) ease, transform 0.25s var(--ease-spring);
+}
+
+.ghost-toggle:active {
+  transform: scale(0.95);
+}
+
+.ghost-toggle .gh-ico {
+  opacity: 0.45;
+  filter: none;
+  transition: opacity var(--dur-fast, 0.18s) ease;
+}
+
+.ghost-toggle .gt-state {
+  font-style: normal;
+  font-weight: var(--w-body, 500);
+  color: var(--c-ink-3, #74809f);
+}
+
+.ghost-toggle .gt-state::before {
+  content: "·";
+  margin-right: 6px;
+  color: var(--c-ink-3, #74809f);
+}
+
+.ghost-toggle.on {
+  background: rgba(var(--ghost-rgb), 0.12);
+  border-color: rgba(var(--ghost-rgb), 0.38);
+  color: var(--c-ink, #f2f5ff);
+}
+
+.ghost-toggle.on .gh-ico {
+  opacity: 1;
+  filter: drop-shadow(0 0 5px rgba(var(--ghost-rgb), 0.55));
+}
+
+.ghost-toggle.on .gt-state {
+  color: var(--ghost);
+}
+
+/* dans la pause : même largeur que les autres boutons */
+.ghost-toggle-wide {
+  justify-content: center;
+  width: 100%;
+  margin-top: 0;
+}
+
+/* ── Victoire : « ✨ Nouveau record ! Fantôme mis à jour » ───────────── */
+
+.win-ghost {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: -6px 0 14px;
+  padding: 6px 14px 6px 10px;
+  border-radius: var(--r-pill);
+  background: rgba(var(--ghost-rgb), 0.1);
+  border: 1px solid rgba(var(--ghost-rgb), 0.32);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(6px) scale(0.92);
+}
+
+.win-ghost b {
+  font-weight: var(--w-title, 700);
+  font-size: var(--t-small, 12.5px);
+  color: var(--c-ink, #f2f5ff);
+}
+
+.win-ghost small {
+  font-size: var(--t-small, 12.5px);
+  color: var(--ghost);
+}
+
+.win-ghost.first b {
+  font-weight: var(--w-strong, 650);
+}
+
+.wg-spark {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  background: var(--ghost);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.win-ghost.show {
+  animation: wg-in 0.55s var(--ease-spring) 0.5s forwards;
+}
+
+.win-ghost.record.show .wg-spark {
+  animation: wg-spark 1.4s var(--ease-soft) 0.6s both;
+}
+
+/* reflet qui traverse le bandeau, une seule fois */
+.win-ghost.record::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+}
+
+.win-ghost.record.show::after {
+  animation: wg-shine 1s var(--ease-soft) 0.9s forwards;
+}
+
+@keyframes wg-in {
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes wg-spark {
+  0% { transform: scale(0.4) rotate(-40deg); }
+  45% { transform: scale(1.35) rotate(15deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes wg-shine {
+  to { transform: translateX(120%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-card.in,
+  .start-card.out,
+  .win-ghost.show,
+  .win-ghost.record.show::after,
+  .win-ghost.record.show .wg-spark {
+    animation-duration: 0.01s;
+    animation-delay: 0s;
+  }
+}
+
+/* petits écrans en paysage : carte plus compacte */
+@media (max-height: 420px) {
+  .start-card {
+    top: calc(54px + var(--safe-top, 0px));
+    padding: 8px 14px 10px;
+    gap: 2px;
+  }
+  .ghost-toggle { min-height: 30px; margin-top: 4px; }
+}

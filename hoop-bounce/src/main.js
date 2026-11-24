@@ -32,6 +32,7 @@ import { Achievements } from './shared/achievements.js';
 import { lt } from './shared/live-i18n.js';
 import { getAds } from './shared/ads.js';
 import { awardPassXp } from './shared/pass.js';
+import { GhostRecorder, GhostPlayer, GhostStore } from './game/ghost.js';
 
 const R = CONFIG.ball.radius;
 const DT = CONFIG.physics.fixedDt;
@@ -85,6 +86,13 @@ const ui = {
   introMechs: $('intro-mechs'),
   introLevel: $('intro-level'),
   wipe: $('wipe'),
+  // Mode Fantôme (phase 3)
+  startCard: $('start-card'),
+  scLevel: $('sc-level'),
+  scBest: $('sc-best'),
+  scGhost: $('sc-ghost'),
+  ghostToggles: [...document.querySelectorAll('[data-ghost-toggle]')],
+  winGhost: $('win-ghost'),
 };
 
 const settings = new Settings();
@@ -120,6 +128,26 @@ const game = new Game(CONFIG, localizedLevel(levelIndex));
 // Après une chute, si un drapeau a été atteint : écran « Niveau échoué » (recommencer, ou reprendre au
 // drapeau en regardant une publicité)
 game.holdAtCheckpoint = true;
+
+// ─── Mode Fantôme (phase 3) ────────────────────────────────────────────────
+// Le meilleur essai de chaque niveau est rejoué par un ballon fantôme. Aide visuelle uniquement : il est
+// relevé sur la partie (lecture seule) et dessiné à part ; il ne touche jamais à la simulation.
+const ghostStore = new GhostStore();
+const recorder = new GhostRecorder(DT);
+const ghostState = {
+  player: null,
+  fade: 0,
+  doneAt: -1,
+  pos: {},
+  run: { x: 0, y: 0, angle: 0, alpha: 0, r: R, trail: [], sinceBounce: 9 },
+  card: { open: false, shownAt: 0, touchedAt: -99 },
+};
+game.events.on('restart', () => {
+  recorder.reset();
+  recorder.step(game);
+  ghostState.doneAt = -1;
+});
+game.events.on('impact', (e) => recorder.bounce(game.runTime, e.speed));
 const renderer = new Renderer(canvas, game.level);
 renderer.particleDensity = QUALITY_PARTICLES[settings.get('quality')] ?? 1;
 // Boutique : articles équipés (ballon, effet de rebond, traînée, animation de panier)
@@ -599,6 +627,8 @@ function showWin(r) {
   const def = LEVELS[levelIndex];
   const world = WORLDS[def.worldIndex];
   const res = progress.complete(def.id, r.stars, r.time);
+  // Mode Fantôme : l'essai remplace l'ancien fantôme seulement s'il est plus rapide
+  const ghostRes = ghostStore.offer(def.id, recorder.finish(r));
   const earned = wallet.reward(def.id, def.worldIndex, r.stars, !!state.swish);
   // Hoop Pass (saison en cours) : XP pour un niveau terminé, plus la première fois
   showPassXp(awardPassXp('level', { first: earned.lines.some(([k]) => k === 'first') }));
@@ -647,8 +677,10 @@ function showWin(r) {
   ui.winBody.hidden = !body;
   ui.winBody.textContent = body;
   ui.winTime.textContent = formatTime(r.time);
-  ui.winRecord.hidden = !res.newRecord;
+  // « Nouveau record » : le bandeau du fantôme le dit déjà quand le fantôme est remplacé
+  ui.winRecord.hidden = !res.newRecord || ghostRes === 'record';
   ui.winRecord.textContent = gt(lang, 'win.record');
+  showGhostResult(ghostRes);
   ui.next.hidden = lastOverall;
   ui.next.querySelector('span').textContent = gt(lang, lastInWorld ? 'win.world.next' : 'win.next');
   ui.winStars.forEach((s, i) => {
@@ -668,6 +700,29 @@ function showWin(r) {
   confetti.celebrate(state.swish ? 1 : 0.7);
   openOverlay('win');
   (lastOverall ? ui.replay : ui.next).focus({ preventScroll: true });
+}
+
+/** Écran de victoire : « ✨ Nouveau record ! Fantôme mis à jour » (ou « Fantôme débloqué »). */
+function showGhostResult(res) {
+  const el = ui.winGhost;
+  if (!el) return;
+  el.classList.remove('show', 'record', 'first');
+  if (res !== 'record' && res !== 'first') {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.querySelector('b').textContent = gt(lang, res === 'record' ? 'ghost.record' : 'ghost.unlocked');
+  el.querySelector('small').textContent = gt(lang, res === 'record' ? 'ghost.updated' : 'ghost.replay');
+  void el.offsetWidth;
+  el.classList.add('show', res);
+  if (res === 'record') {
+    setTimeout(() => {
+      const b = el.getBoundingClientRect();
+      confetti.pop(b.left + 22, b.top + b.height / 2, 12, ['#d6ecff', '#ffffff', '#9fd0ff']);
+      sfx.star?.(3);
+    }, 650);
+  }
 }
 
 /** Compteur de pièces qui défile, avec un petit tintement. */
@@ -910,6 +965,8 @@ function startLevel(index) {
   updateLevelLabels();
   const def = LEVELS[index];
   history.replaceState(null, '', `?world=${def.world}&level=${def.number}`);
+  loadGhost(def.id);
+  showStartCard();
   // « Niveaux » (pause, victoire) : la sélection des mondes du menu, ouverte sur ce monde
   for (const id of ['btn-pause-map', 'btn-win-map']) $(id).href = `index.html?world=${def.world}#mondes`;
   setupTutorial();
@@ -984,6 +1041,105 @@ function hideIntro() {
   ui.intro.classList.add('hidden');
   input.enabled = true;
   sfx.unlock();
+  showStartCard();
+}
+
+// ─── Mode Fantôme : chargement, carte de départ, bouton, dessin ───────────
+
+/** Prépare le fantôme du niveau (s'il existe un meilleur essai). */
+function loadGhost(levelId) {
+  const data = ghostStore.get(levelId);
+  ghostState.player = data ? new GhostPlayer(data) : null;
+  ghostState.fade = 0;
+  ghostState.doneAt = -1;
+  ghostState.run.alpha = 0;
+}
+
+function ghostOn() {
+  return settings.get('ghost') !== false;
+}
+
+/** Bouton « Fantôme » (carte de départ et pause) : état et texte. */
+function updateGhostToggles() {
+  const on = ghostOn();
+  for (const b of ui.ghostToggles) {
+    b.setAttribute('aria-pressed', String(on));
+    b.classList.toggle('on', on);
+    const st = b.querySelector('.gt-state');
+    if (st) st.textContent = gt(lang, on ? 'ghost.on' : 'ghost.off');
+  }
+}
+
+function toggleGhost() {
+  settings.set('ghost', !ghostOn());
+  updateGhostToggles();
+  ghostState.card.touchedAt = state.time;
+  haptics.light?.();
+}
+for (const b of ui.ghostToggles) b.addEventListener('click', toggleGhost);
+
+/** Carte de départ : meilleur temps et fantôme du niveau ; elle s'efface dès qu'on joue. */
+function showStartCard() {
+  if (state.intro || !ui.startCard) return;
+  const def = LEVELS[levelIndex];
+  const g = ghostStore.get(def.id);
+  const best = g?.t ?? progress.bestTimeFor(def.id);
+  ui.scLevel.textContent = `${levelLabel(def)} · ${gt(lang, def.nameKey)}`;
+  ui.scBest.textContent = best ? formatTime(best) : gt(lang, 'ghost.noBest');
+  ui.scGhost.textContent = gt(lang, g ? 'ghost.available' : 'ghost.locked');
+  ui.startCard.classList.toggle('has-ghost', !!g);
+  updateGhostToggles();
+  ghostState.card.open = true;
+  ghostState.card.shownAt = state.time;
+  ui.startCard.hidden = false;
+  ui.startCard.classList.remove('out');
+  void ui.startCard.offsetWidth;
+  ui.startCard.classList.add('in');
+}
+
+function hideStartCard() {
+  if (!ghostState.card.open) return;
+  ghostState.card.open = false;
+  ui.startCard.classList.remove('in');
+  ui.startCard.classList.add('out');
+}
+
+/** Position du fantôme pour cette image (même horloge que le chronomètre du niveau). */
+function updateGhost(frameDt, alpha) {
+  const gs = ghostState;
+  const run = gs.run;
+  const pl = gs.player;
+  // carte de départ : s'efface quand le joueur s'élance (ou au bout de quelques secondes)
+  if (gs.card.open) {
+    const age = state.time - gs.card.shownAt;
+    const touched = state.time - gs.card.touchedAt < 2.5;
+    const moving = game.runTime > 0.4 && Math.abs(game.body.vx) > 1.2;
+    if (!touched && (age > 6 || (age > 0.8 && moving) || state.overlay)) hideStartCard();
+  }
+  if (!pl) {
+    run.alpha = 0;
+    return;
+  }
+  const want = ghostOn() && !state.intro;
+  const t = Math.max(0, game.runTime - (game.state === 'playing' ? (1 - alpha) * DT : 0));
+  const pos = pl.at(t, gs.pos);
+  // Fin du parcours : le fantôme reste un instant dans le panier, puis s'efface
+  let end = 1;
+  if (pos.done) {
+    if (gs.doneAt < 0) gs.doneAt = state.time;
+    end = clamp(1 - (state.time - gs.doneAt - 0.5) / 0.6, 0, 1);
+  } else gs.doneAt = -1;
+  gs.fade = damp(gs.fade, want ? 1 : 0, 7, frameDt);
+  // Il ne masque jamais le vrai ballon : il s'efface quand ils se superposent
+  const d = Math.hypot(pos.x - state.ball.x, pos.y - state.ball.y);
+  const near = game.state === 'dying' ? 1 : clamp((d - 0.45) / 1.1, 0.2, 1);
+  run.alpha = 0.62 * gs.fade * end * near;
+  run.x = pos.x;
+  run.y = pos.y;
+  run.angle = pos.angle;
+  run.sinceBounce = pos.sinceBounce;
+  run.r = state.ball.r ?? R;
+  pl.trail(t, 10, 2, run.trail);
 }
 
 // iPhone (WebKit) : le son ne peut démarrer que sur un geste « terminé » (doigt levé, clic, touche),
@@ -1172,6 +1328,7 @@ function render(frameDt, alpha) {
   state.ball.angle = lerp(p.angle, b.angle, alpha);
   const pop = clamp(Math.min(state.sinceRespawn, state.sinceTeleport) / 0.28, 0, 1);
   state.ball.scale = game.state === 'dying' ? 0 : pop >= 1 ? 1 : easeOutBack(pop);
+  updateGhost(frameDt, alpha);
 
   if (b.grounded && game.state !== 'dying') state.groundY = b.y - R;
   const fastFollow = state.sinceRespawn < 0.6 || state.sinceTeleport < 0.8;
@@ -1242,6 +1399,7 @@ function render(frameDt, alpha) {
     fx,
     trail: trail.id !== 'trail-none' ? trail : null,
     ghost,
+    ghostRun: ghostState.run,
     tracks,
     goal: state.goal,
     goalFlash: state.goalFlash,
@@ -1259,7 +1417,15 @@ function easeOutBack(t) {
 }
 
 // Pendant l'introduction d'un monde, la partie attend (le décor reste animé)
-const loop = new FixedLoop({ dt: DT, update: (dt) => !state.intro && game.fixedUpdate(dt), render });
+const loop = new FixedLoop({
+  dt: DT,
+  update: (dt) => {
+    if (state.intro) return;
+    game.fixedUpdate(dt);
+    recorder.step(game); // Mode Fantôme : relevé de la position (lecture seule)
+  },
+  render,
+});
 
 // L'application passe en arrière-plan : on met en pause (le joueur reprend quand il veut)
 window.addEventListener('pagehide', () => stats.save());
