@@ -3,11 +3,11 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 23/11/2026 · **Version :** 1.4.0-dev (non publiée ; la version publiable reste
+> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.5.0-dev (non publiée ; la version publiable reste
 > 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1 : menu décoré + **Hoop Pass**) · **Version de
-> test Android :** **`HoopBounce_Test_v7.apk` (1.6.0-test7, mise à jour)** · **iOS :** projet Xcode prêt
-> (`ios/`) · **Phase en cours :** qualité visuelle uniquement (plus aucune nouvelle fonctionnalité) — étape 25 :
-> direction artistique unifiée ; rien n'est publié.
+> test Android :** **`HoopBounce_Test_v8.apk` (1.7.0-test8, mise à jour)** · **iOS :** projet Xcode prêt
+> (`ios/`) · **Phase en cours :** qualité — **phase 2 : refonte complète des 50 niveaux** (mêmes 5 mondes, mêmes
+> mécaniques, niveaux deux fois plus longs et uniques) ; rien n'est publié.
 
 ## Sommaire
 
@@ -331,7 +331,7 @@ hoop-bounce/
 | `src/menu/` | Menu principal : décor vivant, pages, sons, musique, icônes, textes, boutique. |
 | `src/shared/` | Réglages du joueur et numéro de version, communs au menu et au jeu. |
 | `tests/` | Tests automatiques ; `fixtures/` contient le terrain d'essai et les solutions des niveaux. |
-| `tools/` | Outil de vérification des niveaux. |
+| `tools/` | Outils de conception et de vérification des niveaux (partie complète, plan, fenêtres, solutions aléatoires), du Trickshot, des illustrations et des builds. |
 
 La logique (`physics/`, `game/`) émet des **événements** (`bounce`, `slam`, `star`, `death`, `win`…) que la
 présentation (son, vibrations, effets, caméra, interface) écoute. Les deux restent indépendantes.
@@ -480,13 +480,21 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tools/trickshot-check.mjs` | Solveur du mode TRICKSHOT : essaie des milliers de tirs par niveau (angles × puissances × instants, 4 processus), mesure la part de tirs gagnants → difficulté, cherche finement autour des tirs les plus proches ; `--quick`, `--save`, `N` ou `N-M`. |
 | `tools/trickshot-atlas.html` | Atlas des cartes TRICKSHOT (`?from=1&to=25`) avec le trajet de la solution enregistrée, pour relire les niveaux d'un coup d'œil. |
 | `tools/ui-art.mjs` | Génère les illustrations d'interface `assets/ui/*.svg` (pièce, gemme, 6 coffres en deux pièces) dans un style commun (étape 25). |
-| `tools/route-check.mjs` | Outil de level design : essaie des centaines de séquences de commandes par passage et mesure la difficulté ; « pilote » pour écrire les solutions expertes (rouler jusqu'à, charger, sauter, viser). |
+| `tools/route-check.mjs` | Outil de level design : essaie des centaines de séquences de commandes par passage et mesure la difficulté ; « pilote » pour écrire les solutions expertes (rouler jusqu'à, charger, sauter, viser, flotter, tirer au panier). `N`, `id` ou plage `a-b` ; `--save` ; `--part=` (calcul réparti). |
+| `tools/route-merge.mjs` | Fusionne les fichiers partiels de `route-check --part` dans `tests/fixtures/routes.json`. |
+| `tools/level-run.mjs` | ★ Phase 2 : joue un niveau **en entier** (tous les passages à la suite, du départ au panier) et mesure la durée experte → durée joueur estimée (× 1,4), comparée à la fourchette du monde. Utilisé par `tests/routes.test.mjs`. |
+| `tools/level-map.mjs` | ★ Phase 2 : plan PNG d'un niveau (géométrie, pièges, étoiles, panier) avec la trajectoire du pilote et les morts. |
+| `tools/tune.mjs` | ★ Phase 2 : balaie toutes les fenêtres de départ d'un passage chronométré (`--full` : état réel d'arrivée) pour choisir une fenêtre sûre. |
+| `tools/pass-debug.mjs` | ★ Phase 2 : rejoue un passage manœuvre par manœuvre (position, vitesse, puissance, cause d'une mort). |
 
 ### Ajouter un niveau ou un élément
 
-- **Niveau** : l'ajouter dans le fichier de son monde (`src/game/levels/<monde>.js`, format complet dans
-  `src/game/levels/README.md`), ajouter son nom et ses aides dans `src/game/i18n.js`, ajouter ses passages dans
-  `tools/route-check.mjs`, puis `node tools/route-check.mjs 400 --save`.
+- **Niveau** : l'écrire dans le fichier de son monde (`src/game/levels/<monde>.js`) avec le **kit**
+  (`level()` + `c.section(longueur, s => …)`, voir l'en-tête de `src/game/levels/kit.js`) : sol, blocs, pièges,
+  étoiles (exactement 3), drapeaux, et un `s.pass()` par passage avec sa solution experte. Ajouter son nom et
+  ses aides dans `src/game/i18n.js` (3 langues). Vérifier : `node tools/level-run.mjs N --verbose` (partie
+  complète), `node tools/level-map.mjs N dossier` (plan), `node tools/tune.mjs N passage --full` (fenêtre d'un
+  piège chronométré), `node tools/pass-debug.mjs N passage` ; puis `node tools/route-check.mjs 400 --save`.
 - **Élément** : ses données dans le niveau, sa construction dans `game/level.js`, sa logique dans
   `game/world-elements.js` et `game/game.js`, son dessin dans `render/world-draw.js`, ses sons dans
   `audio/sfx.js`, ses effets dans `main.js`, un test dans `tests/mechanics.test.mjs`.
@@ -1343,10 +1351,10 @@ boutique, `src/shared/gem-offers.js`).
 | # | Monde | Accroche | Couleur | Ambiance | Mécaniques | Niveaux |
 |---|---|---|---|---|---|---|
 | 1 | **Ville** (tutoriel) | Le terrain du coucher de soleil | orange | ville moderne la nuit : gratte-ciel et immeubles détaillés (fenêtres qui s'allument et s'éteignent, néons qui pulsent, grandes enseignes au néon qui grésillent, châteaux d'eau, balises rouges), voie rapide où passent des voitures, avions au loin, projecteurs qui balaient le ciel, lune, vitrines, graffitis, lumière magenta et cyan ; lo-fi hip-hop | plateformes mobiles, trampolines, ventilateurs, caisse, scies, lasers, presses hydrauliques | 10 / 10 |
-| 2 | **Neige** | Les sommets gelés | bleu glacier | montagnes enneigées ombrées, sapins enneigés, brume, petits nuages de froid, soleil d'hiver pâle, petits flocons, rafales, glace qui brille, traces dans la neige, couleurs froides ; boîte à musique | sol glissant, vent, stalactites, plaques qui tombent, boules de neige, blocs de glace, canon à boules de neige | 10 / 10 |
-| 3 | **Volcan** | Au cœur de la lave | orange feu | volcans qui fument et rougeoient, nuages de fumée, roches fissurées éclairées de rouge, rivière de lave animée, braises, cendres, chaleur visible ; tambours graves | lave, plateformes fragiles, geysers, chutes de pierres, ascenseurs, jets de flammes, rochers de lave, broyeurs | 10 / 10 |
-| 4 | **Forêt** | Les bois enchantés | vert | collines, arbres détaillés, herbe vivante, rayons de soleil, oiseaux, papillons, feuilles qui tombent, champignons, lucioles ; marimba et flûte | lianes, champignons, branches mobiles, troncs, rivière, troncs-marteaux, rondins qui dévalent, branches qui cassent, planche magique | 10 / 10 |
-| 5 | **Espace** (monde final) | Au-delà des étoiles | violet | nébuleuses, étoiles qui scintillent, étoiles filantes, planètes, la Terre, station spatiale, débris qui flottent en apesanteur, poussières qui remontent ; nappes de synthé | gravité réduite, astéroïdes, portails, plateformes flottantes, gravité inversée, lasers, trous noirs, pistons, boules de plasma | 10 / 10 |
+| 2 | **Neige** | Les sommets gelés | bleu glacier | montagnes enneigées ombrées, sapins enneigés, brume, petits nuages de froid, soleil d'hiver pâle, petits flocons, rafales, glace qui brille, traces dans la neige, couleurs froides ; boîte à musique | sol glissant, vent, stalactites, plaques qui cèdent, boules de neige, blocs de glace qui s'écrasent, remonte-pente | 10 / 10 |
+| 3 | **Volcan** | Au cœur de la lave | orange feu | volcans qui fument et rougeoient, nuages de fumée, roches fissurées éclairées de rouge, rivière de lave animée, braises, cendres, chaleur visible ; tambours graves | lave, pierres fragiles, flammes, geysers, chutes de pierres, canons à boules de feu, rochers de lave, ascenseurs et navettes, bloc de pierre (forge), marteaux-pilons, bouches-téléporteurs | 10 / 10 |
+| 4 | **Forêt** | Les bois enchantés | vert | collines, arbres détaillés, herbe vivante, rayons de soleil, oiseaux, papillons, feuilles qui tombent, champignons, lucioles ; marimba et flûte | champignons, lianes, balanciers à pointes, branches mobiles et fragiles, troncs (roulants, flottant), rondins, troncs-marteaux, planches magiques, rivière, leviers, arbres creux (téléporteurs) | 10 / 10 |
+| 5 | **Espace** (monde final) | Au-delà des étoiles | violet | nébuleuses, étoiles qui scintillent, étoiles filantes, planètes, la Terre, station spatiale, débris qui flottent en apesanteur, poussières qui remontent ; nappes de synthé | gravité réduite, plateformes flottantes, astéroïdes, portails à double sens, gravité inversée, trous noirs, pistons, lasers, caisse et leviers | 10 / 10 |
 
 **Ambiance sonore de chaque monde** (étape 10, `audio/music.js`) — en plus de la musique, un fond continu et des
 petits sons ponctuels, chacun à son propre rythme aléatoire, pour reconnaître le monde les yeux fermés :
@@ -1357,8 +1365,9 @@ de chaleur, crépitements, **bulles de lave**, **éruptions lointaines** ; Forê
 **coucou**, **pic-vert**, brise ; Espace — bourdon qui respire, harmoniques qui scintillent, bips, **messages
 radio**, souffles.
 
-- **50 niveaux** (10 par monde). La difficulté monte vite (voir [La difficulté](#la-difficulté)) : chaque niveau
-  ajoute une difficulté nouvelle, et l'Espace est le monde final.
+- **50 niveaux** (10 par monde), **entièrement refaits à la phase 2** (voir [Les niveaux](#les-niveaux)) : chaque
+  niveau a une idée principale et raconte une petite histoire ; la durée et l'exigence montent de monde en monde,
+  et l'Espace est le monde final.
 - **Matériaux par monde** (seule l'apparence change, la physique reste celle du rôle de la surface) : Ville :
   trottoir et asphalte, béton, briques, métal à rivets et bandes de chantier ; Neige : neige, glace brillante,
   bois enneigé (petites stalactites), roche gelée ; Volcan : basalte poreux aux fissures incandescentes, pierre
@@ -1375,31 +1384,96 @@ radio**, souffles.
 
 ### Les niveaux
 
-| # | Ville | Neige | Volcan | Forêt | Espace |
-|---|---|---|---|---|---|
-Ce que chaque niveau ajoute (en **gras** : la difficulté apportée par l'étape 10) :
+**Refonte complète (phase 2, 24/11/2026).** Les 50 niveaux ont été refaits de zéro avec le **kit de construction**
+(`src/game/levels/kit.js`) : un niveau s'écrit de gauche à droite, section par section, chaque section ayant une
+idée et sa solution experte. Mêmes 5 mondes, mêmes mécaniques, même physique et même maniabilité ; les
+identifiants des niveaux n'ont pas changé (la progression enregistrée reste valable).
 
-| # | Ville | Neige | Volcan | Forêt | Espace |
-|---|---|---|---|---|---|
-| 1 | Premier panier — rouler, rebondir | Premières glissades — glace, **boule de neige qu'on saute sur place** | Premières braises — bassins, **jet de flammes au-dessus du bassin** | La clairière — champignons, **tronc-marteau** | Premiers pas lunaires — **trou noir au fond du vide** |
-| 2 | Le mur — charger, scie | La rampe — crevasse, **bloc de glace sur la réception** | Pierres fragiles — **colonne de feu au milieu du gué** | Le sentier de bois — tronc, **planche qui clignote** | Plateformes flottantes, laser, **piston** |
-| 3 | Trampoline au-dessus des pics | Stalactites — **boule de neige dans le couloir** | Les geysers — **rochers de lave qui dévalent** | La première liane — **rondins sur l'autre rive** | Portails — **boules de plasma** |
-| 4 | Plateforme mobile, scie | Vent glacial — **bloc de glace dans le vent de face** | Ascenseurs — **broyeur au sommet** | Branches mouvantes — **la dernière branche casse** | Astéroïdes — **trou noir sous les plateformes** |
-| 5 | Le souffle — ventilateur, mur temporisé, **premier pilon** | Glace vive — plaque qui tombe, **canon à boules de neige** | Pluie de pierres, boulet, **broyeur** | Liane après liane, tronc à pointes | Gravité inversée, **deux lasers décalés** |
-| 6 | L'interrupteur — porte, téléporteur, **premier laser** | Le grand lac — **avalanche à franchir par les plateformes** | Terre de feu — **colonne de feu sur la falaise** | Sous les feuillages — **tronc-marteau sur la cabane** | Apesanteur — **piston** |
-| 7 | La caisse, scie, **deux pilons décalés** | Bourrasques — boulet, **second boulet** | Le gué de feu — canon, **rochers de lave vers le bassin** | Rebonds sauvages — boulet, **rondins jusqu'à la souche** | Portails, bloc temporisé, **boules de plasma** |
-| 8 | Les toits — **scie au milieu du vide** | Le pont de bois — **avalanche de deux boules** | La forge — **jet de flammes au ras du plateau** | Rivière aux troncs — **rondins sur le toit de la cabane** | Monde à l'envers — **piston** |
-| 9 | Le chantier — **plaque fragile au milieu des pics** | Descente glacée — boulet, **bloc de glace sur la bosse** | Trampolines de lave, canon, **rochers de lave** | Canopée — **tronc-marteau** | Ceinture d'astéroïdes — **laser avant le sol** |
-| 10 | Grand final — **pilon rapide devant le panier** | Sommet — **avalanche puis bloc de glace** | Cœur du volcan — **broyeur puis jet de flammes** | Cœur de la forêt — **tronc-marteau de la cabane** | Au-delà des étoiles — **trou noir, piston final** |
+**Durée visée pour un joueur** (estimée à 1,4 × la solution experte jouée par le pilote ; moyenne mesurée) :
 
-- Identifiants : `first-shot`, `the-wall`, `trampoline`, `moving`, `updraft`, `final`, `city-crate`,
+| Monde | Visé | Mesuré | Rôle |
+|---|---|---|---|
+| Ville | 20 – 30 s | 20 – 33 s (moy. 27) | découverte, très peu de pièges |
+| Neige | 30 – 40 s | 30 – 36 s (moy. 33) | premières combinaisons |
+| Volcan | 40 – 50 s | 42 – 53 s (moy. 47) | enchaînements techniques |
+| Forêt | 45 – 60 s | 46 – 57 s (moy. 51) | précision, les erreurs coûtent plus cher (moins de drapeaux, rivière) |
+| Espace | 50 – 70 s | 52 – 68 s (moy. 59) | expert, presque toutes les mécaniques |
+
+**Principes appliqués** : une idée principale par niveau (jamais toutes les mécaniques à la fois, sauf les finales) ;
+chaque piège est présenté seul avant d'être combiné ; pièges réguliers et annoncés (le joueur comprend toujours
+pourquoi il a échoué) ; puzzles d'observation (attendre, observer, activer, détruire, faire tomber, téléporter,
+rebondir) ; rythme alterné facile / technique / puzzle / précision / rapide / détente ; drapeaux avant les
+passages longs ; **3 étoiles** par niveau, souvent sur un passage risqué.
+
+| # | Niveau | Idée | Palier | Joueur | Passages |
+|---|---|---|---|---|---|
+| 1 | **Premier tir** | tutoriel : rouler, rebondir, charger | F | ~26 s | 6 |
+| 2 | **Les trampolines** | trampolines et premiers pics | F | ~24 s | 5 |
+| 3 | **Les nacelles** | plateformes mobiles, monte-charge, nacelle du haut | M | ~32 s | 4 |
+| 4 | **La caisse** | la caisse sert de marche, puis de pont sous un plafond bas | M | ~26 s | 4 |
+| 5 | **Le souffle des toits** | ventilateurs de toit en toit (détente) | F | ~33 s | 4 |
+| 6 | **Le panier verrouillé** | trampoline → toit → interrupteur de la tour → porte du panier | M | ~20 s | 4 |
+| 7 | **Les scies** | rythme des scies (précision) | M | ~30 s | 5 |
+| 8 | **Le métro** | réseau de téléporteurs, rame de métro, puits | M | ~24 s | 5 |
+| 9 | **Le chantier** | lasers et presses (rapide) | D | ~26 s | 5 |
+| 10 | **La grande finale** | caisse → interrupteur → porte → ventilateur → téléporteur | D | ~29 s | 7 |
+| 11 | **Premières glissades** | la glace : élan, freinage, piliers glissants, tremplin | F | ~30 s | 8 |
+| 12 | **Le col venteux** | vent de face, vent dans le dos, rafales | M | ~32 s | 8 |
+| 13 | **La grotte de glace** | stalactites : passer vite, ou les faire tomber et attendre | M | ~31 s | 4 |
+| 14 | **Le pont de glace** ★ | le pont s'effondre derrière toi : ne jamais s'arrêter | M | ~36 s | 5 |
+| 15 | **L'avalanche** ★ | boules de neige : sauter, ou se cacher dans un creux | M | ~35 s | 5 |
+| 16 | **Patinoire au vent** | glace + vent : freiner à temps | D | ~32 s | 7 |
+| 17 | **Le glacier** | blocs de glace qui s'écrasent (précision) | D | ~36 s | 6 |
+| 18 | **Le chalet** | deux interrupteurs : la barrière du remonte-pente, puis la porte du chalet | M | ~32 s | 7 |
+| 19 | **Le sommet** | ascension : trampolines, plaques, corniche venteuse, stalactites | D | ~34 s | 6 |
+| 20 | **Tempête de neige** | finale : tempête, avalanche, tunnel de glace, pont qui cède | D | ~33 s | 5 |
+| 21 | **Premières braises** | la lave : bassins, îlots, flammes, pierres fragiles | F | ~42 s | 5 |
+| 22 | **Les geysers** | courir, s'arrêter, repartir ; marches brûlantes ; lac de feu | M | ~50 s | 7 |
+| 23 | **Chute de pierres** | les ombres annoncent les pierres : galerie, abris, cheminée | M | ~44 s | 7 |
+| 24 | **Les canons** | boules de feu : sous la lave, en face, du plafond | D | ~47 s | 6 |
+| 25 | **La coulée** | rochers de lave : sauter, ou se cacher dans la niche | D | ~51 s | 5 |
+| 26 | **La forge** ★ | puzzle : bloc-pont sous la hotte, bloc-marche, soufflet, marteaux-pilons | M | ~44 s | 9 |
+| 27 | **Le pont des geysers** ★ | pierres fragiles entre les geysers, piliers de repos | D | ~45 s | 6 |
+| 28 | **Les ascenseurs** | ascenseurs et navettes de pierre, pierres qui tombent | M | ~49 s | 6 |
+| 29 | **Le cratère** | puzzle : choisir la bonne bouche (téléporteurs), interrupteur de l'îlot | D | ~45 s | 10 |
+| 30 | **Le cœur du volcan** ★ | finale : tout le volcan | E | ~53 s | 9 |
+| 31 | **La clairière** | champignons : souche, ronces, rivière, escalier, grand champignon | M | ~46 s | 7 |
+| 32 | **La rivière aux lianes** ★ | une liane, trois lianes, entre les balanciers | M | ~51 s | 6 |
+| 33 | **Les branches** | branches qui montent, qui glissent, qui cassent ; échelle de branches | D | ~47 s | 6 |
+| 34 | **Les troncs** | troncs qui roulent, rondins qui dévalent, tronc flottant | M | ~57 s | 6 |
+| 35 | **Le bûcheron** | balanciers à pointes et troncs-marteaux | D | ~46 s | 6 |
+| 36 | **La cabane** | puzzle : levier du champignon, levier de la caisse, monte-charge | M | ~51 s | 9 |
+| 37 | **Les planches magiques** | planches qui clignotent : vague, escalier, descente | D | ~54 s | 5 |
+| 38 | **La canopée** | tout en hauteur : lianes, branches, champignon, branches fragiles | D | ~50 s | 6 |
+| 39 | **Les arbres creux** ★ | puzzle : le bon tronc, rondin, marteau, levier du sommet | D | ~48 s | 12 |
+| 40 | **La forêt profonde** ★ | finale : toute la forêt | E | ~55 s | 8 |
+| 41 | **Premiers pas lunaires** | sauts lunaires, plateformes flottantes, premier trou noir | M | ~64 s | 5 |
+| 42 | **La ceinture d'astéroïdes** | entre les astéroïdes, par-dessus, dessous la pluie | D | ~61 s | 9 |
+| 43 | **Les portails** ★ | portails à double sens : l'aller-retour vers l'interrupteur | D | ~54 s | 13 |
+| 44 | **La tête en bas** ★ | gravité inversée : le plafond devient le sol, le pont invisible | D | ~56 s | 6 |
+| 45 | **Les trous noirs** | sauter assez haut, assez loin, ou les contourner | D | ~63 s | 8 |
+| 46 | **La station** | pistons et lasers : le bon tempo | D | ~54 s | 8 |
+| 47 | **Le laboratoire** | puzzle : la caisse mène au portail, le portail mène au levier | D | ~55 s | 9 |
+| 48 | **Le monde à l'envers** | gravité inversée, astéroïdes, pics des deux côtés | E | ~52 s | 5 |
+| 49 | **Le grand vide** | plateformes flottantes, astéroïdes et trous noirs au-dessus du vide | E | ~68 s | 8 |
+| 50 | **L'odyssée** ★ | finale : tout le jeu | E | ~61 s | 8 |
+
+★ **14 niveaux marquants** : le pont qui s'effondre (14), l'avalanche et le creux (15), la forge (26), le pont des
+geysers (27), le cœur du volcan (30), la rivière aux lianes (32), les arbres creux (39), la forêt profonde (40), les
+portails aller-retour (43), le pont invisible (44), l'odyssée (50), et les finales de la Ville et de la Neige.
+
+- Identifiants inchangés : `first-shot`, `the-wall`, `trampoline`, `moving`, `updraft`, `final`, `city-crate`,
   `city-roofs`, `city-site`, `city-finale`, puis `snow-1` … `snow-10`, `volcano-1` … `volcano-10`,
-  `forest-1` … `forest-10`, `space-1` … `space-10`.
-- Chaque niveau décrit ses **passages** (`passages`) : départ, objectif et une **solution experte** sous forme de
-  plan de manœuvres (rouler jusqu'à, charger, sauter en visant, attendre le bon moment d'un geyser, monter sur
-  une plateforme mobile, se balancer aux lianes…). L'outil les joue et les tests les rejouent.
-- Chaque passage de chaque niveau est vérifié par l'outil (`tools/route-check.mjs`) : solutions aléatoires et
-  solutions expertes scriptées, rejouées par les tests.
+  `forest-1` … `forest-10`, `space-1` … `space-10`. Noms : clés `lv.<monde>.<n>` (3 langues).
+- Chaque niveau décrit ses **passages** (`passages`) : départ, objectif et une **solution experte** (plan de
+  manœuvres : rouler jusqu'à, charger, sauter en visant, attendre le bon moment, monter sur une plateforme, se
+  balancer aux lianes, flotter dans un souffle…).
+- **Vérification de référence** : `tools/level-run.mjs` joue **tous les passages à la suite dans une seule partie**,
+  du départ au panier (portes, caisses, interrupteurs, pièges chronométrés dans leur état réel) et mesure la
+  durée. `tests/routes.test.mjs` le fait pour les 50 niveaux à chaque `npm test` (≈ 6 s).
+- Outils de conception : `tools/level-map.mjs` (plan PNG avec la trajectoire du pilote), `tools/tune.mjs`
+  (balayage des fenêtres de départ d'un piège chronométré, `--full` = état réel d'arrivée),
+  `tools/pass-debug.mjs` (un passage manœuvre par manœuvre), `tools/route-check.mjs` (solutions aléatoires).
 - **JOUER** (menu) reprend au premier niveau ouvert non terminé, tous mondes confondus.
 - Liens directs : `play.html?world=snow&level=1` (ou `play.html?level=N`, N dans la liste de tous les niveaux).
 
@@ -1417,22 +1491,23 @@ Ce que chaque niveau ajoute (en **gras** : la difficulté apportée par l'étape
 
 - **5 paliers** affichés (pastille sur la carte, et dans l'intro) : **facile** (vert), **moyen** (ambre),
   **difficile** (orange), **expert** (rouge), **extrême** (violet, pastille qui pulse).
-- **Courbe voulue (étape 10)** — le jeu devient difficile beaucoup plus vite :
+- **Courbe de la refonte (phase 2)** — la difficulté monte avec les mondes, en alternant des niveaux plus doux :
 
-  | Niveaux | Paliers | Ce que vit le joueur |
+  | Monde | Ce que vit le joueur | Paliers (1 → 10) |
   |---|---|---|
-  | 1–4 | facile, moyen | apprendre les commandes et les premiers éléments |
-  | 5–14 | difficile (un moyen pour souffler) | **on commence à échouer** (premier pilon au niveau 5) |
-  | 15–29 | difficile, expert | **plusieurs essais** par niveau |
-  | 30–44 | expert, extrême | **vraiment difficile** |
-  | 45–50 | extrême | **très exigeant, mais toujours faisable** |
+  | Ville | découverte, chaque mécanique seule, très peu de pièges | F F M M F M M M D D |
+  | Neige | premières combinaisons (glace + vent, pont + stalactites) | F M M M M D D M D D |
+  | Volcan | enchaînements techniques, pièges chronométrés | F M M D D M D M D E |
+  | Forêt | précision : moins de drapeaux, la rivière ne pardonne pas | M M D M D M D D D E |
+  | Espace | expert : presque toutes les mécaniques combinées | M D D D D D D E E E |
 
-  Paliers par monde — Ville : F F M M D M D D D E · Neige : D D D D E D E D E E · Volcan : D E D E E E E D E X ·
-  Forêt : E E E E X E X E X X · Espace : E E E E X X X X X X (F facile, M moyen, D difficile, E expert, X extrême).
-- **Chaque niveau introduit une difficulté nouvelle** (tableau ci-dessus) : aucun niveau ne répète le précédent.
-- **Jamais injuste** : chaque piège est annoncé, prévisible et vérifié. Les fenêtres de passage sont calculées
-  par balayage (outil `scan`) : en général 0,5 à 1,5 s, jusqu'à ~0,25–0,45 s dans les derniers niveaux
-  (Forêt 5, Espace 5). Les niveaux longs ont des drapeaux.
+  (F facile, M moyen, D difficile, E expert.) Les niveaux « puzzle » (Ville 6, Neige 18, Volcan 26 et 29, Forêt 36
+  et 39, Espace 43 et 47) et les détentes (Ville 5) font respirer chaque monde ; les finales sont « expert ».
+- **Jamais injuste** : chaque piège est périodique et annoncé ; les fenêtres de départ des passages chronométrés
+  sont choisies au centre d'une plage qui réussit (outil `tools/tune.mjs`). Une fenêtre trop étroite (< 0,2 s)
+  a été corrigée en changeant le niveau, jamais acceptée.
+- **Progression non bloquée** : vérifiée pour les 50 niveaux par une partie complète jouée par le pilote ; un test
+  vérifie aussi que chaque monde dure en moyenne plus longtemps que le précédent.
 
 ### Revenir chaque jour (étape 12)
 
@@ -1671,17 +1746,18 @@ porte-monnaie.
 
 | Action | Pièces |
 |---|---|
-| Premier panier d'un niveau | 40 + 10 par monde (Ville 40 … Espace 80) |
+| Premier panier d'un niveau | 50 + 15 par monde (Ville 50 … Espace 110) — relevé à la phase 2 (40 + 10 avant) |
 | Chaque étoile obtenue pour la première fois | 25 |
-| Les 3 étoiles d'un niveau (première fois) | +20 |
-| Rejouer un niveau déjà terminé | 10 |
+| Les 3 étoiles d'un niveau (première fois) | +25 (+20 avant) |
+| Rejouer un niveau déjà terminé | 15 (10 avant) |
 | « Swish » (panier sans toucher le cercle) | +5 |
 | Récompense quotidienne, missions, succès (étape 12) | voir [Revenir chaque jour](#revenir-chaque-jour-étape-12) |
 | Publicité facultative sur l'écran de victoire (étape 13) | pièces du niveau doublées |
 | Coffre bonus et roue de la chance (étape 13) | voir [Publicités récompensées](#publicités-récompensées-étape-13) |
 
-- Une première partie complète rapporte environ **7 750 pièces** (50 niveaux, 150 étoiles) ; depuis l'étape 17, le
-  catalogue complet coûte **7 767 000** : un objectif de collection à très long terme (voir la boutique ci-dessus).
+- Une première partie complète rapporte environ **9 000 pièces** (50 niveaux, 150 étoiles ; 7 750 avant la
+  refonte : les niveaux sont deux fois plus longs) ; depuis l'étape 17, le catalogue complet coûte **7 767 000** :
+  un objectif de collection à très long terme (voir la boutique ci-dessus).
 - Le gain s'affiche sur l'écran de victoire (compteur qui défile, tintements) et s'ajoute au solde du menu.
 
 ---
@@ -1766,7 +1842,7 @@ porte-monnaie.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v7.apk` (≈ 0,6 Mo, **1.6.0-test7**, direction artistique unifiée) —
+**Fichier actuel :** `dist/HoopBounce_Test_v8.apk` (≈ 0,6 Mo, **1.7.0-test8**, refonte des 50 niveaux) —
 une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
 
@@ -1788,7 +1864,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · **v7 : `1.6.0-test7` (7)** ; « 1.6.0 (test 7) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · **v8 : `1.7.0-test8` (8)** ; « 1.7.0 (test 8) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -2014,6 +2090,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Caméra : impulsions, regard vers le bas, plan d'ouverture, ralentis progressifs, mouvements réduits
 - 🟡 Validation par le porteur du projet ; essai au casque et sur haut-parleur de téléphone
 
+### Phase 6 octies — Qualité, phase 2 : refonte des 50 niveaux ✅ (en attente de validation)
+- ✅ Kit de construction des niveaux par sections ; vérification par partie complète (`level-run`), plan,
+  balayage des fenêtres, débogage pas à pas
+- ✅ Ville (20–30 s), Neige (30–40 s), Volcan (40–50 s), Forêt (45–60 s), Espace (50–70 s) refaits : 50 niveaux
+  uniques, une idée par niveau, 14 niveaux marquants, rythme alterné, 3 étoiles chacun
+- ✅ Noms et 14 nouvelles aides en 3 langues ; gains en pièces légèrement relevés
+- ✅ Test : les 50 niveaux joués en entier à chaque `npm test` ; difficulté croissante vérifiée
+- 🔴 Retours du porteur du projet et de vrais joueurs (durées réelles, passages trop durs)
+
 ### Phase 7 bis — Saisons 🟡
 - ✅ Interrupteur de saison ; **Saison 1 — Noël, étape 1** : menu principal décoré et ambiance d'hiver
 - ✅ **Hoop Pass « Saison 1 · Noël »** : 50 niveaux, lignes Gratuit / Premium, XP en jouant, 9 objets
@@ -2069,6 +2154,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Phase 2 — refonte des 50 niveaux** : 50 niveaux uniques et plus longs (Ville 20–30 s … Espace 50–70 s),
+  une idée et une petite histoire par niveau, puzzles, pièges introduits un par un, 14 niveaux marquants,
+  vérification par partie complète, noms et aides en 3 langues, gains relevés, APK de test v8
 - ✅ **Étape 25 — qualité visuelle** : direction artistique unique (Outfit seule, hiérarchie, arrondis, ombres),
   pièces, gemmes et 6 coffres illustrés, icônes cohérentes, neige réaliste, ouverture de coffre, effets du Pass,
   victoire, boutons, profondeur des fonds — sans toucher au jeu ni aux sauvegardes
@@ -2117,6 +2205,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation de la refonte des 50 niveaux** (phase 2) avec `HoopBounce_Test_v8.apk` : durée et difficulté
+  ressenties monde par monde, puzzles compris sans aide, passages trop durs ; décision sur les anciens records
 - 🟡 **Validation de la qualité visuelle** (étape 25) avec `HoopBounce_Test_v7.apk` : impression générale, lisibilité
   de la police, coffres, neige, fluidité sur téléphone
 - 🟡 **Validation du Hoop Pass et des gemmes** avec `HoopBounce_Test_v6.apk` ; décision attendue sur le rythme
@@ -2202,6 +2292,13 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 9. Optimisations
+
+**Refonte des niveaux (phase 2)**
+- Vérification des 50 niveaux en partie complète : ≈ 6 s pour tout le jeu (simulation à pas fixe sans rendu),
+  donc jouée à chaque `npm test`. Les solutions aléatoires (`route-check 400`) sont calculées sur 4 processus
+  (`--part` + `route-merge`).
+- Niveaux plus longs mais même nombre d'éléments actifs à l'écran : mesuré à **60 images/s** (médiane et p95 à
+  16,7 ms) sur 15 niveaux dans Chromium, téléphone Pixel 7 émulé.
 
 **Mode TRICKSHOT (étapes 22-23)**
 - Laboratoire : tout le décor fixe (panneaux, tuyaux, câbles, lampes, néon) est précalculé une fois par taille
@@ -2331,6 +2428,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | Phase 2 : les **records de temps** enregistrés avant la refonte ont été faits sur les anciens niveaux (deux fois plus courts) ; ils sont conservés tels quels (les sauvegardes ne sont pas modifiées), donc presque impossibles à battre. | 🟡 À décider : les garder, ou les effacer une fois à la mise à jour (étoiles et niveaux terminés seraient conservés) |
+| Info | Phase 2 : les durées sont **estimées** (1,4 × la solution experte) ; à confirmer avec de vrais joueurs, surtout les puzzles (plus longs à comprendre) et l'Espace. | 🔴 À éprouver |
+| Info | Phase 2 : en gravité réduite, un ballon chargé au maximum (puissance 5) monte très haut ; quelques passages de l'Espace demandent de ne pas trop charger (les plans experts le font). | 🟡 Voulu (précision) |
 | Info | Étape 25 : les nouvelles animations (pièces qui pivotent, éclats, neige) sont mesurées dans un navigateur sans carte graphique ; elles sont prévues pour le GPU des téléphones (transform / opacity). | 🔴 À confirmer sur téléphone (v7) |
 | Info | Étape 25 : les « ✓ » et « → » des textes viennent de la police du système (Outfit ne les contient pas) : rendu légèrement différent selon l'appareil. | 🟡 Mineur |
 | Info | Hoop Pass : le Premium coûte 250 💎 ; sans dépenser ailleurs, on ne les réunit qu’au **niveau 50** du Pass (cadeau 50 + 240 de la ligne gratuite = 290 ; 230 au niveau 48). Le Premium étant rétroactif, rien n’est perdu, mais on le débloque très tard. | 🟡 À décider : baisser le prix, augmenter le cadeau, ou ajouter quelques gemmes (missions, calendrier) |
@@ -2382,6 +2482,61 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 24/11/2026 — Qualité, phase 2 : refonte complète des 50 niveaux (v1.5.0-dev, APK de test v8)
+
+> Aucune nouvelle fonctionnalité, aucun nouveau niveau : les **50 niveaux existants** du mode principal sont
+> refaits de zéro. Mêmes 5 mondes, mêmes mécaniques, même physique et même maniabilité. **Inchangés** : menus,
+> Hoop Pass, boutique, collection, succès, mode Trickshot, sauvegardes.
+
+**Ajouté**
+- **Kit de construction des niveaux** (`src/game/levels/kit.js`) : un niveau s'écrit section par section, en
+  coordonnées locales ; éléments, étoiles, aides, drapeaux et solutions expertes sont décalés automatiquement.
+- **Outils de conception** : `tools/level-run.mjs` (partie complète jouée par le pilote, du départ au panier,
+  durée estimée), `tools/level-map.mjs` (plan PNG avec la trajectoire), `tools/tune.mjs` (fenêtres de départ des
+  pièges chronométrés, `--full`), `tools/pass-debug.mjs` (un passage manœuvre par manœuvre),
+  `tools/route-merge.mjs` (calcul des solutions aléatoires sur 4 processus) ; nouvelles manœuvres du pilote :
+  flotter dans un souffle, tirer au panier dans une partie en cours.
+- **Noms des 50 niveaux** (`lv.<monde>.<n>`) et **14 nouvelles aides** (téléporteur, laser, plaques, blocs,
+  flamme, canon, rocher de lave, forge, bouches, balancier, leviers, planches magiques, arbres creux,
+  laboratoire), en français, anglais et espagnol.
+- `tests/routes.test.mjs` refait : les 50 niveaux sont **joués en entier** à chaque `npm test` (≈ 6 s), avec leur
+  durée ; test de difficulté croissante d'un monde à l'autre ; solutions aléatoires rejouées.
+
+**Modifié**
+- **Ville** (20–30 s, découverte) : tutoriel, trampolines, nacelles, caisse-pont, ventilateurs, panier verrouillé,
+  scies, métro (téléporteurs), chantier (lasers, presses), finale.
+- **Neige** (30–40 s, premières combinaisons) : glace, col venteux, grotte aux stalactites, pont qui s'effondre,
+  avalanche (sauter ou se cacher), patinoire au vent, glacier, chalet à deux interrupteurs, sommet, tempête.
+- **Volcan** (40–50 s, enchaînements) : bassins et îlots, geysers, chutes de pierres, canons, coulée de rochers,
+  forge (bloc-pont, bloc-marche, soufflet, marteaux-pilons), pont des geysers, ascenseurs et navettes, cratère aux
+  bouches-téléporteurs, cœur du volcan.
+- **Forêt** (45–60 s, précision) : champignons, rivière aux lianes et balanciers, branches mobiles et fragiles,
+  troncs (roulant, rondins, flottant), bûcheron, cabane à deux leviers, planches magiques, canopée, arbres creux,
+  forêt profonde.
+- **Espace** (50–70 s, expert) : sauts lunaires, ceinture d'astéroïdes, portails aller-retour, tête en bas (pont
+  invisible), trous noirs, station, laboratoire, monde à l'envers, grand vide, odyssée.
+- **3 étoiles par niveau**, souvent sur un passage risqué ; drapeaux avant les passages longs (moins en Forêt).
+- Paliers de difficulté : Ville F F M M F M M M D D · Neige F M M M M D D M D D · Volcan F M M D D M D M D E ·
+  Forêt M M D M D M D D D E · Espace M D D D D D D E E E.
+- **Gains en pièces légèrement relevés** (niveaux plus longs) : premier panier 50 + 15 par monde (40 + 10 avant),
+  3 étoiles +25 (+20), rejouer 15 (10) ; une partie complète ≈ 9 000 pièces (7 750 avant).
+- `tools/route-check.mjs` : plage de niveaux `a-b`, option `--part` ; `tools/build-test-apk.mjs` : version de test 8.
+
+**Vérifié**
+- Les **50 niveaux se terminent** en partie complète (aucune progression bloquée) ; durées joueur estimées :
+  Ville 20–33 s, Neige 30–36 s, Volcan 42–53 s, Forêt 46–57 s, Espace 52–68 s ; moyenne croissante par monde.
+- Jeu dans Chromium (Pixel 7 émulé) : 15 niveaux ouverts, **60 images/s** (médiane et p95 16,7 ms), aucune erreur ;
+  rendu de tous les nouveaux pièges vérifié sur captures.
+- **Mise à jour v7 → v8 simulée** : progression (niveaux terminés, étoiles, mondes ouverts, records), pièces, gemmes
+  et objets équipés conservés ; la partie reprend au premier niveau non terminé (refait).
+- `dist/HoopBounce_Test_v8.apk` (1.7.0-test8) : même identifiant `com.echospeed.hoopbounce.test`, même clé de test
+  (SHA-256 identique à la v1), versionCode 8 : s'installe par-dessus la v7 sans perdre les sauvegardes.
+
+**Reste à faire**
+- Avis du porteur du projet sur les nouveaux niveaux ; essais sur téléphone (durées réelles, passages trop durs,
+  lisibilité des puzzles).
+- Décider du sort des **anciens records de temps** (faits sur les anciens niveaux, conservés : voir Bugs connus).
 
 ### 23/11/2026 — Étape 25 : qualité visuelle, direction artistique unifiée (v1.4.0-dev, APK de test v7)
 

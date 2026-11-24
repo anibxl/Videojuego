@@ -6,9 +6,13 @@
 // Chaque passage a aussi une solution « experte » : un plan de manœuvres décrit dans les données du
 // niveau (`passages`, voir src/game/levels/README.md), joué par le « pilote » ci-dessous.
 //
-// Usage : node tools/route-check.mjs [essais] [niveau 1..N, dans l'ordre de tous les mondes] [--save]
+// Usage : node tools/route-check.mjs [essais] [niveau 1..N | id | plage a-b] [--save] [--part=fichier.json]
 //   --save : enregistre une solution par passage dans tests/fixtures/routes.json
 //            (rejouée par tests/routes.test.mjs : les niveaux doivent rester faisables)
+//   --part : n'écrit que les solutions des niveaux traités dans un fichier partiel ; on fusionne ensuite
+//            avec  node tools/route-merge.mjs parts/*.json  (calcul réparti sur plusieurs processus)
+// La vérification de référence d'un niveau entier (passages enchaînés) est tools/level-run.mjs : un plan
+// expert peut échouer ici quand on le joue SEUL (porte encore fermée, caisse pas encore poussée…).
 
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -553,13 +557,16 @@ if (isMain) {
   const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const SAVE = process.argv.includes('--save');
   const TRIES = Number(args[0] ?? 400);
-  // Niveau : numéro (1..50) ou identifiant (ex. snow-3)
+  // Niveau : numéro (1..50), identifiant (ex. snow-3) ou plage (ex. 21-30)
   const only = args[1];
-  const ONLY = only === undefined ? null : /^\d+$/.test(only) ? Number(only) - 1 : LEVELS.findIndex((l) => l.id === only);
+  const range = /^(\d+)-(\d+)$/.exec(only ?? '');
+  const ONLY = only === undefined || range ? null : /^\d+$/.test(only) ? Number(only) - 1 : LEVELS.findIndex((l) => l.id === only);
+  const inRange = (li) => (range ? li >= Number(range[1]) - 1 && li <= Number(range[2]) - 1 : ONLY === null || li === ONLY);
+  const PART = process.argv.find((a) => a.startsWith('--part='))?.slice(7);
   const solutions = ROUTES.map((r) => r.map(() => null));
   console.log(`${TRIES} essais aléatoires par passage\n`);
   ROUTES.forEach((routes, li) => {
-    if (ONLY !== null && li !== ONLY) return;
+    if (!inRange(li)) return;
     console.log(`Niveau ${li + 1} — ${LEVELS[li].id}`);
     routes.forEach(([name, start, goal, prep, expert], ri) => {
       const rng = createRng(1000 + li * 50 + ri);
@@ -585,7 +592,14 @@ if (isMain) {
       solutions[li][ri] = example;
     });
   });
-  if (SAVE) {
+  if (PART) {
+    const part = {};
+    ROUTES.forEach((routes, li) => {
+      if (inRange(li)) part[li] = routes.map(([name], ri) => ({ name, ...solutions[li][ri] }));
+    });
+    writeFileSync(PART, JSON.stringify(part));
+    console.log(`\nSolutions partielles enregistrées dans ${PART}`);
+  } else if (SAVE) {
     const out = new URL('../tests/fixtures/routes.json', import.meta.url);
     writeFileSync(out, JSON.stringify(ROUTES.map((routes, li) => routes.map(([name], ri) => ({ name, ...solutions[li][ri] }))), null, 1));
     console.log('\nSolutions enregistrées dans tests/fixtures/routes.json');

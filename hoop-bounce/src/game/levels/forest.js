@@ -44,7 +44,6 @@ const L31 = level({ id: 'forest-1', difficulty: 'medium', number: 1, nameKey: 'l
     s.ground(0, 22);
     s.add('spikes', { x: 0, y: 0, w: 18, dir: 'up' });
     s.add('mushrooms', { x: 3, y: 1, w: 1.8, height: 5 }, { x: 8.6, y: 1, w: 1.8, height: 5 }, { x: 14.2, y: 1, w: 1.8, height: 5 });
-    s.star(9.5, 6.6);
     s.pass('Les ronces', [-1.4, 4], ['on', 18.2, 22, 0], [['hold', 1, -0.2], ['fly', 3.9], ['fly', 9.5], ['fly', 15.1], ['fly', 20]]);
   });
   // Champignons dans la rivière
@@ -66,7 +65,6 @@ const L31 = level({ id: 'forest-1', difficulty: 'medium', number: 1, nameKey: 'l
     s.block(13, 0, 4.6, 6.2, wood);
     s.block(17.6, 0, 6.4, 1.2, wood);
     s.checkpoint(0.8, 0);
-    s.star(15.3, 8.2);
     s.pass('L’escalier de souches', [-2, 0], ['on', 13.3, 17.4, 6.2], [['goTo', 0.8], ['hop', 2, 3.5], ['fly', 7.6], ['goTo', 7.8], ['hop', 1, 9.6], ['fly', 14.6], ['goTo', 15.3]]);
     s.pass('Redescendre', [15.3, 6.2], ['on', 17.8, 24, 1.2], [['hold', 1, 17.8], ['goTo', 20]]);
   });
@@ -107,7 +105,6 @@ const L32 = level({ id: 'forest-2', difficulty: 'medium', number: 2, nameKey: 'l
     s.add('vines', { x: 5.6, y: 9.6, len: 6.4 }, { x: 11.4, y: 9.6, len: 6.4 }, { x: 17.2, y: 9.6, len: 6.4 });
     s.ground(21, 26);
     s.checkpoint(1, 0);
-    s.star(14.3, 5.4);
     s.pass('Trois lianes', [-3, 0], ['on', 21.2, 26, 0], [['goTo', 2.2], ['charge', 4], ['vines', 21.4], ['goTo', 23.6]]);
   });
   // Les balanciers : deux troncs à pointes se balancent entre les lianes
@@ -127,7 +124,6 @@ const L32 = level({ id: 'forest-2', difficulty: 'medium', number: 2, nameKey: 'l
     river(s, 2, 11);
     s.add('vines', { x: 4.6, y: 10, len: 6 });
     s.block(11, -1.2, 7, 4.2, wood);
-    s.star(9.6, 6);
     s.pass('Liane → souche', [-2.6, 0], ['on', 11.2, 18, 3], [['goTo', 1.2], ['charge', 4], ['vines', 11.4], ['goTo', 13]]);
   });
   // Redescendre par la liane, sous le balancier
@@ -171,7 +167,6 @@ const L33 = level({ id: 'forest-3', difficulty: 'hard', number: 3, nameKey: 'lv.
     s.add('fallers', { x: 3, y: 6.2, w: 2.4, h: 0.4 }, { x: 6.4, y: 6.2, w: 2.4, h: 0.4 }, { x: 9.8, y: 6.2, w: 2.4, h: 0.4 }, { x: 13.2, y: 6.2, w: 2.4, h: 0.4 });
     s.block(18, -1.2, 4, 7.8, wood);
     s.checkpoint(1, 6.6);
-    s.star(11, 8.6);
     s.pass('Les branches fragiles', [-2, 6.6], ['on', 18.2, 22, 6.6], [['goTo', 1], ['hop', 2, 4.2, 6.6], ['jump', 1, 7.6, 6.6], ['jump', 1, 11, 6.6], ['jump', 1, 14.4, 6.6], ['jump', 1, 19.6, 6.6]]);
   });
   // Les branches qui glissent : on attend que la suivante revienne
@@ -222,7 +217,6 @@ const L34 = level({ id: 'forest-4', difficulty: 'medium', number: 4, nameKey: 'l
     s.block(20, 0, 4, 1.4, wood);
     s.add('boulders', { x1: 1.5, x2: 19.5, y: 0, r: 0.55, dir: -1, speed: 6, period: 4.4, phase: 0 }, { x1: 1.5, x2: 19.5, y: 0, r: 0.55, dir: -1, speed: 6, period: 4.4, phase: 0.5 });
     s.checkpoint(0.4, 0);
-    s.star(10, 2.6);
     s.pass('Les rondins', [-3, 0], ['on', 20.3, 24, 1.4], [['goTo', 0.4], ['waitCycle', 4.4, 3.2, 3.3], ['jumpBoulder', 1, 2.2], ['jumpBoulder', 0, 2.2], ['dribbleRun', 1, 2, 18, 21.4], ['goTo', 22.6]]);
   });
   // Le tronc flottant
@@ -272,7 +266,6 @@ const L35 = level({ id: 'forest-5', difficulty: 'hard', number: 5, nameKey: 'lv.
     s.add('crushers', { x: 4, w: 2.4, top: 3.2, bottom: 0, period: 2.4, phase: 0 });
     s.add('maces', { x: 13, y: 6.4, len: 5.4, r: 0.55, amp: 0.8, period: 2.4, phase: 0.5 });
     s.checkpoint(0.4, 0);
-    s.star(9, 1.2);
     s.pass('Le tronc-marteau', [-3, 0], ['on', 8, 10, 0], [['goTo', 1.6], ['waitCycle', 2.4, 1.8, 1.9], ['run', 1, 8.2, 10, 0], ['goTo', 9]]);
     s.pass('Le balancier derrière', [9, 0], ['on', 18, 22, 0], [['goTo', 9], ['waitCycle', 2.4, 0.0, 0.1], ['run', 1, 18.2, 22, 0]]);
   });
@@ -331,7 +324,6 @@ const L36 = level({ id: 'forest-6', difficulty: 'medium', number: 6, nameKey: 'l
     const sw = s.add('switches', { x: 15.6, y: 3.2, w: 1.2, target: 'gateB' });
     s.checkpoint(1, 0);
     s.hint(1.5, 4.3, 'hint.crate');
-    s.star(16.2, 6);
     s.pass('Pousser la caisse', [-3, 0], ['crate', k, 11.3], [['goTo', 2.6], ['hold', 1, 10.95]]);
     s.pass('Caisse → souche', [11, 0], ['on', 13.3, 15.4, 3.2], [['goTo', 9], ['hop', 2, 12.2, 1.6], ['settle'], ['hop', 2, 14.2, 3.2]]);
     s.pass('Le second levier', [14.2, 3.2], ['switch', sw], [['goTo', 14.2], ['hop', 1, 16.2, 3.2]]);
@@ -388,7 +380,6 @@ const L37 = level({ id: 'forest-7', difficulty: 'hard', number: 7, nameKey: 'lv.
     s.add('blinkers', blink(3.4, 1.2, 2.4, 0), blink(7.6, 2.8, 2.4, 0.8), blink(11.8, 4.4, 2.4, 0.6));
     s.block(16, -1.2, 8, 7.6, wood);
     s.checkpoint(1, 0);
-    s.star(9, 5.4);
     s.pass('L’escalier magique', [-2, 0], ['on', 16.2, 24, 6.4], [['goTo', 1.2], ['waitCycle', 3, 2.5, 2.6], ['hop', 3, 4.6, 1.6], ['jump', 1, 8.8, 3.2], ['jump', 1, 13, 4.8], ['jump', 1, 17.6, 6.4], ['goTo', 22.6]]);
   });
   // La descente : planche magique, branche fragile, planche magique
@@ -442,7 +433,6 @@ const L38 = level({ id: 'forest-8', difficulty: 'hard', number: 8, nameKey: 'lv.
     const b1 = s.add('branches', { x1: 7, x2: 9.5, y: 9.2, path: { dx: 0, dy: 1.2, period: 3.6, phase: 0.5 } });
     s.block(12, -1.2, 10, 11.6, wood);
     s.checkpoint(1, 6);
-    s.star(8.2, 12);
     s.pass('Les branches au-dessus du vide', [-2, 6], ['on', 12.2, 22, 10.4], [['goTo', 1.4], ['hopTo', 2, 'branches', b0, 1.25], ['hopTo', 2, 'branches', b1, 1.25], ['hop', 2, 13.4, 10.4], ['goTo', 18.6]]);
   });
   // Le champignon de la canopée : par-dessus le grand arbre
@@ -462,7 +452,6 @@ const L38 = level({ id: 'forest-8', difficulty: 'hard', number: 8, nameKey: 'lv.
     s.add('vines', { x: 4.6, y: 16.8, len: 5.8 }, { x: 10, y: 16.8, len: 5.8 });
     s.ground(14, 18, 8, wood);
     s.checkpoint(1, 8);
-    s.star(7.3, 12.4);
     s.pass('Deux lianes courtes', [-6, 8], ['on', 14.2, 18, 8], [['goTo', 1.2], ['charge', 4], ['vines', 14.4], ['goTo', 16]]);
   });
   // Les branches fragiles, jusqu'au nid
@@ -510,7 +499,6 @@ const L39 = level({ id: 'forest-9', difficulty: 'hard', number: 9, nameKey: 'lv.
     s.add('teleporters', { a: { x: 8.6, y: 3.9 + 1.0 }, b: { x: 0.2, y: 1.6 }, r: 0.8 });
     s.add('teleporters', { a: { x: 3.4, y: 2.6 }, b: { x: 13, y: 4.4 }, r: 0.8 });
     s.checkpoint(-2, 0);
-    s.star(20.6, 6.4);
     s.pass('Le bon tronc', [-3, 0], ['on', 12.2, 14.8, 3], [['goTo', 2.4], ['hop', 2, 3.6], ['settle'], ['goTo', 13]]);
     s.pass('La liane de l’îlot', [13, 3], ['on', 26.2, 30, 0], [['goTo', 13.6], ['charge', 4], ['vines', 26.4], ['goTo', 27.6]]);
   });
@@ -532,7 +520,6 @@ const L39 = level({ id: 'forest-9', difficulty: 'hard', number: 9, nameKey: 'lv.
     s.add('teleporters', { a: { x: 2, y: 0.9 }, b: { x: 12.4, y: 1.4 }, r: 0.8 });
     s.add('crushers', { x: 8.4, w: 2.2, top: 3.2, bottom: 0, period: 2.4, phase: 0 }, { x: 15.2, w: 2.2, top: 3.2, bottom: 0, period: 2.4, phase: 0.5 });
     s.checkpoint(0.6, 0);
-    s.star(12.4, 3.4);
     s.pass('L’arbre creux du marteau', [-2, 0], ['on', 11.2, 13.6, 0], [['goTo', 0.6], ['hold', 1, 2.2], ['settle'], ['goTo', 12.4]]);
     s.pass('Sous le marteau', [12.4, 0], ['on', 19, 24, 0], [['goTo', 12.4], ['waitCycle', 2.4, 0.8, 0.9], ['run', 1, 19.2, 24, 0]]);
   });
@@ -585,7 +572,6 @@ const L40 = level({ id: 'forest-10', difficulty: 'expert', number: 10, nameKey: 
     const b1 = s.add('branches', { x1: 10.4, x2: 13, y: 3, path: { dx: 4.4, dy: 0, period: 4.4, phase: 0.5 } });
     s.block(18, -1.2, 6, 4.2, wood);
     s.checkpoint(1, 3);
-    s.star(12, 5);
     s.pass('Première branche', [-3.4, 3], ['on', 10.4, 13, 3], [['goTo', 1.6], ['waitMover', 'branches', b0, 'x', '<', 0.1], ['hopTo', 1, 'branches', b0, 1.3], ['stayOn', 'branches', b0, 'x', '>', 4.3], ['hopTo', 1, 'branches', b1, 1.3]]);
     s.pass('Deuxième branche', [11.7, 3], ['on', 18.2, 24, 3], [['stayOn', 'branches', b1, 'x', '>', 4.3], ['hop', 1, 19.6, 3], ['goTo', 21]]);
   });
@@ -606,7 +592,6 @@ const L40 = level({ id: 'forest-10', difficulty: 'expert', number: 10, nameKey: 
     s.add('blinkers', blink(3.6, 2.2, 2.4, 0), blink(8.2, 1.4, 2.4, 0.8), blink(12.8, 0.6, 2.4, 0.6));
     s.ground(19, 24);
     s.checkpoint(0.8, 3);
-    s.star(9.4, 4.4);
     s.pass('Les planches magiques', [-1.4, 3], ['on', 19.2, 24, 0], [['goTo', 1], ['waitCycle', 3, 2.1, 2.2], ['hop', 2, 4.8, 2.6], ['jump', 1, 9.4, 1.8], ['jump', 1, 14, 1.0], ['jump', 1, 20.6, 0], ['goTo', 21]]);
   });
   // Les deux troncs-marteaux de la scierie

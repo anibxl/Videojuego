@@ -132,6 +132,7 @@ const L13 = level({ id: 'snow-3', difficulty: 'medium', number: 3, nameKey: 'lv.
     s.block(6, 0, 8, 1.4, ice);
     s.add('icicles', { x: 7, y: 4.8, len: 1.4 }, { x: 10.6, y: 4.8, len: 1.4 });
     s.checkpoint(1, 0);
+    s.star(8.8, 2.6);
     s.pass('Faire tomber la stalactite, puis monter', [-1, 0], ['on', 11.8, 14, 1.4], [['goTo', 5.4], ['goTo', 3.4], ['wait', 1.2], ['hop', 2, 7.4, 1.4], ['settle'], ['goTo', 9.4], ['goTo', 7.6], ['wait', 1.2], ['run', 1, 12, 14, 1.4]]);
   });
   // Le puits : on descend sous trois stalactites décalées
@@ -162,7 +163,6 @@ const L14 = level({ id: 'snow-4', difficulty: 'medium', number: 4, nameKey: 'lv.
     s.ground(24, 26, 0, snow);
     for (let i = 0; i < 12; i++) s.add('fallers', { x: i * 2, y: -0.4, w: 2, h: 0.4 });
     s.star(8, 1.4);
-    s.star(16, 1.4);
     s.pass('Le pont qui s’effondre', [-6, 0], ['on', 24.2, 40, 0], [['goTo', -3], ['run', 1, 24.4, 40, 0]]);
   });
   // Le pont a déjà cédé par endroits : deux trous à sauter sans s'arrêter
@@ -179,7 +179,6 @@ const L14 = level({ id: 'snow-4', difficulty: 'medium', number: 4, nameKey: 'lv.
     s.ground(0, 4, 0, snow);
     s.ground(16, 20, 2.6, snow);
     s.add('fallers', { x: 4.6, y: 0.6, w: 2.4, h: 0.4 }, { x: 9, y: 1.4, w: 2.4, h: 0.4 }, { x: 13, y: 2.2, w: 2.4, h: 0.4 });
-    s.star(14.2, 4.4);
     s.pass('Plaques suspendues', [-2, 0], ['on', 16.2, 20, 2.6], [['goTo', 1.4], ['dribbleRun', 1, 2, 3.4, 5.8], ['jump', 1, 10.2], ['jump', 1, 14.2], ['jump', 1, 17.6]]);
   });
   // La descente : trois plaques qui cèdent, de plus en plus bas
@@ -354,7 +353,6 @@ const L18 = level({ id: 'snow-8', difficulty: 'medium', number: 8, nameKey: 'lv.
     s.ground(0, 12, 0, snow);
     s.block(7, 0, 5, 4.4, snow);
     const m = s.add('movers', { x: 3.6, y: -0.5, w: 2.4, h: 0.5, path: { dx: 0, dy: 4.4, period: 4.4, phase: 0 } });
-    s.star(4.8, 6);
     s.pass('Le remonte-pente', [-2, 0], ['on', 7.3, 12, 4.4], [['goTo', 2], ['waitMover', 'movers', m, 'y', '<', 0.05], ['goTo', 4.8], ['waitMover', 'movers', m, 'y', '>', 4.3], ['run', 1, 7.5, 12, 4.4]]);
   });
   // La piste de glace et le tremplin qui envoie sur le rocher de l'interrupteur
@@ -404,7 +402,6 @@ const L19 = level({ id: 'snow-9', difficulty: 'hard', number: 9, nameKey: 'lv.sn
     s.ground(14, 18, 7.4, 'rock');
     s.add('fallers', { x: 2.8, y: 5.4, w: 2.4, h: 0.4 }, { x: 6.8, y: 6.2, w: 2.4, h: 0.4 }, { x: 10.6, y: 7.0, w: 2.4, h: 0.4 });
     s.checkpoint(0.6, 5);
-    s.star(8, 8.4);
     s.pass('Plaques qui cèdent', [-2, 5], ['on', 14.2, 18, 7.4], [['goTo', 0.6], ['hop', 2, 4, 5.8], ['jump', 1, 8, 6.6], ['jump', 1, 11.8, 7.4], ['jump', 1, 15.5, 7.4]]);
   });
   // La corniche venteuse : des plaques qui cèdent, le vent repousse
@@ -422,7 +419,6 @@ const L19 = level({ id: 'snow-9', difficulty: 'hard', number: 9, nameKey: 'lv.sn
     s.ground(0, 14, 7.4, 'rock');
     s.add('trampolines', { x: 3, y: 7.4, w: 1.6 });
     s.block(7, 7.4, 7, 2.4, 'rock');
-    s.star(4.4, 12.6);
     s.pass('Trampoline → dernier étage', [-2, 7.4], ['on', 7.3, 14, 9.8], [['goTo', 1.6], ['hold', 1, 3.8], ['fly', 9.5]]);
   });
   // L'arête et ses stalactites : on les fait tomber avant de passer
@@ -460,7 +456,6 @@ const L20 = level({ id: 'snow-10', difficulty: 'hard', number: 10, nameKey: 'lv.
     s.block(17, 0, 5, 1.6, 'rock');
     s.add('boulders', { x1: 0.5, x2: 16.6, y: 0, r: 0.85, dir: 1, speed: 6.2, period: 6, phase: 0.3 });
     s.checkpoint(-4, 0);
-    s.star(9, 1.4);
     s.pass('L’avalanche', [-3, 0], ['on', 17.3, 22, 1.6], [['goTo', -1.2], ['waitCycle', 6, 2.5, 2.6], ['dribbleRun', 1, 2, 14.4, 18.5]]);
   });
   // Le tunnel : stalactites et vent de face, à pleine vitesse

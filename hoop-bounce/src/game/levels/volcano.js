@@ -39,7 +39,6 @@ const L21 = level({ id: 'volcano-1', difficulty: 'easy', number: 1, nameKey: 'lv
     pool(s, 13, 17);
     s.ground(17, 22, 0, rock);
     s.star(6.5, 3);
-    s.star(15, 3.4);
     s.pass('Deux bassins', [-6, 0], ['on', 17.3, 22, 0], [['goTo', 4.2], ['hop', 3, 9.6], ['dribbleRun', 1, 2, 12.4, 18.6]]);
   });
   // Les îlots : on enchaîne les rebonds sans s'arrêter
@@ -60,7 +59,6 @@ const L21 = level({ id: 'volcano-1', difficulty: 'easy', number: 1, nameKey: 'lv
     s.ground(0, 20, 0, rock);
     s.add('lasers', flame(6, 0, 10.5, 0), flame(12, 0, 10.5, 0.5));
     s.hint(2.5, 4.3, 'hint.flame');
-    s.star(9, 1.2);
     s.pass('Les soupiraux', [-2, 0], ['on', 15, 20, 0], [['goTo', 3.2], ['waitCycle', 2.6, 0.05, 0.15], ['goTo', 9], ['waitCycle', 2.6, 1.35, 1.45], ['run', 1, 15.2, 20, 0]]);
   });
   // Les pierres fragiles
@@ -93,7 +91,6 @@ const L22 = level({ id: 'volcano-2', difficulty: 'medium', number: 2, nameKey: '
     s.ground(0, 26, 0, rock);
     s.add('geysers', { x: 6, y: 0 }, { x: 13, y: 0, phase: 0.5 }, { x: 20, y: 0 });
     s.star(9.5, 1.2);
-    s.star(16.5, 1.2);
     s.pass('Trois geysers', [-6, 0], ['on', 22.5, 26, 0], [['goTo', 2], ['waitCycle', 3.2, 0.0, 0.1], ['goTo', 9.5], ['waitCycle', 3.2, 1.6, 1.7], ['goTo', 16.5], ['waitCycle', 3.2, 0.0, 0.1], ['run', 1, 22.7, 26, 0]]);
   });
   // Les marches brûlantes : un geyser sur chaque marche ; on attend au pied de la suivante
@@ -105,7 +102,6 @@ const L22 = level({ id: 'volcano-2', difficulty: 'medium', number: 2, nameKey: '
     s.add('geysers', { x: 7.5, y: 1.4 }, { x: 17.5, y: 2.8, phase: 0.5 });
     s.checkpoint(1, 0);
     s.star(7.5, 6.8);
-    s.star(17.5, 8.2);
     s.pass('Première marche', [-2, 0], ['on', 3.3, 6.2, 1.4], [['goTo', 1], ['hop', 2, 4.4, 1.4]]);
     s.pass('Le geyser de la première marche', [4.4, 1.4], ['on', 13.3, 16.5, 2.8], [['goTo', 5.8], ['waitCycle', 3.2, 0.0, 0.1], ['run', 1, 9.6, 12.2, 1.4], ['goTo', 11.2], ['hop', 2, 14.4, 2.8]]);
     s.pass('Le geyser de la deuxième marche', [14.4, 2.8], ['on', 23.3, 30, 4.2], [['goTo', 15.8], ['waitCycle', 3.2, 1.6, 1.7], ['run', 1, 19.6, 22.2, 2.8], ['goTo', 21.2], ['hop', 2, 24.4, 4.2]]);
@@ -153,7 +149,6 @@ const L23 = level({ id: 'volcano-3', difficulty: 'medium', number: 3, nameKey: '
     for (const x of [12, 14, 16]) s.add('rockfalls', { x, y: 6.4, phase: 0.5 });
     for (const x of [21, 23, 25]) s.add('rockfalls', { x, y: 6.4, phase: 0 });
     s.checkpoint(0.6, 0);
-    s.star(9.5, 1.2);
     s.star(18.5, 1.2);
     s.pass('Les abris', [-2, 0], ['on', 26.6, 28, 0], [['goTo', 0.6], ['waitCycle', 2.8, 1.55, 2.3], ['goTo', 9.5], ['waitCycle', 2.8, 0.15, 1.1], ['goTo', 18.5], ['waitCycle', 2.8, 1.55, 2.3], ['run', 1, 26.8, 28, 0]]);
   });
@@ -165,7 +160,6 @@ const L23 = level({ id: 'volcano-3', difficulty: 'medium', number: 3, nameKey: '
     s.add('rockfalls', { x: 9.8, y: 10.5, phase: 0 });
     s.ground(17, 22, 0, rock);
     s.checkpoint(1, 0);
-    s.star(9.8, 2.6);
     s.pass('Le pont fragile', [-2, 0], ['on', 17.3, 22, 0], [['goTo', 1.8], ['waitCycle', 2.8, 0.6, 0.7], ['hop', 3, 5.6, 0.45], ['jump', 1, 9.8, 0.45], ['jump', 1, 14, 0.45], ['jump', 1, 18.8, 0]]);
   });
   // La cheminée : on monte, les pierres tombent du haut
@@ -213,7 +207,6 @@ const L24 = level({ id: 'volcano-4', difficulty: 'hard', number: 4, nameKey: 'lv
     s.block(20, 0, 4, 1.4, rock);
     s.add('cannons', { x: 20.4, y: 0.55, dir: -1, period: 3.2, phase: 0 });
     s.checkpoint(1.2, 1.4);
-    s.star(12, 2.8);
     s.pass('Le rebord', [-2, 0], ['on', 0.3, 2.2, 1.4], [['goTo', -1.2], ['hop', 2, 1.2, 1.4]]);
     s.pass('Le couloir', [1.2, 1.4], ['on', 20.5, 24, 1.4], [['goTo', 1.2], ['waitCycle', 3.2, 2.9, 3.0], ['jumpAt', 1, 9, 13], ['hold', 1, 16], ['hop', 2, 21.6, 1.4]]);
   });
@@ -312,7 +305,6 @@ const L26 = level({ id: 'volcano-6', difficulty: 'medium', number: 6, nameKey: '
     s.block(12, 0, 10, 3.2, rock);
     const sw = s.add('switches', { x: 16.4, y: 3.2, w: 1.2, target: 'forge' });
     s.checkpoint(1, 0);
-    s.star(16, 6);
     s.pass('Le bloc contre la paroi', [-3, 0], ['crate', k, 10.3], [['goTo', 1.6], ['hold', 1, 9.95]]);
     s.pass('Bloc → paroi', [10, 0], ['on', 12.3, 22, 3.2], [['goTo', 8], ['hop', 2, 11.2, 1.6], ['settle'], ['hop', 3, 13.6, 3.2]]);
     s.pass('Le soufflet', [13.6, 3.2], ['switch', sw], [['goTo', 14.4], ['hop', 1, 17, 3.2]]);
@@ -358,7 +350,7 @@ const L27 = level({ id: 'volcano-7', difficulty: 'hard', number: 7, nameKey: 'lv
     s.add('geysers', { x: 5.9, y: -0.4, h: 6, phase: phases[0] }, { x: 10.6, y: -0.4, h: 6, phase: phases[1] });
     s.block(12, -1.2, 2, 1.6, rock);
     s.checkpoint(-1, 0.4);
-    s.star(star, 3.8);
+    if (star) s.star(star, 3.8);
     s.pass(name, [-1, 0.4], ['on', 12.2, 13.8, 0.4], [['goTo', -0.8], ['waitCycle', 3.2, wait, wait + 0.1], ['hop', 3, 3.6, 0.45], ['jump', 1, 8.2, 0.45], ['jump', 1, 13, 0.4], ['goTo', 13]]);
   });
   c.section(4, (s) => {
@@ -369,7 +361,7 @@ const L27 = level({ id: 'volcano-7', difficulty: 'hard', number: 7, nameKey: 'lv
   });
   span('Première travée', [0, 0], 5.9, 1.4);
   span('Deuxième travée', [0, 0.3], 10.6, 2.6);
-  span('Troisième travée', [0.5, 0], 5.9, 1.0);
+  span('Troisième travée', [0.5, 0], null, 1.0);
   span('Quatrième travée', [0.25, 0.5], 10.6, 2.0);
   c.section(22, (s) => {
     pool(s, 0, 2);
@@ -403,7 +395,6 @@ const L28 = level({ id: 'volcano-8', difficulty: 'medium', number: 8, nameKey: '
     const m2 = s.add('movers', { x: 13.2, y: 3.9, w: 2.6, h: 0.5, style: 'stone', path: { dx: 8.2, dy: 0, period: 4.4, phase: 0.5 } });
     s.ground(24, 26, 4.4, rock);
     s.checkpoint(1, 4.4);
-    s.star(7.4, 6.4);
     s.star(17.6, 6.4);
     s.pass('Première navette', [-2, 4.4], ['on', 11.3, 13.1, 4.4], [['goTo', 1], ['ride', m1, 20], ['goTo', 12.2]]);
     s.pass('Deuxième navette', [12.2, 4.4], ['on', 24.1, 26, 4.4], [['goTo', 12.6], ['ride', m2, 20], ['goTo', 25.2]]);
@@ -416,7 +407,6 @@ const L28 = level({ id: 'volcano-8', difficulty: 'medium', number: 8, nameKey: '
     s.block(7, 4.4, 15, 4.4, rock);
     s.add('rockfalls', { x: 5.5, y: 14, period: 5, phase: 0.6 });
     s.checkpoint(1.4, 4.4);
-    s.star(5.5, 10.4);
     s.pass('Le grand ascenseur', [-2, 4.4], ['on', 7.3, 22, 8.8], [['goTo', 2.8], ['waitMover', 'movers', m, 'y', '<', 0.05], ['goTo', 5.5], ['waitMover', 'movers', m, 'y', '>', 4.3], ['run', 1, 7.5, 12, 8.8]]);
   });
   // La descente : deux plaques fragiles au-dessus de la lave, jusqu'au panier
@@ -469,7 +459,6 @@ const L29 = level({ id: 'volcano-9', difficulty: 'hard', number: 9, nameKey: 'lv
     s.add('teleporters', { a: { x: 2.4, y: 0.9 }, b: { x: 6.4, y: 6.6 }, r: 0.8 });
     s.add('teleporters', { a: { x: 22.2, y: 6.5 }, b: { x: 27, y: 1.6 }, r: 0.8 });
     s.checkpoint(1, 0);
-    s.star(13.6, 8.6);
     s.pass('Monter au rebord', [-2, 0], ['on', 5.2, 8.8, 5.6], [['goTo', 1], ['hold', 1, 2.2], ['settle'], ['goTo', 7.6]]);
     s.pass('Entre les geysers', [7.6, 5.6], ['on', 19.2, 21.4, 5.6], [['goTo', 7.8], ['waitCycle', 3.2, 0.0, 0.1], ['hop', 3, 11.4, 5.65], ['jump', 1, 15.8, 5.65], ['jump', 1, 20.2, 5.6], ['goTo', 20.4]]);
     s.pass('La bouche du bas', [20.4, 5.6], ['on', 26.2, 30, 0], [['hold', 1, 22], ['settle'], ['goTo', 28]]);
@@ -543,7 +532,6 @@ const L30 = level({ id: 'volcano-10', difficulty: 'expert', number: 10, nameKey:
     s.block(9, 11, 9, 2, rock);
     s.add('cannons', { x: 12, y: 10.6, angle: -Math.PI / 2, period: 2.2, phase: 0 }, { x: 15, y: 10.6, angle: -Math.PI / 2, period: 2.2, phase: 0.5 });
     s.checkpoint(1.4, 2.8);
-    s.star(4.5, 9.6);
     s.pass('L’ascenseur', [-2, 2.8], ['on', 6.3, 10.6, 6.8], [['goTo', 2.2], ['waitMover', 'movers', m, 'y', '<', 0.05], ['goTo', 4.5], ['waitMover', 'movers', m, 'y', '>', 3.9], ['run', 1, 6.5, 10.6, 6.8], ['goTo', 9.6]]);
     s.pass('Sous les canons', [9.6, 6.8], ['on', 16.4, 18, 6.8], [['goTo', 9.6], ['waitCycle', 2.2, 1.3, 1.4], ['run', 1, 16.6, 18, 6.8]]);
   });

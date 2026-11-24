@@ -92,18 +92,20 @@ test('page Mondes du menu : plus d\'écran « bientôt », l\'ancienne carte ren
   assert.match(redirect, /index\.html.*#mondes/);
 });
 
-test('économie (étape 17) : fourchettes de prix par rareté, prix progressifs, gains inchangés', () => {
+test('économie (étape 17) : fourchettes de prix par rareté, prix progressifs, barème des gains', () => {
   const RANGES = { common: [6000, 10000], rare: [15000, 50000], epic: [75000, 250000], legendary: [500000, 1000000] };
   for (const it of CATALOG) {
     if (!it.price) continue; // offerts et exclusifs
     const [lo, hi] = RANGES[it.rarity];
     assert.ok(it.price >= lo && it.price <= hi, `${it.id} : ${it.price} hors de ${lo}–${hi}`);
   }
-  // Les gains du jeu ne bougent pas
-  assert.deepEqual(REWARDS, { firstClear: 40, perWorld: 10, newStar: 25, perfect: 20, replay: 10, swish: 5 });
+  // Barème des gains (légèrement relevé à la phase 2 : niveaux plus longs)
+  assert.deepEqual(REWARDS, { firstClear: 50, perWorld: 15, newStar: 25, perfect: 25, replay: 15, swish: 5 });
   // Aucun objet n'est achetable dès le départ ; le premier achat reste accessible (moins que les gains d'une première partie complète)
+  const fullRun = 50 * REWARDS.firstClear + 10 * REWARDS.perWorld * (0 + 1 + 2 + 3 + 4) + 150 * REWARDS.newStar + 50 * REWARDS.perfect;
+  assert.equal(fullRun, 9000);
   const cheapest = Math.min(...CATALOG.filter((i) => i.price > 0).map((i) => i.price));
-  assert.ok(cheapest >= 6000 && cheapest < 7750);
+  assert.ok(cheapest >= 6000 && cheapest < fullRun);
 });
 
 test('nouveaux objets : présents, traduits, visages équipés comme des ballons, sauvegardés après « fermeture »', () => {

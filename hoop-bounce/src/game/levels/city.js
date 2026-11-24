@@ -75,7 +75,6 @@ const L2 = level({ id: 'the-wall', difficulty: 'easy', number: 2, nameKey: 'lv.c
     s.ground(0, 16);
     s.add('trampolines', { x: 2.5, y: 0, w: 1.6 });
     s.block(6.5, 0, 9.5, 5.2, 'block');
-    s.star(4.2, 7.2);
     s.pass('Trampoline → balcon', [-3, 0], ['on', 7, 16, 5.2], [['goTo', 1.4], ['hold', 1, 3.3], ['fly', 9.5]]);
   });
   // Descente puis deux trampolines à la suite au-dessus d'une fosse de pics
@@ -230,6 +229,7 @@ const L6 = level({ id: 'final', difficulty: 'medium', number: 6, nameKey: 'lv.ci
     s.ground(0, 22);
     s.add('doors', { id: 'cage', x: 4, y: 0, w: 0.8, h: 3.2, open: { dx: 0, dy: 3.2 }, duration: 0.8 });
     s.block(4, 3.2, 0.8, 8.8, 'wall');
+    s.star(9, 1.4);
     s.hoop(15, 3.4);
     s.pass('Porte ouverte → panier', [-4, 0], ['win'], [['goTo', 3], ['wait', 0.4], ['hold', 1, 7], ['shot']]);
   });
@@ -297,7 +297,6 @@ const L8 = level({ id: 'city-roofs', difficulty: 'medium', number: 8, nameKey: '
     s.ground(14, 20, 7.5);
     s.checkpoint(0.8, 7.5);
     s.add('teleporters', { a: { x: 2.2, y: 8.4 }, b: { x: 15.5, y: 8.4 }, r: 0.8 });
-    s.star(8.5, 9.5);
     s.pass('Station 2 → autre rive', [-4, 7.5], ['on', 14.5, 20, 7.5], [['hold', 1, 2.3], ['run', 1, 16, 20, 7.5], ['goTo', 18]]);
   });
   // La rame : une plateforme mobile traverse le tunnel jusqu'à la station 3

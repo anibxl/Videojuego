@@ -21,15 +21,17 @@
 //   v1 : 1.0.0-test1 (étape 20)   v2 : 1.1.0-test2 (étape 22, mode TRICKSHOT)   v3 : 1.2.0-test3 (étape 23, laboratoire)
 //   v4 : 1.3.0-test4 (étape 24, Boutique et Collection refaites)
 //   v5 : 1.4.0-test5 (saison 1 Noël, étape 1 : menu décoré)
+//   v6 : 1.5.0-test6 (Hoop Pass et gemmes)   v7 : 1.6.0-test7 (étape 25, direction artistique)
+//   v8 : 1.7.0-test8 (phase 2 : refonte complète des 50 niveaux)
 
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const TEST_BUILD = 7;
+const TEST_BUILD = 8;
 // Nom de version des versions de test : 1.1.0 = mode TRICKSHOT, 1.2.0 = TRICKSHOT « laboratoire », 1.3.0 = Boutique / Collection, 1.4.0 = menu de Noël (Play Store : 1.0.0)
-const VERSION = '1.6.0';
+const VERSION = '1.7.0';
 const PACKAGE = 'com.echospeed.hoopbounce.test';
 // Empreinte SHA-256 de la clé de test qui a signé la v1 : une autre clé empêcherait la mise à jour
 const KEY_SHA256 = '894f0b7da38d40fbd7ad33ae73cfe4d3c64659d981e8f94c00d4cba11535bfd8';

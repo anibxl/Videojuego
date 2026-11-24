@@ -42,7 +42,6 @@ const L41 = level({ id: 'space-1', difficulty: 'medium', number: 1, nameKey: 'lv
     s.ground(13, 28);
     s.checkpoint(1, 0);
     s.hint(9, 4.4, 'hint.blackhole', 0.8);
-    s.star(9, 6.6);
     s.pass('Le grand saut', [-6, 0], ['on', 13.2, 28, 0], [['goTo', 3.4], ['hop', 5, 15.4], ['goTo', 18]]);
   });
   // Les plateformes flottantes
@@ -100,7 +99,6 @@ const L42 = level({ id: 'space-2', difficulty: 'hard', number: 2, nameKey: 'lv.s
     s.ground(0, 22);
     const k = s.add('asteroids', { x: 6, y: 0.7, r: 0.7, path: { dx: 8, dy: 0, period: 4.4, phase: 0 } });
     s.checkpoint(0.6, 0);
-    s.star(10, 3.4);
     s.pass('L’astéroïde qui roule', [-2, 0], ['on', 17, 22, 0], [['goTo', 2.6], ['waitMover', 'rollers', k, 'x', '<', 0.3], ['jumpOver', 'rollers', k, 3], ['goTo', 19]]);
   });
   // La passerelle : un astéroïde roule sur un pont étroit au-dessus du vide
@@ -118,7 +116,6 @@ const L42 = level({ id: 'space-2', difficulty: 'hard', number: 2, nameKey: 'lv.s
     s.ground(0, 26);
     s.add('asteroids', { x: 6, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3.2, phase: 0 } }, { x: 11, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3.2, phase: 0.33 } }, { x: 16, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3.2, phase: 0.66 } });
     s.checkpoint(0.6, 0);
-    s.star(11, 2);
     s.pass('La pluie d’astéroïdes', [-3, 0], ['on', 20, 26, 0], [['goTo', 1.6], ['waitCycle', 3.2, 0.0, 0.1], ['run', 1, 20.2, 26, 0]]);
   });
   // La grande pluie : deux rideaux d'astéroïdes, un abri entre les deux
@@ -164,7 +161,6 @@ const L43 = level({ id: 'space-3', difficulty: 'hard', number: 3, nameKey: 'lv.s
     s.add('doors', { id: 'cabin', x: 16, y: 0, w: 0.8, h: 3.4, open: { dx: 0, dy: 3.4 }, duration: 0.8 });
     s.block(16, 3.4, 0.8, 8.6, 'wall');
     s.checkpoint(-1, 0);
-    s.star(7.6, 8.4);
     s.pass('Vers la cabine', [-4, 0], ['switch', sw], [['goTo', 0.4], ['hold', 1, 2.4], ['settle'], ['goTo', 7.6]]);
     s.pass('Retour par le même portail', [7.6, 6.4], ['on', 0, 4, 0], [['hold', -1, 5.2], ['settle'], ['goTo', 3.6]]);
     s.pass('La porte est ouverte', [3.6, 0], ['on', 18, 26, 0], [['run', 1, 18.2, 26, 0]]);
@@ -190,7 +186,6 @@ const L43 = level({ id: 'space-3', difficulty: 'hard', number: 3, nameKey: 'lv.s
     s.block(13, 0, 6, 4, 'block', glow);
     s.add('teleporters', { a: { x: 8, y: 0.9 }, b: { x: 14.6, y: 5 }, r: 0.8, twoWay: true });
     s.checkpoint(1, 0);
-    s.star(16, 6.6);
     s.pass('Le portail gardé', [-2, 0], ['on', 13.2, 19, 4], [['goTo', 2.6], ['waitCycle', 2.6, 0.0, 0.1], ['hold', 1, 8.2], ['settle'], ['goTo', 16.4]]);
     s.pass('Descendre de l’estrade', [16.4, 4], ['on', 20, 26, 0], [['hold', 1, 19.4], ['goTo', 22]]);
   });
@@ -238,7 +233,6 @@ const L44 = level({ id: 'space-4', difficulty: 'hard', number: 4, nameKey: 'lv.s
     s.add('gravityZones', { x: 3, y: 0, w: 18, h: 6.4 });
     s.add('spikes', { x: 5, y: 0, w: 16, dir: 'up' }, { x: 10.4, y: 6.4, w: 1.8, dir: 'down' });
     s.checkpoint(0.8, 0);
-    s.star(11.3, 3.6);
     s.pass('Les pics suspendus', [-6, 0], ['on', 22, 32, 0], [['goTo', 0.8], ['jumpAt', 1, 8.6], ['run', 1, 22.2, 32, 0], ['goTo', 28]]);
   });
   // Les lasers du plafond
@@ -259,7 +253,6 @@ const L44 = level({ id: 'space-4', difficulty: 'hard', number: 4, nameKey: 'lv.s
     s.add('gravityZones', { x: 4, y: -3, w: 18, h: 9.4 });
     s.ground(22, 34);
     s.checkpoint(1, 0);
-    s.star(13, 5.6);
     s.pass('Le pont invisible', [-4, 0], ['on', 23, 34, 0], [['goTo', 1], ['run', 1, 23.2, 34, 0], ['goTo', 28]]);
   });
   // Deux plafonds à la suite
@@ -295,7 +288,6 @@ const L45 = level({ id: 'space-5', difficulty: 'hard', number: 5, nameKey: 'lv.s
     s.add('magnets', { x: 15.6, y: -1.6, radius: 4.2, strength: 26, core: 0.7 });
     s.ground(21, 30);
     s.star(6.6, 5.4);
-    s.star(15.6, 6);
     s.pass('Le premier trou noir', [-6, 0], ['on', 9, 12, 1.6], [['goTo', 3.4], ['hop', 4, 10.4, 1.6]]);
     s.pass('Le deuxième trou noir', [10.4, 1.6], ['on', 21.2, 30, 0], [['settle'], ['goTo', 11.4], ['hop', 4, 22.6], ['goTo', 24]]);
   });
@@ -317,7 +309,6 @@ const L45 = level({ id: 'space-5', difficulty: 'hard', number: 5, nameKey: 'lv.s
     s.add('magnets', { x: 11.6, y: -2, radius: 4.4, strength: 22, core: 0.8 });
     s.ground(19, 26);
     s.checkpoint(1, 0);
-    s.star(11.6, 5.8);
     s.pass('Le plot du grand trou noir', [-6, 0], ['on', 10.4, 12.8, 3.2], [['goTo', 3.4], ['hop', 5, 11.6, 3.2]]);
     s.pass('Quitter le grand trou noir', [11.6, 3.2], ['on', 19.2, 26, 0], [['settle'], ['hop', 3, 20.6], ['goTo', 21]]);
   });
@@ -359,7 +350,6 @@ const L46 = level({ id: 'space-6', difficulty: 'hard', number: 6, nameKey: 'lv.s
     s.add('lasers', laser(5, 0, 7, 0));
     s.add('crushers', { x: 9.2, w: 2.2, top: 2.8, bottom: 0, period: 2.2, phase: 0.3 });
     s.checkpoint(0.6, 0);
-    s.star(5, 2.4);
     s.pass('Le laser', [-2, 0], ['on', 6.6, 8.6, 0], [['goTo', 2.6], ['waitCycle', 3, 0.63, 0.73], ['run', 1, 6.8, 8.6, 0], ['goTo', 7.8]]);
     s.pass('Le piston derrière', [7.8, 0], ['on', 14, 20, 0], [['goTo', 7.8], ['waitCycle', 2.2, 1.25, 1.35], ['run', 1, 14.2, 20, 0]]);
   });
@@ -377,7 +367,6 @@ const L46 = level({ id: 'space-6', difficulty: 'hard', number: 6, nameKey: 'lv.s
     s.add('lasers', laser(5, 0, 12, 0, 2.6, 1.2), laser(12, 0, 12, 0.5, 2.6, 1.2));
     s.add('crushers', { x: 17.4, w: 2.4, top: 3, bottom: 0, period: 2.6, phase: 0.25 });
     s.checkpoint(0.6, 0);
-    s.star(8.5, 1.2);
     s.pass('Les lasers croisés', [-3, 0], ['on', 14, 16.6, 0], [['goTo', 2.6], ['waitCycle', 2.6, 0.0, 0.1], ['goTo', 8.5], ['waitCycle', 2.6, 1.3, 1.4], ['run', 1, 14.2, 16.6, 0], ['goTo', 15.4]]);
     s.pass('Le dernier piston', [15.4, 0], ['on', 22, 28, 0], [['goTo', 15.4], ['waitCycle', 2.6, 1.6, 1.7], ['run', 1, 22.2, 28, 0]]);
   });
@@ -426,7 +415,6 @@ const L47 = level({ id: 'space-7', difficulty: 'hard', number: 7, nameKey: 'lv.s
     s.add('doors', { id: 'labA', x: 21, y: 0, w: 0.8, h: 3.4, open: { dx: 0, dy: 3.4 }, duration: 0.8 });
     s.block(21, 3.4, 0.8, 9.6, 'wall');
     s.checkpoint(1, 3.6);
-    s.star(14.4, 8.6);
     s.pass('Le portail de l’étagère', [-8, 3.6], ['switch', sw], [['goTo', 1.2], ['hold', 1, 3.6], ['settle'], ['goTo', 14.4]]);
     s.pass('Retour par le portail', [14.4, 6.4], ['on', 0, 6, 3.6], [['hold', -1, 11.8], ['settle'], ['goTo', 4.8]]);
     s.pass('Descendre → la porte', [4.8, 3.6], ['on', 22, 26, 0], [['hold', 1, 6.4], ['run', 1, 22.2, 26, 0]]);
@@ -482,7 +470,6 @@ const L48 = level({ id: 'space-8', difficulty: 'expert', number: 8, nameKey: 'lv
     s.add('gravityZones', { x: 3, y: 0, w: 20, h: 6.4 });
     s.add('spikes', { x: 4.6, y: 0, w: 18.4, dir: 'up' }, { x: 9.4, y: 6.4, w: 1.8, dir: 'down' }, { x: 16.4, y: 6.4, w: 1.8, dir: 'down' });
     s.checkpoint(0.8, 0);
-    s.star(13.8, 5.6);
     s.pass('Les pics du plafond', [-6, 0], ['on', 24, 34, 0], [['goTo', 0.8], ['jumpAt', 1, 7.6], ['jumpAt', 1, 14.6], ['run', 1, 24.2, 34, 0], ['goTo', 30]]);
   });
   // Le pont invisible sous les lasers
@@ -540,7 +527,6 @@ const L49 = level({ id: 'space-9', difficulty: 'expert', number: 9, nameKey: 'lv
     s.add('magnets', { x: 21, y: -2, radius: 3.6, strength: 20, core: 0.8 });
     s.ground(24, 28);
     s.checkpoint(1, 0);
-    s.star(15.2, 7.4);
     s.pass('Premier plot', [-2, 0], ['on', 5, 7.5, 2], [['goTo', 1.2], ['hop', 2, 6.25, 2]]);
     s.pass('Entre les astéroïdes (1)', [6.25, 2], ['on', 11, 13.5, 3.4], [['settle'], ['waitCycle', 3.6, 0.65, 0.75], ['hop', 2, 12.25, 3.4]]);
     s.pass('Entre les astéroïdes (2)', [12.25, 3.4], ['on', 17, 19.5, 2.2], [['settle'], ['waitCycle', 4, 2.35, 2.45], ['hop', 2, 18.25, 2.2]]);
@@ -595,7 +581,6 @@ const L50 = level({ id: 'space-10', difficulty: 'expert', number: 10, nameKey: '
     s.add('gravityZones', { x: 11, y: 0, w: 14, h: 6.4 });
     s.add('spikes', { x: 12.6, y: 0, w: 12.4, dir: 'up' }, { x: 17.6, y: 6.4, w: 1.8, dir: 'down' });
     s.checkpoint(-3, 0);
-    s.star(18.5, 4.6);
     s.pass('Le portail', [-3, 0], ['on', 7, 10, 0], [['goTo', 1.2], ['hold', 1, 3.2], ['settle'], ['goTo', 8.6]]);
     s.pass('Le plafond aux pics', [8.6, 0], ['on', 26, 36, 0], [['goTo', 8.6], ['jumpAt', 1, 15.8], ['run', 1, 26.2, 36, 0], ['goTo', 31]]);
   });

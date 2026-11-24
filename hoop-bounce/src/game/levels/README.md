@@ -1,5 +1,10 @@
 # Format des niveaux
 
+> **Depuis la phase 2 (refonte des 50 niveaux), les niveaux s'écrivent avec le kit `kit.js`** : `level(meta,
+> c => c.section(longueur, s => …))`, section par section en coordonnées locales (voir l'en-tête de `kit.js`).
+> Le kit produit exactement les objets décrits ci-dessous. Vérification d'un niveau entier :
+> `node tools/level-run.mjs N --verbose` ; plan : `node tools/level-map.mjs N dossier`.
+
 Un niveau est un simple objet de données. Les niveaux sont rangés par monde (`city.js`, `snow.js`,
 `volcano.js`, `forest.js`, `space.js`) ; la liste des mondes et leurs réglages est dans `../worlds.js`.
 

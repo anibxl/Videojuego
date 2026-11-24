@@ -107,11 +107,12 @@ export function itemById(id) {
 }
 
 /** Barème des pièces (voir wallet.js). */
+// Phase 2 (refonte des niveaux) : niveaux deux fois plus longs, gains légèrement relevés.
 export const REWARDS = {
-  firstClear: 40,       // première victoire dans un niveau…
-  perWorld: 10,         // … + 10 par monde (la Neige rapporte plus que la Ville, etc.)
+  firstClear: 50,       // première victoire dans un niveau…
+  perWorld: 15,         // … + 15 par monde (la Neige rapporte plus que la Ville, etc.)
   newStar: 25,          // chaque étoile obtenue pour la première fois
-  perfect: 20,          // bonus : les 3 étoiles obtenues
-  replay: 10,           // rejouer un niveau déjà terminé
+  perfect: 25,          // bonus : les 3 étoiles obtenues
+  replay: 15,           // rejouer un niveau déjà terminé
   swish: 5,             // panier sans toucher le cercle
 };
