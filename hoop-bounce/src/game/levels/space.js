@@ -15,7 +15,6 @@
 // 50 L'odyssée              tout le jeu en un niveau (★ finale)
 
 import { level } from './kit.js';
-import { P6, P7, P8, P9, P10 } from './_space_old.js';
 
 const glow = { skin: 'glow' };
 /** Plateforme flottante (mobile) de largeur w, qui monte et descend de dy. */
@@ -339,4 +338,296 @@ const L45 = level({ id: 'space-5', difficulty: 'hard', number: 5, nameKey: 'lv.s
   });
 });
 
-export const SPACE_LEVELS = [L41, L42, L43, L44, L45, P6, P7, P8, P9, P10];
+const laser = (x, y0, y1, phase = 0, period = 3, on = 1.2) => ({ x1: x, y1: y0, x2: x, y2: y1, period, on, phase });
+
+// 46 — La station : pistons et lasers
+const L46 = level({ id: 'space-6', difficulty: 'hard', number: 6, nameKey: 'lv.space.6', idea: 'pistons et lasers de la station : le bon tempo', maxY: 12 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.crusher');
+  });
+  c.section(18, (s) => {
+    s.ground(0, 18);
+    s.add('crushers', { x: 7, w: 2.4, top: 3, bottom: 0, period: 2.2, phase: 0 });
+    s.star(8.2, 1.2);
+    s.pass('Le premier piston', [-6, 0], ['on', 12, 18, 0], [['goTo', 4.4], ['waitCycle', 2.2, 1.6, 1.7], ['run', 1, 12.2, 18, 0]]);
+  });
+  // Laser, puis piston
+  c.section(20, (s) => {
+    s.ground(0, 20);
+    s.add('lasers', laser(5, 0, 7, 0));
+    s.add('crushers', { x: 9.2, w: 2.2, top: 2.8, bottom: 0, period: 2.2, phase: 0.3 });
+    s.checkpoint(0.6, 0);
+    s.star(5, 2.4);
+    s.pass('Le laser', [-2, 0], ['on', 6.6, 8.6, 0], [['goTo', 2.6], ['waitCycle', 3, 0.63, 0.73], ['run', 1, 6.8, 8.6, 0], ['goTo', 7.8]]);
+    s.pass('Le piston derrière', [7.8, 0], ['on', 14, 20, 0], [['goTo', 7.8], ['waitCycle', 2.2, 1.25, 1.35], ['run', 1, 14.2, 20, 0]]);
+  });
+  // Le couloir des pistons : trois pistons en vague, on court derrière la vague
+  c.section(26, (s) => {
+    s.ground(0, 26);
+    s.add('crushers', { x: 5, w: 2.2, top: 3, bottom: 0, period: 2.4, phase: 0 }, { x: 10, w: 2.2, top: 3, bottom: 0, period: 2.4, phase: 0.85 }, { x: 15, w: 2.2, top: 3, bottom: 0, period: 2.4, phase: 0.7 });
+    s.checkpoint(0.6, 0);
+    s.star(12.6, 1.2);
+    s.pass('Le couloir des pistons', [-3, 0], ['on', 20, 26, 0], [['goTo', 2.4], ['waitCycle', 2.4, 1.5, 1.6], ['run', 1, 20.2, 26, 0]]);
+  });
+  // Les lasers croisés : deux lasers, un refuge entre les deux, puis un piston
+  c.section(28, (s) => {
+    s.ground(0, 28);
+    s.add('lasers', laser(5, 0, 12, 0, 2.6, 1.2), laser(12, 0, 12, 0.5, 2.6, 1.2));
+    s.add('crushers', { x: 17.4, w: 2.4, top: 3, bottom: 0, period: 2.6, phase: 0.25 });
+    s.checkpoint(0.6, 0);
+    s.star(8.5, 1.2);
+    s.pass('Les lasers croisés', [-3, 0], ['on', 14, 16.6, 0], [['goTo', 2.6], ['waitCycle', 2.6, 0.0, 0.1], ['goTo', 8.5], ['waitCycle', 2.6, 1.3, 1.4], ['run', 1, 14.2, 16.6, 0], ['goTo', 15.4]]);
+    s.pass('Le dernier piston', [15.4, 0], ['on', 22, 28, 0], [['goTo', 15.4], ['waitCycle', 2.6, 1.6, 1.7], ['run', 1, 22.2, 28, 0]]);
+  });
+  // Le quai : trois plateformes flottantes, de plus en plus mobiles
+  c.section(28, (s) => {
+    s.ground(0, 3);
+    const m = s.add('movers', float(6, 1.2, 2.6, 0.6, 3.4), float(11.6, 2.4, 2.6, 1.0, 3.6, 0.4), float(17.2, 1.4, 2.6, 1.4, 3.2, 0.7));
+    s.ground(22, 28);
+    s.checkpoint(1, 0);
+    s.star(12.9, 5);
+    s.pass('Le quai flottant', [-3, 0], ['on', 22.2, 28, 0], [['goTo', 2.2], ['hopTo', 2, 'movers', m, 1.3], ['hopTo', 2, 'movers', m + 1, 1.3], ['hopTo', 2, 'movers', m + 2, 1.3], ['hop', 2, 23.6], ['goTo', 24]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
+
+// 47 — Le laboratoire : caisse, portail, deux leviers
+const L47 = level({ id: 'space-7', difficulty: 'hard', number: 7, nameKey: 'lv.space.7', idea: 'puzzle : la caisse mène au portail, le portail mène au levier', maxY: 13 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.lab');
+  });
+  // La soute : la caisse sert de marche vers l'étagère du portail
+  c.section(24, (s) => {
+    s.ground(0, 24);
+    const k = s.add('crates', { x: 4, y: 0, w: 1.6, h: 1.6 });
+    s.block(13, 0, 11, 3.6, 'block', glow);
+    s.star(16, 6);
+    s.pass('Pousser la caisse', [-6, 0], ['crate', k, 11.3], [['goTo', 2.6], ['hold', 1, 10.95]]);
+    s.pass('Caisse → étagère', [11, 0], ['on', 13.3, 16, 3.6], [['goTo', 9], ['hop', 2, 12.2, 1.6], ['settle'], ['hop', 2, 14.4, 3.6]]);
+  });
+  // La salle scellée : le portail de l'étagère y mène ; on revient par le même
+  c.section(26, (s) => {
+    s.ground(0, 6, 3.6, 'block');
+    s.ground(6, 26);
+    s.block(10, 6, 7, 0.4, 'block', glow);
+    s.block(10, 9.8, 7, 0.4, 'block', glow);
+    s.block(10, 6.4, 0.4, 3.4, 'wall');
+    s.block(16.6, 6.4, 0.4, 3.4, 'wall');
+    const sw = s.add('switches', { x: 13.8, y: 6.4, w: 1.2, target: 'labA' });
+    s.add('teleporters', { a: { x: 3.4, y: 4.5 }, b: { x: 11.6, y: 7.4 }, r: 0.8, twoWay: true });
+    s.add('doors', { id: 'labA', x: 21, y: 0, w: 0.8, h: 3.4, open: { dx: 0, dy: 3.4 }, duration: 0.8 });
+    s.block(21, 3.4, 0.8, 9.6, 'wall');
+    s.checkpoint(1, 3.6);
+    s.star(14.4, 8.6);
+    s.pass('Le portail de l’étagère', [-8, 3.6], ['switch', sw], [['goTo', 1.2], ['hold', 1, 3.6], ['settle'], ['goTo', 14.4]]);
+    s.pass('Retour par le portail', [14.4, 6.4], ['on', 0, 6, 3.6], [['hold', -1, 11.8], ['settle'], ['goTo', 4.8]]);
+    s.pass('Descendre → la porte', [4.8, 3.6], ['on', 22, 26, 0], [['hold', 1, 6.4], ['run', 1, 22.2, 26, 0]]);
+  });
+  // Le second levier est sur la dernière plateforme flottante
+  c.section(26, (s) => {
+    s.ground(0, 3);
+    const m = s.add('movers', float(6, 1.4, 2.6, 0.8, 3.6), float(11.6, 2.8, 2.6, 0.8, 3.6, 0.5));
+    pad(s, 17, 4.2, 3);
+    const sw = s.add('switches', { x: 17.9, y: 4.2, w: 1.2, target: 'labB' });
+    s.ground(22, 26);
+    s.checkpoint(1, 0);
+    s.star(12.9, 6.4);
+    s.pass('Plateformes flottantes → le second levier', [-3, 0], ['switch', sw], [['goTo', 2.2], ['hopTo', 3, 'movers', m, 1.3], ['hopTo', 2, 'movers', m + 1, 1.3], ['hop', 2, 18.5, 4.2]]);
+    s.pass('Vers la rive', [18.5, 4.2], ['on', 22.2, 26, 0], [['settle'], ['hop', 1, 23.4], ['goTo', 23.8]]);
+  });
+  // Le sas : la porte du second levier, sous un laser
+  c.section(20, (s) => {
+    s.ground(0, 20);
+    s.add('lasers', laser(5, 0, 13, 0, 2.6, 1.0));
+    s.add('doors', { id: 'labB', x: 10, y: 0, w: 0.8, h: 3.4, open: { dx: 0, dy: 3.4 }, duration: 0.8 });
+    s.block(10, 3.4, 0.8, 9.6, 'wall');
+    s.star(7.6, 1.2);
+    s.pass('Le sas', [-2, 0], ['on', 13, 20, 0], [['goTo', 2.6], ['waitCycle', 2.6, 0.0, 0.1], ['run', 1, 13.2, 20, 0]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
+
+// 48 — Le monde à l'envers : zones inversées, astéroïdes, pics des deux côtés
+const L48 = level({ id: 'space-8', difficulty: 'expert', number: 8, nameKey: 'lv.space.8', idea: 'gravité inversée et astéroïdes', maxY: 12 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+  });
+  // Au plafond, sous les astéroïdes qui montent
+  c.section(32, (s) => {
+    s.ground(0, 32);
+    s.block(3, 6.4, 18, 1, 'block', glow);
+    s.add('gravityZones', { x: 3, y: 0, w: 18, h: 6.4 });
+    s.add('spikes', { x: 4.6, y: 0, w: 16.4, dir: 'up' });
+    s.add('asteroids', { x: 9, y: 0.8, r: 0.7, path: { dx: 0, dy: 4.8, period: 3.2, phase: 0 } }, { x: 15, y: 0.8, r: 0.7, path: { dx: 0, dy: 4.8, period: 3.2, phase: 0.5 } });
+    s.star(12, 5.6);
+    s.pass('Les astéroïdes du plafond', [-6, 0], ['on', 22, 32, 0], [['goTo', 0.8], ['waitCycle', 3.2, 0.0, 0.1], ['run', 1, 22.2, 32, 0], ['goTo', 28]]);
+  });
+  // Pics au plafond et pics au sol : deux sauts vers le bas
+  c.section(34, (s) => {
+    s.ground(0, 34);
+    s.block(3, 6.4, 20, 1, 'block', glow);
+    s.add('gravityZones', { x: 3, y: 0, w: 20, h: 6.4 });
+    s.add('spikes', { x: 4.6, y: 0, w: 18.4, dir: 'up' }, { x: 9.4, y: 6.4, w: 1.8, dir: 'down' }, { x: 16.4, y: 6.4, w: 1.8, dir: 'down' });
+    s.checkpoint(0.8, 0);
+    s.star(13.8, 5.6);
+    s.pass('Les pics du plafond', [-6, 0], ['on', 24, 34, 0], [['goTo', 0.8], ['jumpAt', 1, 7.6], ['jumpAt', 1, 14.6], ['run', 1, 24.2, 34, 0], ['goTo', 30]]);
+  });
+  // Le pont invisible sous les lasers
+  c.section(34, (s) => {
+    s.ground(0, 4);
+    s.block(4, 6.4, 18, 1, 'block', glow);
+    s.add('gravityZones', { x: 4, y: -3, w: 18, h: 9.4 });
+    s.add('lasers', laser(10, 3.6, 6.4, 0, 3, 1.2), laser(16, 3.6, 6.4, 0.4, 3, 1.2));
+    s.ground(22, 34);
+    s.checkpoint(1, 0);
+    s.star(13, 5.6);
+    s.pass('Le pont invisible sous les lasers', [-6, 0], ['on', 23, 34, 0], [['goTo', 1], ['waitCycle', 3, 0.2, 0.3], ['run', 1, 23.2, 34, 0], ['goTo', 28]]);
+  });
+  // Deux plafonds presque collés : on passe de l'un à l'autre sans toucher les pics
+  c.section(36, (s) => {
+    s.ground(0, 36);
+    s.block(3, 6.4, 8, 1, 'block', glow);
+    s.block(12, 6.4, 12, 1, 'block', glow);
+    s.add('gravityZones', { x: 3, y: 0, w: 8, h: 6.4 }, { x: 12, y: 0, w: 12, h: 6.4 });
+    s.add('spikes', { x: 4.6, y: 0, w: 19.4, dir: 'up' }, { x: 18.6, y: 6.4, w: 1.8, dir: 'down' });
+    s.checkpoint(0.8, 0);
+    s.star(11.5, 3.6);
+    s.pass('D’un plafond à l’autre', [-6, 0], ['on', 26, 36, 0], [['goTo', 0.8], ['jumpAt', 1, 16.8], ['run', 1, 26.2, 36, 0], ['goTo', 31]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
+
+// 49 — Le grand vide : plateformes au-dessus du vide et des trous noirs
+const L49 = level({ id: 'space-9', difficulty: 'expert', number: 9, nameKey: 'lv.space.9', idea: 'plateformes flottantes, astéroïdes et trous noirs au-dessus du vide', maxY: 13 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+  });
+  // Cinq plateformes flottantes, un trou noir dessous
+  c.section(32, (s) => {
+    s.ground(0, 3);
+    const m = s.add('movers', float(5, 1.1, 2.4, 0.6, 3.4), float(10, 2.9, 2.4, 0.8, 3.8, 0.3), float(15, 1.7, 2.4, 0.6, 3.2, 0.6), float(20, 3.5, 2.4, 0.6, 3.6, 0.1), float(25, 2.1, 2.4, 0.8, 3.8, 0.45));
+    s.add('magnets', { x: 16, y: -2, radius: 4, strength: 20, core: 0.8 });
+    s.ground(29.4, 32);
+    s.star(16.2, 5);
+    s.pass('Cinq plateformes', [-6, 0], ['on', 29.6, 32, 0], [['goTo', 2.2], ['hopTo', 2, 'movers', m, 1.2], ['hopTo', 2, 'movers', m + 1, 1.2], ['hopTo', 1, 'movers', m + 2, 1.2], ['hopTo', 2, 'movers', m + 3, 1.2], ['hopTo', 1, 'movers', m + 4, 1.2], ['hop', 2, 30.6], ['goTo', 30.8]]);
+  });
+  // Les plots et les astéroïdes, au-dessus du vide
+  c.section(28, (s) => {
+    s.ground(0, 2);
+    pad(s, 5, 2);
+    s.add('asteroids', { x: 9.2, y: 5.5, r: 0.7, path: { dx: 0, dy: -4, period: 3.6, phase: 0 } });
+    pad(s, 11, 3.4);
+    s.add('asteroids', { x: 15.2, y: 6, r: 0.7, path: { dx: 0, dy: -4.4, period: 4, phase: 0.5 } });
+    pad(s, 17, 2.2);
+    s.add('magnets', { x: 21, y: -2, radius: 3.6, strength: 20, core: 0.8 });
+    s.ground(24, 28);
+    s.checkpoint(1, 0);
+    s.star(15.2, 7.4);
+    s.pass('Premier plot', [-2, 0], ['on', 5, 7.5, 2], [['goTo', 1.2], ['hop', 2, 6.25, 2]]);
+    s.pass('Entre les astéroïdes (1)', [6.25, 2], ['on', 11, 13.5, 3.4], [['settle'], ['waitCycle', 3.6, 0.65, 0.75], ['hop', 2, 12.25, 3.4]]);
+    s.pass('Entre les astéroïdes (2)', [12.25, 3.4], ['on', 17, 19.5, 2.2], [['settle'], ['waitCycle', 4, 2.35, 2.45], ['hop', 2, 18.25, 2.2]]);
+    s.pass('Au-dessus du trou noir', [18.25, 2.2], ['on', 24.2, 28, 0], [['settle'], ['hop', 3, 25.4], ['goTo', 25.8]]);
+  });
+  // Les plateformes qui clignotent au-dessus du vide
+  c.section(28, (s) => {
+    s.ground(0, 3);
+    s.add('blinkers', { x: 5.6, y: 1, w: 2.6, h: 0.5, period: 3.2, on: 2.0, phase: 0 }, { x: 11.4, y: 2.2, w: 2.6, h: 0.5, period: 3.2, on: 2.0, phase: 0.6 }, { x: 17.2, y: 1, w: 2.6, h: 0.5, period: 3.2, on: 2.0, phase: 0.2 });
+    s.add('magnets', { x: 14, y: -2.4, radius: 3.6, strength: 18, core: 0.8 });
+    s.ground(23, 28);
+    s.checkpoint(1, 0);
+    s.star(12.7, 5);
+    s.pass('Les plateformes qui clignotent', [-2, 0], ['on', 23.2, 28, 0], [['goTo', 2.2], ['waitCycle', 3.2, 0.0, 0.1], ['hop', 2, 6.9, 1.5], ['jump', 1, 12.7, 2.7], ['jump', 1, 18.5, 1.5], ['jump', 1, 24.6, 0], ['goTo', 25]]);
+  });
+  // Le dernier saut : au-dessus du plus grand trou noir
+  c.section(26, (s) => {
+    s.ground(0, 4);
+    s.add('magnets', { x: 9, y: -1.8, radius: 3.4, strength: 18, core: 0.8 });
+    s.ground(13.4, 26);
+    s.checkpoint(1, 0);
+    s.star(9, 7);
+    s.pass('Le dernier saut', [-3, 0], ['on', 13.6, 26, 0], [['goTo', 3.4], ['hop', 5, 15.6], ['goTo', 17]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
+
+// 50 — L'odyssée : plateformes flottantes, portail, plafond inversé, pluie d'astéroïdes, trou noir,
+// pistons, levier et porte, puis le dernier panier du jeu.
+const L50 = level({ id: 'space-10', difficulty: 'expert', number: 10, nameKey: 'lv.space.10', idea: 'finale : tout le jeu', maxY: 13 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+  });
+  c.section(26, (s) => {
+    s.ground(0, 3);
+    const m = s.add('movers', float(6, 1.5, 2.6, 0.6, 3.4), float(11, 3.0, 2.6, 0.6, 3.8, 0.3), float(16, 2.0, 2.6, 0.6, 3.2, 0.6));
+    s.ground(21, 26);
+    s.star(12.3, 5.4);
+    s.pass('Les plateformes flottantes', [-6, 0], ['on', 21.2, 26, 0], [['goTo', 2.2], ['hopTo', 2, 'movers', m, 1.3], ['hopTo', 2, 'movers', m + 1, 1.3], ['hopTo', 1, 'movers', m + 2, 1.3], ['hop', 2, 22.6], ['goTo', 23]]);
+  });
+  // Le portail à travers la cloison, puis le plafond au-dessus des pics
+  c.section(36, (s) => {
+    s.ground(0, 36);
+    s.block(5, 0, 1.2, 16, 'wall');
+    s.add('teleporters', { a: { x: 3, y: 0.9 }, b: { x: 8, y: 0.9 }, r: 0.8, twoWay: true });
+    s.block(11, 6.4, 14, 1, 'block', glow);
+    s.add('gravityZones', { x: 11, y: 0, w: 14, h: 6.4 });
+    s.add('spikes', { x: 12.6, y: 0, w: 12.4, dir: 'up' }, { x: 17.6, y: 6.4, w: 1.8, dir: 'down' });
+    s.checkpoint(-3, 0);
+    s.star(18.5, 4.6);
+    s.pass('Le portail', [-3, 0], ['on', 7, 10, 0], [['goTo', 1.2], ['hold', 1, 3.2], ['settle'], ['goTo', 8.6]]);
+    s.pass('Le plafond aux pics', [8.6, 0], ['on', 26, 36, 0], [['goTo', 8.6], ['jumpAt', 1, 15.8], ['run', 1, 26.2, 36, 0], ['goTo', 31]]);
+  });
+  // La pluie d'astéroïdes, puis le trou noir
+  c.section(36, (s) => {
+    s.ground(0, 20);
+    s.add('asteroids', { x: 5, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3.2, phase: 0 } }, { x: 9, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3.2, phase: 0.25 } }, { x: 13, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3.2, phase: 0.5 } });
+    s.add('magnets', { x: 25.4, y: -1.8, radius: 3.4, strength: 18, core: 0.8 });
+    s.ground(29.6, 36);
+    s.checkpoint(0.6, 0);
+    s.star(25.4, 7);
+    s.pass('La pluie d’astéroïdes', [-5, 0], ['on', 16.5, 20, 0], [['goTo', 1.4], ['waitCycle', 3.2, 0.0, 0.1], ['run', 1, 16.6, 20, 0], ['goTo', 19.4]]);
+    s.pass('Le trou noir', [19.4, 0], ['on', 29.8, 36, 0], [['hop', 5, 31.8], ['goTo', 32.4]]);
+  });
+  // Le levier et les pistons
+  c.section(30, (s) => {
+    s.ground(0, 30);
+    s.block(2, 0, 4, 3.2, 'block', glow);
+    const sw = s.add('switches', { x: 3.4, y: 3.2, w: 1.2, target: 'odyssey' });
+    s.add('crushers', { x: 10, w: 2.4, top: 3, bottom: 0, period: 2.2, phase: 0 }, { x: 16, w: 2.4, top: 3, bottom: 0, period: 2.2, phase: 0.5 });
+    s.add('doors', { id: 'odyssey', x: 25, y: 0, w: 0.8, h: 3.4, open: { dx: 0, dy: 3.4 }, duration: 0.8 });
+    s.block(25, 3.4, 0.8, 9.6, 'wall');
+    s.checkpoint(0.6, 0);
+    s.star(14.2, 1.2);
+    s.pass('Le levier', [-2, 0], ['switch', sw], [['goTo', 0.4], ['hop', 3, 4, 3.2]]);
+    s.pass('Les pistons', [4, 3.2], ['on', 26, 30, 0], [['hold', 1, 6.4], ['goTo', 7.6], ['waitCycle', 2.2, 1.6, 1.7], ['goTo', 14.2], ['waitCycle', 2.2, 0.5, 0.6], ['run', 1, 26.2, 30, 0]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le dernier panier', [-2, 0], ['win'], 'shot');
+  });
+});
+
+export const SPACE_LEVELS = [L41, L42, L43, L44, L45, L46, L47, L48, L49, L50];
