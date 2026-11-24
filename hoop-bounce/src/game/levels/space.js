@@ -1,303 +1,342 @@
-// MONDE 5 — ESPACE (10 niveaux), le monde final. Gravité réduite (réglée dans worlds.js), astéroïdes
-// mobiles, portails, plateformes flottantes, zones de gravité inversée.
-import { walls, bounds, floor, hoopAt } from './common.js';
+// MONDE 5 — ESPACE : EXPERT (refonte phase 2). 50 à 70 s par niveau pour un joueur.
+// Gravité réduite (worlds.js : on retombe lentement, les rebonds montent 25 % plus haut), plateformes
+// flottantes, astéroïdes, portails à double sens, zones de gravité inversée, trous noirs, pistons et
+// lasers de la station. Les derniers niveaux combinent presque toutes les mécaniques du jeu.
+//
+// 41 Premiers pas lunaires  sauts lunaires, plateformes flottantes, le premier trou noir (découverte)
+// 42 La ceinture            astéroïdes : entre eux, par-dessus, en dessous (rythme)
+// 43 Les portails           portails à double sens : l'aller-retour vers l'interrupteur (★ puzzle)
+// 44 La tête en bas         gravité inversée : rouler au plafond, sauter vers le sol (★ mémorable)
+// 45 Les trous noirs        ils attirent : sauter assez haut, ou assez loin (précision)
+// 46 La station             pistons et lasers (rapide)
+// 47 Le laboratoire         caisse, interrupteurs, portails (puzzle)
+// 48 Le monde à l'envers    zones inversées et astéroïdes (technique)
+// 49 Le grand vide          plateformes flottantes au-dessus du vide et des trous noirs (précision)
+// 50 L'odyssée              tout le jeu en un niveau (★ finale)
 
-/** Plateforme flottante (mobile, style « float ») de largeur w, qui monte et descend de dy. */
+import { level } from './kit.js';
+import { P6, P7, P8, P9, P10 } from './_space_old.js';
+
+const glow = { skin: 'glow' };
+/** Plateforme flottante (mobile) de largeur w, qui monte et descend de dy. */
 const float = (x, y, w, dy, period, phase = 0) => ({ x, y, w, h: 0.5, style: 'float', path: { dx: 0, dy, period, phase } });
-/** Plateforme lumineuse fixe. */
-const pad = (x, top, w) => ({ x, y: top - 0.5, w, h: 0.5, style: 'block', skin: 'glow' });
+/** Plot lumineux fixe, dessus à `top`. */
+const pad = (s, x, top, w = 2.5) => s.block(x, top - 0.5, w, 0.5, 'block', glow);
 
-const P1 = {
-  id: 'space-1',
-  difficulty: 'expert',
-  number: 1,
-  nameKey: 'level.space.1',
-  bounds: bounds(60, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(60), floor(-4, 12), floor(18, 30), floor(37, 64)],
-  // Trou noir au fond du grand vide : il aspire le ballon qui saute trop bas
-  magnets: [{ x: 33.5, y: -1.2, radius: 4.2, strength: 26, core: 0.7 }],
-  stars: [{ x: 15, y: 5.2 }, { x: 24, y: 2.4 }, { x: 33.5, y: 6.4 }],
-  hoop: hoopAt(50),
-  hints: [{ x: 4.6, y: 4.3, key: 'hint.space' }, { x: 33.5, y: 4.4, key: 'hint.blackhole', size: 0.8 }],
-  passages: [
-    { name: 'Premier saut lunaire', start: [3, 0], goal: ['on', 18, 30, 0], plan: [['goTo', 11.3], ['hop', 3, 20]] },
-    { name: 'Grand saut', start: [21, 0], goal: ['on', 37, 46, 0], plan: [['goTo', 29.3], ['hop', 4, 39.5]] },
-    { name: 'Sol → panier', start: [42, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 41 — Premiers pas lunaires
+const L41 = level({ id: 'space-1', difficulty: 'medium', number: 1, nameKey: 'lv.space.1', idea: 'gravité réduite : sauts lunaires, plateformes flottantes, premier trou noir', maxY: 12 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.space');
+  });
+  c.section(22, (s) => {
+    s.ground(0, 6);
+    s.ground(12, 22);
+    s.star(9, 5.4);
+    s.pass('Premier saut lunaire', [-6, 0], ['on', 12.2, 22, 0], [['goTo', 5.2], ['hop', 3, 14], ['goTo', 16]]);
+  });
+  // Le grand saut, au-dessus du trou noir
+  c.section(28, (s) => {
+    s.ground(0, 4);
+    s.add('magnets', { x: 8.5, y: -1.8, radius: 3.2, strength: 16, core: 0.7 });
+    s.ground(13, 28);
+    s.checkpoint(1, 0);
+    s.hint(9, 4.4, 'hint.blackhole', 0.8);
+    s.star(9, 6.6);
+    s.pass('Le grand saut', [-6, 0], ['on', 13.2, 28, 0], [['goTo', 3.4], ['hop', 5, 15.4], ['goTo', 18]]);
+  });
+  // Les plateformes flottantes
+  c.section(30, (s) => {
+    s.ground(0, 3);
+    const m = s.add('movers', float(6, 1.5, 2.6, 0.6, 3.4), float(11, 3.0, 2.6, 0.6, 3.8, 0.3), float(16, 2.0, 2.6, 0.6, 3.2, 0.6), float(21, 3.4, 2.6, 0.6, 3.6, 0.1));
+    s.ground(26, 30);
+    s.checkpoint(1, 0);
+    s.hint(1.6, 4.3, 'hint.floating');
+    s.star(17.3, 5.4);
+    s.pass('Les plateformes flottantes', [-4, 0], ['on', 26.2, 30, 0], [['goTo', 2.2], ['hopTo', 2, 'movers', m, 1.3], ['hopTo', 2, 'movers', m + 1, 1.3], ['hopTo', 1, 'movers', m + 2, 1.3], ['hopTo', 2, 'movers', m + 3, 1.3], ['hop', 2, 27.6], ['goTo', 28]]);
+  });
+  // Les plots lumineux : on monte, on redescend
+  c.section(26, (s) => {
+    s.ground(0, 2);
+    pad(s, 4.6, 2.4);
+    pad(s, 9.4, 4.4);
+    pad(s, 14.2, 2.8);
+    s.ground(19, 26);
+    s.checkpoint(1, 0);
+    s.star(10.6, 6.8);
+    s.pass('Les plots lumineux', [-2, 0], ['on', 19.2, 26, 0], [['goTo', 1.2], ['hop', 2, 5.85, 2.4], ['settle'], ['hop', 2, 10.65, 4.4], ['settle'], ['hop', 1, 15.45, 2.8], ['settle'], ['hop', 1, 21, 0], ['goTo', 21.4]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const P2 = {
-  id: 'space-2',
-  difficulty: 'expert',
-  number: 2,
-  nameKey: 'level.space.2',
-  bounds: bounds(58, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(58), floor(-4, 10), floor(32, 62)],
-  movers: [float(12, 1.5, 2.6, 0.6, 3.4), float(17, 3.0, 2.6, 0.6, 3.8, 0.3), float(22, 2.0, 2.6, 0.6, 3.2, 0.6), float(27, 3.4, 2.6, 0.6, 3.6, 0.1)],
-  lasers: [{ x1: 36.6, y1: 0, x2: 36.6, y2: 7, period: 3, on: 1.2, phase: 0 }],
-  // Piston de la station : il s'écrase juste après le laser
-  crushers: [{ x: 39.8, w: 2.2, top: 2.8, bottom: 0, period: 2.2, phase: 0.3 }],
-  stars: [{ x: 15.6, y: 5.6 }, { x: 24.6, y: 5.8 }, { x: 36.6, y: 2.4 }],
-  hoop: hoopAt(51),
-  hints: [{ x: 4.4, y: 4.3, key: 'hint.floating' }],
-  passages: [
-    { name: 'Quatre plateformes flottantes', start: [3, 0], goal: ['on', 32, 35.8, 0], plan: [['goTo', 9.4], ['hopTo', 2, 'movers', 0, 1.3], ['hopTo', 2, 'movers', 1, 1.3], ['hopTo', 1, 'movers', 2, 1.3], ['hopTo', 2, 'movers', 3, 1.3], ['hop', 2, 33.8], ['goTo', 34]] },
-    { name: 'Le premier laser', start: [34, 0], goal: ['on', 37.4, 39.2, 0], plan: [['goTo', 34.6], ['waitCycle', 3, 0.63, 0.73], ['run', 1, 37.6, 39.2, 0], ['goTo', 38.6]] },
-    { name: 'Piston', start: [38.6, 0], goal: ['on', 42.6, 58, 0], plan: [['goTo', 38.6], ['waitCycle', 2.2, 1.25, 1.35], ['run', 1, 42.8, 58, 0]] },
-    { name: 'Sol → panier', start: [43, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 42 — La ceinture d'astéroïdes
+const L42 = level({ id: 'space-2', difficulty: 'hard', number: 2, nameKey: 'lv.space.2', idea: 'astéroïdes : passer entre eux, par-dessus, en dessous', maxY: 12 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.asteroids');
+  });
+  // Entre les astéroïdes qui montent et descendent
+  c.section(26, (s) => {
+    s.ground(0, 2);
+    pad(s, 5, 2);
+    s.add('asteroids', { x: 9.2, y: 5.5, r: 0.7, path: { dx: 0, dy: -4, period: 3.6, phase: 0 } });
+    pad(s, 11, 3.4);
+    s.add('asteroids', { x: 15.2, y: 6, r: 0.7, path: { dx: 0, dy: -4.4, period: 4, phase: 0.5 } });
+    pad(s, 17, 2.2);
+    s.ground(22, 26);
+    s.star(9.2, 7.4);
+    s.pass('Première plateforme', [-6, 0], ['on', 5, 7.5, 2], [['goTo', 1.2], ['hop', 2, 6.25, 2]]);
+    s.pass('Entre les astéroïdes (1)', [6.25, 2], ['on', 11, 13.5, 3.4], [['settle'], ['waitCycle', 3.6, 0.65, 0.75], ['hop', 2, 12.25, 3.4]]);
+    s.pass('Entre les astéroïdes (2)', [12.25, 3.4], ['on', 17, 19.5, 2.2], [['settle'], ['waitCycle', 4, 2.35, 2.45], ['hop', 2, 18.25, 2.2]]);
+    s.pass('Plateforme → sol', [18.25, 2.2], ['on', 22.2, 26, 0], [['settle'], ['hop', 1, 23.4], ['goTo', 24]]);
+  });
+  // L'astéroïde qui roule : on saute par-dessus
+  c.section(22, (s) => {
+    s.ground(0, 22);
+    const k = s.add('asteroids', { x: 6, y: 0.7, r: 0.7, path: { dx: 8, dy: 0, period: 4.4, phase: 0 } });
+    s.checkpoint(0.6, 0);
+    s.star(10, 3.4);
+    s.pass('L’astéroïde qui roule', [-2, 0], ['on', 17, 22, 0], [['goTo', 2.6], ['waitMover', 'rollers', k, 'x', '<', 0.3], ['jumpOver', 'rollers', k, 3], ['goTo', 19]]);
+  });
+  // La passerelle : un astéroïde roule sur un pont étroit au-dessus du vide
+  c.section(24, (s) => {
+    s.ground(0, 3);
+    s.block(3, -0.5, 16, 0.5, 'block', glow);
+    const k = s.add('asteroids', { x: 6, y: 0.7, r: 0.7, path: { dx: 8, dy: 0, period: 4, phase: 0.5 } });
+    s.ground(19, 24);
+    s.checkpoint(1, 0);
+    s.star(11, 3.6);
+    s.pass('La passerelle', [-3, 0], ['on', 19.2, 24, 0], [['goTo', 1.6], ['waitMover', 'rollers', k, 'x', '>', 7.7], ['jumpOver', 'rollers', k, 3], ['run', 1, 19.4, 24, 0], ['goTo', 21]]);
+  });
+  // La pluie d'astéroïdes : trois astéroïdes tombent sur le chemin, on passe dessous au bon moment
+  c.section(26, (s) => {
+    s.ground(0, 26);
+    s.add('asteroids', { x: 6, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3.2, phase: 0 } }, { x: 11, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3.2, phase: 0.33 } }, { x: 16, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3.2, phase: 0.66 } });
+    s.checkpoint(0.6, 0);
+    s.star(11, 2);
+    s.pass('La pluie d’astéroïdes', [-3, 0], ['on', 20, 26, 0], [['goTo', 1.6], ['waitCycle', 3.2, 0.0, 0.1], ['run', 1, 20.2, 26, 0]]);
+  });
+  // La grande pluie : deux rideaux d'astéroïdes, un abri entre les deux
+  c.section(30, (s) => {
+    s.ground(0, 30);
+    for (const [x, ph] of [[4, 0], [6.4, 0.15], [8.8, 0.3]]) s.add('asteroids', { x, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3, phase: ph } });
+    for (const [x, ph] of [[16.4, 0.5], [18.8, 0.65], [21.2, 0.8]]) s.add('asteroids', { x, y: 7, r: 0.7, path: { dx: 0, dy: -6.2, period: 3, phase: ph } });
+    s.checkpoint(0.6, 0);
+    s.star(12.6, 1.4);
+    s.pass('La grande pluie', [-3, 0], ['on', 25, 30, 0], [['goTo', 1.4], ['waitCycle', 3, 0.0, 0.1], ['goTo', 12.6], ['waitCycle', 3, 1.5, 1.6], ['run', 1, 25.2, 30, 0]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const P3 = {
-  id: 'space-3',
-  difficulty: 'expert',
-  number: 3,
-  nameKey: 'level.space.3',
-  bounds: bounds(60, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [
-    ...walls(60),
-    floor(-4, 64),
-    { x: 14, y: 0, w: 1.2, h: 16, style: 'wall' },
-    { x: 25, y: 0, w: 4, h: 3.6, style: 'block', skin: 'glow' },
-    { x: 30, y: 0, w: 1.2, h: 16, style: 'wall' },
-    { x: 41.6, y: 0, w: 18.4, h: 1.2, style: 'block', skin: 'glow' },
-  ],
-  spikes: [{ x: 20, y: 0, w: 3.4, dir: 'up' }],
-  // Boules de plasma qui roulent de l'estrade vers la paroi
-  boulders: [{ x1: 35.4, x2: 41, y: 0, r: 0.5, dir: -1, speed: 6, period: 2.2, phase: 0 }],
-  teleporters: [
-    { a: { x: 12, y: 0.9 }, b: { x: 17.6, y: 0.9 }, r: 0.8, twoWay: true },
-    { a: { x: 28.2, y: 4.5 }, b: { x: 33.6, y: 0.9 }, r: 0.8, twoWay: true },
-  ],
-  stars: [{ x: 21.7, y: 4.4 }, { x: 27, y: 6.4 }, { x: 38, y: 3 }],
-  hoop: hoopAt(52, 3.4, 1.2),
-  hints: [{ x: 4.4, y: 4.3, key: 'hint.portal' }],
-  passages: [
-    { name: 'Premier portail', start: [3, 0], goal: ['on', 15.2, 19.6, 0], plan: [['hold', 1, 17.3], ['goTo', 18.2]] },
-    { name: 'Pics → estrade', start: [18.2, 0], goal: ['on', 25, 29, 3.6], plan: [['hop', 5, 26.6, 3.6]] },
-    { name: 'Portail perché', start: [26, 3.6], goal: ['on', 33.2, 34.8, 0], plan: [['hold', 1, 33.4], ['goTo', 34.2]] },
-    { name: 'Boules de plasma → estrade', start: [34.2, 0], goal: ['on', 42, 60, 1.2], plan: [['charge', 2], ['dodgeBoulders', 42.6, 3.2, 39.8]] },
-    { name: 'Estrade → panier', start: [43, 1.2], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 43 — Les portails : à double sens
+const L43 = level({ id: 'space-3', difficulty: 'hard', number: 3, nameKey: 'lv.space.3', idea: 'portails à double sens : l’aller-retour vers l’interrupteur', maxY: 12 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.portal');
+  });
+  // Le premier portail traverse la cloison
+  c.section(20, (s) => {
+    s.ground(0, 20);
+    s.block(8, 0, 1.2, 16, 'wall');
+    s.add('teleporters', { a: { x: 5, y: 0.9 }, b: { x: 12.4, y: 0.9 }, r: 0.8, twoWay: true });
+    s.star(12.4, 3);
+    s.pass('Le premier portail', [-6, 0], ['on', 13.5, 20, 0], [['goTo', 3], ['hold', 1, 5.2], ['settle'], ['goTo', 16]]);
+  });
+  // Le détour : l'interrupteur est enfermé dans une cabine ; on y va, et on revient par le même portail
+  c.section(26, (s) => {
+    s.ground(0, 26);
+    s.block(4, 6, 6, 0.4, 'block', glow);
+    s.block(4, 9.6, 6, 0.4, 'block', glow);
+    s.block(4, 6.4, 0.4, 3.2, 'wall');
+    s.block(9.6, 6.4, 0.4, 3.2, 'wall');
+    const sw = s.add('switches', { x: 7, y: 6.4, w: 1.2, target: 'cabin' });
+    s.add('teleporters', { a: { x: 2.2, y: 0.9 }, b: { x: 5.4, y: 7.4 }, r: 0.8, twoWay: true });
+    s.add('doors', { id: 'cabin', x: 16, y: 0, w: 0.8, h: 3.4, open: { dx: 0, dy: 3.4 }, duration: 0.8 });
+    s.block(16, 3.4, 0.8, 8.6, 'wall');
+    s.checkpoint(-1, 0);
+    s.star(7.6, 8.4);
+    s.pass('Vers la cabine', [-4, 0], ['switch', sw], [['goTo', 0.4], ['hold', 1, 2.4], ['settle'], ['goTo', 7.6]]);
+    s.pass('Retour par le même portail', [7.6, 6.4], ['on', 0, 4, 0], [['hold', -1, 5.2], ['settle'], ['goTo', 3.6]]);
+    s.pass('La porte est ouverte', [3.6, 0], ['on', 18, 26, 0], [['run', 1, 18.2, 26, 0]]);
+  });
+  // Les portails en chaîne : de plot en plot au-dessus des pics
+  c.section(30, (s) => {
+    s.ground(0, 30);
+    s.add('spikes', { x: 4, y: 0, w: 22, dir: 'up' });
+    pad(s, 9, 2.4, 3);
+    pad(s, 17, 2.4, 3);
+    s.add('teleporters', { a: { x: 2.4, y: 0.9 }, b: { x: 9.8, y: 3.4 }, r: 0.8, twoWay: true }, { a: { x: 11.4, y: 3.3 }, b: { x: 17.8, y: 3.4 }, r: 0.8, twoWay: true }, { a: { x: 19.4, y: 3.3 }, b: { x: 27.6, y: 0.9 }, r: 0.8, twoWay: true });
+    s.checkpoint(0.6, 0);
+    s.star(14, 4.4);
+    s.pass('Premier portail de la chaîne', [-4, 0], ['on', 9, 12, 2.4], [['goTo', 0.6], ['hold', 1, 2.4], ['settle'], ['goTo', 10.2]]);
+    s.pass('Deuxième portail', [10.2, 2.4], ['on', 17, 20, 2.4], [['hold', 1, 11.4], ['settle'], ['goTo', 18.2]]);
+    s.pass('Troisième portail', [18.2, 2.4], ['on', 26.2, 30, 0], [['hold', 1, 19.4], ['settle'], ['goTo', 28.4]]);
+  });
+  // Le portail gardé : un laser devant le portail, une cloison derrière
+  c.section(26, (s) => {
+    s.ground(0, 26);
+    s.add('lasers', { x1: 5, y1: 0, x2: 5, y2: 12, period: 2.6, on: 1.2, phase: 0 });
+    s.block(10, 0, 1.2, 16, 'wall');
+    s.block(13, 0, 6, 4, 'block', glow);
+    s.add('teleporters', { a: { x: 8, y: 0.9 }, b: { x: 14.6, y: 5 }, r: 0.8, twoWay: true });
+    s.checkpoint(1, 0);
+    s.star(16, 6.6);
+    s.pass('Le portail gardé', [-2, 0], ['on', 13.2, 19, 4], [['goTo', 2.6], ['waitCycle', 2.6, 0.0, 0.1], ['hold', 1, 8.2], ['settle'], ['goTo', 16.4]]);
+    s.pass('Descendre de l’estrade', [16.4, 4], ['on', 20, 26, 0], [['hold', 1, 19.4], ['goTo', 22]]);
+  });
+  // Le portail perché : on saute dedans, on ressort derrière la cloison au-dessus des pics
+  c.section(26, (s) => {
+    s.ground(0, 26);
+    s.block(4, 0, 4, 3.6, 'block', glow);
+    s.block(11, 0, 1.2, 16, 'wall');
+    s.add('spikes', { x: 12.2, y: 0, w: 8, dir: 'up' });
+    pad(s, 14.6, 3.4);
+    s.add('teleporters', { a: { x: 7, y: 4.5 }, b: { x: 15.8, y: 4.4 }, r: 0.8, twoWay: true });
+    s.checkpoint(1, 0);
+    s.star(18, 6);
+    s.pass('Sur l’estrade', [-4, 0], ['on', 4.2, 6.4, 3.6], [['goTo', 0.6], ['hop', 3, 5, 3.6]]);
+    s.pass('Le portail perché', [5, 3.6], ['on', 14.6, 17.1, 3.4], [['hold', 1, 7], ['settle'], ['goTo', 15.6]]);
+    s.pass('Par-dessus les pics', [15.6, 3.4], ['on', 20.4, 26, 0], [['hop', 1, 22], ['goTo', 22.4]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const P4 = {
-  id: 'space-4',
-  difficulty: 'expert',
-  number: 4,
-  nameKey: 'level.space.4',
-  bounds: bounds(54, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(54), floor(-4, 10), pad(13, 2, 2.5), pad(19, 3.4, 2.5), pad(25, 2.2, 2.5), floor(30, 58)],
-  asteroids: [
-    { x: 17.2, y: 5.5, r: 0.7, path: { dx: 0, dy: -4, period: 3.6, phase: 0 } },
-    { x: 23.2, y: 6, r: 0.7, path: { dx: 0, dy: -4.4, period: 4, phase: 0.5 } },
-  ],
-  magnets: [{ x: 23.2, y: -0.9, radius: 3.0, strength: 18, core: 0.6 }],
-  stars: [{ x: 14.25, y: 4.4 }, { x: 20.25, y: 6 }, { x: 23.2, y: 1.8 }],
-  hoop: hoopAt(46),
-  hints: [{ x: 4.4, y: 4.3, key: 'hint.asteroids' }],
-  passages: [
-    { name: 'Première plateforme', start: [3, 0], goal: ['on', 13, 15.5, 2], plan: [['goTo', 9.4], ['hop', 2, 14.25, 2]] },
-    { name: 'Entre les astéroïdes (1)', start: [14.25, 2], goal: ['on', 19, 21.5, 3.4], plan: [['waitCycle', 3.6, 0.65, 0.75], ['hop', 2, 20.25]] },
-    { name: 'Entre les astéroïdes (2)', start: [20.25, 3.4], goal: ['on', 25, 27.5, 2.2], plan: [['waitCycle', 4, 2.35, 2.45], ['hop', 2, 26.25]] },
-    { name: 'Plateforme → sol', start: [26.25, 2.2], goal: ['on', 30, 38, 0], plan: [['hop', 2, 32]] },
-    { name: 'Sol → panier', start: [36, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 44 — La tête en bas : la gravité s'inverse dans les zones violettes
+const L44 = level({ id: 'space-4', difficulty: 'hard', number: 4, nameKey: 'lv.space.4', idea: 'gravité inversée : le plafond devient le sol', maxY: 12 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.inverted');
+  });
+  // Le premier plafond : on roule dessus, au-dessus des pics
+  c.section(30, (s) => {
+    s.ground(0, 30);
+    s.block(4, 6.4, 14, 1, 'block', glow);
+    s.add('gravityZones', { x: 4, y: 0, w: 14, h: 6.4 });
+    s.add('spikes', { x: 6, y: 0, w: 12, dir: 'up' });
+    s.star(11, 5.6);
+    s.pass('Le premier plafond', [-6, 0], ['on', 19, 30, 0], [['run', 1, 19.2, 30, 0], ['goTo', 26]]);
+  });
+  // Les pics du plafond : sauter vers le bas, au-dessus des pics suspendus
+  c.section(32, (s) => {
+    s.ground(0, 32);
+    s.block(3, 6.4, 18, 1, 'block', glow);
+    s.add('gravityZones', { x: 3, y: 0, w: 18, h: 6.4 });
+    s.add('spikes', { x: 5, y: 0, w: 16, dir: 'up' }, { x: 10.4, y: 6.4, w: 1.8, dir: 'down' });
+    s.checkpoint(0.8, 0);
+    s.star(11.3, 3.6);
+    s.pass('Les pics suspendus', [-6, 0], ['on', 22, 32, 0], [['goTo', 0.8], ['jumpAt', 1, 8.6], ['run', 1, 22.2, 32, 0], ['goTo', 28]]);
+  });
+  // Les lasers du plafond
+  c.section(32, (s) => {
+    s.ground(0, 32);
+    s.block(3, 6.4, 18, 1, 'block', glow);
+    s.add('gravityZones', { x: 3, y: 0, w: 18, h: 6.4 });
+    s.add('spikes', { x: 5, y: 0, w: 16, dir: 'up' });
+    s.add('lasers', { x1: 8.6, y1: 3.4, x2: 8.6, y2: 6.4, period: 3, on: 1.2, phase: 0 }, { x1: 14.6, y1: 3.4, x2: 14.6, y2: 6.4, period: 3, on: 1.2, phase: 0.35 });
+    s.checkpoint(0.8, 0);
+    s.star(11.6, 5.6);
+    s.pass('Les lasers du plafond', [-4, 0], ['on', 22, 32, 0], [['goTo', 0.8], ['waitCycle', 3, 0.2, 0.3], ['run', 1, 22.2, 32, 0], ['goTo', 28]]);
+  });
+  // Le pont invisible : il n'y a plus de sol, seulement le plafond
+  c.section(34, (s) => {
+    s.ground(0, 4);
+    s.block(4, 6.4, 18, 1, 'block', glow);
+    s.add('gravityZones', { x: 4, y: -3, w: 18, h: 9.4 });
+    s.ground(22, 34);
+    s.checkpoint(1, 0);
+    s.star(13, 5.6);
+    s.pass('Le pont invisible', [-4, 0], ['on', 23, 34, 0], [['goTo', 1], ['run', 1, 23.2, 34, 0], ['goTo', 28]]);
+  });
+  // Deux plafonds à la suite
+  c.section(34, (s) => {
+    s.ground(0, 34);
+    s.block(3, 6.4, 8, 1, 'block', glow);
+    s.block(15, 6.4, 8, 1, 'block', glow);
+    s.add('gravityZones', { x: 3, y: 0, w: 8, h: 6.4 }, { x: 15, y: 0, w: 8, h: 6.4 });
+    s.add('spikes', { x: 4.6, y: 0, w: 6.4, dir: 'up' }, { x: 16.6, y: 0, w: 6.4, dir: 'up' });
+    s.checkpoint(0.8, 0);
+    s.star(13, 3.6);
+    s.pass('Deux plafonds', [-6, 0], ['on', 25, 34, 0], [['goTo', 0.8], ['run', 1, 25.2, 34, 0], ['goTo', 29]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const P5 = {
-  id: 'space-5',
-  difficulty: 'extreme',
-  number: 5,
-  nameKey: 'level.space.5',
-  bounds: bounds(44, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(44), floor(-4, 48), { x: 12, y: 6.4, w: 12, h: 1, style: 'block', skin: 'glow' }],
-  gravityZones: [{ x: 12, y: 0, w: 12, h: 6.4 }],
-  spikes: [{ x: 14.4, y: 0, w: 9.6, dir: 'up' }],
-  lasers: [
-    { x1: 17, y1: 3.4, x2: 17, y2: 6.4, period: 3, on: 1.2, phase: 0 },
-    { x1: 21.4, y1: 3.4, x2: 21.4, y2: 6.4, period: 3, on: 1.2, phase: 0.35 },
-  ],
-  stars: [{ x: 15, y: 5.6 }, { x: 19.2, y: 5.6 }, { x: 27, y: 2.6 }],
-  hoop: hoopAt(37),
-  hints: [{ x: 4.6, y: 4.3, key: 'hint.inverted' }],
-  passages: [
-    { name: 'Au plafond, sous le laser', start: [3, 0], goal: ['on', 24.6, 31, 0], plan: [['waitCycle', 3, 2.48, 2.58], ['run', 1, 24.6, 31, 0], ['goTo', 28]] },
-    { name: 'Sol → panier', start: [28, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 45 — Les trous noirs : ils attirent le ballon
+const L45 = level({ id: 'space-5', difficulty: 'hard', number: 5, nameKey: 'lv.space.5', idea: 'trous noirs : sauter assez haut, assez loin, ou les contourner', maxY: 13 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.blackhole');
+  });
+  // Deux trous noirs sous deux sauts
+  c.section(30, (s) => {
+    s.ground(0, 4);
+    s.add('magnets', { x: 6.6, y: -1.6, radius: 3.6, strength: 24, core: 0.7 });
+    pad(s, 9, 1.6, 3);
+    s.add('magnets', { x: 15.6, y: -1.6, radius: 4.2, strength: 26, core: 0.7 });
+    s.ground(21, 30);
+    s.star(6.6, 5.4);
+    s.star(15.6, 6);
+    s.pass('Le premier trou noir', [-6, 0], ['on', 9, 12, 1.6], [['goTo', 3.4], ['hop', 4, 10.4, 1.6]]);
+    s.pass('Le deuxième trou noir', [10.4, 1.6], ['on', 21.2, 30, 0], [['settle'], ['goTo', 11.4], ['hop', 4, 22.6], ['goTo', 24]]);
+  });
+  // Le trou noir suspendu : il faut sauter bas pour passer dessous
+  c.section(26, (s) => {
+    s.ground(0, 6);
+    s.add('magnets', { x: 12, y: 7, radius: 3.4, strength: 22, core: 0.7 });
+    pad(s, 10.8, 1.2, 2.4);
+    s.ground(18, 26);
+    s.checkpoint(1, 0);
+    s.star(12, 2.8);
+    s.pass('Sous le trou noir', [-2, 0], ['on', 10.8, 13.2, 1.2], [['goTo', 5.2], ['hop', 1, 12, 1.2]]);
+    s.pass('Vers l’autre rive', [12, 1.2], ['on', 18.2, 26, 0], [['settle'], ['hop', 1, 19.6], ['goTo', 20]]);
+  });
+  // Le grand trou noir : un plot au milieu, juste au-dessus
+  c.section(26, (s) => {
+    s.ground(0, 4);
+    pad(s, 10.4, 3.2, 2.4);
+    s.add('magnets', { x: 11.6, y: -2, radius: 4.4, strength: 22, core: 0.8 });
+    s.ground(19, 26);
+    s.checkpoint(1, 0);
+    s.star(11.6, 5.8);
+    s.pass('Le plot du grand trou noir', [-6, 0], ['on', 10.4, 12.8, 3.2], [['goTo', 3.4], ['hop', 5, 11.6, 3.2]]);
+    s.pass('Quitter le grand trou noir', [11.6, 3.2], ['on', 19.2, 26, 0], [['settle'], ['hop', 3, 20.6], ['goTo', 21]]);
+  });
+  // Les plateformes flottantes entre deux trous noirs
+  c.section(30, (s) => {
+    s.ground(0, 3);
+    const m = s.add('movers', float(6, 1.4, 2.6, 0.8, 3.6), float(12, 2.8, 2.6, 0.8, 3.6, 0.5), float(18, 1.6, 2.6, 0.8, 3.6, 0.25));
+    s.add('magnets', { x: 10.4, y: -1.4, radius: 3.6, strength: 22, core: 0.7 }, { x: 16.4, y: -1.4, radius: 3.6, strength: 22, core: 0.7 });
+    s.ground(24, 30);
+    s.checkpoint(1, 0);
+    s.star(13.3, 5.6);
+    s.pass('Plateformes et trous noirs', [-5, 0], ['on', 24.2, 30, 0], [['goTo', 2.2], ['hopTo', 2, 'movers', m, 1.3], ['hopTo', 2, 'movers', m + 1, 1.3], ['hopTo', 2, 'movers', m + 2, 1.3], ['hop', 2, 25.6], ['goTo', 26]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const P6 = {
-  id: 'space-6',
-  difficulty: 'extreme',
-  number: 6,
-  nameKey: 'level.space.6',
-  bounds: bounds(66, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [
-    ...walls(66),
-    { x: -4, y: -6, w: 14, h: 6, style: 'ground' },
-    { x: 26, y: -6, w: 44, h: 6, style: 'ground' },
-    { x: 33, y: 0, w: 1.2, h: 16, style: 'wall' },           // paroi : on passe par les portails
-    { x: 40, y: 6.6, w: 8, h: 1, style: 'block' },           // plafond de la zone inversée
-  ],
-  movers: [
-    { x: 12, y: 1.5, w: 2.6, h: 0.5, style: 'float', path: { dx: 0, dy: 0.6, period: 3.4, phase: 0 } },
-    { x: 16.8, y: 3.0, w: 2.6, h: 0.5, style: 'float', path: { dx: 0, dy: 0.6, period: 3.8, phase: 0.3 } },
-    { x: 21.6, y: 2.0, w: 2.6, h: 0.5, style: 'float', path: { dx: 0, dy: 0.6, period: 3.2, phase: 0.6 } },
-  ],
-  asteroids: [{ x: 15.4, y: 5.4, r: 0.6, path: { dx: 0, dy: -2.6, period: 4.4, phase: 0 } }],
-  teleporters: [{ a: { x: 31.6, y: 0.9 }, b: { x: 35.6, y: 0.9 }, r: 0.8, twoWay: true }],
-  gravityZones: [{ x: 40, y: 0, w: 8, h: 6.6 }],
-  spikes: [{ x: 42.2, y: 0, w: 5.2, dir: 'up' }],
-  stars: [
-    { x: 18.1, y: 5.6 },
-    { x: 31.6, y: 3.4 },
-    { x: 44, y: 5.6 },
-  ],
-  crushers: [{ x: 55.2, w: 2.2, top: 2.8, bottom: 0, period: 2.1, phase: 0 }],
-  hoop: { x: 63.4, y: 3.4, facing: -1, mount: 'pole' },
-  passages: [
-    { name: 'Plateformes flottantes', start: [3, 0], goal: ['on', 26, 33, 0], plan: [['goTo', 9.4], ['hopTo', 2, 'movers', 0, 1.3], ['hopTo', 2, 'movers', 1, 1.3], ['hopTo', 1, 'movers', 2, 1.3], ['hop', 2, 28]] },
-    { name: 'Portails', start: [27, 0], goal: ['x', 34.5], plan: [['hold', 1, 34.6]] },
-    { name: 'Gravité inversée', start: [36, 0], goal: ['on', 48, 54.6, 0], plan: [['hold', 1, 48.2], ['goTo', 54]] },
-    { name: 'Piston', start: [54, 0], goal: ['on', 58, 66, 0], plan: [['goTo', 54], ['waitCycle', 2.1, 1.75, 1.85], ['run', 1, 58.2, 66, 0]] },
-    { name: 'Sol → panier', start: [58.4, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
-
-
-const P7 = {
-  id: 'space-7',
-  difficulty: 'extreme',
-  number: 7,
-  nameKey: 'level.space.7',
-  bounds: bounds(62, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(62), floor(-4, 10), pad(19, 4.0, 2.5), pad(31.5, 4.2, 2.5), floor(40, 66), { x: 51.6, y: 0, w: 10.4, h: 1.2, style: 'block', skin: 'glow' }],
-  boulders: [{ x1: 45.6, x2: 51, y: 0, r: 0.5, dir: -1, speed: 6, period: 2.0, phase: 0 }],
-  blinkers: [{ x: 25.5, y: 2.5, w: 2.5, h: 0.5, period: 3.2, on: 2.2, phase: 0 }],
-  teleporters: [
-    { a: { x: 8, y: 0.9 }, b: { x: 20.25, y: 4.9 }, r: 0.8 },
-    { a: { x: 33.4, y: 5.1 }, b: { x: 44, y: 0.9 }, r: 0.8 },
-  ],
-  asteroids: [{ x: 23.6, y: 6, r: 0.7, path: { dx: 0, dy: -4.4, period: 4, phase: 0 } }],
-  stars: [{ x: 14, y: 3 }, { x: 26.75, y: 6.2 }, { x: 38, y: 3.4 }],
-  hoop: hoopAt(57, 3.4, 1.2),
-  passages: [
-    { name: 'Portail vers la plateforme', start: [3, 0], goal: ['on', 19, 21.5, 4], plan: [['hold', 1, 19.9], ['goTo', 20.3]] },
-    { name: 'Sous l\'astéroïde', start: [20.3, 4], goal: ['on', 25.5, 28, 3], plan: [['waitCycle', 4, 1.5, 1.6], ['hop', 2, 26.75]] },
-    { name: 'Plateforme du portail', start: [26.75, 3], goal: ['on', 31.5, 34, 4.2], plan: [['waitCycle', 3.2, 0.78, 0.88], ['hop', 2, 32.4]] },
-    { name: 'Portail vers le sol', start: [32.4, 4.2], goal: ['on', 43, 44.8, 0], plan: [['hold', 1, 43.5], ['goTo', 44.2]] },
-    { name: 'Boules de plasma → estrade', start: [44.2, 0], goal: ['on', 52, 62, 1.2], plan: [['charge', 2], ['dodgeBoulders', 52.6, 3.2, 49.8]] },
-    { name: 'Estrade → panier', start: [53, 1.2], goal: ['win'], plan: 'shot' },
-  ],
-};
-
-const P8 = {
-  id: 'space-8',
-  difficulty: 'extreme',
-  number: 8,
-  nameKey: 'level.space.8',
-  bounds: bounds(66, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [
-    ...walls(66),
-    floor(-4, 70),
-    { x: 10, y: 6.4, w: 12, h: 1, style: 'block', skin: 'glow' },
-    { x: 32, y: 6.4, w: 14, h: 1, style: 'block', skin: 'glow' },
-  ],
-  gravityZones: [{ x: 10, y: 0, w: 12, h: 6.4 }, { x: 32, y: 0, w: 14, h: 6.4 }],
-  spikes: [
-    { x: 12, y: 0, w: 10, dir: 'up' },
-    { x: 34, y: 0, w: 12, dir: 'up' },
-    { x: 41, y: 6.4, w: 1.6, dir: 'down' },
-  ],
-  crushers: [{ x: 52.6, w: 2.4, top: 2.8, bottom: 0, period: 2.0, phase: 0 }],
-  stars: [{ x: 16, y: 5.6 }, { x: 41.8, y: 4.2 }, { x: 44.5, y: 5.6 }],
-  hoop: hoopAt(63),
-  passages: [
-    { name: 'Première zone inversée', start: [3, 0], goal: ['on', 23, 31.4, 0], plan: [['run', 1, 23, 31.4, 0], ['goTo', 27]] },
-    { name: 'Pics suspendus', start: [27, 0], goal: ['on', 46.5, 51.8, 0], plan: [['jumpAt', 1, 39.6], ['goTo', 51.2]] },
-    { name: 'Piston', start: [51.2, 0], goal: ['on', 55.6, 66, 0], plan: [['goTo', 51.4], ['waitCycle', 2.0, 1.6, 1.7], ['run', 1, 55.8, 66, 0]] },
-    { name: 'Sol → panier', start: [56, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
-
-const P9 = {
-  id: 'space-9',
-  difficulty: 'extreme',
-  number: 9,
-  nameKey: 'level.space.9',
-  bounds: bounds(58, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(58), floor(-4, 9), floor(36, 62)],
-  movers: [float(11, 1.1, 2.4, 0.6, 3.4), float(16, 2.9, 2.4, 0.8, 3.8, 0.3), float(21, 1.7, 2.4, 0.6, 3.2, 0.6), float(26, 3.5, 2.4, 0.6, 3.6, 0.1), float(31, 2.1, 2.4, 0.8, 3.8, 0.45)],
-  asteroids: [
-    { x: 14.7, y: 8.4, r: 0.6, path: { dx: 0, dy: -5, period: 4, phase: 0 } },
-    { x: 24.7, y: 8.8, r: 0.6, path: { dx: 0, dy: -5.6, period: 4.6, phase: 0.5 } },
-  ],
-  spikes: [{ x: 38.5, y: 0, w: 2.5, dir: 'up' }],
-  lasers: [{ x1: 34.6, y1: 0.8, x2: 34.6, y2: 8, period: 2.6, on: 1.2, phase: 0 }],
-  checkpoints: [{ x: 37, y: 0 }],
-  stars: [{ x: 17.2, y: 6 }, { x: 24.7, y: 5.4 }, { x: 39.7, y: 3.6 }],
-  hoop: hoopAt(51),
-  passages: [
-    { name: 'Plateforme 1', start: [3, 0], goal: ['onMover', 0], plan: [['goTo', 8.4], ['hopTo', 2, 'movers', 0, 1.2]] },
-    { name: 'Astéroïde 1 → plateforme 2', start: [12.2, 1.6], goal: ['onMover', 1], plan: [['waitCycle', 4, 0.5, 0.6], ['hopTo', 2, 'movers', 1, 1.2]] },
-    { name: 'Plateforme 3', start: [17.2, 3.95], goal: ['onMover', 2], plan: [['hopTo', 2, 'movers', 2, 1.2]] },
-    { name: 'Astéroïde 2 → plateforme 4', start: [22.2, 2.8], goal: ['onMover', 3], plan: [['waitCycle', 4.6, 1.07, 1.18], ['hopTo', 2, 'movers', 3, 1.2]] },
-    { name: 'Plateforme 5', start: [27.2, 4.1], goal: ['onMover', 4], plan: [['hopTo', 2, 'movers', 4, 1.2]] },
-    { name: 'Plateforme 5 → laser → sol', start: [32.2, 3.4], goal: ['on', 36, 38.2, 0], plan: [['charge', 2], ['waitCycle', 2.6, 0.05, 0.15], ['jump', 1, 37.2]] },
-    { name: 'Pics', start: [37.2, 0], goal: ['on', 41, 48, 0], plan: [['hop', 2, 43]] },
-    { name: 'Sol → panier', start: [45, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
-
-const P10 = {
-  id: 'space-10',
-  difficulty: 'extreme',
-  number: 10,
-  nameKey: 'level.space.10',
-  bounds: bounds(104, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [
-    ...walls(104),
-    floor(-4, 10),
-    floor(22, 64),
-    { x: 34, y: 0, w: 1.2, h: 16, style: 'wall' },
-    { x: 42, y: 6.4, w: 12, h: 1, style: 'block', skin: 'glow' },
-    floor(82, 108),
-  ],
-  movers: [float(12, 1.5, 2.4, 0.6, 3.4), float(17, 3.1, 2.4, 0.6, 3.8, 0.3), float(66, 1.9, 2.4, 0.6, 3.4), float(72, 2.9, 2.4, 0.8, 3.8, 0.3), float(77, 1.7, 2.4, 0.6, 3.2, 0.6)],
-  spikes: [
-    { x: 25, y: 0, w: 2, dir: 'up' },
-    { x: 44, y: 0, w: 10, dir: 'up' },
-    { x: 50.4, y: 6.4, w: 1.4, dir: 'down' },
-  ],
-  teleporters: [{ a: { x: 32.6, y: 0.9 }, b: { x: 37, y: 0.9 }, r: 0.8, twoWay: true }],
-  gravityZones: [{ x: 42, y: 0, w: 12, h: 6.4 }],
-  asteroids: [{ x: 70.2, y: 6, r: 0.7, path: { dx: 0, dy: -4, period: 4, phase: 0 } }],
-  lasers: [{ x1: 30.8, y1: 0, x2: 30.8, y2: 6, period: 3, on: 1.1, phase: 0 }],
-  magnets: [{ x: 74, y: -1.6, radius: 3.6, strength: 20, core: 0.7 }],
-  crushers: [{ x: 88.4, w: 2.4, top: 2.8, bottom: 0, period: 2.0, phase: 0 }],
-  checkpoints: [{ x: 39.6, y: 0 }, { x: 61, y: 0 }, { x: 85, y: 0 }],
-  stars: [{ x: 15.6, y: 5.4 }, { x: 51.1, y: 4.2 }, { x: 70.2, y: 3.4 }],
-  hoop: hoopAt(98),
-  passages: [
-    { name: 'Deux plateformes flottantes', start: [3, 0], goal: ['on', 22, 24.6, 0], plan: [['goTo', 9.4], ['hopTo', 2, 'movers', 0, 1.2], ['hopTo', 2, 'movers', 1, 1.2], ['hop', 2, 23.4]] },
-    { name: 'Pics', start: [23.4, 0], goal: ['on', 27.5, 32, 0], plan: [['goTo', 23.8], ['hop', 3, 29]] },
-    { name: 'Laser → portail', start: [29, 0], goal: ['on', 37, 41.6, 0], plan: [['goTo', 29.4], ['waitCycle', 3, 0.7, 0.8], ['hold', 1, 36.9], ['goTo', 39]] },
-    { name: 'Zone inversée et pics suspendus', start: [39, 0], goal: ['on', 55, 63.4, 0], plan: [['jumpAt', 1, 49], ['run', 1, 55, 63.4, 0], ['goTo', 60]] },
-    { name: 'Dernières plateformes', start: [60, 0], goal: ['on', 82, 87.8, 0], plan: [['goTo', 63.4], ['hopTo', 2, 'movers', 2, 1.2], ['hopTo', 2, 'movers', 3, 1.2], ['hopTo', 1, 'movers', 4, 1.2], ['hop', 2, 84], ['goTo', 87.2]] },
-    { name: 'Piston final', start: [87.2, 0], goal: ['on', 91.4, 104, 0], plan: [['goTo', 87.2], ['waitCycle', 2.0, 1.6, 1.7], ['run', 1, 91.6, 104, 0]] },
-    { name: 'Sol → panier', start: [91.8, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
-
-export const SPACE_LEVELS = [P1, P2, P3, P4, P5, P6, P7, P8, P9, P10];
+export const SPACE_LEVELS = [L41, L42, L43, L44, L45, P6, P7, P8, P9, P10];
