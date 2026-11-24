@@ -18,12 +18,12 @@ import { CATALOG, itemById } from './catalog.js';
 // fréquent, épique rare, légendaire très rare. Les gemmes ne sortent que des coffres premium et
 // légendaires (Hoop Pass, onglet Gemmes de la boutique).
 export const CHESTS = {
-  common: { coins: [100, 200], itemChance: 0.3, odds: { common: 80, rare: 18, epic: 2 } },
-  rare: { coins: [250, 450], itemChance: 0.55, odds: { common: 30, rare: 52, epic: 15, legendary: 3 } },
-  epic: { coins: [600, 1000], itemChance: 0.9, odds: { rare: 40, epic: 48, legendary: 12 } },
+  common: { coins: [100, 200], itemChance: 0.15, odds: { common: 82, rare: 17, epic: 1 } },
+  rare: { coins: [250, 450], itemChance: 0.3, odds: { common: 30, rare: 59, epic: 10, legendary: 1 } },
+  epic: { coins: [600, 1000], itemChance: 0.6, odds: { rare: 55, epic: 40, legendary: 5 } },
   // Hoop Pass et boutique de gemmes
-  premium: { coins: [900, 1500], itemChance: 1, odds: { rare: 15, epic: 60, legendary: 25 }, gems: [5, 15] },
-  legendary: { coins: [1500, 2500], itemChance: 1, odds: { epic: 30, legendary: 70 }, gems: [15, 25] },
+  premium: { coins: [900, 1500], itemChance: 0.85, odds: { rare: 35, epic: 53, legendary: 12 }, gems: [5, 15] },
+  legendary: { coins: [1500, 2500], itemChance: 1, odds: { epic: 50, legendary: 50 }, gems: [15, 25] },
 };
 // Ancien « coffre bonus amélioré » (supprimé à la phase 4) : une sauvegarde ancienne qui le citerait
 // reçoit un coffre rare.
@@ -36,10 +36,13 @@ export function chestOdds(kind) {
   return Object.fromEntries(Object.entries(c.odds).map(([r, w]) => [r, (c.itemChance * w) / total]));
 }
 
-/** Tirage d'une rareté selon des poids, parmi celles qui ont encore un objet à gagner. */
-export function pickRarity(odds, wallet, rng = Math.random) {
-  const open = Object.entries(odds).filter(([r]) => CATALOG.some((it) => purchasable(it) && it.rarity === r && !wallet.owns(it.id)));
-  const list = open.length ? open : Object.entries(odds);
+/**
+ * Tirage d'une rareté selon les poids du coffre. Les chances ne changent JAMAIS selon la collection : si
+ * tous les objets de la rareté tirée sont déjà possédés, le coffre donne des pièces à la place (sinon,
+ * une fois les objets communs possédés, les légendaires deviendraient fréquents).
+ */
+export function pickRarity(odds, rng = Math.random) {
+  const list = Object.entries(odds);
   const total = list.reduce((a, [, w]) => a + w, 0);
   let x = rng() * total;
   for (const [r, w] of list) {
@@ -47,6 +50,12 @@ export function pickRarity(odds, wallet, rng = Math.random) {
     if (x < 0) return r;
   }
   return list[list.length - 1][0];
+}
+
+/** Un objet pas encore possédé de cette rareté exacte (ou null). */
+function unownedOf(wallet, rarity, rng) {
+  const pool = CATALOG.filter((it) => purchasable(it) && it.rarity === rarity && !wallet.owns(it.id));
+  return pool.length ? pool[Math.floor(rng() * pool.length)] : null;
 }
 
 /** Valeur en pièces d'un article déjà possédé (récompense remplacée). */
@@ -78,9 +87,13 @@ export function grant(reward, wallet, stats = null, rng = Math.random) {
     out.coins += Math.round((c.coins[0] + rng() * (c.coins[1] - c.coins[0])) / 10) * 10;
     if (c.gems) out.gems += Math.round(c.gems[0] + rng() * (c.gems[1] - c.gems[0]));
     if (rng() < c.itemChance) {
-      const it = randomUnowned(wallet, [pickRarity(c.odds, wallet, rng)], rng);
+      const rarity = pickRarity(c.odds, rng);
+      const it = unownedOf(wallet, rarity, rng);
       if (it) out.item = it;
-      else out.coins += 200;
+      else {
+        out.duplicate = true;
+        out.coins += DUPLICATE[rarity] ?? 200;
+      }
     }
     stats?.add('chests', 1, false);
   }

@@ -1,5 +1,5 @@
 // Tests du système publicitaire (publicités récompensées uniquement) : configuration, gestionnaire,
-// coffre bonus quotidien, roue de la chance.
+// roulette quotidienne (le coffre bonus a été supprimé à la phase 4).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 

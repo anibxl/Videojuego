@@ -44,8 +44,8 @@ Voir `store/CHECKLIST.md`, § 10 : clé d'importation, `keystore.properties`, pu
 ## 4. Passer aux vrais identifiants (juste avant la publication)
 
 Voir `store/CHECKLIST.md`, § 11. En résumé :
-1. Console AdMob : créer l'application et **4 blocs « Avec récompense »** (`doubleCoins`, `checkpoint`,
-   `bonusChest`, `wheelSpin`).
+1. Console AdMob : créer l'application et **3 blocs « Avec récompense »** (`doubleCoins`, `checkpoint`,
+   `wheelSpin`).
 2. `src/shared/ads-config.js` : remplacer les identifiants `prod` (les `XXXX`) et passer `useTestAds` à `false`.
 3. `android/app/src/main/res/values/strings.xml` : `admob_app_id` = vrai identifiant d'application.
 4. Publier `app-ads.txt` sur le site du développeur, et le message de consentement RGPD dans AdMob.

@@ -160,8 +160,8 @@ npm run android:sync        # copie le jeu (www/) dans le projet Android
 ## 11. Publicités AdMob en production
 
 - [ ] Console AdMob : créer l'application Android « Hoop Bounce » et la **relier à la fiche Play**.
-- [ ] Créer **4 blocs « Avec récompense »** : `doubleCoins`, `checkpoint`, `bonusChest` et `wheelSpin`.
-- [ ] `src/shared/ads-config.js` : remplacer les 4 identifiants `prod` et l'identifiant d'application, puis
+- [ ] Créer **3 blocs « Avec récompense »** : `doubleCoins`, `checkpoint` et `wheelSpin`.
+- [ ] `src/shared/ads-config.js` : remplacer les 3 identifiants `prod` et l'identifiant d'application, puis
       passer `useTestAds: false`. Garde-fou : tant qu'un `XXXX` reste, le jeu reste en mode test.
 - [ ] `android/app/src/main/res/values/strings.xml` : `admob_app_id` = vrai identifiant d'application.
 - [ ] **`app-ads.txt`** à la racine du site web indiqué dans la fiche. Le contenu est fourni par AdMob.

@@ -72,7 +72,7 @@ export function simulate({ days = 30, profile = 'active', ads = false, seed = 7,
   const bonus = new Bonus(store, now);
   const achievements = new Achievements(store);
   const passNow = () => new Date(clock.t);
-  const pass = () => new HoopPass(undefined, store, passNow);
+  const pass = () => new HoopPass({ storage: store, now: passNow });
   let nextLevel = 0;
   let firstPurchase = null;
   let premiumDay = null;
@@ -117,7 +117,7 @@ export function simulate({ days = 30, profile = 'active', ads = false, seed = 7,
       if (swish) stats.add('swishes', 1, false);
       if (rng() < 0.4) stats.add('noDeath', 1, false);
       stats.markLevel(L.id);
-      awardPassXp('level', { first }, store, passNow);
+      awardPassXp('level', { first }, store);
     };
     for (let i = 0; i < P.firstClears && nextLevel < LEVELS.length; i++) play(LEVELS[nextLevel++], true);
     const replays = P.replays + (nextLevel >= LEVELS.length ? P.firstClears : 0);
@@ -125,11 +125,11 @@ export function simulate({ days = 30, profile = 'active', ads = false, seed = 7,
     stats.save();
     // Missions du jour (le joueur réussit les plus simples d'abord)
     const worlds = WORLDS.filter((_, i) => progress.isWorldUnlocked(i)).map((w) => w.id);
-    const missions = generateMissions(stats.todayKey?.() ?? now().toISOString().slice(0, 10), worlds);
+    const missions = generateMissions(now().toISOString().slice(0, 10), worlds);
     for (const m of missions.slice(0, P.missions)) {
       track(grant(m.reward, wallet, stats, rng));
       stats.add('missions', 1);
-      awardPassXp('mission', {}, store, passNow);
+      awardPassXp('mission', {}, store);
     }
     // Succès atteints
     for (const a of achievements.view(ctx).filter((x) => x.state === 'ready')) track(achievements.claim(a.id, ctx, rng));
@@ -150,7 +150,9 @@ export function simulate({ days = 30, profile = 'active', ads = false, seed = 7,
     clock.t = new Date(clock.t.getTime() + 86400000);
   }
   const last = out[out.length - 1];
-  return { days: out, firstPurchase, premiumDay, passMaxDay, totals, final: { ...last, collection: purchasable.length } };
+  const byRarity = {};
+  for (const it of purchasable) if (wallet.owns(it.id)) byRarity[it.rarity] = (byRarity[it.rarity] ?? 0) + 1;
+  return { days: out, firstPurchase, premiumDay, passMaxDay, totals, final: { ...last, collection: purchasable.length, byRarity } };
 }
 
 const isMain = process.argv[1] === fileURLToPath(import.meta.url);
@@ -162,7 +164,7 @@ if (isMain) {
       console.log(`\n${profile}${ads ? ' + publicités' : ''} — ${days} jours`);
       console.log(' jour  pièces  gemmes  niveaux  Pass  objets  coffres');
       for (const d of r.days.filter((d) => d.day === 1 || d.day % 5 === 0)) console.log(`  ${String(d.day).padStart(3)} ${String(d.coins).padStart(7)} ${String(d.gems).padStart(7)} ${String(d.levels).padStart(8)} ${String(d.passLevel).padStart(5)}${d.premium ? '★' : ' '} ${String(d.owned).padStart(6)} ${String(d.chests).padStart(8)}`);
-      console.log(`  gagné : ${r.totals.coinsEarned} pièces, ${r.totals.gemsEarned} gemmes, ${r.totals.ads} publicités · 1er achat : jour ${r.firstPurchase ?? '—'} · Premium : jour ${r.premiumDay ?? '—'} · Pass terminé : jour ${r.passMaxDay ?? '—'} · collection ${r.final.owned}/${r.final.collection}`);
+      console.log(`  gagné : ${r.totals.coinsEarned} pièces, ${r.totals.gemsEarned} gemmes, ${r.totals.ads} publicités · 1er achat : jour ${r.firstPurchase ?? '—'} · Premium : jour ${r.premiumDay ?? '—'} · Pass terminé : jour ${r.passMaxDay ?? '—'} · collection ${r.final.owned}/${r.final.collection} ${JSON.stringify(r.final.byRarity)}`);
     }
   }
 }

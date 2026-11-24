@@ -23,14 +23,14 @@ export const AD_SPINS_PER_DAY = 3;
 
 /** Cases de la roue, dans l'ordre (sens des aiguilles d'une montre depuis le haut). `weight` : chances relatives (total 100). */
 export const WHEEL = [
-  { id: 'coins120', reward: { coins: 120 }, weight: 28, icon: 'coin', color: '#2d3f6b' },
-  { id: 'chestCommon', reward: { chest: 'common' }, weight: 18, icon: 'chest', color: '#3a2a52' },
-  { id: 'coins250', reward: { coins: 250 }, weight: 22, icon: 'coin', color: '#2d3f6b' },
+  { id: 'coins120', reward: { coins: 120 }, weight: 32, icon: 'coin', color: '#2d3f6b' },
+  { id: 'chestCommon', reward: { chest: 'common' }, weight: 13, icon: 'chest', color: '#3a2a52' },
+  { id: 'coins250', reward: { coins: 250 }, weight: 25, icon: 'coin', color: '#2d3f6b' },
   { id: 'gems', reward: { gems: 10 }, weight: 5, icon: 'gem', color: '#16465c' },
-  { id: 'coins500', reward: { coins: 500 }, weight: 12, icon: 'coin', color: '#2d3f6b' },
-  { id: 'chestRare', reward: { chest: 'rare' }, weight: 9, icon: 'chest', color: '#3a2a52' },
+  { id: 'coins500', reward: { coins: 500 }, weight: 13, icon: 'coin', color: '#2d3f6b' },
+  { id: 'chestRare', reward: { chest: 'rare' }, weight: 6, icon: 'chest', color: '#3a2a52' },
   { id: 'coins1200', reward: { coins: 1200 }, weight: 4, icon: 'coin', color: '#5a3d10' },
-  { id: 'skin', reward: { cosmetic: ['epic', 'legendary'], category: 'ball' }, weight: 2, icon: 'skin', color: '#5a1f4a' },
+  { id: 'skin', reward: { cosmetic: 'epic', category: 'ball' }, weight: 2, icon: 'skin', color: '#5a1f4a' },
 ];
 
 /** Tirage pondéré d'une case. */

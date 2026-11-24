@@ -113,7 +113,12 @@ test('missions : 3 par jour, même tirage pour une date, renouvelées le lendema
   assert.deepEqual(a, b);
   assert.equal(a.length, 3);
   assert.equal(new Set(a.map((m) => m.tpl)).size, 3, 'trois missions différentes');
-  assert.ok(a[2].reward.chest || a[2].reward.cosmetic, 'la difficile rapporte un coffre ou un article');
+  assert.ok(a[2].reward.coins > a[0].reward.coins, 'la difficile rapporte plus que la facile');
+  // Sur un mois, la mission difficile donne un coffre environ un jour sur trois (jamais de gemmes)
+  const month = Array.from({ length: 30 }, (_, d) => generateMissions(`2026-12-${String(d + 1).padStart(2, '0')}`, ['city'])[2]);
+  const chests = month.filter((m) => m.reward.chest).length;
+  assert.ok(chests >= 4 && chests <= 16, `${chests} coffres en 30 jours`);
+  assert.ok(month.every((m) => !m.reward.gems));
   for (const m of a) assert.ok(MISSION_TEMPLATES.some((t) => t.id === m.tpl));
   const store = memory();
   const c = clock('2026-11-19T09:00:00');

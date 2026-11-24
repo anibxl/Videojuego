@@ -2,8 +2,8 @@
 //
 // Chaque jour, 3 missions sont tirées automatiquement (tirage déterminé par la date : le même jour
 // donne les mêmes missions) : une facile, une moyenne, une difficile. Leur progression vient des
-// compteurs du jour (stats.js). Récompenses : des pièces ; la mission difficile ajoute un coffre
-// (commun, rare, ou épique rarement) ; la moyenne, parfois un coffre commun. Jamais de gemmes.
+// compteurs du jour (stats.js). Récompenses : des pièces ; la mission difficile ajoute, un jour sur trois,
+// un coffre (commun, rare, ou épique rarement) ; la moyenne, rarement un coffre commun. Jamais de gemmes.
 // Tout se renouvelle à minuit (heure locale).
 
 import { dayKey, safeLocalStorage } from './stats.js';
@@ -52,12 +52,12 @@ export function generateMissions(date, worlds = ['city']) {
       m.stat = `world.${m.world}`;
     }
     if (tier === 2) {
-      // La mission difficile : un coffre — commun le plus souvent, rare parfois, épique rarement
+      // La mission difficile : environ un jour sur trois, un coffre — commun le plus souvent, rare parfois, épique rarement
       const r = rng();
-      if (r < 0.62) m.reward.chest = 'common';
-      else if (r < 0.92) m.reward.chest = 'rare';
-      else m.reward.chest = 'epic';
-    } else if (tier === 1 && rng() < 0.15) m.reward.chest = 'common';
+      if (r < 0.2) m.reward.chest = 'common';
+      else if (r < 0.28) m.reward.chest = 'rare';
+      else if (r < 0.3) m.reward.chest = 'epic';
+    } else if (tier === 1 && rng() < 0.08) m.reward.chest = 'common';
     return m;
   });
 }

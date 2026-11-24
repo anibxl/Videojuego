@@ -103,7 +103,7 @@ const collectionView = new CollectionView($('#page-collection'), viewEnv);
 const dailyView = new DailyView($('#page-quotidien'), viewEnv);
 const missionsView = new MissionsView($('#page-missions'), viewEnv);
 const achievementsView = new AchievementsView($('#page-succes'), viewEnv);
-// Coffre bonus et roue de la chance (étape 13)
+// Roulette quotidienne (étape 13, roulette seule depuis la phase 4)
 const bonusView = new BonusView($('#page-bonus'), viewEnv);
 // Mode Trickshot : page de présentation et sélection des 50 niveaux
 viewEnv.showPage = (p) => showPage(p);

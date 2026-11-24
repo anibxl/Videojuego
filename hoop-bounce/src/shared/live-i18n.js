@@ -68,7 +68,7 @@ const BASE = {
   'chest.epic': A('Coffre épique', 'Epic chest', 'Cofre épico'),
   'reward.cosmetic.common': A('Article commun', 'Common item', 'Objeto común'),
   'reward.cosmetic.rare': A('Article rare', 'Rare item', 'Objeto raro'),
-  // Page Bonus (étape 13) : coffre bonus et roue de la chance
+  // Page Roulette quotidienne (étape 13, refaite à la phase 4 : la roulette seule)
   'chest.super': A('Coffre amélioré', 'Upgraded chest', 'Cofre mejorado'),
   'pass.levelUp': A('niveau {n} !', 'level {n}!', '¡nivel {n}!'),
   'chest.legendary': A('Coffre légendaire', 'Legendary chest', 'Cofre legendario'),

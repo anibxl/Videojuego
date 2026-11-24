@@ -63,8 +63,8 @@ que le temps du chargement (minimum 1,1 s) et ne revient pas en sortant d'une pa
 
 **Étape 13 :** **publicités récompensées, toujours facultatives** (Google AdMob, identifiants
 de test uniquement pendant le développement). Doubler les pièces après une victoire, reprendre au dernier
-drapeau après un échec (offert si aucune annonce n'est disponible), coffre bonus quotidien gratuit ou amélioré,
-roue de la chance (1 lancer gratuit par jour, lancers bonus). Jamais d'annonce pendant un niveau, au lancement ou
+drapeau après un échec (offert si aucune annonce n'est disponible), roulette quotidienne (1 lancer gratuit par
+jour, puis jusqu'à 3 lancers avec publicité ; le coffre bonus a été supprimé à la phase 4). Jamais d'annonce pendant un niveau, au lancement ou
 automatiquement. Accès : bouton Bonus de l'accueil. Configuration : `src/shared/ads-config.js` (seul fichier à
 modifier avant la publication) et `native/android/README.md`. Dans le navigateur, une annonce de test simulée
 s'affiche (`?ads=none` : aucune annonce, `?ads=fail` : erreur).

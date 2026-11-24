@@ -99,7 +99,7 @@ test('récompenses : gratuites tout de suite, Premium avec des gemmes (rétroact
   assert.equal(w.gems, g - XMAS.premium.gems);
   assert.equal(p.unlockPremium(w), 'owned');
   assert.equal(p.state(1, 'premium'), 'ready', 'Premium : récompenses des niveaux atteints disponibles');
-  for (let i = 0; i < 120; i++) p.addXp('achievement');
+  for (let i = 0; i < Math.ceil(16000 / XMAS.xp.achievement); i++) p.addXp('achievement');
   const all = p.claimAll(w, null, () => 0.5);
   assert.equal(all.length, 99, `${all.length} récompenses`);
   assert.equal(p.claimable(), 0);
@@ -111,7 +111,7 @@ test('fin de saison : plus d’XP ni de récompense (le mythique ne s’obtient 
   const st = memory();
   const w = new Wallet(st);
   const p = pass(st);
-  for (let i = 0; i < 100; i++) p.addXp('achievement');
+  for (let i = 0; i < Math.ceil(16000 / XMAS.xp.achievement); i++) p.addXp('achievement');
   p.claim(25, 'free', w);
   const late = pass(st, AFTER);
   assert.equal(late.active, false);

@@ -785,7 +785,7 @@ html.fit-760 .hub { padding: 0 9px; }
   .dday-name { font-size: 11px; }
 }
 
-/* ── Page Bonus : coffre bonus et roue de la chance (étape 13) ───────────── */
+/* ── Page Roulette : roue de la chance (étape 13) ───────────── */
 
 @keyframes gem-glint { 50% { box-shadow: 0 0 22px var(--gem), 0 0 6px #fff; } }
 .chest.opened .chest-lid { transform: translate(-4%, -34%) rotate(-14deg); }

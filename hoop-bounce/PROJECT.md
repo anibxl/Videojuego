@@ -3,11 +3,12 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.6.0-dev (non publiée ; la version publiable reste
+> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.7.0-dev (non publiée ; la version publiable reste
 > 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1 : menu décoré + **Hoop Pass**) · **Version de
-> test Android :** **`HoopBounce_Test_v9.apk` (1.8.0-test9, mise à jour)** · **iOS :** projet Xcode prêt
-> (`ios/`) · **Phase en cours :** **phase 3 : Mode Fantôme** (rejouer contre son meilleur essai, intégré au mode
-> principal) ; phase 2 (refonte des 50 niveaux) terminée ; rien n'est publié.
+> test Android :** **`HoopBounce_Test_v10.apk` (1.9.0-test10, mise à jour)** · **iOS :** projet Xcode prêt
+> (`ios/`) · **Phase en cours :** **phase 4 : économie** (roulette quotidienne, calendrier, gemmes rares, coffres,
+> pièces, Pass prêt pour l'achat intégré) ; phases 2 (refonte des 50 niveaux) et 3 (Mode Fantôme) terminées ;
+> rien n'est publié.
 
 ## Sommaire
 
@@ -19,6 +20,7 @@
 4 ter. [Saisons — Saison 1 : Noël](#4-ter-saisons--saison-1--noël)
 4 quater. [Hoop Pass et gemmes](#4-quater-hoop-pass-et-gemmes-saison-1--noël)
 4 quinquies. [Mode Fantôme](#4-quinquies-mode-fantôme-phase-3)
+4 sexies. [Économie](#4-sexies-économie-phase-4)
 5. [Progression](#5-progression)
 5 bis. [Publication Google Play](#5-bis-publication-google-play-version-100)
 5 ter. [Version iPhone (iOS)](#5-ter-version-iphone-ios)
@@ -311,7 +313,7 @@ hoop-bounce/
 │   ├── trickshot/          ★ Mode TRICKSHOT : règles, 50 niveaux, visée, rendu de l'arène, progression, textes
 │   └── shared/             Ce que le menu, la boutique et le jeu partagent (réglages, porte-monnaie,
 │                           statistiques, récompenses quotidiennes, missions, succès, coffres,
-│                           publicités récompensées, coffre bonus et roue de la chance)
+│                           publicités récompensées, roulette quotidienne, Hoop Pass, achats)
 ├── tools/build-web.mjs     Prépare www/ (fichiers du jeu seulement) pour l'application Android
 ├── tests/                  Tests automatiques (node --test)
 │   └── fixtures/           Terrain d'essai et solutions enregistrées des niveaux
@@ -434,7 +436,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `collection-view.js` | Page Collection : articles possédés par catégorie, aperçu animé, Équiper / Déséquiper, badge « Équipé ». |
 | `live-views.js` | Pages Récompense quotidienne (calendrier de 7 jours), Missions (3 par jour) et Succès (4 paliers), pastilles de l'accueil. |
 | `about-page.js` | Page « À propos » (étape 16) : identité du jeu, version, créateur, copyright, crédits, liens (politique de confidentialité, conditions d'utilisation). |
-| `bonus-view.js` | Page Bonus du jour (étape 13) : coffre bonus (gratuit ou amélioré avec une publicité) et roue de la chance (rotation, ralentissement, clics, pointeur). |
+| `bonus-view.js` | Page Roulette quotidienne (étape 13, refaite à la phase 4) : roue de la chance seule (rotation, ralentissement, clics, pointeur), lancer gratuit, compte à rebours, 3 lancers avec publicité (pastilles), état « revenez demain ». |
 | `rewards-fx.js` | Révélation d'une récompense : coffre qui tombe, tremble et s'ouvre, rayons, butin (pièces, 💎 gemmes, un ou plusieurs objets), pluie de pièces, pièces qui filent vers le compteur. Aussi utilisée par la boutique (coffres en gemmes). |
 | `pass-view.js` | Page **Hoop Pass** : en-tête de saison, niveau et XP, carte Premium, piste défilante des 50 niveaux (Premium / Gratuit), montées de niveau animées, récupération, « Tout récupérer », « Mon niveau », étincelles. État du bouton de l'accueil (`passHomeState`). |
 | `snowfall.js` | Neige de la saison de Noël (étape 25) : trois plans (lointain, cristaux, flocons flous), vent, parallaxe, flocons précalculés. |
@@ -452,15 +454,16 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `seasons/` | ★ **Configuration des saisons** : `christmas.js` (thème, textes, couleurs, dates, barème d'XP, prix du Premium, 50 niveaux et récompenses, objets exclusifs) et `index.js` (registre). |
 | `gem-offers.js` | Offres en gemmes de la boutique : coffres premium et légendaire, pack de saison. |
 | `stats.js` | Statistiques du joueur : compteurs à vie (succès) et du jour (missions), remis à zéro à minuit (heure locale). |
-| `rewards.js` | Récompenses communes : pièces, gemmes, coffres (commun, rare, épique, premium, légendaire), articles exclusifs, article au hasard ; doublons convertis en pièces. |
-| `daily.js` | Récompense quotidienne : calendrier de 7 jours, une récompense par jour, mémorisée, nouveau cycle après le 7e jour. |
+| `rewards.js` | Récompenses communes : pièces, gemmes, coffres (commun, rare, épique, premium, légendaire ; tables de chances `CHESTS`, `chestOdds`, `pickRarity` depuis la phase 4), articles exclusifs, article au hasard ; doublons convertis en pièces. |
+| `daily.js` | Récompense quotidienne : calendrier de 7 jours (`DAILY_CALENDAR`, phase 4 : pièces, gemmes, coffres, gros lot du 7e jour qui change selon la semaine), une récompense par jour, mémorisée, nouveau cycle après le 7e jour, `week()` pour l'affichage. |
 | `missions.js` | Missions quotidiennes : 9 modèles, 3 missions tirées par jour (facile, moyenne, difficile), progression, récompenses. |
 | `achievements.js` | Succès : 40 succès sur 4 paliers, mesure de la progression, récompenses à récupérer. |
 | `live-i18n.js` | Textes des missions, des succès, des paliers, des coffres et de la page Bonus (FR / EN / ES), partagés par le menu et le jeu. |
 | `ads-config.js` | ★ **Configuration des publicités** (étape 13) : identifiants AdMob de test et de production, limites par jour, public et classification. **Le seul fichier à modifier avant la publication.** |
 | `ads.js` | Gestionnaire centralisé des publicités récompensées : chargement à l'avance, affichage, validation de la récompense, erreurs, absence d'annonce, nouvelles tentatives, moments interdits, limites du jour. Fournisseurs AdMob (Android) et annonce de test (navigateur). |
 | `about.js` | ★ **Contenu de la page « À propos »** (étape 16) : nom, créateur, première année du copyright, liste des crédits (rôle, noms, précision, icône), adresses des liens. **Le seul fichier à modifier pour ajouter un crédit ou relier un lien.** |
-| `bonus.js` | Coffre bonus quotidien et roue de la chance (8 cases pondérées) : disponibilité, tirage, récompenses, sauvegarde. |
+| `bonus.js` | Roulette quotidienne (phase 4) : 8 cases pondérées, 1 lancer gratuit + `AD_SPINS_PER_DAY = 3` lancers avec publicité, `status()` (`free` / `ads` / `done`), tirage, récompenses, sauvegarde (v2, anciennes sauvegardes lues). |
+| `billing.js` | ★ Phase 4 : **achat du Pass Premium**, prêt pour Google Play Billing. `BILLING.mode` (`'gems'` aujourd'hui, `'store'` plus tard), `premiumOffer()`, `purchasePremium()`, fournisseur `PlayBillingProvider` (vide : aucun paiement réel). |
 | `ui-polish.js` | Onde lumineuse au point touché sur les éléments interactifs de toutes les pages (sauf commandes de jeu). |
 | `settings.js` | Réglages du joueur (musique, effets, vibrations, langue, qualité, **Fantôme**), enregistrés et corrigés s'ils sont abîmés. |
 | `safe-width.js` | Largeur réellement utilisable (encoche des iPhone, étape 21) : classes `fit-760` / `fit-1100` sur `<html>` pour les mises en page compactes. |
@@ -477,7 +480,8 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tests/progress.test.mjs` | Progression (déblocage des mondes, statistiques, animation annoncée une fois, conversion de l'ancien format), mondes, textes de jeu dans les trois langues. |
 | `tests/menu.test.mjs` | Textes du menu dans les trois langues, réglages. |
 | `tests/about.test.mjs` | Page À propos : version 1.0.0, créateur, copyright, crédits demandés et traduits, liens intégrés / « Bientôt » sans adresse, vrais liens externes avec adresse. |
-| `tests/ads.test.mjs` | Publicités : identifiants test / production, récompense seulement si l'annonce va au bout, moments interdits, limites du jour sauvegardées, coffre bonus (une fois par jour, amélioré plus riche), roue (lancer gratuit, lancers bonus, tirage pondéré). |
+| `tests/ads.test.mjs` | Publicités : identifiants test / production, récompense seulement si l'annonce va au bout, moments interdits, limites du jour sauvegardées, coffre bonus supprimé (ancienne sauvegarde ignorée), roulette (lancer gratuit, 3 lancers avec publicité au plus, rien avant le gratuit, remise à zéro à minuit, tirage pondéré). |
+| `tests/economy.test.mjs` | ★ Phase 4 : **équilibrage de l'économie** sur des joueurs simulés pendant 30 jours (4 graines) : progression régulière, collection jamais finie, légendaires très rares, gemmes rares, effet des publicités ; chances des coffres ; sources de gemmes ; achat du Pass (gemmes / magasin). |
 | `tests/live.test.mjs` | Statistiques (jour, minuit), coffres et doublons, récompense quotidienne (une par jour, 7 jours, cycle), missions (tirage, renouvellement, récompense unique), succès (paliers, progression, récupération), textes. |
 | `tests/routes.test.mjs` | Chaque passage de chaque niveau reste faisable (solutions enregistrées + solutions expertes). |
 | `tests/fixtures/test-yard.js` | Terrain d'essai pour les tests de mécanique (indépendant des niveaux). |
@@ -488,6 +492,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tools/trickshot-atlas.html` | Atlas des cartes TRICKSHOT (`?from=1&to=25`) avec le trajet de la solution enregistrée, pour relire les niveaux d'un coup d'œil. |
 | `tools/ui-art.mjs` | Génère les illustrations d'interface `assets/ui/*.svg` (pièce, gemme, 6 coffres en deux pièces) dans un style commun (étape 25). |
 | `tools/route-check.mjs` | Outil de level design : essaie des centaines de séquences de commandes par passage et mesure la difficulté ; « pilote » pour écrire les solutions expertes (rouler jusqu'à, charger, sauter, viser, flotter, tirer au panier). `N`, `id` ou plage `a-b` ; `--save` ; `--part=` (calcul réparti). |
+| `tools/economy-sim.mjs` | ★ Phase 4 : **simulateur de l'économie** : des joueurs types (actif, occasionnel ; avec ou sans publicités) jouent N jours avec le vrai code (porte-monnaie, coffres, calendrier, roulette, missions, succès, Pass, boutique) et une horloge simulée. `node tools/economy-sim.mjs 30`. |
 | `tools/route-merge.mjs` | Fusionne les fichiers partiels de `route-check --part` dans `tests/fixtures/routes.json`. |
 | `tools/level-run.mjs` | ★ Phase 2 : joue un niveau **en entier** (tous les passages à la suite, du départ au panier) et mesure la durée experte → durée joueur estimée (× 1,4), comparée à la fourchette du monde. Utilisé par `tests/routes.test.mjs`. |
 | `tools/level-map.mjs` | ★ Phase 2 : plan PNG d'un niveau (géométrie, pièges, étoiles, panier) avec la trajectoire du pilote et les morts. |
@@ -576,7 +581,7 @@ et recule légèrement quand une page est ouverte.
 | **Récompense quotidienne** (étape 12) | Calendrier de 7 jours — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
 | **Missions** (étape 12) | 3 missions du jour — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
 | **Succès** (étape 12) | 40 succès sur 4 paliers — voir [Revenir chaque jour](#revenir-chaque-jour-étape-12). |
-| **Bonus du jour** (étape 13) | Coffre bonus et roue de la chance — voir [Bonus du jour](#bonus-du-jour-indexhtmlbonus). |
+| **Roulette** (étape 13, refaite à la phase 4) | Roulette quotidienne : 1 lancer gratuit + 3 avec publicité — voir [Roulette quotidienne](#roulette-quotidienne-indexhtmlbonus--refaite-à-la-phase-4). |
 | Paramètres | Musique, effets sonores (curseurs appliqués en direct), vibrations, qualité graphique (basse / moyenne / haute), langue (FR / EN / ES), politique de confidentialité, **À propos de Hoop Bounce** (ouvre la page À propos, étape 16), version. |
 | **À propos** (étape 16) | Identité, version, créateur, copyright, crédits et liens — voir [À propos](#à-propos-indexhtmlapropos). |
 
@@ -721,25 +726,28 @@ Même style que le reste du menu (verre sombre, accent orange, ressorts) ; chaqu
 - **Pendant la partie** : une bannière glisse en haut de l'écran — « **Mission terminée !** » (vert) ou
   « **Succès débloqué !** » (or) — avec un arpège lumineux et une vibration.
 
-### Bonus du jour (`index.html#bonus`)
+### Roulette quotidienne (`index.html#bonus`) — refaite à la phase 4
 
-Même style que les autres pages (verre sombre, ressorts), deux panneaux côte à côte :
+Même style que les autres pages (verre sombre, ressorts). Depuis la phase 4, la page ne contient plus qu'**un
+seul panneau centré : la roulette**, récompense quotidienne principale (le coffre bonus a été supprimé). Le menu
+l'appelle « Roulette » (FR) / « Spin » (EN) / « Ruleta » (ES) ; titre de la page : « Roulette quotidienne ».
 
-- **Coffre bonus** : un coffre qui flotte et scintille, **« 🎁 Coffre gratuit »** OU **« 📺 Regarder une
-  publicité → Coffre amélioré »** (« Plus de pièces · article presque garanti · skins et effets rares »).
-  Coffre amélioré : le coffre de la page **se transforme** (orange et or, gemme rose) dans un éclair avec un
-  son de surprise, tremble, puis la grande révélation (rayons, butin, pluie de pièces). Une fois ouvert :
-  « ✓ Coffre du jour ouvert · Revient dans 12 h 53 min » (coffre entrouvert, éteint).
-- **Roue de la chance** : roue à 8 cases (pièces 100 / 250 / 500 / 1000, coffre, coffre rare, effet, skin
-  rare), cercle doré avec lumières, pointeur. **« 🎡 Lancer gratuit »** (1 par jour) puis **« 📺 Regarder une
-  publicité → Lancer supplémentaire · 3 restants »**. Lancer : **rotation fluide** (≈ 5,6 s, 6 tours),
-  **ralentissement progressif** (les dernières cases passent au ralenti : suspense), **clic à chaque case**
-  (plus grave quand la roue ralentit), **pointeur qui sautille**, lumières du bord qui clignotent, puis la case
-  gagnante grossit et la révélation de la récompense s'ouvre.
+- **Roue** à 8 cases (120 / 250 / 500 / 1 200 pièces, 10 💎, coffre commun, coffre rare, skin épique), cercle
+  doré avec lumières, pointeur ; la case 💎 a sa gemme dessinée. Lancer : **rotation fluide** (≈ 5,6 s,
+  6 tours), **ralentissement progressif**, **clic à chaque case**, pointeur qui sautille, lumières qui
+  clignotent, puis la case gagnante grossit et la révélation de la récompense s'ouvre (pièces, gemmes, coffre
+  ou objet).
+- **Trois états** (`data-status` du panneau) :
+  1. **Gratuit** : gros bouton **« 🎡 Lancer gratuit »** (1 par jour).
+  2. **Publicités** : « Lancer gratuit utilisé · Prochain lancer gratuit dans 13 h 52 min » (compte à rebours en
+     direct) puis **« 📺 Regarder une publicité → Lancer supplémentaire »**, avec **3 pastilles** (lancers avec
+     publicité restants aujourd'hui).
+  3. **Terminé** : « Plus de lancers aujourd’hui — reviens demain ! ». Plus aucune
+     roulette jusqu'au lendemain (minuit, heure de l'appareil).
 - Boutons de publicité : « Chargement de la publicité… », « Aucune publicité disponible pour le moment »,
-  « Limite du jour atteinte — revenez demain ». Les options gratuites restent toujours utilisables.
-- En-tête : temps avant le renouvellement (minuit) et compteur de pièces ; mention « Publicités toujours
-  facultatives ».
+  « Limite du jour atteinte — revenez demain ». Le lancer gratuit ne demande jamais de publicité.
+- En-tête : temps avant le renouvellement et compteur de pièces ; mention « Publicités toujours facultatives ».
+- Le point rouge du menu (« Roulette ») s'allume tant que le lancer gratuit du jour n'est pas utilisé.
 
 ### À propos (`index.html#apropos`)
 
@@ -1304,34 +1312,55 @@ repart du niveau 1, l'ancienne est gardée.
 
 ### XP de Pass
 
-| Action | XP |
-|---|---|
-| Terminer un niveau | 60 la première fois, 15 en rejouant |
-| Réussir un Trickshot | 80 la première fois, 20 en rejouant |
-| Récupérer une mission quotidienne | 100 |
-| Récupérer un succès | 150 |
+| Action | XP (phase 4) | Avant |
+|---|---|---|
+| Terminer un niveau | 50 la première fois, 10 en rejouant | 60 / 15 |
+| Réussir un Trickshot | 60 la première fois, 15 en rejouant | 80 / 20 |
+| Récupérer une mission quotidienne | 60 | 100 |
+| Récupérer un succès | 100 | 150 |
 
 - Niveau n → n+1 : `200 + 4 × (n+1)` XP (208 … 400) ; **14 896 XP** pour le niveau 50.
-- Le gain s'affiche sur l'écran de victoire du jeu et du Trickshot (« +60 XP · Hoop Pass · niveau 4 ! »).
+- Rythme visé (simulateur, voir [Économie](#4-sexies-économie-phase-4)) : un joueur actif atteint le niveau ≈ 47 au
+  bout de 30 jours, un joueur occasionnel le niveau ≈ 31 ; le Pass ne se termine pas en quelques jours.
+- Le gain s'affiche sur l'écran de victoire du jeu et du Trickshot (« +50 XP · Hoop Pass · niveau 4 ! »).
 - Hors saison ou après la fin : plus d'XP, rien ne casse.
 
 ### Récompenses (50 niveaux, deux lignes)
 
-- **Gratuit** : pièces (160 → 650), gemmes (15 à 30 aux niveaux 6, 12, 18… ; 60 au niveau 50), coffres (commun
-  3, 9, 21 ; rare 15, 27, 33 ; épique 39, 45), effet de rebond **Flocons** (niveau 25).
-- **Premium** : gemmes, coffres rares / épiques / premium, 2 000 à 4 000 pièces, et les **niveaux marquants** :
-  5 **traînée Sucre d'orge** · 10 **Ballon de Noël** · 20 **effet de victoire « Pluie de cadeaux »** · 30 **skin
-  Père Noël** · 40 **coffre légendaire** · 50 **skin MYTHIQUE « Étoile du Nord »** (nouvelle rareté, rose).
+- **Gratuit** : pièces (170 → 650), **gemmes** (15 aux niveaux 8 et 16, 20 aux niveaux 24 et 32, 25 aux niveaux
+  40 et 48, 40 au niveau 50 : **160 💎**), coffres (commun 3, 9 ; rare 15, 27 ; épique 39, 45), effet de rebond
+  **Flocons** (niveau 25).
+- **Premium** : gemmes (30 au niveau 1, 20 au 12, 25 au 24 et au 36, 60 au 48 : **160 💎**, moins que son prix),
+  coffres rares / épiques / premium, 2 000 à 4 000 pièces, des pièces aux autres niveaux, et les **niveaux
+  marquants** : 5 **traînée Sucre d'orge** · 10 **Ballon de Noël** · 20 **effet de victoire « Pluie de
+  cadeaux »** · 30 **skin Père Noël** · 40 **coffre légendaire** · 50 **skin MYTHIQUE « Étoile du Nord »**
+  (nouvelle rareté, rose).
 - **Objets exclusifs** (`exclusive: 'pass'`, `season: 'christmas-1'`) : jamais en boutique ni dans les coffres ;
   **impossibles à obtenir après la saison** ; ceux déjà obtenus restent au joueur.
-- **Premium** : débloqué avec **250 💎** (version de test, aucun argent réel) ; il donne aussi les récompenses
-  Premium des niveaux déjà atteints. **Cadeau de bienvenue** : 50 💎 à la première ouverture.
+- **Premium** : débloqué avec **250 💎** (prix inchangé ; version de test, aucun argent réel) ; il donne aussi
+  les récompenses Premium des niveaux déjà atteints. **Cadeau de bienvenue** : 50 💎 à la première ouverture.
+  Un joueur actif l'obtient vers le **13e jour**, un joueur occasionnel entre le **17e et le 20e jour**.
+- **Achat (architecture prête pour Google Play Billing)** : la page passe par `purchasePremium()` de
+  `src/shared/billing.js`, jamais directement par le Pass. Aujourd'hui `BILLING.mode = 'gems'` (les gemmes sont
+  dépensées). Plus tard : `mode = 'store'`, le fournisseur `PlayBillingProvider` achète le produit
+  `hoop_pass_christmas_1` (champ `premium.productId` de la saison) et, une fois l'achat validé, appelle
+  `pass.grantPremium('store')`. La sauvegarde garde l'origine (`premiumSource : 'gems' | 'store'`). **Aucun
+  paiement réel n'est branché** : en mode `store`, l'achat répond `unavailable`.
 
 ### Les 💎 gemmes
 
-Monnaie **rare**, à côté des pièces (sans les remplacer). Gagnées : ligne gratuite et Premium du Pass, cadeau de
-bienvenue, coffres premium (5–15) et légendaires (10–20). Dépensées uniquement pour : le Pass Premium, les
-coffres premium et légendaires, les skins très rares vendus en gemmes, les offres spéciales (onglet Gemmes de la
+Monnaie **rare**, à côté des pièces (sans les remplacer). **Phase 4 : jamais après une partie ni dans les
+missions.** Seules sources :
+- **Hoop Pass** : 160 💎 sur la ligne gratuite, 160 sur la ligne Premium, cadeau de bienvenue (50) ;
+- **Récompense quotidienne** : 45 💎 par semaine (jours 3, 5 et 7) ;
+- **Quelques grands succès** (paliers Expert et Légende, 10 à 40 💎) : À mi-chemin 15, Volcanologue 10,
+  Gardien de la forêt 15, Au-delà des étoiles 40, Constellation 30, Astronaute 20, Fidèle 10, Légende des
+  missions 15 ;
+- **Récompenses spéciales** : case 10 💎 de la roulette (5 %), coffres premium (5–15) et légendaires (15–25).
+
+Ordre de grandeur (simulateur) : ≈ 620 💎 gagnées en 30 jours par un joueur actif, ≈ 490 par un joueur
+occasionnel ; les publicités n'en ajoutent presque pas. Dépensées uniquement pour : le Pass Premium, les coffres
+premium et légendaires, les skins très rares vendus en gemmes, les offres spéciales (onglet Gemmes de la
 boutique, `src/shared/gem-offers.js`).
 
 ### La page (`index.html#pass`)
@@ -1415,6 +1444,47 @@ facultatif, et il ne change **rien** au jeu (physique, niveaux, scores, récompe
   meilleur essai seulement et persistance, stockage plein, réglage (y compris anciennes sauvegardes).
 
 ---
+
+## 4 sexies. Économie (phase 4)
+
+> Une économie **équilibrée, motivante et professionnelle** : le joueur actif progresse régulièrement, sans
+> frustration, et garde toujours un objectif. Les publicités restent **totalement facultatives**. Phase 4 :
+> **aucun** changement de gameplay, de niveau, de physique, du Mode Fantôme, du Trickshot ni des menus (seuls
+> les textes et la page Roulette suivent les nouvelles règles).
+
+### Ce qui a changé
+
+| Domaine | Phase 4 | Détails |
+|---|---|---|
+| **Roulette quotidienne** | Récompense quotidienne principale : 1 lancer gratuit par jour, compte à rebours, puis jusqu'à 3 lancers **uniquement** avec une publicité récompensée, puis plus rien jusqu'au lendemain | [Page](#roulette-quotidienne-indexhtmlbonus--refaite-à-la-phase-4) · [Chances](#publicités-récompensées-étape-13) |
+| **Coffre bonus quotidien** | **Supprimé** (logique, page, emplacement publicitaire, textes) ; les anciennes sauvegardes restent lisibles | |
+| **Récompenses quotidiennes** | 150 · 250 · 10 💎 · coffre commun · 400 + 10 💎 · coffre rare · très grosse récompense (qui change selon la semaine) ; nouveau cycle automatique | [Calendrier](#revenir-chaque-jour-étape-12) |
+| **Gemmes** | Rares : Pass, calendrier, grands succès, quelques récompenses spéciales ; **jamais après une partie** | [Gemmes](#les--gemmes) |
+| **Pièces** | Les niveaux longs et difficiles rapportent un peu plus (40 → 135) ; rejouer 8 → 16 ; missions −20 % | [Récompenses](#les-récompenses) |
+| **Coffres** | Commun très fréquent, rare fréquent, épique rare, légendaire très rare ; tables de chances sans « remontée » de rareté | [Coffres](#revenir-chaque-jour-étape-12) |
+| **Hoop Pass** | Prix inchangé (250 💎) ; XP et récompenses rééquilibrées ; achat passé par `billing.js`, prêt pour Google Play Billing (non branché) | [Pass](#récompenses-50-niveaux-deux-lignes) |
+| **Publicités** | Doubler les pièces 5/jour, reprise au drapeau 10/jour, roulette 3/jour : 18 au plus, toutes facultatives | [Publicités](#publicités-récompensées-étape-13) |
+
+### Le simulateur (`tools/economy-sim.mjs`)
+
+Des joueurs types jouent 30 jours avec **le vrai code du jeu** (porte-monnaie, coffres, calendrier, roulette,
+missions, succès, Hoop Pass, boutique) et une horloge simulée ; ils achètent l'objet le moins cher dès qu'ils
+peuvent. `node tools/economy-sim.mjs 30` affiche le tableau jour par jour. Résultats (graine 7) :
+
+| Profil (30 jours) | Pièces gagnées | 💎 gagnées | 1er achat | Premium | Pass | Objets (sur 41) |
+|---|---|---|---|---|---|---|
+| Actif | 106 858 | 621 | jour 2 | jour 13 | niv. 47 | 27 (2 légendaires) |
+| Actif + publicités | 136 520 | 650 | jour 2 | jour 13 | niv. 47 | 23 (1 légendaire) |
+| Occasionnel | 66 945 | 490 | jour 4 | jour 20 | niv. 31 | 19 |
+| Occasionnel + publicités | 94 994 | 540 | jour 3 | jour 17 | niv. 31 | 22 |
+
+Les objets tombés des coffres dépendent du hasard : sur une graine, le joueur avec publicités peut finir avec
+moins d'objets que sans (il en achète autant ou plus, mais en reçoit moins des coffres). Les tests vérifient
+donc des **moyennes sur 4 graines** et des bornes (`tests/economy.test.mjs`).
+
+**Avant les réglages**, le premier passage du simulateur montrait une économie beaucoup trop généreuse :
+41 objets sur 41 en 15 jours et 1 334 💎 en un mois (la rareté « remontait » quand les objets communs étaient
+possédés, trop de coffres, trop de gemmes dans le Pass).
 
 ## 5. Progression
 
@@ -1599,25 +1669,36 @@ drapeau, compte comme une mort), étoiles ramassées dans les niveaux réussis, 
 jeu (seulement quand on joue vraiment : pas en pause, pas pendant l'intro), niveaux terminés par monde ;
 pièces gagnées (niveaux, récompenses), coffres ouverts, récompenses quotidiennes, missions accomplies.
 
-**Récompense quotidienne** — la première connexion de chaque jour donne **une seule** récompense :
+**Récompense quotidienne** — la première connexion de chaque jour donne **une seule** récompense (calendrier
+refait à la phase 4, `DAILY_CALENDAR` dans `src/shared/daily.js`) :
 
 | Jour | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 |---|---|---|---|---|---|---|---|
-| Récompense | 100 pièces | 200 pièces | Coffre commun | 350 pièces | Traînée exclusive « Hoop Bounce » | 500 pièces | Skin exclusif « Hoop Bounce » |
+| Récompense | 150 pièces | 250 pièces | 10 💎 | Coffre commun | 400 pièces + 10 💎 | Coffre rare | **Très grosse récompense** |
 
-- On avance d'un jour à chaque récupération ; **manquer un jour ne fait rien perdre**. Après le 7e jour, une
-  nouvelle semaine commence ; les exclusifs déjà possédés sont alors remplacés par des pièces.
+- **7e jour** selon la semaine (`bigReward(cycle)`) : semaine 1 → **skin exclusif « Hoop Bounce »** + 500 pièces
+  + 25 💎 ; semaine 2 → **traînée exclusive « Hoop Bounce »** + 500 pièces + 25 💎 ; ensuite → **coffre épique**
+  + 25 💎. Un exclusif déjà possédé est remplacé par des pièces.
+- On avance d'un jour à chaque récupération ; **manquer un jour ne fait rien perdre**. Après le 7e jour, un
+  nouveau cycle commence automatiquement. Une semaine rapporte ≈ 1 300 pièces, 45 💎, 2 coffres et le gros lot.
+- La page affiche les vraies récompenses de la semaine en cours (`week()`) : pièces, gemmes (gemme dessinée),
+  nom du coffre (« Coffre commun », « Coffre rare », « Coffre épique »), « + 400 » sur les jours combinés.
 
-**Coffres** :
+**Coffres** (`CHESTS` dans `src/shared/rewards.js`, phase 4) — « commun très fréquent, rare fréquent, épique
+rare, légendaire très rare » :
 
-| Coffre | Pièces | Article (non possédé) |
-|---|---|---|
-| Commun | 120 à 250 | 35 % de chances : commun ou rare |
-| Rare | 300 à 500 | 60 % : rare ou épique |
-| Épique | 600 à 900 | toujours : épique ou légendaire |
+| Coffre | Pièces | Chance d'un objet | Rareté de l'objet | Gemmes |
+|---|---|---|---|---|
+| Commun | 100 à 200 | 15 % | commun 82 % · rare 17 % · épique 1 % | — |
+| Rare | 250 à 450 | 30 % | commun 30 % · rare 59 % · épique 10 % · légendaire 1 % | — |
+| Épique | 600 à 1 000 | 60 % | rare 55 % · épique 40 % · légendaire 5 % | — |
+| Premium | 900 à 1 500 | 85 % | rare 35 % · épique 53 % · légendaire 12 % | 5 à 15 |
+| Légendaire | 1 500 à 2 500 | 100 % | épique 50 % · légendaire 50 % | 15 à 25 |
 
-Si tous les articles possibles sont déjà possédés, des pièces les remplacent. Un article exclusif déjà possédé
-vaut des pièces (150 à 1 000 selon la rareté).
+- La rareté est tirée **d'abord**, selon ces poids (`pickRarity`) ; si tous les objets de cette rareté sont déjà
+  possédés, le joueur reçoit des **pièces de doublon** (150 à 1 000 selon la rareté) au lieu de « remonter » vers
+  une rareté supérieure (c'était le cas avant la phase 4 : la collection se finissait trop vite).
+- `chestOdds(kind)` donne les chances de chaque coffre (tests, affichage futur).
 
 **Missions quotidiennes** — 3 par jour (une facile, une moyenne, une difficile), tirées automatiquement d'après
 la date (le même jour donne les mêmes missions), renouvelées à minuit. Leur progression vient des compteurs du
@@ -1625,18 +1706,19 @@ jour.
 
 | Mission | Facile · moyenne · difficile | Pièces |
 |---|---|---|
-| Terminer N niveaux différents | 2 · 3 · 5 | 100 · 140 · 200 |
-| Marquer N paniers | 5 · 10 · 15 | 100 · 160 · 220 |
-| Obtenir N étoiles | 4 · 7 · 10 | 110 · 160 · 220 |
-| Finir N niveaux sans mourir | 1 · 2 · 3 | 130 · 190 · 260 |
-| Jouer pendant N minutes | 5 · 10 · 15 | 90 · 150 · 210 |
-| Faire N rebonds | 30 · 60 · 100 | 80 · 130 · 180 |
-| Terminer N niveaux du monde X (un monde ouvert) | 1 · 1 · 2 | 120 · 150 · 220 |
-| Jouer N parties | 3 · 4 · 6 | 70 · 100 · 150 |
-| Marquer N swish | 1 · 2 · 3 | 110 · 160 · 210 |
+| Terminer N niveaux différents | 2 · 3 · 5 | 80 · 110 · 160 |
+| Marquer N paniers | 5 · 10 · 15 | 80 · 130 · 180 |
+| Obtenir N étoiles | 4 · 7 · 10 | 90 · 130 · 180 |
+| Finir N niveaux sans mourir | 1 · 2 · 3 | 100 · 150 · 210 |
+| Jouer pendant N minutes | 5 · 10 · 15 | 70 · 120 · 170 |
+| Faire N rebonds | 30 · 60 · 100 | 60 · 100 · 150 |
+| Terminer N niveaux du monde X (un monde ouvert) | 1 · 1 · 2 | 90 · 120 · 180 |
+| Jouer N parties | 3 · 4 · 6 | 60 · 80 · 120 |
+| Marquer N swish | 1 · 2 · 3 | 90 · 130 · 170 |
 
-La mission difficile ajoute un **coffre commun** (55 %), un **coffre rare** (25 %) ou un **article** au hasard
-(20 %) ; la moyenne ajoute parfois (25 %) un coffre commun.
+Pièces **réduites d'environ 20 %** à la phase 4 (les valeurs ci-dessus sont les nouvelles). La mission difficile
+ajoute parfois un coffre : **commun 20 %**, **rare 8 %**, **épique 2 %** (sinon des pièces seulement) ; la
+moyenne ajoute un coffre commun 8 % du temps. **Jamais de gemmes** dans les missions.
 
 **Succès** — 40 succès sur 4 paliers ; chacun a sa récompense à récupérer :
 
@@ -1644,16 +1726,16 @@ La mission difficile ajoute un **coffre commun** (55 %), un **coffre rare** (25 
 |---|---|
 | **Débutant** (bronze) | Premier panier (1er niveau → 100) · Échauffement (100 rebonds → 100) · Chasseur d'étoiles (10 étoiles → 150) · Sans faute (1 niveau sans mourir → 150) · Premier achat (1 article → coffre commun) · Habitué (10 parties → 100) · Roi de la ville (monde Ville → coffre commun) · Tirelire (1 000 pièces gagnées → 150) · Bienvenue ! (1 récompense quotidienne → 100) · En mission (1 mission → 100) |
 | **Intermédiaire** (argent) | Dix sur dix (10 niveaux → 300) · Pluie d'étoiles (50 étoiles → coffre rare) · Dribbleur (1 000 rebonds → 300) · Tireur (100 paniers → 300) · Swish ! (25 swish → article rare) · Accro du shopping (5 articles → 400) · Montagnard (monde Neige → coffre rare) · Ne lâche rien (100 chutes → 200) · Passionné (30 min → 300) · Économe (5 000 pièces → 500) · Chasseur de trésors (5 coffres → 300) |
-| **Expert** (or) | À mi-chemin (25 niveaux → coffre épique) · Volcanologue (monde Volcan → 600) · Gardien de la forêt (monde Forêt → 700) · **Perfection** (un monde avec toutes les étoiles → traînée exclusive **Aurore**) · Tireur d'élite (500 paniers → 800) · Collectionneur (10 articles → coffre épique) · Infatigable (5 000 rebonds → 800) · Impeccable (20 niveaux sans mourir → 800) · Fortune (20 000 pièces → 1 000) · Constellation naissante (100 étoiles → 800) · Agent spécial (15 missions → coffre rare) |
-| **Légende** (violet) | **Au-delà des étoiles** (les 50 niveaux → ballon exclusif **Légende**) · **Constellation** (150 étoiles → animation de panier exclusive **Constellation**) · **Maître du swish** (100 swish → effet de rebond exclusif **Couronne**) · Astronaute (monde Espace → coffre épique) · Fidèle (7 récompenses quotidiennes → coffre épique) · Légende des missions (30 missions → 1 500) · Marathonien (3 h → 2 000) · Collection complète (tous les articles de la boutique → 3 000) |
+| **Expert** (or) | À mi-chemin (25 niveaux → coffre épique + 15 💎) · Volcanologue (monde Volcan → 600 + 10 💎) · Gardien de la forêt (monde Forêt → 700 + 15 💎) · **Perfection** (un monde avec toutes les étoiles → traînée exclusive **Aurore**) · Tireur d'élite (500 paniers → 800) · Collectionneur (10 articles → coffre épique) · Infatigable (5 000 rebonds → 800) · Impeccable (20 niveaux sans mourir → 800) · Fortune (20 000 pièces → 1 000) · Constellation naissante (100 étoiles → 800) · Agent spécial (15 missions → coffre rare) |
+| **Légende** (violet) | **Au-delà des étoiles** (les 50 niveaux → ballon exclusif **Légende** + 40 💎) · **Constellation** (150 étoiles → animation de panier exclusive **Constellation** + 30 💎) · **Maître du swish** (100 swish → effet de rebond exclusif **Couronne**) · Astronaute (monde Espace → coffre épique + 20 💎) · Fidèle (7 récompenses quotidiennes → coffre épique + 10 💎) · Légende des missions (30 missions → 1 500 + 15 💎) · Marathonien (3 h → 2 000) · Collection complète (tous les articles de la boutique → 3 000) |
 
 **Articles exclusifs** (jamais en vente ; dans la boutique, ils portent l'étiquette « Exclusif · Récompense
 quotidienne » ou « Exclusif · Succès ») :
 
 | Article | Catégorie | Rareté | Comment l'obtenir |
 |---|---|---|---|
-| Hoop Bounce (ballon orange, panneau bleu nuit et monogramme « HB ») | Ballon | Légendaire | 7e jour de la récompense quotidienne |
-| Hoop Bounce (ruban orange et bleu nuit semé de ballons) | Traînée | Épique | 5e jour de la récompense quotidienne |
+| Hoop Bounce (ballon orange, panneau bleu nuit et monogramme « HB ») | Ballon | Légendaire | 7e jour de la récompense quotidienne (1re semaine) |
+| Hoop Bounce (ruban orange et bleu nuit semé de ballons) | Traînée | Épique | 7e jour de la récompense quotidienne (2e semaine) |
 | Légende (noir et or, coutures lumineuses) | Ballon | Légendaire | Succès « Au-delà des étoiles » |
 | Aurore (voiles verts, turquoise et violets qui ondulent) | Traînée | Légendaire | Succès « Perfection » |
 | Couronne (anneau d'or et pointes d'étoiles) | Effet de rebond | Légendaire | Succès « Maître du swish » |
@@ -1676,18 +1758,26 @@ l'annonce par le SDK.
 | `block()` / `unblock()` | Moments interdits : `playing` (pendant un niveau) et `animation` (animations de victoire). |
 | `onChange(fn)` | Prévient l'interface pour mettre à jour les boutons. |
 
-**Emplacements et récompenses**
+**Emplacements et récompenses** (plafonds revus à la phase 4 ; le coffre bonus a été supprimé)
 
 | Emplacement | Où | Récompense | Limite / jour |
 |---|---|---|---|
-| `doubleCoins` | Écran de victoire | Pièces du niveau doublées (animation ×2, éclat de pièces, son) | 15 |
-| `checkpoint` | Écran « Niveau échoué » | Reprise au dernier drapeau, étoiles et progression gardées (offerte si aucune annonce) | 15 |
-| `bonusChest` | Page Bonus | Coffre amélioré : 450–750 pièces, 85 % de chances d'un article rare, épique ou légendaire (au lieu du coffre commun : 120–250 pièces, 35 % d'un article commun ou rare) | 1 |
-| `wheelSpin` | Page Bonus | Lancer supplémentaire de la roue | 3 |
+| `doubleCoins` | Écran de victoire | Pièces du niveau doublées (animation ×2, éclat de pièces, son) | 5 (15 avant) |
+| `checkpoint` | Écran « Niveau échoué » | Reprise au dernier drapeau, étoiles et progression gardées (offerte si aucune annonce) | 10 (15 avant) |
+| `wheelSpin` | Page Roulette | Lancer supplémentaire de la roulette, **seulement après le lancer gratuit** | 3 |
 
-**Roue de la chance** (`src/shared/bonus.js`) — chances : 100 pièces 24 %, coffre commun 15 %, 250 pièces 20 %,
-effet de rebond rare / épique 9 %, 500 pièces 12 %, coffre rare 9 %, 1 000 pièces 7 %, skin de ballon épique /
-légendaire 4 %. Un article déjà possédé est remplacé par des pièces.
+Au plus **18 annonces par jour**, toutes facultatives. Le simulateur montre qu'elles ajoutent environ **+30 %
+de pièces** (×1,1 à ×1,6 selon le profil) et presque **aucune gemme** : elles accélèrent sans être nécessaires.
+
+**Roulette quotidienne** (`src/shared/bonus.js`, phase 4) — 1 lancer gratuit par jour, puis jusqu'à
+`AD_SPINS_PER_DAY = 3` lancers avec publicité, puis plus rien jusqu'au lendemain (`status()` : `free` → `ads` →
+`done`). `spin()` refuse un lancer avec publicité avant le lancer gratuit ou au-delà de 3. Chances :
+
+| Case | 120 pièces | 250 pièces | 500 pièces | Coffre commun | 10 💎 | Coffre rare | 1 200 pièces | Skin de ballon épique |
+|---|---|---|---|---|---|---|---|---|
+| Chance | 32 % | 25 % | 13 % | 13 % | 5 % | 6 % | 4 % | 2 % |
+
+Un skin déjà possédé est remplacé par des pièces. Moyenne ≈ 290 pièces par lancer, plus les coffres.
 
 **Règles imposées par le gestionnaire** (quel que soit l'écran) : jamais pendant un niveau, jamais pendant une
 animation importante, jamais au lancement du jeu (le SDK n'est même pas initialisé avant le premier bouton
@@ -1695,9 +1785,9 @@ affiché), jamais automatiquement après une partie. Les plafonds par jour garde
 Le jeu reste entièrement jouable sans regarder une seule annonce.
 
 **Sauvegardes** : `hoopbounce.ads` (annonces regardées par emplacement aujourd'hui, total) et
-`hoopbounce.bonus` (coffre du jour ouvert ou non et lequel, lancer gratuit utilisé, lancers bonus du jour,
-nombre de lancers et de coffres, dernière case). Les récompenses vont dans `hoopbounce.coins` /
-`hoopbounce.inventory` et les statistiques (`hoopbounce.stats`). Le tirage est enregistré **avant**
+`hoopbounce.bonus` (version 2 : jour, lancer gratuit utilisé, lancers avec publicité du jour, nombre total de
+lancers, dernière case ; l'ancien champ du coffre bonus est ignoré, l'historique des coffres ouverts est gardé). Les récompenses vont
+dans `hoopbounce.coins` / `hoopbounce.inventory` et les statistiques (`hoopbounce.stats`). Le tirage est enregistré **avant**
 l'animation : quitter pendant que la roue tourne ne fait rien perdre.
 
 **Développement** : seuls les **identifiants de test officiels de Google** sont utilisés (`useTestAds: true`).
@@ -1705,8 +1795,8 @@ Dans le navigateur, une annonce de test simulée remplace AdMob ; `?ads=none` si
 `?ads=fail` une erreur, `?ads=instant` une annonce éclair (tests automatisés).
 
 **Configuration avant publication** (détails dans `native/android/README.md`) :
-1. Console AdMob : créer l'application Android et **4 blocs « Avec récompense »** (`doubleCoins`,
-   `checkpoint`, `bonusChest`, `wheelSpin`).
+1. Console AdMob : créer l'application Android et **3 blocs « Avec récompense »** (`doubleCoins`,
+   `checkpoint`, `wheelSpin`).
 2. `src/shared/ads-config.js` : remplacer les identifiants `prod` (les `XXXX`) et passer `useTestAds` à
    `false`. Garde-fou : tant qu'un `XXXX` reste, le jeu reste en mode test.
 3. `AndroidManifest.xml` : balise `com.google.android.gms.ads.APPLICATION_ID` avec le vrai identifiant
@@ -1785,30 +1875,34 @@ En gras : les 20 nouveaux articles. « Foudre » s'appelle désormais « Éclair
   - **Électrique** : 9 éclairs, anneaux, étincelles ;
   - **Spatial** : nébuleuse, planète à anneau, étoiles filantes.
 
-**Rythme de déblocage estimé** (gains actuels, joueur régulier) :
-- **Une première partie complète** (50 niveaux, 150 étoiles) rapporte ~7 750 pièces, plus les succès en cours
-  de route (15 550 pièces de succès au total, plus des coffres). Le **premier objet commun (6 000)** s'achète
-  donc vers la fin de la première partie, ou plus tôt avec les gains quotidiens. Un nouveau joueur ne peut pas
-  acheter plusieurs objets d'un coup.
-- **Ensuite, chaque jour** : récompense quotidienne (~190 en moyenne), 3 missions (~460), coffre bonus (~185),
-  lancer gratuit de la roue (~360), parties rejouées (10 par niveau). Total : **~1 400 pièces par jour** sans
-  publicité, **~3 000** en regardant les publicités facultatives (coffre amélioré, 3 lancers, pièces doublées).
-- Délai approximatif pour acheter :
+**Rythme de déblocage** (phase 4, mesuré par le simulateur `tools/economy-sim.mjs` avec le vrai code, moyenne
+de 4 tirages sur 30 jours) :
+- **Une première partie complète** (50 niveaux, 150 étoiles) rapporte **≈ 8 800 pièces** de niveaux, plus les
+  succès en cours de route.
+- **Pièces par jour** (tout compris : niveaux, calendrier, roulette, missions, succès, coffres, Pass) :
+
+  | Profil | Sans publicité | Avec les publicités facultatives |
+  |---|---|---|
+  | Actif (≈ 25 min : 4 nouveaux niveaux + 6 rejoués, 3 missions) | ≈ 3 600 | ≈ 4 600 |
+  | Occasionnel (≈ 10 min : 2 + 2, 1 mission) | ≈ 2 200 | ≈ 3 200 |
+
+- **Ce que ça donne en 30 jours** (joueur actif sans publicité) : premier achat le **2e jour**, au moins un
+  nouvel objet **chaque semaine**, ≈ **25 à 27 objets sur 41**, dont 0 à 2 légendaires ; Pass Premium vers le
+  **13e jour**, Pass niveau ≈ 47 ; ≈ 620 💎. Le joueur occasionnel : premier achat vers le 4e jour, ≈ 19 objets,
+  Premium entre le 17e et le 20e jour, Pass niveau ≈ 31. Il reste **toujours un objectif** : la collection
+  n'est jamais finie en un mois et les légendaires restent très rares.
+- Délai approximatif pour acheter (joueur actif) :
 
   | Objet | Sans publicité | Avec les publicités facultatives |
   |---|---|---|
-  | rare (25 000) | ~2–3 semaines | ~1 semaine |
-  | épique (120 000) | ~3 mois | ~6 semaines |
-  | légendaire (500 000) | ~1 an | ~6 mois |
-  | Diamant (1 000 000) | ~2 ans | ~11 mois |
+  | rare (25 000) | ~1 semaine | ~5–6 jours |
+  | épique (120 000) | ~5 semaines | ~4 semaines |
+  | légendaire (500 000) | ~4–5 mois | ~3,5 mois |
+  | Diamant (1 000 000) | ~9 mois | ~7 mois |
 
-- En plus des achats, **des objets tombent directement** :
-  - coffres des missions et des succès ;
-  - coffre bonus amélioré : 85 % de chances d'un objet rare, épique ou légendaire ;
-  - roue de la chance : effet ou skin rare ;
-  - récompense quotidienne.
-  - La collection avance donc aussi sans acheter. Voir « Bugs connus » pour l'effet de ces tirages sur la
-    valeur des légendaires.
+- En plus des achats, **des objets tombent directement** (rareté tirée selon les chances des coffres, doublons
+  convertis en pièces) : coffres du calendrier, des missions, des succès et du Pass ; roulette (coffres, skin
+  épique 2 %) ; gros lot du 7e jour.
 
 **Sauvegarde** : les achats et les objets équipés sont dans `hoopbounce.inventory` (rien ne change pour les
 anciennes sauvegardes). Ils restent après fermeture du jeu, ce que vérifient des tests qui relancent le
@@ -1816,20 +1910,23 @@ porte-monnaie.
 
 ### Les récompenses
 
+Barème revu à la phase 4 (`REWARDS`, `firstClearCoins()` et `replayCoins()` dans `src/shared/catalog.js`) : les
+niveaux plus longs et plus difficiles rapportent un peu plus.
+
 | Action | Pièces |
 |---|---|
-| Premier panier d'un niveau | 50 + 15 par monde (Ville 50 … Espace 110) — relevé à la phase 2 (40 + 10 avant) |
-| Chaque étoile obtenue pour la première fois | 25 |
-| Les 3 étoiles d'un niveau (première fois) | +25 (+20 avant) |
-| Rejouer un niveau déjà terminé | 15 (10 avant) |
+| Premier panier d'un niveau | 40 + 15 par monde + bonus de difficulté (facile 0, moyen 10, difficile 20, expert 35, extrême 50) : de **40** (Ville, facile) à **135** (Espace, extrême) |
+| Chaque étoile obtenue pour la première fois | 20 |
+| Les 3 étoiles d'un niveau (première fois) | +30 |
+| Rejouer un niveau déjà terminé | 8 + 2 par monde (Ville 8 … Espace 16) |
 | « Swish » (panier sans toucher le cercle) | +5 |
 | Récompense quotidienne, missions, succès (étape 12) | voir [Revenir chaque jour](#revenir-chaque-jour-étape-12) |
-| Publicité facultative sur l'écran de victoire (étape 13) | pièces du niveau doublées |
-| Coffre bonus et roue de la chance (étape 13) | voir [Publicités récompensées](#publicités-récompensées-étape-13) |
+| Publicité facultative sur l'écran de victoire (étape 13) | pièces du niveau doublées (5 fois par jour) |
+| Roulette quotidienne | voir [Publicités récompensées](#publicités-récompensées-étape-13) |
+| **Gemmes** | jamais après une partie : voir [Les 💎 gemmes](#les--gemmes) |
 
-- Une première partie complète rapporte environ **9 000 pièces** (50 niveaux, 150 étoiles ; 7 750 avant la
-  refonte : les niveaux sont deux fois plus longs) ; depuis l'étape 17, le catalogue complet coûte **7 767 000** :
-  un objectif de collection à très long terme (voir la boutique ci-dessus).
+- Une première partie complète rapporte environ **8 800 pièces** (50 niveaux, 150 étoiles) ; le catalogue
+  complet coûte **7 767 000** : un objectif de collection à très long terme (voir la boutique ci-dessus).
 - Le gain s'affiche sur l'écran de victoire (compteur qui défile, tintements) et s'ajoute au solde du menu.
 
 ---
@@ -1914,9 +2011,18 @@ porte-monnaie.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v9.apk` (≈ 0,6 Mo, **1.8.0-test9**, Mode Fantôme) —
+**Fichier actuel :** `dist/HoopBounce_Test_v10.apk` (≈ 0,6 Mo, **1.9.0-test10**, économie rééquilibrée) —
 une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
+
+**Mise à jour v10 (phase 4) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé identique
+(SHA-256 `894f0b7d…`, contrôlée par le script), versionCode 10, versionName 1.9.0-test10, `apksigner verify`
+valide (v2 + v3). Fichiers de l'économie extraits de l'APK identiques aux sources testées ; pages Roulette,
+Récompense quotidienne, Hoop Pass et un niveau ouverts depuis les fichiers de l'APK : 0 erreur. **Simulation de
+mise à jour v9 → v10** (sauvegarde complète d'un joueur avancé) : pièces, gemmes, objets et équipement,
+progression, records, série du calendrier, Pass Premium et récompenses récupérées, réglages et fantômes relus à
+l'identique ; l'ancienne sauvegarde du coffre bonus est ignorée sans erreur et la roulette repart d'un lancer
+gratuit le lendemain.
 
 **Mise à jour v3 (étape 23) — vérifié :** identifiant inchangé, clé identique (empreinte contrôlée par le script),
 versionCode 3, versionName 1.2.0-test3, signature valide. Simulation v2 → v3 (fichiers extraits des deux APK,
@@ -1936,7 +2042,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · **v9 : `1.8.0-test9` (9)** ; « 1.8.0 (test 9) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · **v10 : `1.9.0-test10` (10)** ; « 1.8.0 (test 9) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -2143,7 +2249,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Gestionnaire centralisé (chargement, affichage, récompense validée, erreurs, absence d'annonce, limites)
 - ✅ Configuration unique `ads-config.js` : identifiants de test officiels, production prête à remplir
 - ✅ Doubler les pièces (victoire), reprendre au drapeau (échec), coffre bonus amélioré, lancer de roue
-- ✅ Page Bonus du jour : coffre gratuit ou amélioré, roue de la chance animée
+- ✅ Page Bonus du jour : coffre gratuit ou amélioré, roue de la chance animée (devenue la Roulette quotidienne seule à la phase 4)
 - ✅ Annonce de test simulée dans le navigateur ; politique de confidentialité mise à jour
 - 🟡 Validation par le porteur du projet ; essai du vrai SDK sur un appareil (phase Android)
 
@@ -2177,6 +2283,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Carte de départ (meilleur temps, état du fantôme), bouton Activé / Désactivé (départ et pause), enregistré
 - ✅ « ✨ Nouveau record ! Fantôme mis à jour » ; sauvegarde à part, conservée lors des mises à jour
 - 🔴 Retours du porteur du projet sur téléphone (lisibilité, discrétion, envie de rejouer)
+
+### Phase 6 decies — Phase 4 : économie ✅ (en attente de validation)
+- ✅ Roulette quotidienne : 1 lancer gratuit + 3 avec publicité au plus, compte à rebours, « reviens demain »
+- ✅ Coffre bonus quotidien supprimé (logique, page, publicité, textes) ; anciennes sauvegardes lues
+- ✅ Calendrier de 7 jours (pièces, gemmes, coffres, gros lot variable) ; gemmes rares ; barème des pièces
+- ✅ Chances des coffres (commun → légendaire), doublons convertis en pièces ; plafonds de publicités revus
+- ✅ Hoop Pass rééquilibré, achat prêt pour Google Play Billing (non branché) ; simulateur + 6 tests
+- 🔴 Retours du porteur du projet sur téléphone (rythme ressenti, envie de revenir, prix du Premium)
+- 🔴 Plus tard : brancher Google Play Billing (`PlayBillingProvider`) et la vérification des achats
 
 ### Phase 7 bis — Saisons 🟡
 - ✅ Interrupteur de saison ; **Saison 1 — Noël, étape 1** : menu principal décoré et ambiance d'hiver
@@ -2286,14 +2401,15 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation de l'économie** (phase 4) avec `HoopBounce_Test_v10.apk` : roulette (lancer gratuit, 3 lancers
+  avec publicité de test, compte à rebours), calendrier, rythme des pièces et des gemmes, coffres, Pass Premium
 - 🟡 **Validation du Mode Fantôme** avec `HoopBounce_Test_v9.apk` : lisibilité du fantôme dans les 5 mondes,
   discrétion, carte de départ, envie de rejouer
 - 🟡 **Validation de la refonte des 50 niveaux** (phase 2) avec `HoopBounce_Test_v8.apk` : durée et difficulté
   ressenties monde par monde, puzzles compris sans aide, passages trop durs ; décision sur les anciens records
 - 🟡 **Validation de la qualité visuelle** (étape 25) avec `HoopBounce_Test_v7.apk` : impression générale, lisibilité
   de la police, coffres, neige, fluidité sur téléphone
-- 🟡 **Validation du Hoop Pass et des gemmes** avec `HoopBounce_Test_v6.apk` ; décision attendue sur le rythme
-  des gemmes (voir Bugs connus)
+- 🟡 **Validation du Hoop Pass et des gemmes** avec `HoopBounce_Test_v6.apk` (rythme des gemmes revu à la phase 4)
 - 🟡 **Validation du menu de Noël** (saison 1, étape 1) avec `HoopBounce_Test_v5.apk`
 - 🟡 **Validation de la Boutique et de la Collection** (étape 24) avec `HoopBounce_Test_v4.apk`
 - 🟡 **Validation du mode TRICKSHOT refondu** par le porteur du projet (étape 23) avec `HoopBounce_Test_v3.apk` :
@@ -2303,7 +2419,6 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
   qui ne va pas (démarrage, performances, son, vibrations, encoche, sauvegarde, confort des commandes)
 - 🟡 Attente des retours du porteur du projet sur la page « Modes à venir » (étape 19) et sur le son et les
   sensations (étape 18)
-- 🟡 Décision en attente (étape 17) : pondérer les objets tirés des coffres et de la roue
 
 ### À faire — court terme 🔴
 - 🔴 TRICKSHOT : faire jouer les 50 cartes à de vrais joueurs et réajuster celles qui paraissent injustes (la
@@ -2375,6 +2490,12 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 9. Optimisations
+
+**Économie (phase 4)**
+- Simulateur (`tools/economy-sim.mjs`) : stockage en mémoire et horloge simulée, aucune attente ; 30 jours d'un
+  joueur en ≈ 30 ms : les 6 tests d'économie (des dizaines de simulations) tournent en moins d'une seconde.
+- Roulette : la page ne prépare la publicité qu'à l'état « publicités » (jamais avant le lancer gratuit, jamais
+  quand la limite est atteinte) : aucune requête inutile.
 
 **Mode Fantôme (phase 3)**
 - Relevé : 3 entiers écrits dans un tableau typé (agrandi par doublement) toutes les 2 étapes de simulation ;
@@ -2527,7 +2648,10 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | Info | Phase 2 : en gravité réduite, un ballon chargé au maximum (puissance 5) monte très haut ; quelques passages de l'Espace demandent de ne pas trop charger (les plans experts le font). | 🟡 Voulu (précision) |
 | Info | Étape 25 : les nouvelles animations (pièces qui pivotent, éclats, neige) sont mesurées dans un navigateur sans carte graphique ; elles sont prévues pour le GPU des téléphones (transform / opacity). | 🔴 À confirmer sur téléphone (v7) |
 | Info | Étape 25 : les « ✓ » et « → » des textes viennent de la police du système (Outfit ne les contient pas) : rendu légèrement différent selon l'appareil. | 🟡 Mineur |
-| Info | Hoop Pass : le Premium coûte 250 💎 ; sans dépenser ailleurs, on ne les réunit qu’au **niveau 50** du Pass (cadeau 50 + 240 de la ligne gratuite = 290 ; 230 au niveau 48). Le Premium étant rétroactif, rien n’est perdu, mais on le débloque très tard. | 🟡 À décider : baisser le prix, augmenter le cadeau, ou ajouter quelques gemmes (missions, calendrier) |
+| Info | Hoop Pass : le Premium coûtait 250 💎 et ne se débloquait qu’au **niveau 50** du Pass. | ✅ Résolu (phase 4) : gemmes du calendrier et des grands succès ; Premium vers le 13e jour (joueur actif), 17e–20e (occasionnel), prix inchangé |
+| Info | Phase 4 : les gains déjà reçus avant la mise à jour (pièces, gemmes, objets) sont gardés tels quels ; seuls les gains à venir suivent le nouveau barème. Un joueur qui a déjà beaucoup de gemmes peut donc acheter le Premium tout de suite. | 🟡 Normal (les sauvegardes ne sont jamais modifiées) |
+| Info | Phase 4 : le calendrier reprend au même jour de la semaine après la mise à jour (série conservée) mais affiche les nouvelles récompenses ; un ancien coffre bonus du jour déjà ouvert n'est pas remplacé par un lancer. | 🟡 Normal |
+| Info | Phase 4 : l'achat réel du Premium (Google Play Billing) n'est pas branché ; en mode `store`, l'achat répond `unavailable`. | 🔴 À faire avant la publication d'un Pass payant |
 | Info | Hoop Pass : les dates suivent l'heure de l'appareil (comme la récompense quotidienne). | 🟡 Normal hors ligne |
 | ✅ | Hoop Pass (en développement) : pastille du bouton de l'accueil coupée après un toucher, accueil pas rafraîchi au retour de la page, son du Premium qui plantait, étiquette « rarity.mythic ». | ✅ Corrigé avant validation |
 | Info | TRICKSHOT (étape 23) : progression Trickshot de l'étape 22 convertie (les anciennes cartes n'existent plus) : les déblocages sont gardés, pas les étoiles ni les records des anciennes cartes. | 🟡 Voulu |
@@ -2538,7 +2662,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | Info | Son (étape 18) : réglé au casque dans un navigateur, **pas encore écouté sur le haut-parleur d'un téléphone** (souvent mono et pauvre en graves : la couche de poids et la stéréo y seront moins sensibles). | 🔴 À tester (phase Android) |
 | Info | Physique (étape 18) : les trajectoires sont volontairement inchangées pour garder l'équilibre vérifié des 50 niveaux ; un freinage plus franc au sol a été essayé puis abandonné (16 passages à revérifier). | 🟡 À rediscuter avec les retours des joueurs |
 | ✅ | Boutique (étape 18, en cours de développement) : l'achat d'un objet épique ou légendaire plantait (variable supprimée par erreur). | ✅ Corrigé avant publication |
-| Info | Économie (étape 17) : les coffres et la roue donnent toujours des **objets entiers** tirés au hasard parmi les raretés prévues : coffre épique → épique ou légendaire ; coffre bonus amélioré → rare, épique ou légendaire ; roue → skin épique ou légendaire. Avec les nouveaux prix, un légendaire (500 000+) peut donc tomber d'un coffre. Les gains n'ont pas été réduits, comme demandé. | 🟡 À décider : pondérer les tirages vers les raretés basses, si les légendaires doivent rester rares |
+| Info | Économie (étape 17) : les coffres et la roue donnent toujours des **objets entiers** tirés au hasard parmi les raretés prévues : coffre épique → épique ou légendaire ; coffre bonus amélioré → rare, épique ou légendaire ; roue → skin épique ou légendaire. Avec les nouveaux prix, un légendaire (500 000+) peut donc tomber d'un coffre. Les gains n'ont pas été réduits, comme demandé. | ✅ Résolu (phase 4) : la rareté est tirée selon des poids (légendaire 1 % dans un coffre rare, 5 % dans un épique), sans remontée ; doublons → pièces |
 | ✅ | Boutique entre 920 et 1 100 px de large : le compteur de pièces sortait de l'écran ; sur les cartes légendaires, le prix et « ★ Exclusif » débordaient. | ✅ Corrigé (v1.0.0) |
 | Info | iPhone (étape 21) : projet Xcode **jamais compilé** (Xcode n'existe que sur Mac) ; testé dans WebKit (WebKitGTK) sous Linux, pas sur un vrai iPhone. Les 60 images/s sont à confirmer sur appareil. | 🔴 À tester par le porteur du projet |
 | Info | iPhone : sur iOS, le son du jeu suit le bouton silencieux (comme la plupart des jeux) : téléphone en mode silencieux = pas de son. | 🟡 Normal |
@@ -2576,6 +2700,62 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 24/11/2026 — Phase 4 : économie rééquilibrée (v1.7.0-dev, APK de test v10)
+
+> Une économie plus équilibrée, plus motivante et plus professionnelle. **Aucun** changement de gameplay, de
+> niveau, de physique, du Mode Fantôme, du Trickshot ni des menus.
+
+**Ajouté**
+- **Roulette quotidienne** (récompense principale) : 1 lancer gratuit par jour, compte à rebours jusqu'au
+  prochain, puis jusqu'à **3 lancers uniquement avec une publicité récompensée** (pastilles), puis « Plus de
+  lancers aujourd'hui — reviens demain ! ». `Bonus.status()` (`free` / `ads` / `done`) ; `spin()` refuse un
+  lancer avec publicité avant le gratuit ou au-delà de 3. Nouvelle case **10 💎** (5 %).
+- **Calendrier de 7 jours** : 150 · 250 · 10 💎 · coffre commun · 400 + 10 💎 · coffre rare · très grosse
+  récompense (semaine 1 : skin exclusif Hoop Bounce + 500 + 25 💎 ; semaine 2 : traînée exclusive + 500 +
+  25 💎 ; ensuite : coffre épique + 25 💎), nouveau cycle automatique ; la page affiche les vraies récompenses.
+- **Tables de chances des coffres** (`CHESTS`, `chestOdds`, `pickRarity`) : commun très fréquent, rare fréquent,
+  épique rare, légendaire très rare (1 % dans un coffre rare, 5 % dans un épique).
+- **Gemmes** sur 8 grands succès (Expert et Légende, 10 à 40 💎) ; puce 💎 dans les révélations de récompense.
+- **`src/shared/billing.js`** : achat du Pass Premium passé par une couche dédiée (`BILLING.mode = 'gems'`
+  aujourd'hui ; `'store'` + `PlayBillingProvider` + produit `hoop_pass_christmas_1` plus tard, non branché) ;
+  `pass.grantPremium(source)`, origine sauvegardée (`premiumSource`).
+- **`tools/economy-sim.mjs`** : simulateur de joueurs (actif / occasionnel, avec ou sans publicités) sur le vrai
+  code ; **`tests/economy.test.mjs`** (6 tests) : progression, collection jamais finie, légendaires très rares,
+  gemmes rares, effet des publicités, chances des coffres, sources de gemmes, achat du Pass.
+- Nouvelle section [4 sexies. Économie](#4-sexies-économie-phase-4).
+
+**Modifié**
+- **Coffre bonus quotidien supprimé** : logique, page (la Roulette est seule, centrée), emplacement publicitaire
+  `bonusChest`, textes (FR / EN / ES), fiche Play, checklist AdMob (3 blocs au lieu de 4). Menu : « Bonus »
+  devient « Roulette ».
+- **Pièces** : premier panier 40 + 15 par monde + bonus de difficulté (40 → 135), étoile 20, 3 étoiles +30,
+  rejouer 8 → 16 selon le monde ; missions −20 % (coffres plus rares, jamais de gemmes) ; une partie complète
+  ≈ 8 800 pièces.
+- **Coffres** : moins de pièces et d'objets dans les coffres communs ; un doublon donne des pièces au lieu de
+  « remonter » vers une rareté supérieure ; la roulette ne donne plus qu'un skin épique.
+- **Hoop Pass** : prix inchangé (250 💎) ; XP réduite (niveau 50 / 10, Trickshot 60 / 15, mission 60, succès
+  100) ; 160 💎 sur la ligne gratuite (8, 16, 24, 32, 40, 48, 50), 160 sur la ligne Premium (moins que son
+  prix) ; moins de coffres (gratuit 21 et 33, Premium 8, 18, 28, 38 retirés).
+- **Publicités** : doubler les pièces 5/jour (15 avant), reprise au drapeau 10/jour (15), roulette 3/jour.
+- Textes de la boutique (« Comment gagner des pièces »), sous-titres du calendrier, README.
+
+**Vérifié**
+- **513 tests** passent (dont les 6 nouveaux tests d'économie et les tests mis à jour : roulette, remise à zéro
+  à minuit, limite de 3 publicités, suppression du coffre bonus, calendrier, pièces, gemmes, sauvegardes).
+- Simulateur : joueur actif → premier achat jour 2, Premium jour 13, Pass niveau 47, ≈ 25–27 objets sur 41,
+  ≈ 620 💎 en 30 jours ; occasionnel → Premium jour 17–20 ; publicités ≈ +30 % de pièces, presque aucune gemme.
+- Navigateur (844 × 390) : roulette dans ses 3 états, lancer avec annonce de test, calendrier semaine 1 et
+  semaine 3, aucune erreur.
+- **Aucune sauvegarde perdue** : simulation de mise à jour v9 → v10 avec une sauvegarde complète (23 456 pièces,
+  140 💎, objets, progression, records, série du calendrier, Pass Premium, réglages, fantômes) relue à
+  l'identique ; l'ancienne sauvegarde du coffre bonus est ignorée sans erreur.
+- `dist/HoopBounce_Test_v10.apk` (1.9.0-test10) : même identifiant, même clé de test (SHA-256 identique à la
+  v1), versionCode 10, signature valide ; fichiers de l'APK identiques aux sources testées, 0 erreur.
+
+**Reste à faire**
+- Retours du porteur du projet sur téléphone : rythme ressenti, envie de revenir, prix du Premium.
+- Plus tard : brancher Google Play Billing et la vérification des achats côté serveur.
 
 ### 24/11/2026 — Phase 3 : Mode Fantôme (v1.6.0-dev, APK de test v9)
 

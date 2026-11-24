@@ -57,7 +57,7 @@ Gagne des pièces en jouant et collectionne 51 objets : ballons (Néon, Magma, G
 • Une récompense quotidienne sur 7 jours, avec un ballon exclusif au 7e jour
 • 3 nouvelles missions chaque jour
 • 40 succès, du Débutant à la Légende
-• Un coffre bonus et une roue de la chance chaque jour
+• Une roulette quotidienne avec un lancer gratuit chaque jour
 
 ✅ UN JEU RESPECTUEUX
 • Aucun achat intégré : tout se débloque en jouant
@@ -75,7 +75,7 @@ Prêt à marquer ? Télécharge Hoop Bounce et fais rebondir ton ballon jusqu'au
 - **3 étoiles** par niveau, des records de temps et des « swish » pour les joueurs exigeants.
 - **51 objets** à collectionner en jouant (ballons, ballons à visage, effets, traînées, animations de panier), 4 raretés et des
   exclusifs.
-- **Récompense quotidienne, missions, succès, coffre bonus et roue de la chance** : du contenu chaque jour.
+- **Récompense quotidienne, missions, succès et roulette quotidienne** : du contenu chaque jour.
 - **Aucun achat intégré**, publicités **uniquement facultatives**, jouable **hors connexion**.
 - Décors animés, musique et ambiance sonore propres à chaque monde ; **60 images par seconde**.
 - Français, anglais, espagnol.

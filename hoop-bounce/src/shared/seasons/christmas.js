@@ -17,42 +17,41 @@ function buildLevels() {
     3: { chest: 'common' },
     9: { chest: 'common' },
     15: { chest: 'rare' },
-    21: { chest: 'common' },
     25: { item: 'bounce-snow' },
     27: { chest: 'rare' },
-    33: { chest: 'rare' },
     39: { chest: 'epic' },
     45: { chest: 'epic' },
-    50: { gems: 60 },
+    50: { gems: 40 },
   };
-  const FREE_GEMS = { 6: 15, 12: 15, 18: 20, 24: 20, 30: 25, 36: 25, 42: 30, 48: 30 };
+  // Phase 4 (économie) : moins de gemmes, mieux réparties (160 sur la ligne gratuite)
+  const FREE_GEMS = { 8: 15, 16: 15, 24: 20, 32: 20, 40: 25, 48: 25 };
   const PREMIUM = {
     1: { gems: 30 },
     3: { chest: 'rare' },
     5: { item: 'trail-xmas' },
-    8: { chest: 'rare' },
     10: { item: 'ball-xmas' },
     13: { chest: 'epic' },
     15: { coins: 2000 },
-    18: { chest: 'rare' },
     20: { item: 'goal-xmas' },
     23: { chest: 'epic' },
     25: { coins: 3000 },
-    28: { chest: 'epic' },
     30: { item: 'ball-santa' },
     33: { chest: 'premium' },
     35: { coins: 4000 },
-    38: { chest: 'epic' },
     40: { chest: 'legendary' },
     43: { chest: 'premium' },
     45: { chest: 'premium' },
+    12: { gems: 20 },
+    24: { gems: 25 },
+    36: { gems: 25 },
     48: { gems: 60 },
     50: { item: 'ball-polaris' },
   };
   return Array.from({ length: 50 }, (_, i) => {
     const n = i + 1;
     const free = FREE[n] ?? (FREE_GEMS[n] ? { gems: FREE_GEMS[n] } : { coins: Math.round((150 + 10 * n) / 10) * 10 });
-    const premium = PREMIUM[n] ?? { gems: 10 + Math.floor(n / 10) * 5 };
+    // Ligne Premium : des pièces par défaut (≈ 160 gemmes au total, aux niveaux 1, 12, 24, 36 et 48)
+    const premium = PREMIUM[n] ?? { coins: Math.round((300 + 15 * n) / 10) * 10 };
     return { level: n, free, premium, highlight: [5, 10, 20, 30, 40, 50].includes(n) };
   });
 }
@@ -70,7 +69,8 @@ export default Object.freeze({
   // Palette : bleu nuit, blanc, rouge foncé, doré, touches de vert sapin
   palette: Object.freeze({ night: '#0b1430', night2: '#14214a', snow: '#f4f7ff', red: '#a3162a', red2: '#d42a3a', gold: '#ffd36b', fir: '#1f5b3a', fir2: '#2f8a48' }),
   // XP de Pass gagnée par action (première fois / fois suivantes)
-  xp: Object.freeze({ level: 60, levelReplay: 15, trickshot: 80, trickshotReplay: 20, mission: 100, achievement: 150 }),
+  // Phase 4 : XP ajustée pour qu'un joueur actif termine le Pass en ≈ 5 semaines (la saison en dure 6)
+  xp: Object.freeze({ level: 50, levelReplay: 10, trickshot: 60, trickshotReplay: 15, mission: 60, achievement: 100 }),
   maxLevel: 50,
   /** XP nécessaire pour passer au niveau n (n ≥ 2) : 208, 212… 400 → 14 896 XP pour tout le Pass. */
   levelXp: (n) => 200 + 4 * n,
