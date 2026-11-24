@@ -7,6 +7,7 @@ import { TS_LEVELS, TS_BANDS } from '../src/trickshot/levels.js';
 import { TrickshotGame, simulateShot, DT } from '../src/trickshot/game.js';
 import { TS_CONFIG, TRICKSHOT, DIFFICULTIES, CHAPTERS, chapterOf } from '../src/trickshot/config.js';
 import { TrickshotProgress, TS_KEY } from '../src/trickshot/progress.js';
+import { FirstTryRule } from '../src/trickshot/first-try.js';
 import { aimFromDrag, trajectory } from '../src/trickshot/aim.js';
 import { TS_STRINGS, tt } from '../src/trickshot/i18n.js';
 import { CONFIG } from '../src/config.js';
@@ -140,6 +141,81 @@ test('étoiles et score : 3 au 1er essai, 2 au 2e, 1 au 3e ; bonus de style', ()
     const bonus = Object.values(g.result.bonus).reduce((a, v) => a + v, 0);
     assert.equal(g.result.score, g.result.stars * 1000 + bonus);
   }
+});
+
+test('« Premier essai » : ↺ le désactive pour la tentative, les autres étoiles restent normales', () => {
+  const def = TS_LEVELS[0];
+  const s = FIX[1];
+  const win = (g, misses = 0) => {
+    for (let i = 0; i < misses; i++) {
+      g.launch(180 * DEG, 0.3);
+      while (g.state === 'playing') g.fixedUpdate(DT);
+    }
+    return simulateShot(def, { angle: s.angle * DEG, power: s.power, release: g.time + 0.01 }, g);
+  };
+  const st = memStorage();
+  const progress = new TrickshotProgress({ storage: st, total: 50 });
+  const rule = new FirstTryRule(progress);
+  // Entrée neuve, premier tir réussi : 3 étoiles
+  assert.equal(rule.enter(1), true);
+  let g = rule.apply(new TrickshotGame(def));
+  let r = win(g);
+  assert.equal(r.game.result.stars, 3);
+  assert.equal(r.game.result.firstTryLost, false);
+  // ↺ (même sans avoir tiré) : le premier tir réussi ne vaut plus que 2 étoiles, score en conséquence
+  rule.enter(1);
+  assert.equal(rule.restart(), true, 'le défi était disponible : le message est affiché');
+  g = rule.apply(new TrickshotGame(def));
+  r = win(g);
+  assert.equal(r.game.result.stars, 2);
+  assert.equal(r.game.result.firstTryLost, true);
+  assert.equal(r.game.result.shots, 1);
+  const bonus = Object.values(r.game.result.bonus).reduce((a, v) => a + v, 0);
+  assert.equal(r.game.result.score, 2000 + bonus);
+  // Les autres étoiles fonctionnent comme avant : 2 au 2e essai, 1 au 3e
+  g = rule.apply(new TrickshotGame(def));
+  assert.equal(win(g, 1).game.result.stars, 2);
+  g = rule.apply(new TrickshotGame(def));
+  assert.equal(win(g, 2).game.result.stars, 1);
+  // ↺ répété : reste désactivé jusqu'à la prochaine entrée
+  assert.equal(rule.restart(), false);
+  assert.equal(rule.enter(1), true, 'nouvelle entrée dans la carte : défi de nouveau disponible');
+  assert.equal(rule.apply(new TrickshotGame(def)).firstTryAllowed, true);
+});
+
+test('« Premier essai » : quitter après un tir puis revenir ne rend pas le défi ; une tentative terminée, si', () => {
+  const st = memStorage();
+  const p = new TrickshotProgress({ storage: st, total: 50 });
+  const rule = new FirstTryRule(p);
+  rule.enter(4);
+  rule.shot(); // un tir raté… puis le joueur quitte la carte (ou ferme le jeu)
+  const again = new FirstTryRule(new TrickshotProgress({ storage: st, total: 50 }));
+  assert.equal(again.enter(4), false, 'tentative entamée reprise : défi perdu');
+  assert.equal(again.apply(new TrickshotGame(TS_LEVELS[3])).firstTryAllowed, false);
+  assert.equal(again.enter(5), true, 'les autres cartes ne sont pas concernées');
+  again.enter(4);
+  again.end(); // victoire ou 3 essais ratés : tentative terminée
+  assert.equal(new FirstTryRule(new TrickshotProgress({ storage: st, total: 50 })).enter(4), true);
+});
+
+test('« Premier essai » : les étoiles déjà gagnées restent, anciennes sauvegardes lues sans changement', () => {
+  const st = memStorage();
+  const saved = JSON.stringify({ v: 3, levels: { 1: { stars: 3, best: 4200, plays: 3 } }, carry: 0 });
+  st.setItem(TS_KEY, saved);
+  const p = new TrickshotProgress({ storage: st, total: 50 });
+  assert.equal(st.getItem(TS_KEY), saved, 'lecture seule : rien n’est réécrit');
+  assert.equal(p.attemptOpen(1), false);
+  const rule = new FirstTryRule(p);
+  rule.enter(1);
+  rule.restart();
+  const g = rule.apply(new TrickshotGame(TS_LEVELS[0]));
+  const s = FIX[1];
+  const r = simulateShot(TS_LEVELS[0], { angle: s.angle * DEG, power: s.power, release: 0.3 }, g);
+  const rec = p.record(1, { stars: r.game.result.stars, score: r.game.result.score });
+  assert.equal(r.game.result.stars, 2);
+  assert.equal(rec.newStars, false);
+  assert.equal(p.level(1).stars, 3, 'les 3 étoiles déjà obtenues sont gardées');
+  assert.equal(p.level(1).best, Math.max(4200, r.game.result.score));
 });
 
 test('puissance trop faible : tir refusé ; le décor reste en place entre deux essais', () => {

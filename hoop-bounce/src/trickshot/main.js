@@ -28,6 +28,7 @@ import { TrickshotGame, DT } from './game.js';
 import { TRICKSHOT, DIFFICULTIES, chapterOf } from './config.js';
 import { aimFromDrag, trajectory } from './aim.js';
 import { TrickshotProgress } from './progress.js';
+import { FirstTryRule } from './first-try.js';
 import { ArenaRenderer } from './render.js';
 import { tt, pick } from './i18n.js';
 import { awardPassXp } from '../shared/pass.js';
@@ -61,7 +62,10 @@ for (const el of document.querySelectorAll('[data-label]')) {
 // ─── Systèmes ───────────────────────────────────────────────────────────────
 const canvas = $('game');
 let def = TS_LEVELS[n - 1];
-let game = new TrickshotGame(def);
+// Défi « Premier essai » : disponible à l'entrée dans la carte, perdu dès que ↺ est utilisé (first-try.js)
+const firstTry = new FirstTryRule(progress);
+firstTry.enter(n);
+let game = firstTry.apply(new TrickshotGame(def));
 const wallet = new Wallet();
 // Succès (phase 5) : Trickshots réussis, défis cachés, animation de déblocage
 const stats = new Stats();
@@ -169,13 +173,13 @@ function updateShots() {
 }
 
 let toastTimer = 0;
-function toast(text, warn = false) {
+function toast(text, warn = false, ms = 1600) {
   const el = $('toast');
   el.textContent = text;
   el.classList.toggle('warn', warn);
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 1600);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
 }
 
 // ─── Visée (lance-pierre) ───────────────────────────────────────────────────
@@ -284,6 +288,7 @@ function bindGame() {
   const ev = game.events;
   ev.on('launch', (e) => {
     tsLaunches.set(n, (tsLaunches.get(n) ?? 0) + 1);
+    firstTry.shot();
     sfx.launch?.(e.power);
     haptics.bounce(e.power > 0.8 ? 5 : 3);
     visual.onBounce();
@@ -375,6 +380,7 @@ function bindGame() {
     sfx.fail();
     music.stinger('fail', 'arena');
     progress.played(n);
+    firstTry.end();
     setTimeout(() => openOverlay('fail'), 700);
     updateShots();
   });
@@ -447,13 +453,15 @@ function onWin(e) {
   camera.zoomTarget = perfect ? 1.4 : 1.25;
   timeFx.clear();
   timeFx.slowmo(perfect || spectacular ? 0.18 : 0.3, perfect || spectacular ? 0.5 : 0.3, 0.8, 0.06);
+  firstTry.end();
   const firstWin = !progress.isDone(n);
   const before = progress.level(n);
   const rec = progress.record(n, { stars: r.stars, score: r.score });
   // Succès : un Trickshot de plus, défis cachés (dernier tir, premier coup, billard)
   try {
     stats.add('trickshots');
-    const playsBefore = before.plays + Math.max(0, (tsLaunches.get(n) ?? 1) - r.shots);
+    // Défi caché « Du premier coup » : jamais après ↺ (même règle que l'étoile « Premier essai »)
+    const playsBefore = before.plays + Math.max(0, (tsLaunches.get(n) ?? 1) - r.shots) + (r.firstTryLost ? 1 : 0);
     for (const id of trickshotChallenges(r, { maxShots: TRICKSHOT.shots, playsBefore, wasDone: before.stars > 0 })) achievements.recordChallenge(id);
   } catch {
     /* sauvegarde indisponible */
@@ -467,7 +475,7 @@ function showWin(r, rec) {
   const card = document.querySelector('.win-card');
   card.classList.toggle('perfect', r.stars === 3);
   $('win-title').textContent = t(`win.${r.stars}`);
-  $('win-sub').textContent = t(`win.sub.${r.stars}`);
+  $('win-sub').textContent = r.firstTryLost && r.shots === 1 ? t('win.sub.firstTryOff') : t(`win.sub.${r.stars}`);
   const stars = [...$('win-stars').children];
   stars.forEach((s) => s.classList.remove('on'));
   stars.forEach((s, i) => {
@@ -564,10 +572,13 @@ function resume() {
   loop.start();
 }
 
-function loadLevel(index) {
+/** @param {{restart?: boolean}} [opts] restart : ↺ (même carte, défi « Premier essai » perdu) ; sinon nouvelle entrée */
+function loadLevel(index, { restart = false } = {}) {
   n = index;
   def = TS_LEVELS[n - 1];
-  game = new TrickshotGame(def);
+  if (restart) firstTry.restart();
+  else firstTry.enter(n);
+  game = firstTry.apply(new TrickshotGame(def));
   bindGame();
   renderer.accent = chapterOf(n).accent;
   renderer.number = n;
@@ -597,8 +608,9 @@ function loadLevel(index) {
 
 function restartLevel() {
   if (game.state === 'won' && state.overlay !== 'win') return;
-  loadLevel(n);
+  loadLevel(n, { restart: true });
   sfx.ui?.back();
+  toast(t('firstTry.off'), false, 3200);
 }
 
 function nextLevel() {

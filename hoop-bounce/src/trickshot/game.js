@@ -40,6 +40,9 @@ export class TrickshotGame extends Game {
   constructor(def) {
     super(TS_CONFIG, toEngineLevel(def));
     this.ts = def;
+    // Défi « Premier essai » (3e étoile) : perdu pour toute la tentative si le joueur a utilisé ↺ ou s'il
+    // reprend une tentative déjà entamée (voir first-try.js). La physique et les autres étoiles ne changent pas.
+    this.firstTryAllowed = true;
     this.events.on('impact', (e) => this._onImpact(e));
     this.events.on('teleport', () => this.shot && this.shot.portals++);
     this.events.on('trampoline', () => this.shot && this.shot.boosts++);
@@ -217,7 +220,9 @@ export class TrickshotGame extends Game {
   _win() {
     const L = this.level;
     const s = this.shot ?? { bounces: 0, rim: false, board: false, portals: 0, boosts: 0, switches: 0, breaks: 0 };
-    const stars = Math.max(1, TRICKSHOT.shots + 1 - this.shotsUsed);
+    const byShots = Math.max(1, TRICKSHOT.shots + 1 - this.shotsUsed);
+    const firstTryLost = !this.firstTryAllowed;
+    const stars = firstTryLost ? Math.min(byShots, TRICKSHOT.shots - 1) : byShots;
     const bonus = {
       bounces: Math.min(8, s.bounces) * 100,
       swish: s.rim ? 0 : 500,
@@ -229,7 +234,7 @@ export class TrickshotGame extends Game {
     const score = stars * 1000 + Object.values(bonus).reduce((a, v) => a + v, 0);
     this.state = 'won';
     this.controller.enabled = false;
-    this.result = { stars, shots: this.shotsUsed, score, bonus, swish: !s.rim, bounces: s.bounces, time: this.time, spectacle: this.spectacle() };
+    this.result = { stars, firstTryLost, shots: this.shotsUsed, score, bonus, swish: !s.rim, bounces: s.bounces, time: this.time, spectacle: this.spectacle() };
     this.events.emit('win', { ...this.result, x: L.hoop.centerX, y: L.hoop.rimY });
   }
 }

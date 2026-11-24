@@ -3,9 +3,9 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.9.0-dev (non publiée ; la version publiable reste
+> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.9.1-dev (non publiée ; la version publiable reste
 > 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1 : menu décoré + **Hoop Pass**) · **Version de
-> test Android :** **`HoopBounce_Test_v12.apk` (1.11.0-test12, mise à jour)** · **iOS :** projet Xcode prêt
+> test Android :** **`HoopBounce_Test_v13.apk` (1.11.1-test13, mise à jour)** · **iOS :** projet Xcode prêt
 > (`ios/`) · **Phase en cours :** **refonte de la campagne** (50 niveaux plus longs à étapes, 11 pièges surprises
 > annoncés, 3 niveaux trolls, Trickshot expert en 50 cartes et 5 paliers, progression des niveaux remise à zéro) ;
 > phases 2 à 5 terminées ; rien n'est publié.
@@ -1132,6 +1132,15 @@ changé** (voir « Physique » plus bas).
 - **3 essais au plus.** Entre deux essais le ballon revient au pas de tir, **le décor reste tel quel** (caisse
   cassée, porte ouverte, pont tombé, ventilateur allumé restent : on peut préparer le terrain puis marquer).
 - **Étoiles** : ★★★ au premier essai, ★★ au deuxième, ★ au troisième. Après 3 essais ratés : écran « Raté ! ».
+- **Défi « Premier essai »** (la 3e étoile, correctif de la v13) : il faut réussir du premier tir **sans avoir
+  utilisé ↺ Recommencer** et sans essai précédent depuis l'entrée dans la carte. Le bouton ↺ reste disponible à
+  tout moment, mais dès qu'il est utilisé (bouton, pause, touche R, « Rejouer », « Réessayer ») le défi est perdu
+  pour la tentative : message discret « ⭐ Défi Premier essai désactivé pour cette tentative. » (3 s), et un panier
+  au premier tir vaut alors ★★ (sous-titre « Défi Premier essai désactivé (↺) »). Quitter la carte après un tir
+  puis y revenir **reprend** la même tentative (défi perdu) : la tentative entamée est notée dans la sauvegarde
+  (`open`) jusqu'à sa fin (victoire ou 3 essais ratés). Une **nouvelle entrée** dans la carte (menu, « Carte
+  suivante », réouverture du jeu après une tentative terminée) rend le défi disponible. Les étoiles déjà gagnées
+  ne sont jamais retirées. Le défi caché « Du premier coup » suit la même règle. Code : `src/trickshot/first-try.js`.
 - **Score** = étoiles × 1 000 + style : rebonds (+100, 8 au plus), **swish** (+500), planche (+250), portails
   (+200), propulsions (+100), **combo** (+150 par mécanisme déclenché pendant le tir gagnant : bouton, caisse).
 - Le tir se termine quand le ballon s'arrête, **tombe dans le vide du bas de la salle**, sort, touche un piège
@@ -1289,7 +1298,8 @@ succès « Trickshots réussis » gardent leur total à vie).
 | `cards-expert.js` | Les 30 nouvelles cartes du mode expert. |
 | `aim.js` | Geste → tir (`aimFromDrag`), trajectoire prévue (`trajectory` : longueur d'arc limitée `maxLength`, arrêtée au premier bloc ou rampe). |
 | `render.js` | `ArenaRenderer` (hérite du rendu du jeu) : **laboratoire** (fond précalculé de panneaux rivetés, tuyaux, câbles, lampes, néon ; engrenage, écrans et gyrophares animés ; vide du bas), acier à liseré lumineux, verre, murs inclinés, câbles des plateformes et paniers suspendus, volets à voyant, ascenseurs, caisses, panier néon à planche de verre et filet qui s'illumine, pas de tir, élastique, pointillés et repère du geste. |
-| `progress.js` | Progression séparée (clé `hoopbounce.trickshot`, format v3 : étoiles, meilleur score, parties par carte ; les sauvegardes v1 / v2 repartent de zéro et sont gardées dans `legacy`), déblocage séquentiel, résumé. |
+| `progress.js` | Progression séparée (clé `hoopbounce.trickshot`, format v3 : étoiles, meilleur score, parties par carte, tentatives entamées `open` ; les sauvegardes v1 / v2 repartent de zéro et sont gardées dans `legacy`), déblocage séquentiel, résumé. |
+| `first-try.js` | Règle du défi « Premier essai » : entrée dans la carte, ↺ (défi perdu pour la tentative), tir (tentative entamée), fin de tentative. |
 | `i18n.js` | Textes du mode en français, anglais, espagnol (difficultés, chapitres, mécaniques, écrans). |
 | `main.js` | Écran de jeu : caméra, visée tactile et clavier, HUD, effets (ralenti, zoom, confettis, foule), sons, écrans de victoire / échec / pause, enchaînement des niveaux. |
 
@@ -2197,9 +2207,14 @@ niveaux plus longs et plus difficiles rapportent un peu plus.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v12.apk` (≈ 0,6 Mo, **1.11.0-test12**, refonte de la campagne) —
+**Fichier actuel :** `dist/HoopBounce_Test_v13.apk` (≈ 0,6 Mo, **1.11.1-test13**, correctif « Premier essai » du Trickshot) —
 une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
+
+**Mise à jour v13 (correctif du Trickshot) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé
+identique (SHA-256 `894f0b7d…`), versionCode 13, versionName 1.11.1-test13, signature valide ; fichiers du Trickshot
+extraits de l'APK identiques aux sources testées. Sauvegarde : seule la clé `hoopbounce.trickshot` reçoit un champ
+`open` (tentatives entamées) au premier tir ; étoiles, scores et autres clés inchangés.
 
 **Mise à jour v12 (refonte de la campagne) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé
 identique (SHA-256 `894f0b7d…`, contrôlée par le script), versionCode 12, versionName 1.11.0-test12, `apksigner
@@ -2244,7 +2259,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · v10 : `1.9.0-test10` (10) · v11 : `1.10.0-test11` (11) · **v12 : `1.11.0-test12` (12)** ; « 1.11.0 (test 12) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · v10 : `1.9.0-test10` (10) · v11 : `1.10.0-test11` (11) · v12 : `1.11.0-test12` (12) · **v13 : `1.11.1-test13` (13)** ; « 1.11.1 (test 13) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -2567,6 +2582,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Correctif Trickshot « Premier essai »** : ↺ Recommencer ne permet plus d'obtenir la 3e étoile, message
+  discret, tentative entamée gardée si on quitte, étoiles déjà gagnées conservées, APK de test v13
 - ✅ **Refonte de la campagne** : 50 niveaux plus longs à étapes, 11 pièges surprises annoncés, 3 niveaux trolls,
   Trickshot expert en 50 cartes et 5 paliers, progression des niveaux remise à zéro, APK de test v12
 - ✅ **Phase 3 — Mode Fantôme** : meilleur essai enregistré par niveau, ballon fantôme exact et discret, carte de
@@ -2622,7 +2639,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
-- 🟡 **Validation de la refonte de la campagne** avec `HoopBounce_Test_v12.apk` : durées ressenties monde par
+- 🟡 **Validation du correctif « Premier essai »** (Trickshot) avec `HoopBounce_Test_v13.apk` : ↺ puis panier au
+  premier tir → ★★ et message ; nouvelle entrée → ★★★ possible ; tir, sortie, retour → défi perdu
+- 🟡 **Validation de la refonte de la campagne** avec `HoopBounce_Test_v12.apk` (ou v13) : durées ressenties monde par
   monde, pièges surprises (compris au 2e essai ?), niveaux trolls (drôles, pas frustrants), Trickshot 50 cartes
   (paliers, cartes Impossibles faisables)
 - 🟡 **Validation des succès** (phase 5) avec `HoopBounce_Test_v11.apk` : page Succès, carte de déblocage,
@@ -2882,6 +2901,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Important | Trickshot : ↺ Recommencer remettait les essais à zéro ; on pouvait s'entraîner puis obtenir quand même ★★★ « Premier essai ». | ✅ Résolu (v13) : ↺ désactive le défi pour la tentative ; quitter après un tir ne le rend pas ; les étoiles déjà gagnées restent |
+| Info | Trickshot : la description du mode annonçait encore « 20 casse-têtes ». | ✅ Résolu (v13) : 50 |
 | Info | Refonte de la campagne : les durées sont **estimées** (1,4 × la solution experte) ; l'Espace est au plafond de sa fourchette (niveau 42 ≈ 124 s pour 120 visées, toléré par le test). | 🔴 À éprouver avec de vrais joueurs |
 | Info | Refonte de la campagne : 51 passages sur 480 n'ont pas de solution « aléatoire » enregistrée (joués seuls, hors de l'état réel de la partie : porte pas encore ouverte, etc.). Ils sont tous couverts par la partie complète des 50 niveaux. | 🟡 Normal |
 | Info | Refonte de la campagne : les anciens fantômes et records restent dans la sauvegarde sous les anciens identifiants de niveaux (rien n'est effacé) mais ne s'affichent plus. | 🟡 Voulu |
@@ -2949,6 +2970,34 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 24/11/2026 — Correctif Trickshot : le défi « Premier essai » ne se contourne plus avec ↺ (v1.9.1-dev, APK de test v13)
+
+> Faille signalée par le porteur du projet : ↺ Recommencer remettait les 3 essais à zéro, donc on pouvait
+> préparer son tir puis obtenir quand même ★★★ « Premier essai ». **Aucun** changement de physique, de carte,
+> de commandes ni des autres étoiles ; ↺ reste disponible à tout moment.
+
+**Ajouté**
+- `src/trickshot/first-try.js` (`FirstTryRule`) : défi disponible à l'entrée dans la carte ; perdu dès que ↺ est
+  utilisé (bouton, pause, touche R, « Rejouer », « Réessayer ») jusqu'à la prochaine entrée ; une tentative
+  entamée (au moins un tir) est notée dans la sauvegarde (`open`) : quitter puis revenir la reprend, défi perdu ;
+  elle se ferme à la victoire ou après 3 essais ratés.
+- Message discret « ⭐ Défi Premier essai désactivé pour cette tentative. » (3 s) ; sous-titre de victoire
+  « Défi Premier essai désactivé (↺) » ; textes FR / EN / ES.
+- 3 tests : ↺ → ★★ au premier tir (score en conséquence), ★★ au 2e et ★ au 3e inchangés, nouvelle entrée → défi
+  rendu ; sortie après un tir → défi perdu, tentative terminée → rendu ; étoiles déjà gagnées conservées.
+
+**Modifié**
+- `TrickshotGame` : `firstTryAllowed` ; sans lui, les étoiles sont plafonnées à 2 (`result.firstTryLost`).
+- Défi caché « Du premier coup » : même règle. Description du mode : « 50 casse-têtes » (au lieu de 20).
+
+**Vérifié**
+- **664 tests** passent. Chromium (fichiers du jeu servis par Playwright) : ↺ → message affiché puis effacé,
+  panier au premier tir = 2 étoiles ; rechargement = 3 étoiles ; tir, sortie, retour → défi perdu ; 0 erreur.
+- `dist/HoopBounce_Test_v13.apk` (1.11.1-test13) : même identifiant, même clé, versionCode 13, fichiers identiques.
+
+**Reste à faire**
+- Essai sur téléphone par le porteur du projet.
 
 ### 24/11/2026 — Refonte de la campagne : niveaux plus longs, pièges surprises, Trickshot expert (v1.9.0-dev, APK de test v12)
 
