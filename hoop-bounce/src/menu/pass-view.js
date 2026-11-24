@@ -13,6 +13,7 @@
 // couleurs sans toucher à cette page. Styles : css/pass.css.
 
 import { HoopPass } from '../shared/pass.js';
+import { purchasePremium } from '../shared/billing.js';
 import { Wallet } from '../shared/wallet.js';
 import { Stats } from '../shared/stats.js';
 import { itemById, RARITIES } from '../shared/catalog.js';
@@ -553,7 +554,7 @@ export class PassView {
       return;
     }
     this.resetConfirm();
-    if (this.pass.unlockPremium(this.wallet) !== 'ok') return;
+    if (purchasePremium(this.pass, this.wallet) !== 'ok') return;
     this.env.sound.passPremium?.();
     this.env.vibrate([20, 50, 30, 50, 40]);
     this.root.classList.add('premium-unlocking');

@@ -177,12 +177,22 @@ export class HoopPass {
     return !!this.data.premium;
   }
 
-  /** Débloque la ligne Premium avec des gemmes. @returns {'ok'|'owned'|'gems'|'over'} */
+  /**
+   * Débloque la ligne Premium avec des gemmes (version de test). Passer par `purchasePremium()`
+   * (shared/billing.js), qui choisira plus tard l'achat intégré. @returns {'ok'|'owned'|'gems'|'over'}
+   */
   unlockPremium(wallet) {
     if (this.data.premium) return 'owned';
     if (!this.active) return 'over';
     if (!wallet.spendGems(this.season.premium.gems)) return 'gems';
+    return this.grantPremium('gems');
+  }
+
+  /** Premium accordé (gemmes dépensées, ou plus tard achat intégré validé). @returns {'ok'|'owned'} */
+  grantPremium(source = 'gems') {
+    if (this.data.premium) return 'owned';
     this.data.premium = true;
+    this.data.premiumSource = source;
     this._save();
     return 'ok';
   }
@@ -208,6 +218,7 @@ export class HoopPass {
         xp: Math.max(0, Number(raw.xp) || 0),
         seenXp: Math.max(0, Number(raw.seenXp) || 0),
         premium: !!raw.premium,
+        premiumSource: typeof raw.premiumSource === 'string' ? raw.premiumSource : raw.premium ? 'gems' : null,
         claimed: { free: list(raw.claimed?.free), premium: list(raw.claimed?.premium) },
         welcomed: !!raw.welcomed,
         log: Array.isArray(raw.log) ? raw.log.slice(-20) : [],

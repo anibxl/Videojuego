@@ -6,7 +6,7 @@
 //  - inventaire (clé `hoopbounce.inventory`) : articles possédés, articles équipés, étoiles déjà
 //    récompensées par niveau (une étoile ne rapporte qu'une fois).
 
-import { CATALOG, DEFAULTS, REWARDS, itemById } from './catalog.js';
+import { CATALOG, DEFAULTS, REWARDS, itemById, firstClearCoins, replayCoins } from './catalog.js';
 
 const COINS_KEY = 'hoopbounce.coins';
 const GEMS_KEY = 'hoopbounce.gems';
@@ -30,14 +30,14 @@ export class Wallet {
   // ─── Pièces ───────────────────────────────────────────────────────────────
 
   /**
-   * Récompense d'une victoire. `worldIndex` 0..4, `stars` 0..3 obtenues cette fois.
+   * Récompense d'une victoire. `worldIndex` 0..4, `stars` 0..3 obtenues cette fois, `difficulty` du niveau.
    * @returns {{ total:number, lines:Array<[string, number]> }} détail des gains
    */
-  reward(levelId, worldIndex, stars, swish = false) {
+  reward(levelId, worldIndex, stars, swish = false, difficulty = 'medium') {
     const prev = this.inv.rewarded[levelId];
     const lines = [];
-    if (!prev) lines.push(['first', REWARDS.firstClear + REWARDS.perWorld * worldIndex]);
-    else lines.push(['replay', REWARDS.replay]);
+    if (!prev) lines.push(['first', firstClearCoins(worldIndex, difficulty)]);
+    else lines.push(['replay', replayCoins(worldIndex)]);
     const before = prev?.stars ?? 0;
     const fresh = Math.max(0, stars - before);
     if (fresh) lines.push(['stars', fresh * REWARDS.newStar]);

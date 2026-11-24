@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { CATALOG, CATEGORIES, DEFAULTS, RARITIES, REWARDS } from '../src/shared/catalog.js';
+import { CATALOG, CATEGORIES, DEFAULTS, RARITIES, REWARDS, firstClearCoins } from '../src/shared/catalog.js';
+import { LEVELS } from '../src/game/worlds.js';
 import { Wallet } from '../src/shared/wallet.js';
 import { SHOP_STRINGS } from '../src/shop/i18n.js';
 
@@ -32,12 +33,14 @@ test('catalogue : 4 catégories, 4 raretés, un article offert par catégorie, i
 
 test('pièces : première victoire, nouvelles étoiles, 3 étoiles, rejouer — une étoile ne rapporte qu\'une fois', () => {
   const w = new Wallet(memory());
-  const r1 = w.reward('snow-3', 1, 2);
-  assert.equal(r1.total, REWARDS.firstClear + REWARDS.perWorld + 2 * REWARDS.newStar);
-  const r2 = w.reward('snow-3', 1, 3, true);
-  assert.equal(r2.total, REWARDS.replay + REWARDS.newStar + REWARDS.perfect + REWARDS.swish);
-  const r3 = w.reward('snow-3', 1, 3);
-  assert.equal(r3.total, REWARDS.replay, 'plus rien pour les étoiles déjà obtenues');
+  const r1 = w.reward('snow-3', 1, 2, false, 'medium');
+  assert.equal(r1.total, REWARDS.firstClear + REWARDS.perWorld + REWARDS.difficulty.medium + 2 * REWARDS.newStar);
+  const r2 = w.reward('snow-3', 1, 3, true, 'medium');
+  assert.equal(r2.total, REWARDS.replay + REWARDS.replayPerWorld + REWARDS.newStar + REWARDS.perfect + REWARDS.swish);
+  const r3 = w.reward('snow-3', 1, 3, false, 'medium');
+  assert.equal(r3.total, REWARDS.replay + REWARDS.replayPerWorld, 'plus rien pour les étoiles déjà obtenues');
+  // Plus le monde est loin et le niveau difficile, plus la première victoire rapporte
+  assert.ok(firstClearCoins(4, 'expert') > firstClearCoins(2, 'hard') && firstClearCoins(2, 'hard') > firstClearCoins(0, 'easy'));
   assert.equal(w.coins, r1.total + r2.total + r3.total);
 });
 
@@ -99,11 +102,9 @@ test('économie (étape 17) : fourchettes de prix par rareté, prix progressifs,
     const [lo, hi] = RANGES[it.rarity];
     assert.ok(it.price >= lo && it.price <= hi, `${it.id} : ${it.price} hors de ${lo}–${hi}`);
   }
-  // Barème des gains (légèrement relevé à la phase 2 : niveaux plus longs)
-  assert.deepEqual(REWARDS, { firstClear: 50, perWorld: 15, newStar: 25, perfect: 25, replay: 15, swish: 5 });
-  // Aucun objet n'est achetable dès le départ ; le premier achat reste accessible (moins que les gains d'une première partie complète)
-  const fullRun = 50 * REWARDS.firstClear + 10 * REWARDS.perWorld * (0 + 1 + 2 + 3 + 4) + 150 * REWARDS.newStar + 50 * REWARDS.perfect;
-  assert.equal(fullRun, 9000);
+  // Barème des gains (phase 4) : la première victoire dépend du monde et de la difficulté de chaque niveau
+  const fullRun = LEVELS.reduce((n, l) => n + firstClearCoins(l.worldIndex, l.difficulty), 0) + 150 * REWARDS.newStar + 50 * REWARDS.perfect;
+  assert.ok(fullRun > 8000 && fullRun < 9500, `une partie complète rapporte ${fullRun} pièces`);
   const cheapest = Math.min(...CATALOG.filter((i) => i.price > 0).map((i) => i.price));
   assert.ok(cheapest >= 6000 && cheapest < fullRun);
 });

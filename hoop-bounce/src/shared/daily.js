@@ -3,9 +3,11 @@
 //  - la première connexion de chaque jour permet de récupérer UNE récompense : celle du jour suivant
 //    dans le calendrier ;
 //  - on avance d'un jour à chaque récupération (manquer un jour ne fait rien perdre : on reprend où
-//    on en était) ; après le 7e jour, un nouveau cycle commence ;
-//  - les articles exclusifs (traînée du 5e jour, ballon du 7e jour) ne se gagnent qu'une fois :
-//    s'ils sont déjà possédés, ils sont remplacés par des pièces.
+//    on en était) ; après le 7e jour, un nouveau cycle commence, automatiquement, chaque semaine ;
+//  - progression (phase 4) : pièces, pièces, gemmes, coffre, pièces + gemmes, coffre rare, puis la
+//    GRANDE récompense du 7e jour : le ballon exclusif Hoop Bounce la 1re semaine, la traînée exclusive
+//    la 2e, puis un coffre épique ; toujours avec des gemmes et des pièces. Un article exclusif déjà
+//    possédé est remplacé par des pièces.
 
 import { dayKey, safeLocalStorage } from './stats.js';
 import { grant } from './rewards.js';
@@ -13,14 +15,26 @@ import { grant } from './rewards.js';
 const KEY = 'hoopbounce.daily';
 
 export const DAILY_CALENDAR = [
-  { coins: 100 },
-  { coins: 200 },
+  { coins: 150 },
+  { coins: 250 },
+  { gems: 10 },
   { chest: 'common' },
-  { coins: 350 },
-  { item: 'trail-hoop' },
-  { coins: 500 },
-  { item: 'ball-hoop' },
+  { coins: 400, gems: 10 },
+  { chest: 'rare' },
+  { item: 'ball-hoop', coins: 500, gems: 25 },
 ];
+
+/** Grande récompense du 7e jour selon la semaine (0 = première semaine). */
+export function bigReward(cycle) {
+  if (cycle === 0) return { item: 'ball-hoop', coins: 500, gems: 25 };
+  if (cycle === 1) return { item: 'trail-hoop', coins: 500, gems: 25 };
+  return { chest: 'epic', gems: 25 };
+}
+
+/** Récompense d'un jour (0..6) pour une semaine donnée. */
+export function dailyRewardFor(day, cycle = 0) {
+  return day === DAILY_CALENDAR.length - 1 ? bigReward(cycle) : DAILY_CALENDAR[day];
+}
 
 export class DailyReward {
   constructor(storage = safeLocalStorage(), now = () => new Date()) {
@@ -37,6 +51,11 @@ export class DailyReward {
   /** Cycle en cours (0 = première semaine). */
   get cycle() {
     return Math.floor(this.data.streak / DAILY_CALENDAR.length);
+  }
+
+  /** Les 7 récompenses de la semaine en cours (le 7e jour change d'une semaine à l'autre). */
+  week() {
+    return DAILY_CALENDAR.map((_, k) => dailyRewardFor(k, this.cycle));
   }
 
   /** Peut-on récupérer une récompense aujourd'hui ? */
@@ -62,7 +81,7 @@ export class DailyReward {
   claim(wallet, stats = null, rng = Math.random) {
     if (!this.canClaim()) return null;
     const day = this.nextIndex;
-    const res = grant(DAILY_CALENDAR[day], wallet, stats, rng);
+    const res = grant(dailyRewardFor(day, this.cycle), wallet, stats, rng);
     this.data.streak += 1;
     this.data.last = dayKey(this.now());
     this.data.total += 1;

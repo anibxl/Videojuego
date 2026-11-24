@@ -73,7 +73,7 @@ export const CATALOG = [
   { id: 'trail-rainbow', category: 'trail', rarity: 'epic', price: 120000, name: n('Arc-en-ciel', 'Rainbow', 'Arcoíris'), desc: n('Un ruban de toutes les couleurs.', 'A ribbon of every color.', 'Una cinta de todos los colores.') },
   { id: 'trail-galaxy', category: 'trail', rarity: 'epic', price: 230000, name: n('Galaxie', 'Galaxy', 'Galaxia'), desc: n('Un ruban de nébuleuse semé d’étoiles.', 'A nebula ribbon sprinkled with stars.', 'Una cinta de nebulosa llena de estrellas.') },
   { id: 'trail-plasma', category: 'trail', rarity: 'legendary', price: 600000, name: n('Plasma', 'Plasma', 'Plasma'), desc: n('Énergie pure et étincelles électriques.', 'Pure energy and electric sparks.', 'Energía pura y chispas eléctricas.') },
-  { id: 'trail-hoop', category: 'trail', rarity: 'epic', price: null, exclusive: 'daily', name: n('Hoop Bounce', 'Hoop Bounce', 'Hoop Bounce'), desc: n('Un ruban orange et bleu nuit semé de ballons. Récompense du 5e jour.', 'An orange and navy ribbon dotted with balls. Day 5 reward.', 'Una cinta naranja y azul llena de balones. Premio del día 5.') },
+  { id: 'trail-hoop', category: 'trail', rarity: 'epic', price: null, exclusive: 'daily', name: n('Hoop Bounce', 'Hoop Bounce', 'Hoop Bounce'), desc: n('Un ruban orange et bleu nuit semé de ballons. Récompense du 7e jour (2e semaine).', 'An orange and navy ribbon dotted with balls. Day 7 reward (week 2).', 'Una cinta naranja y azul llena de balones. Premio del día 7 (semana 2).') },
   { id: 'trail-aurora', category: 'trail', rarity: 'legendary', price: null, exclusive: 'achievement', name: n('Aurore', 'Aurora', 'Aurora'), desc: n('Une aurore boréale dans ton sillage. Succès « Perfection ».', 'Northern lights in your wake. “Perfection” achievement.', 'Una aurora boreal a tu paso. Logro «Perfección».') },
 
   // ── Animations de panier ──
@@ -107,12 +107,26 @@ export function itemById(id) {
 }
 
 /** Barème des pièces (voir wallet.js). */
-// Phase 2 (refonte des niveaux) : niveaux deux fois plus longs, gains légèrement relevés.
+// Phase 4 (économie) : la première victoire rapporte selon le MONDE (niveaux plus longs) et la DIFFICULTÉ ;
+// rejouer rapporte peu (le Mode Fantôme donne une autre raison de rejouer) ; une partie complète des 50
+// niveaux rapporte ≈ 8 800 pièces.
 export const REWARDS = {
-  firstClear: 50,       // première victoire dans un niveau…
-  perWorld: 15,         // … + 15 par monde (la Neige rapporte plus que la Ville, etc.)
-  newStar: 25,          // chaque étoile obtenue pour la première fois
-  perfect: 25,          // bonus : les 3 étoiles obtenues
-  replay: 15,           // rejouer un niveau déjà terminé
+  firstClear: 40,       // première victoire dans un niveau…
+  perWorld: 15,         // … + 15 par monde (Ville 40 … Espace 100)…
+  difficulty: Object.freeze({ easy: 0, medium: 10, hard: 20, expert: 35, extreme: 50 }), // … + selon la difficulté
+  newStar: 20,          // chaque étoile obtenue pour la première fois
+  perfect: 30,          // bonus : les 3 étoiles obtenues
+  replay: 8,            // rejouer un niveau déjà terminé…
+  replayPerWorld: 2,    // … + 2 par monde (8 … 16)
   swish: 5,             // panier sans toucher le cercle
 };
+
+/** Pièces de la première victoire dans un niveau. */
+export function firstClearCoins(worldIndex, difficulty = 'medium') {
+  return REWARDS.firstClear + REWARDS.perWorld * worldIndex + (REWARDS.difficulty[difficulty] ?? 0);
+}
+
+/** Pièces quand on rejoue un niveau déjà terminé. */
+export function replayCoins(worldIndex) {
+  return REWARDS.replay + REWARDS.replayPerWorld * worldIndex;
+}

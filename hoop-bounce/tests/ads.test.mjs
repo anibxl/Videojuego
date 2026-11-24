@@ -47,7 +47,7 @@ test('configuration : identifiants de TEST officiels pendant le développement, 
     ...ADS_CONFIG,
     useTestAds: false,
     appId: { android: { ...ADS_CONFIG.appId.android, prod: 'ca-app-pub-1234567890123456~1111111111' } },
-    rewarded: { android: { test: ADS_CONFIG.rewarded.android.test, prod: { doubleCoins: 'ca-app-pub-1234567890123456/1', checkpoint: 'ca-app-pub-1234567890123456/2', bonusChest: 'ca-app-pub-1234567890123456/3', wheelSpin: 'ca-app-pub-1234567890123456/4' } } },
+    rewarded: { android: { test: ADS_CONFIG.rewarded.android.test, prod: { doubleCoins: 'ca-app-pub-1234567890123456/1', checkpoint: 'ca-app-pub-1234567890123456/2', wheelSpin: 'ca-app-pub-1234567890123456/4' } } },
   };
   const p = resolveAdIds(real);
   assert.equal(p.testing, false);
@@ -72,10 +72,10 @@ test('gestionnaire : moments interdits, absence d\'annonce, limite du jour (enre
   assert.equal((await ads.showRewarded('checkpoint')).status, 'blocked', 'jamais pendant un niveau');
   assert.equal(ads.status('checkpoint'), 'blocked');
   ads.unblock('playing');
-  assert.equal((await ads.showRewarded('bonusChest')).status, 'rewarded');
-  assert.equal(ads.remaining('bonusChest'), 0);
-  assert.equal((await ads.showRewarded('bonusChest')).status, 'capped');
-  assert.equal(new AdManager({ provider: fakeProvider(), storage: store }).remaining('bonusChest'), 0, 'limite mémorisée');
+  for (let i = 0; i < 3; i++) assert.equal((await ads.showRewarded('wheelSpin')).status, 'rewarded');
+  assert.equal(ads.remaining('wheelSpin'), 0);
+  assert.equal((await ads.showRewarded('wheelSpin')).status, 'capped');
+  assert.equal(new AdManager({ provider: fakeProvider(), storage: store }).remaining('wheelSpin'), 0, 'limite mémorisée');
   ads.dispose();
   const none = new AdManager({ provider: fakeProvider({ loadOk: false }), storage: memory() });
   await none.prepare('wheelSpin');
@@ -84,41 +84,53 @@ test('gestionnaire : moments interdits, absence d\'annonce, limite du jour (enre
   none.dispose();
 });
 
-test('coffre bonus : un par jour, gratuit ou amélioré (meilleur), mémorisé', () => {
+test('coffre bonus quotidien supprimé (phase 4) : plus d’emplacement publicitaire, ancienne sauvegarde ignorée', () => {
+  assert.equal(ADS_CONFIG.placements.bonusChest, undefined);
+  assert.equal(ADS_CONFIG.rewarded.android.prod.bonusChest, undefined);
   const store = memory();
-  const w = new Wallet(store);
-  const c = { t: new Date('2026-11-20T10:00:00') };
-  const b = new Bonus(store, () => c.t);
-  assert.equal(b.chestAvailable(), true);
-  const r = b.openChest(w, null, true, fixed(0.1));
-  assert.ok(r.coins >= 450, 'coffre amélioré : plus de pièces');
-  assert.ok(r.item, 'et presque toujours un article');
-  assert.equal(b.openChest(w), null, 'un seul par jour');
-  assert.equal(new Bonus(store, () => c.t).chestAvailable(), false);
-  c.t = new Date('2026-11-21T09:00:00');
-  assert.equal(new Bonus(store, () => c.t).chestAvailable(), true, 'nouveau coffre le lendemain');
+  store.setItem('hoopbounce.bonus', JSON.stringify({ v: 1, date: '2026-11-20', chest: 'super', freeSpin: true, adSpins: 1, spins: 4, chests: 7, last: 'coins250' }));
+  const b = new Bonus(store, () => new Date('2026-11-20T10:00:00'));
+  assert.equal(typeof b.openChest, 'undefined', 'plus de coffre bonus');
+  assert.equal(b.freeSpinAvailable(), false, 'le lancer gratuit déjà utilisé est conservé');
+  assert.equal(b.adSpinsToday(), 1);
+  assert.equal(b.data.chests, 7, 'historique conservé');
 });
 
-test('roue de la chance : 1 lancer gratuit par jour, lancers bonus avec publicité, tirage pondéré', () => {
+test('roulette quotidienne : 1 lancer gratuit, puis 3 avec publicité au maximum, remise à zéro chaque jour', () => {
   const store = memory();
   const w = new Wallet(store);
   const stats = new Stats(store);
-  const b = new Bonus(store, () => new Date('2026-11-20T10:00:00'));
+  const c = { t: new Date('2026-11-20T10:00:00') };
+  const b = new Bonus(store, () => c.t);
   assert.equal(WHEEL.length, 8);
+  assert.equal(WHEEL.reduce((s, x) => s + x.weight, 0), 100);
   assert.equal(pickWheel(fixed(0)), 0);
   assert.equal(pickWheel(fixed(0.9999)), WHEEL.length - 1);
+  assert.equal(b.status(), 'free');
+  assert.equal(b.spin(w, stats, true), null, 'pas de lancer « publicité » avant le lancer gratuit');
   const s1 = b.spin(w, stats, false, fixed(0));
-  assert.equal(s1.segment.id, 'coins100');
-  assert.equal(w.coins, 100);
+  assert.equal(s1.segment.id, 'coins120');
+  assert.equal(w.coins, 120);
   assert.equal(b.spin(w, stats), null, 'plus de lancer gratuit');
-  const s2 = b.spin(w, stats, true, fixed(0.5));
-  assert.ok(s2, 'lancer obtenu avec une publicité');
-  assert.equal(b.adSpinsToday(), 1);
-  // Les cases rares sont plus rares
+  assert.equal(b.status(), 'ads');
+  for (let i = 0; i < 3; i++) assert.ok(b.spin(w, stats, true, fixed(0.5)), `lancer avec publicité n°${i + 1}`);
+  assert.equal(b.adSpinsLeft(), 0);
+  assert.equal(b.spin(w, stats, true, fixed(0.5)), null, 'pas de 4e lancer avec publicité');
+  assert.equal(b.status(), 'done');
+  // Mémorisé après relance, puis remis à zéro le lendemain
+  assert.equal(new Bonus(store, () => c.t).status(), 'done');
+  c.t = new Date('2026-11-21T00:01:00');
+  const next = new Bonus(store, () => c.t);
+  assert.equal(next.status(), 'free');
+  assert.equal(next.adSpinsLeft(), 3);
+  // Les gros lots sont rares
   const counts = new Array(WHEEL.length).fill(0);
   let seed = 1;
   const rng = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   for (let i = 0; i < 20000; i++) counts[pickWheel(rng)]++;
-  const skin = WHEEL.findIndex((x) => x.id === 'skin');
-  assert.ok(counts[skin] < counts[0] / 4, 'le skin est rare');
+  const at = (id) => counts[WHEEL.findIndex((x) => x.id === id)];
+  assert.ok(at('skin') < at('coins120') / 8, 'le skin est très rare');
+  assert.ok(at('gems') < at('coins120') / 4, 'les gemmes sont rares');
+  assert.ok(at('coins1200') < at('coins250') / 4, 'le jackpot est rare');
 });
+

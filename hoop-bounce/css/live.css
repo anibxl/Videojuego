@@ -119,6 +119,8 @@ html.fit-760 .hub { padding: 0 9px; }
 }
 .rchip .coin { width: 17px; height: 17px; color: var(--gold); }
 .rchip.coins { color: #ffe08a; }
+.rchip .hb-gem { width: 16px; height: 16px; }
+.rchip.gems { color: #a9e8ff; border-color: rgba(95, 212, 255, 0.35); }
 .rchip.item-chip { color: #e3c6ff; border-color: rgba(180, 107, 255, 0.4); padding-left: 9px; }
 .rchip.chest-chip { color: var(--ink); }
 .rchip.chest-chip.rare { color: #a9d2ff; }
@@ -1002,3 +1004,23 @@ html.fit-760 .hub { padding: 0 9px; }
 
 /* Coffres du Hoop Pass et de la boutique de gemmes */
 .rfx.from-chest .rfx-loot { min-height: 104px; align-items: center; }
+
+/* ── Phase 4 : roulette quotidienne seule (le coffre bonus a été supprimé) ── */
+.bv-grid.bv-single { grid-template-columns: minmax(0, 1fr); max-width: 760px; width: 100%; margin: 0 auto; }
+.bv-single .bv-wheel { justify-content: center; }
+.bv-single .wheel-side { max-width: 340px; }
+.bv-renew { display: inline-flex; align-items: center; gap: 7px; font-variant-numeric: tabular-nums; }
+.bv-limit { margin: 2px 0 0; padding: 9px 12px; border-radius: var(--r-md); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--hairline); color: var(--ink-2); font-size: 13px; font-weight: 600; text-align: center; }
+.bv-pips { display: flex; align-items: center; gap: 6px; margin: 2px 0 0; color: var(--ink-3); font-size: 11.5px; font-weight: 600; }
+.bv-pips span { margin-right: 4px; }
+.bv-pips i { width: 9px; height: 9px; border-radius: 50%; background: rgba(95, 212, 255, 0.85); box-shadow: 0 0 8px rgba(95, 212, 255, 0.5); }
+.bv-pips i.used { background: rgba(255, 255, 255, 0.14); box-shadow: none; }
+.bv-wheel[data-status="free"] .bv-pips { opacity: 0.6; }
+.wseg-gem { display: block; width: clamp(14px, 9cqi, 24px); height: clamp(14px, 9cqi, 24px); margin: 0 auto 1px; }
+
+/* Calendrier : gemmes et récompenses combinées */
+.dday-gem-art { display: grid; place-items: center; width: 100%; height: 100%; }
+.dday-gem-art .hb-gem { width: clamp(30px, 8vh, 44px); height: clamp(30px, 8vh, 44px); filter: drop-shadow(0 0 10px rgba(95, 212, 255, 0.55)); }
+.dday-gems { display: inline-flex; align-items: center; gap: 3px; margin-left: 2px; color: #a9e8ff; font-weight: 700; white-space: nowrap; }
+.dday-gems .hb-gem { width: 13px; height: 13px; }
+.dday-plus { color: #ffe08a; font-weight: 700; white-space: nowrap; }

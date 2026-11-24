@@ -2,8 +2,9 @@
 //
 // Chaque jour, 3 missions sont tirées automatiquement (tirage déterminé par la date : le même jour
 // donne les mêmes missions) : une facile, une moyenne, une difficile. Leur progression vient des
-// compteurs du jour (stats.js). Récompenses : des pièces ; la mission difficile ajoute un coffre ou
-// un article ; la moyenne, parfois un coffre. Tout se renouvelle à minuit (heure locale).
+// compteurs du jour (stats.js). Récompenses : des pièces ; la mission difficile ajoute un coffre
+// (commun, rare, ou épique rarement) ; la moyenne, parfois un coffre commun. Jamais de gemmes.
+// Tout se renouvelle à minuit (heure locale).
 
 import { dayKey, safeLocalStorage } from './stats.js';
 import { grant } from './rewards.js';
@@ -12,16 +13,17 @@ import { awardPassXp } from './pass.js';
 const KEY = 'hoopbounce.missions';
 
 /** Modèles : compteur du jour suivi, objectifs (facile → difficile), pièces correspondantes. */
+// Phase 4 (économie) : environ 20 % de pièces en moins, des coffres plus rares (voir generateMissions).
 export const MISSION_TEMPLATES = [
-  { id: 'levels', stat: 'levels', targets: [2, 3, 5], coins: [100, 140, 200], icon: 'flag' },
-  { id: 'goals', stat: 'goals', targets: [5, 10, 15], coins: [100, 160, 220], icon: 'hoop' },
-  { id: 'stars', stat: 'stars', targets: [4, 7, 10], coins: [110, 160, 220], icon: 'star' },
-  { id: 'noDeath', stat: 'noDeath', targets: [1, 2, 3], coins: [130, 190, 260], icon: 'shield' },
-  { id: 'time', stat: 'playTime', targets: [300, 600, 900], coins: [90, 150, 210], icon: 'clock' },
-  { id: 'bounces', stat: 'bounces', targets: [30, 60, 100], coins: [80, 130, 180], icon: 'ball' },
-  { id: 'world', stat: 'world', targets: [1, 1, 2], coins: [120, 150, 220], icon: 'world' },
-  { id: 'games', stat: 'games', targets: [3, 4, 6], coins: [70, 100, 150], icon: 'play' },
-  { id: 'swish', stat: 'swishes', targets: [1, 2, 3], coins: [110, 160, 210], icon: 'swish' },
+  { id: 'levels', stat: 'levels', targets: [2, 3, 5], coins: [80, 110, 160], icon: 'flag' },
+  { id: 'goals', stat: 'goals', targets: [5, 10, 15], coins: [80, 130, 180], icon: 'hoop' },
+  { id: 'stars', stat: 'stars', targets: [4, 7, 10], coins: [90, 130, 180], icon: 'star' },
+  { id: 'noDeath', stat: 'noDeath', targets: [1, 2, 3], coins: [100, 150, 210], icon: 'shield' },
+  { id: 'time', stat: 'playTime', targets: [300, 600, 900], coins: [70, 120, 170], icon: 'clock' },
+  { id: 'bounces', stat: 'bounces', targets: [30, 60, 100], coins: [60, 100, 150], icon: 'ball' },
+  { id: 'world', stat: 'world', targets: [1, 1, 2], coins: [90, 120, 180], icon: 'world' },
+  { id: 'games', stat: 'games', targets: [3, 4, 6], coins: [60, 80, 120], icon: 'play' },
+  { id: 'swish', stat: 'swishes', targets: [1, 2, 3], coins: [90, 130, 170], icon: 'swish' },
 ];
 
 /** Générateur pseudo-aléatoire reproductible (même graine → même suite). */
@@ -50,12 +52,12 @@ export function generateMissions(date, worlds = ['city']) {
       m.stat = `world.${m.world}`;
     }
     if (tier === 2) {
-      // La mission difficile : un coffre (le plus souvent) ou un article
+      // La mission difficile : un coffre — commun le plus souvent, rare parfois, épique rarement
       const r = rng();
-      if (r < 0.55) m.reward.chest = 'common';
-      else if (r < 0.8) m.reward.chest = 'rare';
-      else m.reward.cosmetic = rng() < 0.6 ? 'common' : 'rare';
-    } else if (tier === 1 && rng() < 0.25) m.reward.chest = 'common';
+      if (r < 0.62) m.reward.chest = 'common';
+      else if (r < 0.92) m.reward.chest = 'rare';
+      else m.reward.chest = 'epic';
+    } else if (tier === 1 && rng() < 0.15) m.reward.chest = 'common';
     return m;
   });
 }

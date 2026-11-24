@@ -45,7 +45,6 @@ export const ADS_CONFIG = {
       prod: {
         doubleCoins: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
         checkpoint: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-        bonusChest: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
         wheelSpin: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
       },
     },
@@ -54,7 +53,6 @@ export const ADS_CONFIG = {
       prod: {
         doubleCoins: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
         checkpoint: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-        bonusChest: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
         wheelSpin: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
       },
     },
@@ -64,11 +62,12 @@ export const ADS_CONFIG = {
    * Emplacements : limite par jour (le joueur choisit toujours ; ces plafonds évitent l'abus et
    * gardent les récompenses précieuses).
    */
+  // Phase 4 (économie) : des plafonds bas — les publicités accélèrent la progression, elles ne doivent
+  // jamais devenir une corvée (au plus 18 annonces par jour, toutes choisies par le joueur).
   placements: {
-    doubleCoins: { dailyCap: 15 },  // doubler les pièces d'une victoire
-    checkpoint: { dailyCap: 15 },   // reprendre au dernier drapeau après un échec
-    bonusChest: { dailyCap: 1 },    // améliorer le coffre bonus du jour
-    wheelSpin: { dailyCap: 3 },     // lancers supplémentaires de la roue de la chance
+    doubleCoins: { dailyCap: 5 },   // doubler les pièces d'une victoire
+    checkpoint: { dailyCap: 10 },   // reprendre au dernier drapeau après un échec
+    wheelSpin: { dailyCap: 3 },     // lancers supplémentaires de la roulette quotidienne
   },
 
   /** Appareils de test (identifiants donnés par le journal Android d'AdMob), facultatif. */

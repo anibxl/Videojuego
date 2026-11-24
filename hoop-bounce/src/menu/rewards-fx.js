@@ -186,6 +186,7 @@ export class RewardFx {
 export function rewardChips(lang, reward) {
   const out = [];
   if (reward.coins) out.push(`<span class="rchip coins"><span class="coin">${ICONS.coin}</span>${reward.coins}</span>`);
+  if (reward.gems) out.push(`<span class="rchip gems"><span class="hb-gem" aria-hidden="true"></span>${reward.gems}</span>`);
   if (reward.chest) out.push(`<span class="rchip chest-chip ${reward.chest}">${chestHtml(reward.chest, 'mini')}${lt(lang, `chest.${reward.chest}`)}</span>`);
   if (reward.item) out.push(`<span class="rchip item-chip">★ ${t(lang, 'reward.exclusiveItem')}</span>`);
   if (reward.cosmetic) out.push(`<span class="rchip item-chip">✦ ${lt(lang, `reward.cosmetic.${reward.cosmetic}`)}</span>`);

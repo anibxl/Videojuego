@@ -53,7 +53,7 @@ test('coffres et récompenses : pièces, articles non possédés, doublons conve
   assert.equal(w.coins, 120);
   const r2 = grant({ chest: 'epic' }, w, s, fixed(0));
   assert.ok(r2.coins >= CHESTS.epic.coins[0]);
-  assert.ok(r2.item && ['epic', 'legendary'].includes(r2.item.rarity), 'coffre épique : un article épique ou légendaire');
+  assert.ok(r2.item && ['rare', 'epic', 'legendary'].includes(r2.item.rarity), 'coffre épique : un article rare, épique ou légendaire');
   assert.ok(w.owns(r2.item.id));
   const r3 = grant({ item: 'trail-hoop' }, w, s);
   assert.equal(r3.item.id, 'trail-hoop');
@@ -74,25 +74,37 @@ test('récompense quotidienne : une seule par jour, 7 jours, mémorisée, puis n
   assert.deepEqual(d.states().slice(0, 2), ['today', 'locked']);
   const r = d.claim(w, null, fixed(0.5));
   assert.equal(r.day, 0);
-  assert.equal(w.coins, 100);
+  assert.equal(w.coins, 150);
   assert.equal(d.claim(w), null, 'pas deux fois le même jour');
   assert.deepEqual(d.states().slice(0, 2), ['claimed', 'next']);
   d = new DailyReward(store, c.now);
   assert.equal(d.canClaim(), false, 'mémorisé après relance');
   // Jours 2 à 7
+  let gems = 0;
   for (let k = 1; k < 7; k++) {
     c.next();
     const res = new DailyReward(store, c.now).claim(w, null, fixed(0.5));
     assert.equal(res.day, k);
+    gems += res.gems;
   }
-  assert.ok(w.owns('trail-hoop'), 'jour 5 : traînée exclusive');
-  assert.ok(w.owns('ball-hoop'), 'jour 7 : skin exclusif');
+  assert.equal(gems, 10 + 10 + 25, 'semaine 1 : 45 gemmes (jours 3, 5 et 7)');
+  assert.equal(w.gems, 45);
+  assert.ok(w.owns('ball-hoop'), 'jour 7 de la 1re semaine : skin exclusif Hoop Bounce');
   assert.equal(DAILY_CALENDAR.length, 7);
   // Un jour manqué ne fait rien perdre, et le cycle recommence au jour 1
   c.next(3);
   d = new DailyReward(store, c.now);
   assert.equal(d.nextIndex, 0);
   assert.equal(d.cycle, 1);
+  assert.equal(d.week()[6].item, 'trail-hoop', '2e semaine : la traînée exclusive au 7e jour');
+  for (let k = 0; k < 7; k++) {
+    new DailyReward(store, c.now).claim(w, null, fixed(0.5));
+    c.next();
+  }
+  assert.ok(w.owns('trail-hoop'));
+  d = new DailyReward(store, c.now);
+  assert.equal(d.cycle, 2);
+  assert.deepEqual(d.week()[6], { chest: 'epic', gems: 25 }, 'ensuite : coffre épique et gemmes, chaque semaine');
 });
 
 test('missions : 3 par jour, même tirage pour une date, renouvelées le lendemain, récompense une fois', () => {

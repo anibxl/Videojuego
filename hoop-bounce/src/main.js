@@ -629,7 +629,7 @@ function showWin(r) {
   const res = progress.complete(def.id, r.stars, r.time);
   // Mode Fantôme : l'essai remplace l'ancien fantôme seulement s'il est plus rapide
   const ghostRes = ghostStore.offer(def.id, recorder.finish(r));
-  const earned = wallet.reward(def.id, def.worldIndex, r.stars, !!state.swish);
+  const earned = wallet.reward(def.id, def.worldIndex, r.stars, !!state.swish, def.difficulty);
   // Hoop Pass (saison en cours) : XP pour un niveau terminé, plus la première fois
   showPassXp(awardPassXp('level', { first: earned.lines.some(([k]) => k === 'first') }));
   // Statistiques (missions et succès)

@@ -74,8 +74,9 @@ export default Object.freeze({
   maxLevel: 50,
   /** XP nécessaire pour passer au niveau n (n ≥ 2) : 208, 212… 400 → 14 896 XP pour tout le Pass. */
   levelXp: (n) => 200 + 4 * n,
-  // Premium : payé en gemmes (version de test ; une vraie offre pourra être branchée ici plus tard)
-  premium: Object.freeze({ gems: 250 }),
+  // Premium : payé en gemmes dans la version de test ; `productId` = futur produit Google Play Billing
+  // (voir src/shared/billing.js — aucun paiement réel n'est branché)
+  premium: Object.freeze({ gems: 250, productId: 'hoop_pass_christmas_1' }),
   // Cadeau de bienvenue à la première ouverture du Pass
   welcomeGift: Object.freeze({ gems: 50 }),
   // Objets exclusifs : obtenables uniquement pendant cette saison, via ce Pass

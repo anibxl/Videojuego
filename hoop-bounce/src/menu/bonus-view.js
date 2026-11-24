@@ -1,15 +1,16 @@
-// Page « Bonus du jour » (étape 13) : coffre bonus et roue de la chance.
+// Page « Bonus » : la ROULETTE QUOTIDIENNE, récompense quotidienne principale (phase 4).
 //
-//  - Coffre bonus : un par jour. « Coffre gratuit », OU « Regarder une publicité → Coffre amélioré ».
-//  - Roue de la chance : 1 lancer gratuit par jour, puis « Regarder une publicité → lancer
-//    supplémentaire » (limite du jour dans shared/ads-config.js).
+//  - 1 lancer gratuit par jour ; une fois utilisé, un compte à rebours jusqu'au lendemain.
+//  - Puis jusqu'à 3 lancers supplémentaires, uniquement avec une publicité récompensée (facultative).
+//  - Après ces 3 lancers : plus de roulette jusqu'au lendemain.
+// L'ancien coffre bonus quotidien (étape 13) a été supprimé : il faisait doublon avec la roulette.
 //
 // Les publicités sont TOUJOURS lancées par le joueur ; la récompense n'est donnée qu'après la
 // validation complète de l'annonce (shared/ads.js). Si aucune annonce n'est disponible, l'option
 // gratuite reste là : le joueur n'est jamais bloqué. Aucune annonce n'est chargée avant l'ouverture
 // de cette page (rien au lancement du jeu).
 
-import { Bonus, WHEEL } from '../shared/bonus.js';
+import { Bonus, WHEEL, AD_SPINS_PER_DAY } from '../shared/bonus.js';
 import { getAds } from '../shared/ads.js';
 import { secondsToMidnight } from '../shared/stats.js';
 import { ICONS } from './icons.js';
@@ -19,13 +20,13 @@ import { LiveView, liveContext, header, duration } from './live-views.js';
 
 const SEG = 360 / WHEEL.length;
 const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z"/></svg>';
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Libellé d'une case de la roue. */
 function segmentArt(lang, seg) {
   if (seg.icon === 'coin') return `<span class="coin">${ICONS.coin}</span><b>${seg.reward.coins}</b>`;
   if (seg.icon === 'chest') return `${chestHtml(seg.reward.chest, 'mini')}<b>${t(lang, `wheel.${seg.id}`)}</b>`;
+  if (seg.icon === 'gem') return `<span class="hb-gem wseg-gem" aria-hidden="true"></span><b>${seg.reward.gems}</b>`;
   if (seg.icon === 'effect') return `<span class="wseg-emoji ico">${ICONS.sparkle}</span><b>${t(lang, 'wheel.effect')}</b>`;
   return `<span class="wseg-emoji ico">${ICONS.ball}</span><b>${t(lang, 'wheel.skin')}</b>`;
 }
@@ -53,32 +54,27 @@ export class BonusView extends LiveView {
     const l = this.lang;
     const c = (this.ctx = liveContext());
     const bonus = (this.bonus = new Bonus());
-    const chestOpen = bonus.chestAvailable();
-    const free = bonus.freeSpinAvailable();
-
-    const chestActions = chestOpen
-      ? `
-        <div class="bv-actions">
-          <button class="bv-free pressable" data-chest="free"><span class="bv-emoji ico">${ICONS.gift}</span><span>${t(l, 'bonus.chest.free')}</span></button>
-          <span class="bv-or">${t(l, 'bonus.or')}</span>
-          <button class="ad-btn pressable" data-chest="ad"><span class="ad-ico ico">${ICONS.tv}</span><span class="ad-txt"><b>${t(l, 'bonus.watch')}</b><small data-sub>→ ${t(l, 'bonus.chest.upgrade')}</small></span></button>
-        </div>
-        <p class="bv-perks"><span>✦</span> ${t(l, 'bonus.chest.perks')}</p>`
-      : `<p class="bv-done">${CHECK}<span>${t(l, 'bonus.chest.opened')}</span></p><p class="bv-renew" data-countdown></p>`;
+    const status = bonus.status(); // 'free' · 'ads' · 'done'
+    const used = bonus.adSpinsToday();
+    const pips = Array.from({ length: AD_SPINS_PER_DAY }, (_, i) => `<i class="${i < used ? 'used' : ''}"></i>`).join('');
 
     const segs = WHEEL.map((s, i) => `<span class="wseg" data-seg="${i}" style="--a:${i * SEG + SEG / 2}deg"><span class="wseg-in">${segmentArt(l, s)}</span></span>`).join('');
+
+    let actions = '';
+    if (status === 'free') {
+      actions = `<button class="bv-spin pressable" data-spin="free"><span class="bv-emoji ico">${ICONS.wheel}</span><span>${t(l, 'bonus.wheel.spin')}</span></button>`;
+    } else {
+      actions = `<p class="bv-done small">${CHECK}<span>${t(l, 'bonus.wheel.used')}</span></p>
+              <p class="bv-renew"><span class="dv-clock"></span><span data-countdown></span></p>`;
+      if (status === 'ads') actions += `<button class="ad-btn pressable" data-spin="ad"><span class="ad-ico ico">${ICONS.tv}</span><span class="ad-txt"><b>${t(l, 'bonus.watch')}</b><small data-sub></small></span></button>`;
+      else actions += `<p class="bv-limit">${t(l, 'bonus.wheel.done')}</p>`;
+    }
 
     this.root.innerHTML = `
       ${header(l, 'bonus', 'bonus.title', `<span class="chip lv-chip timer reveal" style="--i:0"><span class="dv-clock"></span><b data-clock></b></span>`)}
       <div class="lv-body bv-body">
-        <div class="bv-grid">
-          <section class="bv-panel bv-chest reveal" style="--i:2" data-open="${chestOpen ? 1 : 0}">
-            <h2 class="bv-title">${t(l, 'bonus.chest.title')}</h2>
-            <p class="bv-sub">${t(l, 'bonus.chest.sub')}</p>
-            <div class="bv-stage">${chestHtml(chestOpen ? 'common' : (bonus.data.chest ?? 'common'), chestOpen ? 'idle' : 'opened')}<span class="bv-sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
-            ${chestActions}
-          </section>
-          <section class="bv-panel bv-wheel reveal" style="--i:3">
+        <div class="bv-grid bv-single">
+          <section class="bv-panel bv-wheel reveal" style="--i:2" data-status="${status}">
             <div class="wheel-wrap">
               <span class="wheel-pointer" aria-hidden="true"></span>
               <div class="wheel">
@@ -89,10 +85,9 @@ export class BonusView extends LiveView {
             </div>
             <div class="wheel-side">
               <h2 class="bv-title">${t(l, 'bonus.wheel.title')}</h2>
-              ${free
-                ? `<button class="bv-spin pressable" data-spin="free"><span class="bv-emoji ico">${ICONS.wheel}</span><span>${t(l, 'bonus.wheel.spin')}</span></button>`
-                : `<p class="bv-done small">${CHECK}<span>${t(l, 'bonus.wheel.used')}</span></p>`}
-              <button class="ad-btn pressable" data-spin="ad"><span class="ad-ico ico">${ICONS.tv}</span><span class="ad-txt"><b>${t(l, 'bonus.watch')}</b><small data-sub></small></span></button>
+              <p class="bv-sub">${t(l, 'bonus.wheel.sub', { n: AD_SPINS_PER_DAY })}</p>
+              ${actions}
+              <p class="bv-pips" aria-label="${t(l, 'bonus.wheel.left', { n: bonus.adSpinsLeft() })}"><span>${t(l, 'bonus.wheel.extraToday')}</span>${pips}</p>
             </div>
           </section>
         </div>
@@ -105,9 +100,8 @@ export class BonusView extends LiveView {
   }
 
   afterShow() {
-    // On prépare une annonce seulement maintenant (jamais au lancement), pour l'option la plus utile
-    if (this.bonus.chestAvailable() && this.ads.remaining('bonusChest')) this.ads.prepare('bonusChest');
-    else if (this.ads.remaining('wheelSpin')) this.ads.prepare('wheelSpin');
+    // On prépare une annonce seulement maintenant (jamais au lancement), et seulement si elle peut servir
+    if (this.bonus.status() === 'ads' && this.ads.remaining('wheelSpin')) this.ads.prepare('wheelSpin');
   }
 
   /** État des boutons « Regarder une publicité » (prête, chargement, indisponible, limite). */
@@ -117,32 +111,25 @@ export class BonusView extends LiveView {
       const st = this.ads.status(placement);
       return { st, text: st === 'ready' || st === 'blocked' ? readyText : t(l, st === 'capped' ? 'ad.capped' : st === 'loading' ? 'ad.loading' : 'ad.unavailable') };
     };
-    const chestBtn = this.root.querySelector('[data-chest="ad"]');
-    if (chestBtn) {
-      const { st, text } = label('bonusChest', `→ ${t(l, 'bonus.chest.upgrade')}`);
-      chestBtn.dataset.state = st;
-      chestBtn.disabled = this.busy || (st !== 'ready' && st !== 'loading');
-      chestBtn.querySelector('[data-sub]').textContent = text;
-    }
     const spinBtn = this.root.querySelector('[data-spin="ad"]');
     if (spinBtn) {
-      const left = this.ads.remaining('wheelSpin');
+      const left = Math.min(this.ads.remaining('wheelSpin'), this.bonus?.adSpinsLeft() ?? AD_SPINS_PER_DAY);
       const { st, text } = label('wheelSpin', `→ ${t(l, 'bonus.wheel.extra')} · ${t(l, 'bonus.wheel.left', { n: left })}`);
       spinBtn.dataset.state = st;
       spinBtn.disabled = this.busy || (st !== 'ready' && st !== 'loading');
       spinBtn.querySelector('[data-sub]').textContent = text;
     }
-    for (const b of this.root.querySelectorAll('[data-chest="free"], [data-spin="free"]')) b.disabled = this.busy;
+    for (const b of this.root.querySelectorAll('[data-spin="free"]')) b.disabled = this.busy;
   }
 
   tick() {
     const l = this.lang;
-    const left = t(l, 'bonus.renew', { t: duration(l, secondsToMidnight()) });
+    const left = t(l, 'bonus.wheel.freeIn', { t: duration(l, secondsToMidnight()) });
     const clock = this.root.querySelector('[data-clock]');
     if (clock) clock.textContent = duration(l, secondsToMidnight());
     const cd = this.root.querySelector('[data-countdown]');
     if (cd) cd.textContent = left;
-    // Minuit passé pendant que la page est ouverte : nouveau coffre, nouveau lancer gratuit
+    // Minuit passé pendant que la page est ouverte : nouveau lancer gratuit, compteur remis à zéro
     if (!this.busy && this.bonus && this.bonus.data.date && this.bonus.data.date !== new Bonus()._today().date) this.render(true);
   }
 
@@ -162,54 +149,15 @@ export class BonusView extends LiveView {
 
   async onClick(e) {
     if (this.busy) return;
-    const chest = e.target.closest('[data-chest]');
     const spin = e.target.closest('[data-spin]');
-    if (chest && !chest.disabled) return this.openChest(chest.dataset.chest === 'ad');
     if (spin && !spin.disabled) return this.spin(spin.dataset.spin === 'ad');
-  }
-
-  // ─── Coffre bonus ─────────────────────────────────────────────────────────
-
-  async openChest(withAd) {
-    if (!new Bonus().chestAvailable()) return this.render(true);
-    this.busy = true;
-    this.updateAdButtons();
-    if (withAd) {
-      const res = await this.watch('bonusChest');
-      if (res.status !== 'rewarded') {
-        this.busy = false;
-        this.updateAdButtons();
-        return this.adFailed(res);
-      }
-    }
-    // Le coffre de la page tremble (et se transforme en coffre amélioré), puis la grande révélation
-    const stage = this.root.querySelector('.bv-stage');
-    const el = stage?.querySelector('.chest');
-    if (el) {
-      if (withAd) {
-        el.classList.remove('common');
-        el.classList.add('super');
-        stage.classList.add('upgrade');
-        this.env.sound.surprise?.();
-        this.env.vibrate([10, 30, 10]);
-        await wait(reducedMotion() ? 200 : 900);
-      }
-      el.classList.remove('idle');
-      el.classList.add('shake');
-      this.env.sound.open();
-      await wait(reducedMotion() ? 100 : 520);
-    }
-    const c = liveContext();
-    const res = new Bonus().openChest(c.wallet, c.stats, withAd);
-    this.busy = false;
-    if (res) await this.celebrate(res, t(this.lang, withAd ? 'bonus.got.super' : 'bonus.got.chest'));
-    else this.render(true);
   }
 
   // ─── Roue de la chance ────────────────────────────────────────────────────
 
   async spin(withAd) {
-    if (!withAd && !new Bonus().freeSpinAvailable()) return this.render(true);
+    const now = new Bonus();
+    if (withAd ? now.status() !== 'ads' : !now.freeSpinAvailable()) return this.render(true);
     this.busy = true;
     this.updateAdButtons();
     if (withAd) {

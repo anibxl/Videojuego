@@ -9,7 +9,7 @@ import { gt } from '../game/i18n.js';
 import { itemById } from '../shared/catalog.js';
 import { Wallet } from '../shared/wallet.js';
 import { Stats, dayKey, secondsToMidnight } from '../shared/stats.js';
-import { DailyReward, DAILY_CALENDAR } from '../shared/daily.js';
+import { DailyReward } from '../shared/daily.js';
 import { Missions } from '../shared/missions.js';
 import { Achievements, TIERS } from '../shared/achievements.js';
 import { Bonus } from '../shared/bonus.js';
@@ -41,10 +41,7 @@ export function liveBadges() {
     daily: c.daily.canClaim() ? 1 : 0,
     missions: c.missions.claimable(c.stats, c.worlds),
     achievements: c.achievements.claimable(c),
-    bonus: (() => {
-      const b = new Bonus();
-      return (b.chestAvailable() ? 1 : 0) + (b.freeSpinAvailable() ? 1 : 0);
-    })(),
+    bonus: new Bonus().freeSpinAvailable() ? 1 : 0, // lancer gratuit de la roulette
   };
 }
 
@@ -120,20 +117,28 @@ export class DailyView extends LiveView {
     const l = this.lang;
     const c = (this.ctx = liveContext());
     const states = c.daily.states();
-    const cards = DAILY_CALENDAR.map((rw, k) => {
+    const cards = c.daily.week().map((rw, k) => {
       let art = '';
       let name = '';
-      if (rw.coins) {
+      const gemTag = (n) => `<span class="dday-gems"><span class="hb-gem" aria-hidden="true"></span>${n}</span>`;
+      if (rw.item) {
+        // 7e jour : objet exclusif, avec des pièces et des gemmes
+        art = `<canvas data-item="${rw.item}"></canvas>`;
+        name = `${t(l, rw.item === 'ball-hoop' ? 'daily.skin' : 'daily.trail')}`;
+      } else if (rw.chest) {
+        art = chestHtml(rw.chest, 'idle');
+        name = t(l, `daily.chest.${rw.chest}`);
+      } else if (rw.coins) {
         const n = rw.coins >= 350 ? 3 : rw.coins >= 200 ? 2 : 1;
         art = `<span class="coin-stack s${n}">${`<span class="coin">${ICONS.coin}</span>`.repeat(n)}</span>`;
         name = t(l, 'daily.coins', { n: rw.coins });
-      } else if (rw.chest) {
-        art = chestHtml(rw.chest, 'idle');
-        name = t(l, 'daily.chest');
-      } else if (rw.item) {
-        art = `<canvas data-item="${rw.item}"></canvas>`;
-        name = t(l, k === 6 ? 'daily.skin' : 'daily.trail');
+      } else if (rw.gems) {
+        art = `<span class="dday-gem-art"><span class="hb-gem" aria-hidden="true"></span></span>`;
+        name = t(l, 'daily.gems', { n: rw.gems });
       }
+      // gemmes en plus (jour 5, jour 7) : petite pastille
+      if (rw.gems && (rw.coins || rw.chest || rw.item)) name += ` ${gemTag(rw.gems)}`;
+      if (rw.item && rw.coins) name += ` <span class="dday-plus">+${rw.coins}</span>`;
       const st = states[k];
       const tag = st === 'today' ? t(l, 'daily.today') : st === 'next' ? t(l, 'daily.tomorrow') : '';
       return `
