@@ -2524,6 +2524,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - `tools/route-check.mjs` : plage de niveaux `a-b`, option `--part` ; `tools/build-test-apk.mjs` : version de test 8.
 
 **Vérifié**
+- `npm test` : **499 tests**, tous réussis (dont les 50 niveaux joués en entier et 301 solutions aléatoires
+  rejouées ; les 29 passages sans solution aléatoire dépendent de l'état du niveau et sont couverts par la partie
+  complète).
 - Les **50 niveaux se terminent** en partie complète (aucune progression bloquée) ; durées joueur estimées :
   Ville 20–33 s, Neige 30–36 s, Volcan 42–53 s, Forêt 46–57 s, Espace 52–68 s ; moyenne croissante par monde.
 - Jeu dans Chromium (Pixel 7 émulé) : 15 niveaux ouverts, **60 images/s** (médiane et p95 16,7 ms), aucune erreur ;
