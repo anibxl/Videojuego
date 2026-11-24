@@ -1,269 +1,306 @@
-// MONDE 4 — FORÊT (10 niveaux). Lianes, plateformes en bois, champignons rebondissants, troncs qui
-// roulent, branches qui bougent, rivière. Plus exigeant que le Volcan : on enchaîne des mouvements en l'air.
-import { walls, bounds, floor, basin, hoopAt } from './common.js';
+// MONDE 4 — FORÊT : PRÉCISION (refonte phase 2). 45 à 60 s par niveau pour un joueur.
+// Champignons rebondissants, lianes, branches qui bougent ou qui cassent, troncs qui roulent ou qui
+// flottent, troncs-balanciers à pointes, troncs-marteaux, rivière. Les erreurs coûtent plus cher : moins
+// de points de contrôle, des chutes dans la rivière.
+//
+// 31 La clairière          champignons : souche, ronces, rivière, le grand champignon (découverte)
+// 32 La rivière aux lianes  une liane, puis trois, puis entre les balanciers (★ mémorable)
+// 33 Les branches          branches qui montent, qui glissent, qui cassent (technique)
+// 34 Les troncs            troncs qui roulent, rondins qui dévalent, tronc flottant (rapide)
+// 35 Le bûcheron           balanciers à pointes et troncs-marteaux (précision)
+// 36 La cabane             deux leviers, deux portes, un champignon (puzzle)
+// 37 Les planches magiques planches qui apparaissent et disparaissent au-dessus de l'eau (rythme)
+// 38 La canopée            tout en hauteur : lianes, branches, champignons (technique)
+// 39 Les arbres creux      les troncs creux téléportent ; lequel prendre ? (★ puzzle)
+// 40 La forêt profonde     finale (★)
 
-const water = (x0, x1) => ({ x: x0, y: -0.5, w: x1 - x0 });
+import { level } from './kit.js';
+import { F6, F7, F8, F9, F10 } from './_forest_old.js';
 
-const F1 = {
-  id: 'forest-1',
-  difficulty: 'expert',
-  number: 1,
-  nameKey: 'level.forest.1',
-  bounds: bounds(50, 14),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(50), floor(-4, 54, 'ground'), { x: 13, y: 0, w: 6, h: 4, style: 'wood' }, { x: 21, y: 0, w: 1.4, h: 9, style: 'block' }],
-  mushrooms: [{ x: 9, y: 1.0, w: 1.8, height: 6 }, { x: 16.6, y: 4.9, w: 1.8, height: 6.5, base: 4 }],
-  // Tronc-marteau : il s'abat d'un coup dans la clairière
-  crushers: [{ x: 26.6, w: 2.4, top: 3.0, bottom: 0, period: 2.4, phase: 0 }],
-  stars: [{ x: 9.9, y: 6.4 }, { x: 17.5, y: 10.4 }, { x: 27.8, y: 1.2 }],
-  hoop: hoopAt(42),
-  hints: [{ x: 4.4, y: 4.3, key: 'hint.mushroom' }],
-  passages: [
-    { name: 'Champignon → souche', start: [3, 0], goal: ['on', 13, 19, 4], plan: [['goTo', 7.2], ['hop', 2, 9.9], ['fly', 15]] },
-    { name: 'Champignon → par-dessus le grand mur', start: [14.2, 4], goal: ['on', 22.4, 26, 0], plan: [['hop', 2, 17.5], ['fly', 24], ['goTo', 25]] },
-    { name: 'Sous le tronc-marteau', start: [25, 0], goal: ['on', 29.8, 40, 0], plan: [['goTo', 25.2], ['waitCycle', 2.4, 2.15, 2.25], ['run', 1, 30, 40, 0]] },
-    { name: 'Clairière → panier', start: [32, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+const wood = 'wood';
+const moss = 'block';
 
-const F2 = {
-  id: 'forest-2',
-  difficulty: 'expert',
-  number: 2,
-  nameKey: 'level.forest.2',
-  bounds: bounds(54),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(54), floor(-4, 22, 'ground'), basin(22, 32, 'ground'), floor(32, 58, 'ground')],
-  water: [water(22, 32)],
-  planks: [{ x1: 21.6, x2: 24.6, y: 2.0, style: 'wood' }],
-  // Planche magique qui apparaît et disparaît au-dessus de la rivière
-  blinkers: [{ x: 26.8, y: 2.6, w: 3.2, h: 0.4, period: 2.6, on: 1.4, phase: 0 }],
-  logs: [{ x: 12, y: 0.6, r: 0.6, path: { dx: 5, dy: 0, period: 5, phase: 0 } }],
-  stars: [{ x: 14.5, y: 3.2 }, { x: 25.7, y: 4.4 }, { x: 31, y: 5.4 }],
-  hoop: hoopAt(46),
-  hints: [{ x: 4.4, y: 4.3, key: 'hint.log' }],
-  passages: [
-    { name: 'Par-dessus le tronc', start: [3, 0], goal: ['on', 18.2, 21.6, 0], plan: [['goTo', 9.4], ['waitMover', 'rollers', 0, 'x', '<', 0.3], ['jumpOver', 'rollers', 0], ['goTo', 19.8]] },
-    { name: 'Première planche', start: [19.8, 0], goal: ['on', 21.6, 24.6, 2.0], plan: [['hop', 3, 23.1]] },
-    { name: 'Planche qui clignote → rive', start: [23.1, 2.0], goal: ['on', 32, 40, 0], plan: [['charge', 3], ['waitCycle', 2.6, 2.2, 2.3], ['jump', 1, 28.4], ['jump', 1, 34]] },
-    { name: 'Rive → panier', start: [36, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+/** Rivière de x0 à x1 (surface 0,5 sous le sol `top`). */
+function river(s, x0, x1, top = 0) {
+  s.ground(x0, x1, top - 1.2);
+  s.add('water', { x: x0, y: top - 0.5, w: x1 - x0 });
+}
 
-const F3 = {
-  id: 'forest-3',
-  difficulty: 'expert',
-  number: 3,
-  nameKey: 'level.forest.3',
-  bounds: bounds(44, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(44), floor(-4, 12, 'ground'), basin(12, 19, 'ground'), floor(19, 48, 'ground'), { x: 27.6, y: 0, w: 16.4, h: 1.4, style: 'wood' }],
-  water: [water(12, 19)],
-  vines: [{ x: 13.8, y: 9.4, len: 6.4 }],
-  // Rondins qui dévalent de la souche vers la rivière
-  boulders: [{ x1: 18.6, x2: 27, y: 0, r: 0.55, dir: -1, speed: 5.5, period: 2.8, phase: 0 }],
-  stars: [{ x: 12.6, y: 4.6 }, { x: 16.6, y: 5.4 }, { x: 22, y: 2.4 }],
-  hoop: hoopAt(38.5, 3.4, 1.4),
-  hints: [{ x: 4.4, y: 4.6, key: 'hint.vine' }],
-  passages: [
-    { name: 'La première liane', start: [3, 0], goal: ['on', 19, 27, 0], plan: [['goTo', 10.6], ['charge', 4], ['waitCycle', 2.8, 0.7, 0.8], ['vines', 19]] },
-    { name: 'Rondins → souche', start: [21, 0], goal: ['on', 28, 44, 1.4], plan: [['charge', 2], ['dodgeBoulders', 28.6, 3.2, 25.6]] },
-    { name: 'Souche → panier', start: [29, 1.4], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 31 — La clairière : les champignons
+const L31 = level({ id: 'forest-1', difficulty: 'medium', number: 1, nameKey: 'lv.forest.1', idea: 'champignons : souche, ronces, rivière, grand champignon', maxY: 14 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.mushroom');
+  });
+  c.section(18, (s) => {
+    s.ground(0, 18);
+    s.add('mushrooms', { x: 4, y: 1, w: 1.8, height: 6 });
+    s.block(9, 0, 9, 4, wood);
+    s.star(4.9, 6.4);
+    s.pass('Champignon → souche', [-6, 0], ['on', 9.3, 18, 4], [['goTo', 2.2], ['hop', 2, 4.9], ['fly', 11], ['goTo', 16.6]]);
+  });
+  // Les ronces : trois champignons au-dessus des épines
+  c.section(22, (s) => {
+    s.ground(0, 22);
+    s.add('spikes', { x: 0, y: 0, w: 18, dir: 'up' });
+    s.add('mushrooms', { x: 3, y: 1, w: 1.8, height: 5 }, { x: 8.6, y: 1, w: 1.8, height: 5 }, { x: 14.2, y: 1, w: 1.8, height: 5 });
+    s.star(9.5, 6.6);
+    s.pass('Les ronces', [-1.4, 4], ['on', 18.2, 22, 0], [['hold', 1, -0.2], ['fly', 3.9], ['fly', 9.5], ['fly', 15.1], ['fly', 20]]);
+  });
+  // Champignons dans la rivière
+  c.section(24, (s) => {
+    s.ground(0, 3);
+    river(s, 3, 19);
+    s.add('mushrooms', { x: 6, y: 0.8, w: 1.8, height: 4.4 }, { x: 12, y: 0.8, w: 1.8, height: 4.4 });
+    s.ground(19, 24);
+    s.checkpoint(1, 0);
+    s.star(12.9, 5.4);
+    s.pass('Champignons dans la rivière', [-2, 0], ['on', 19.2, 24, 0], [['goTo', 2.2], ['hop', 3, 6.9], ['fly', 12.9], ['fly', 20.6]]);
+  });
+  // L'escalier de souches : un champignon sur chaque souche
+  c.section(24, (s) => {
+    s.ground(0, 24);
+    s.add('mushrooms', { x: 2.6, y: 1, w: 1.8, height: 5 });
+    s.block(6.4, 0, 4.6, 3.2, wood);
+    s.add('mushrooms', { x: 8.8, y: 3.4, w: 1.6, height: 5 });
+    s.block(13, 0, 4.6, 6.2, wood);
+    s.block(17.6, 0, 6.4, 1.2, wood);
+    s.checkpoint(0.8, 0);
+    s.star(15.3, 8.2);
+    s.pass('L’escalier de souches', [-2, 0], ['on', 13.3, 17.4, 6.2], [['goTo', 0.8], ['hop', 2, 3.5], ['fly', 7.6], ['goTo', 7.8], ['hop', 1, 9.6], ['fly', 14.6], ['goTo', 15.3]]);
+    s.pass('Redescendre', [15.3, 6.2], ['on', 17.8, 24, 1.2], [['hold', 1, 17.8], ['goTo', 20]]);
+  });
+  // Le grand champignon : par-dessus le vieux mur moussu
+  c.section(22, (s) => {
+    s.ground(0, 22);
+    s.add('mushrooms', { x: 5, y: 1, w: 1.6, height: 9.6 });
+    s.block(10, 0, 1.6, 8.4, moss);
+    s.star(10.8, 11.6);
+    s.pass('Le grand champignon', [-4, 1.2], ['on', 12, 22, 0], [['goTo', 3.2], ['hop', 2, 5.8], ['fly', 14.5]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const F4 = {
-  id: 'forest-4',
-  difficulty: 'expert',
-  number: 4,
-  nameKey: 'level.forest.4',
-  bounds: bounds(38, 16),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(38), floor(-4, 42, 'ground'), { x: 18.5, y: 0, w: 19.5, h: 7.6, style: 'wood' }],
-  branches: [
-    { x1: 8, x2: 10.5, y: 2.4, path: { dx: 0, dy: 1.2, period: 4, phase: 0 } },
-    { x1: 11.5, x2: 14, y: 4.6, path: { dx: 1, dy: 0, period: 3.6, phase: 0.25 } },
-  ],
-  // La dernière branche casse dès qu'on se pose dessus
-  fallers: [{ x: 15, y: 6.2, w: 2.5, h: 0.4 }],
-  stars: [{ x: 9.25, y: 5.8 }, { x: 13, y: 7.4 }, { x: 16.3, y: 9.6 }],
-  hoop: hoopAt(30, 3.4, 7.6),
-  hints: [{ x: 4.2, y: 4.3, key: 'hint.branches' }],
-  passages: [
-    { name: 'De branche en branche', start: [3, 0], goal: ['on', 18.5, 38, 7.6], plan: [['goTo', 9.25], ['hopTo', 4, 'branches', 0, 1.25], ['hopTo', 2, 'branches', 1, 1.25], ['hop', 2, 16.25, 6.6], ['jump', 1, 20.5]] },
-    { name: 'Cabane → panier', start: [21, 7.6], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 32 — La rivière aux lianes
+const L32 = level({ id: 'forest-2', difficulty: 'medium', number: 2, nameKey: 'lv.forest.2', idea: 'lianes : une, trois, puis entre les balanciers', maxY: 12 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.6, 'hint.vine');
+  });
+  c.section(20, (s) => {
+    s.ground(0, 4);
+    river(s, 4, 14);
+    s.add('vines', { x: 6.8, y: 9.4, len: 6.4 });
+    s.ground(14, 20);
+    s.star(7.4, 4.6);
+    s.pass('La première liane', [-6, 0], ['on', 14.2, 20, 0], [['goTo', 3.2], ['charge', 4], ['vines', 14.4], ['goTo', 17]]);
+  });
+  // Trois lianes à la suite
+  c.section(26, (s) => {
+    s.ground(0, 3);
+    river(s, 3, 21);
+    s.add('vines', { x: 5.6, y: 9.6, len: 6.4 }, { x: 11.4, y: 9.6, len: 6.4 }, { x: 17.2, y: 9.6, len: 6.4 });
+    s.ground(21, 26);
+    s.checkpoint(1, 0);
+    s.star(14.3, 5.4);
+    s.pass('Trois lianes', [-3, 0], ['on', 21.2, 26, 0], [['goTo', 2.2], ['charge', 4], ['vines', 21.4], ['goTo', 23.6]]);
+  });
+  // Les balanciers : deux troncs à pointes se balancent entre les lianes
+  c.section(26, (s) => {
+    s.ground(0, 3);
+    river(s, 3, 21);
+    s.add('vines', { x: 5.6, y: 9.6, len: 6.4 }, { x: 11.4, y: 9.6, len: 6.4 }, { x: 17.2, y: 9.6, len: 6.4 });
+    s.add('maces', { x: 8.5, y: 12.5, len: 4.2, r: 0.5, amp: 0.7, period: 3.2, phase: 0 }, { x: 14.3, y: 12.5, len: 4.2, r: 0.5, amp: 0.7, period: 3.2, phase: 0.5 });
+    s.ground(21, 26);
+    s.checkpoint(1, 0);
+    s.star(11.4, 4.2);
+    s.pass('Entre les balanciers', [-2.6, 0], ['on', 21.2, 26, 0], [['goTo', 2.2], ['charge', 4], ['waitCycle', 3.2, 1.8, 1.9], ['vines', 21.4], ['goTo', 23.6]]);
+  });
+  // La dernière liane mène sur la souche
+  c.section(18, (s) => {
+    s.ground(0, 2);
+    river(s, 2, 11);
+    s.add('vines', { x: 4.6, y: 10, len: 6 });
+    s.block(11, -1.2, 7, 4.2, wood);
+    s.star(9.6, 6);
+    s.pass('Liane → souche', [-2.6, 0], ['on', 11.2, 18, 3], [['goTo', 1.2], ['charge', 4], ['vines', 11.4], ['goTo', 13]]);
+  });
+  // Redescendre par la liane, sous le balancier
+  c.section(20, (s) => {
+    s.ground(0, 2, 3, wood);
+    river(s, 2, 14);
+    s.add('vines', { x: 5, y: 10.4, len: 6 });
+    s.add('maces', { x: 10, y: 12, len: 5.6, r: 0.5, amp: 0.7, period: 3, phase: 0 });
+    s.ground(14, 20);
+    s.checkpoint(1, 3);
+    s.star(8.4, 6.4);
+    s.pass('Redescendre par la liane', [-4, 3], ['on', 14.2, 20, 0], [['goTo', 1.2], ['charge', 4], ['waitCycle', 3, 0.5, 0.6], ['vines', 14.4], ['goTo', 16]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const F5 = {
-  id: 'forest-5',
-  difficulty: 'extreme',
-  number: 5,
-  nameKey: 'level.forest.5',
-  bounds: bounds(54, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(54), floor(-4, 11, 'ground'), basin(11, 30, 'ground'), floor(30, 58, 'ground')],
-  water: [water(11, 30)],
-  vines: [{ x: 13.4, y: 9.6, len: 6.4 }, { x: 19.2, y: 9.6, len: 6.4 }, { x: 25, y: 9.6, len: 6.4 }],
-  maces: [{ x: 22.1, y: 12.5, len: 4.2, r: 0.5, amp: 0.7, period: 3.2, phase: 0 }],
-  stars: [{ x: 16.3, y: 5.4 }, { x: 22.1, y: 7.4 }, { x: 28, y: 5.4 }],
-  hoop: hoopAt(46),
-  passages: [
-    { name: 'Trois lianes et un tronc à pointes', start: [3, 0], goal: ['on', 30, 40, 0], plan: [['goTo', 10.2], ['charge', 4], ['waitCycle', 3.2, 0.55, 0.65], ['vines', 30]] },
-    { name: 'Rive → panier', start: [36, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 33 — Les branches : elles montent, elles glissent, elles cassent
+const L33 = level({ id: 'forest-3', difficulty: 'hard', number: 3, nameKey: 'lv.forest.3', idea: 'branches mobiles, branches fragiles, jusqu’à la cabane', maxY: 17 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.branches');
+  });
+  // On monte de branche en branche jusqu'au premier palier
+  c.section(20, (s) => {
+    s.ground(0, 20);
+    const b0 = s.add('branches', { x1: 4, x2: 6.5, y: 2.4, path: { dx: 0, dy: 1.2, period: 4, phase: 0 } });
+    const b1 = s.add('branches', { x1: 7.5, x2: 10, y: 4.6, path: { dx: 1, dy: 0, period: 3.6, phase: 0.25 } });
+    s.block(13, 0, 7, 6.6, wood);
+    s.star(9.2, 7.6);
+    s.pass('Les branches qui bougent', [-6, 0], ['on', 13.3, 20, 6.6], [['goTo', 5.25], ['hopTo', 4, 'branches', b0, 1.25], ['hopTo', 2, 'branches', b1, 1.25], ['hop', 2, 14.4, 6.6], ['goTo', 18.6]]);
+  });
+  // Les branches fragiles au-dessus de la rivière
+  c.section(22, (s) => {
+    s.ground(0, 2, 6.6, wood);
+    river(s, 2, 18);
+    s.add('fallers', { x: 3, y: 6.2, w: 2.4, h: 0.4 }, { x: 6.4, y: 6.2, w: 2.4, h: 0.4 }, { x: 9.8, y: 6.2, w: 2.4, h: 0.4 }, { x: 13.2, y: 6.2, w: 2.4, h: 0.4 });
+    s.block(18, -1.2, 4, 7.8, wood);
+    s.checkpoint(1, 6.6);
+    s.star(11, 8.6);
+    s.pass('Les branches fragiles', [-2, 6.6], ['on', 18.2, 22, 6.6], [['goTo', 1], ['hop', 2, 4.2, 6.6], ['jump', 1, 7.6, 6.6], ['jump', 1, 11, 6.6], ['jump', 1, 14.4, 6.6], ['jump', 1, 19.6, 6.6]]);
+  });
+  // Les branches qui glissent : on attend que la suivante revienne
+  c.section(24, (s) => {
+    s.ground(0, 2, 6.6, wood);
+    river(s, 2, 18);
+    const b0 = s.add('branches', { x1: 3, x2: 5.6, y: 6.6, path: { dx: 4.4, dy: 0, period: 4.4, phase: 0 } });
+    const b1 = s.add('branches', { x1: 10.4, x2: 13, y: 6.6, path: { dx: 4.4, dy: 0, period: 4.4, phase: 0.5 } });
+    s.block(18, -1.2, 6, 7.8, wood);
+    s.checkpoint(1, 6.6);
+    s.star(12, 8.6);
+    s.pass('Première branche glissante', [-2, 6.6], ['on', 10.4, 13, 6.6], [['goTo', 1.6], ['waitMover', 'branches', b0, 'x', '<', 0.1], ['hopTo', 1, 'branches', b0, 1.3], ['stayOn', 'branches', b0, 'x', '>', 4.3], ['hopTo', 1, 'branches', b1, 1.3]]);
+    s.pass('Deuxième branche glissante', [11.7, 6.6], ['on', 18.2, 24, 6.6], [['stayOn', 'branches', b1, 'x', '>', 4.3], ['hop', 1, 19.6, 6.6], ['goTo', 21]]);
+  });
+  // L'échelle de branches : jusqu'au toit de la cabane
+  c.section(18, (s) => {
+    s.ground(0, 18, 6.6, wood);
+    const b0 = s.add('branches', { x1: 3.4, x2: 5.9, y: 8.4, path: { dx: 0, dy: 1.4, period: 3.6, phase: 0 } });
+    const b1 = s.add('branches', { x1: 7.4, x2: 9.9, y: 10.4, path: { dx: 0, dy: 1.2, period: 3.6, phase: 0.5 } });
+    s.block(12, 6.6, 6, 4.8, wood);
+    s.star(8.6, 13.2);
+    s.pass('L’échelle de branches', [-3, 6.6], ['on', 12.3, 18, 11.4], [['goTo', 4.65], ['hopTo', 3, 'branches', b0, 1.25], ['hopTo', 2, 'branches', b1, 1.25], ['hop', 2, 13.6, 11.4], ['goTo', 14]]);
+  });
+  // Le toit de la cabane
+  c.section(16, (s) => {
+    s.ground(0, 16, 11.4, wood);
+    s.hoop(10, 3.4, 11.4);
+    s.pass('Le panier de la cabane', [-2, 11.4], ['win'], 'shot');
+  });
+});
 
-const F6 = {
-  id: 'forest-6',
-  difficulty: 'expert',
-  number: 6,
-  nameKey: 'level.forest.6',
-  bounds: bounds(54, 14),
-  spawn: { x: 2.6, y: 0 },
-  solids: [
-    ...walls(54),
-    { x: -4, y: -6, w: 15, h: 6, style: 'ground' },
-    { x: 11, y: -6, w: 12, h: 4, style: 'ground' },          // lit de la rivière (sous l'eau)
-    { x: 23, y: -6, w: 35, h: 6, style: 'ground' },
-    { x: 40, y: 0, w: 14, h: 5.6, style: 'wood' },           // cabane dans les arbres
-  ],
-  water: [{ x: 11, y: -0.5, w: 12 }],
-  mushrooms: [{ x: 5.6, y: 0.9, w: 1.8, height: 7 }],
-  vines: [
-    { x: 13.4, y: 9.6, len: 6.4 },
-    { x: 19.2, y: 9.6, len: 6.4 },
-  ],
-  logs: [{ x: 27, y: 0.6, r: 0.6, path: { dx: 4.4, dy: 0, period: 5, phase: 0 } }],
-  branches: [
-    { x1: 33.5, x2: 36, y: 2.5, path: { dx: 0, dy: 1.2, period: 4, phase: 0 } },
-    { x1: 37, x2: 39.4, y: 4.4, path: { dx: 0.8, dy: 0, period: 3.5, phase: 0.25 } },
-  ],
-  stars: [
-    { x: 6.5, y: 7.8 },
-    { x: 16.3, y: 5.6 },
-    { x: 29.2, y: 3.4 },
-  ],
-  // Tronc-marteau sur la plateforme de la cabane
-  crushers: [{ x: 43.4, w: 2.2, top: 8.4, bottom: 5.6, period: 2.3, phase: 0 }],
-  hoop: { x: 50.5, y: 9.0, facing: -1, mount: 'pole', floorY: 5.6 },
-  passages: [
-    { name: 'Rivière : les lianes', start: [3, 0], goal: ['on', 23, 40, 0], plan: [['goTo', 10.2], ['charge', 4], ['vines', 23]] },
-    { name: 'Tronc → branches → cabane', start: [24, 0], goal: ['on', 40, 42.8, 5.6], plan: [['waitMover', 'rollers', 0, 'x', '>', 4.3], ['waitMover', 'rollers', 0, 'x', '<', 1.6], ['hop', 3, 31], ['goTo', 34.7], ['charge', 4], ['jump', 0], ['hopTo', 2, 'branches', 1, 1.2], ['hop', 2, 41.6], ['goTo', 42.2]] },
-    { name: 'Tronc-marteau', start: [42.2, 5.6], goal: ['on', 46.2, 54, 5.6], plan: [['goTo', 42.2], ['waitCycle', 2.3, 2.0, 2.1], ['run', 1, 46.4, 54, 5.6]] },
-    { name: 'Cabane → panier', start: [46.4, 5.6], goal: ['win'], plan: 'shot' },
-  ],
-};
+// 34 — Les troncs : ils roulent, ils dévalent, ils flottent
+const L34 = level({ id: 'forest-4', difficulty: 'medium', number: 4, nameKey: 'lv.forest.4', idea: 'troncs qui roulent, rondins qui dévalent, tronc flottant' }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.log');
+  });
+  c.section(20, (s) => {
+    s.ground(0, 20);
+    const k = s.add('logs', { x: 6, y: 0.6, r: 0.6, path: { dx: 6, dy: 0, period: 5, phase: 0 } });
+    s.star(9, 2.8);
+    s.pass('Par-dessus le tronc', [-6, 0], ['on', 15, 20, 0], [['goTo', 3.2], ['waitMover', 'rollers', k, 'x', '<', 0.3], ['jumpOver', 'rollers', k], ['goTo', 17]]);
+  });
+  // Les rondins dévalent la pente de la souche
+  c.section(24, (s) => {
+    s.ground(0, 24);
+    s.block(20, 0, 4, 1.4, wood);
+    s.add('boulders', { x1: 1.5, x2: 19.5, y: 0, r: 0.55, dir: -1, speed: 6, period: 4.4, phase: 0 }, { x1: 1.5, x2: 19.5, y: 0, r: 0.55, dir: -1, speed: 6, period: 4.4, phase: 0.5 });
+    s.checkpoint(0.4, 0);
+    s.star(10, 2.6);
+    s.pass('Les rondins', [-3, 0], ['on', 20.3, 24, 1.4], [['goTo', 0.4], ['waitCycle', 4.4, 3.2, 3.3], ['jumpBoulder', 1, 2.2], ['jumpBoulder', 0, 2.2], ['dribbleRun', 1, 2, 18, 21.4], ['goTo', 22.6]]);
+  });
+  // Le tronc flottant
+  c.section(24, (s) => {
+    s.ground(0, 3, 1.4, wood);
+    river(s, 3, 18);
+    const k = s.add('logs', { x: 3.7, y: -0.2, r: 0.7, path: { dx: 13.6, dy: 0, period: 8, phase: 0 } });
+    s.ground(18, 24);
+    s.checkpoint(1.6, 1.4);
+    s.star(10.4, 2.2);
+    s.pass('Le tronc flottant', [-1.4, 1.4], ['on', 18.2, 24, 0], [['goTo', 2.2], ['waitMover', 'rollers', k, 'x', '<', 0.15], ['hopTo', 1, 'rollers', k, 0], ['stayOn', 'rollers', k, 'x', '>', 13.2], ['hop', 2, 19.6], ['goTo', 20.4]]);
+  });
+  // Deux troncs qui roulent l'un vers l'autre
+  c.section(24, (s) => {
+    s.ground(0, 24);
+    const a = s.add('logs', { x: 4, y: 0.6, r: 0.6, path: { dx: 5, dy: 0, period: 4, phase: 0 } });
+    const b = s.add('logs', { x: 12, y: 0.6, r: 0.6, path: { dx: 5, dy: 0, period: 4, phase: 0.5 } });
+    s.checkpoint(0.6, 0);
+    s.star(10.5, 2.8);
+    s.pass('Premier tronc', [-3.6, 0], ['on', 10, 11.4, 0], [['goTo', 1.6], ['waitMover', 'rollers', a, 'x', '<', 0.3], ['jumpOver', 'rollers', a], ['goTo', 10.7]]);
+    s.pass('Deuxième tronc', [10.7, 0], ['on', 19.5, 24, 0], [['waitMover', 'rollers', b, 'x', '<', 0.3], ['jumpOver', 'rollers', b], ['goTo', 21]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
+// 35 — Le bûcheron : balanciers à pointes et troncs-marteaux
+const L35 = level({ id: 'forest-5', difficulty: 'hard', number: 5, nameKey: 'lv.forest.5', idea: 'balanciers à pointes et troncs-marteaux : le bon moment', maxY: 12 }, (c) => {
+  c.section(8, (s) => {
+    s.ground(0, 8);
+    s.spawn(2);
+    s.hint(5, 4.3, 'hint.mace');
+  });
+  // Le premier balancier
+  c.section(18, (s) => {
+    s.ground(0, 18);
+    s.add('maces', { x: 9, y: 6.4, len: 5.4, r: 0.55, amp: 0.8, period: 2.8, phase: 0 });
+    s.star(9, 2.2);
+    s.pass('Le premier balancier', [-6, 0], ['on', 14, 18, 0], [['goTo', 3], ['waitCycle', 2.8, 1.2, 1.3], ['run', 1, 14.2, 18, 0]]);
+  });
+  // Le tronc-marteau, puis un balancier juste derrière
+  c.section(22, (s) => {
+    s.ground(0, 22);
+    s.add('crushers', { x: 4, w: 2.4, top: 3.2, bottom: 0, period: 2.4, phase: 0 });
+    s.add('maces', { x: 13, y: 6.4, len: 5.4, r: 0.55, amp: 0.8, period: 2.4, phase: 0.5 });
+    s.checkpoint(0.4, 0);
+    s.star(9, 1.2);
+    s.pass('Le tronc-marteau', [-3, 0], ['on', 8, 10, 0], [['goTo', 1.6], ['waitCycle', 2.4, 1.8, 1.9], ['run', 1, 8.2, 10, 0], ['goTo', 9]]);
+    s.pass('Le balancier derrière', [9, 0], ['on', 18, 22, 0], [['goTo', 9], ['waitCycle', 2.4, 0.0, 0.1], ['run', 1, 18.2, 22, 0]]);
+  });
+  // Le pont de rondins : deux balanciers au-dessus de la rivière
+  c.section(24, (s) => {
+    s.ground(0, 3);
+    river(s, 3, 21);
+    s.block(3, -1.2, 18, 1.2, wood);
+    s.add('maces', { x: 8, y: 6.4, len: 5.4, r: 0.55, amp: 0.8, period: 3, phase: 0 }, { x: 15, y: 6.4, len: 5.4, r: 0.55, amp: 0.8, period: 3, phase: 0.5 });
+    s.ground(21, 24);
+    s.checkpoint(1, 0);
+    s.star(11.5, 1.2);
+    s.pass('Le pont de rondins', [-2, 0], ['on', 21.2, 24, 0], [['goTo', 1.2], ['waitCycle', 3, 1.3, 1.4], ['goTo', 11.5], ['waitCycle', 3, 1.7, 1.8], ['run', 1, 21.4, 24, 0]]);
+  });
+  // Deux troncs-marteaux en alternance, une souche au milieu
+  c.section(22, (s) => {
+    s.ground(0, 22);
+    s.add('crushers', { x: 4, w: 2.4, top: 3.2, bottom: 0, period: 2.2, phase: 0 }, { x: 12, w: 2.4, top: 3.2, bottom: 0, period: 2.2, phase: 0.5 });
+    s.checkpoint(0.6, 0);
+    s.star(9.2, 1.2);
+    s.pass('Deux troncs-marteaux', [-1, 0], ['on', 17, 22, 0], [['goTo', 1.6], ['waitCycle', 2.2, 1.6, 1.7], ['goTo', 9.2], ['waitCycle', 2.2, 0.5, 0.6], ['run', 1, 17.2, 22, 0]]);
+  });
+  c.section(16, (s) => {
+    s.ground(0, 16);
+    s.hoop(10, 3.4);
+    s.pass('Le panier', [-2, 0], ['win'], 'shot');
+  });
+});
 
-const F7 = {
-  id: 'forest-7',
-  difficulty: 'extreme',
-  number: 7,
-  nameKey: 'level.forest.7',
-  bounds: bounds(54, 16),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(54), floor(-4, 58, 'ground'), { x: 23, y: 0, w: 9, h: 3, style: 'wood' }, { x: 45, y: 0, w: 9, h: 1.4, style: 'wood' }],
-  spikes: [{ x: 14, y: 0, w: 9, dir: 'up' }],
-  boulders: [{ x1: 36.6, x2: 44.4, y: 0, r: 0.55, dir: -1, speed: 6, period: 2.4, phase: 0 }],
-  mushrooms: [{ x: 10, y: 1.0, w: 1.8, height: 5.4 }],
-  vines: [{ x: 15.6, y: 12, len: 7 }],
-  maces: [{ x: 35.2, y: 6.6, len: 5.4, r: 0.55, amp: 0.8, period: 2.8, phase: 0 }],
-  checkpoints: [{ x: 27.5, y: 3 }],
-  stars: [{ x: 10.9, y: 6 }, { x: 18.2, y: 5.4 }, { x: 35.2, y: 2.4 }],
-  hoop: hoopAt(50.5, 3.4, 1.4),
-  passages: [
-    { name: 'Champignon → liane → souche', start: [3, 0], goal: ['on', 23, 32, 3], plan: [['goTo', 8.2], ['hop', 2, 10.9], ['vines', 23, false]] },
-    { name: 'Souche → tronc balancier → rondins → souche', start: [28.5, 3], goal: ['on', 45.4, 54, 1.4], plan: [['goTo', 30.5], ['waitCycle', 2.8, 1.2, 1.3], ['hold', 1, 38.4], ['dodgeBoulders', 45.8, 3.4, 42.8]] },
-    { name: 'Souche → panier', start: [46, 1.4], goal: ['win'], plan: 'shot' },
-  ],
-};
-
-const F8 = {
-  id: 'forest-8',
-  difficulty: 'expert',
-  number: 8,
-  nameKey: 'level.forest.8',
-  bounds: bounds(48, 15),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(48), floor(-4, 10, 'ground'), basin(10, 22, 'ground'), floor(22, 52, 'ground'), { x: 34, y: 0, w: 14, h: 6.4, style: 'wood' }, { x: 42, y: 6.4, w: 6, h: 1.2, style: 'wood' }],
-  // Des rondins dévalent le toit de la cabane
-  boulders: [{ x1: 36.4, x2: 41.4, y: 6.4, r: 0.5, dir: -1, speed: 5.5, period: 2.3, phase: 0 }],
-  water: [water(10, 22)],
-  logs: [{ x: 10.7, y: -0.2, r: 0.7, path: { dx: 10.6, dy: 0, period: 7, phase: 0 } }],
-  branches: [
-    { x1: 26, x2: 28.5, y: 2.6, path: { dx: 0, dy: 1, period: 4, phase: 0 } },
-    { x1: 30, x2: 32.5, y: 4.8, path: { dx: 1, dy: 0, period: 3.6, phase: 0.25 } },
-  ],
-  stars: [{ x: 16, y: 2.4 }, { x: 27.25, y: 5.8 }, { x: 33.2, y: 7.6 }],
-  hoop: hoopAt(46, 3.4, 7.6),
-  passages: [
-    { name: 'Le tronc flottant', start: [3, 0], goal: ['on', 22, 25, 0], plan: [['goTo', 9], ['waitMover', 'rollers', 0, 'x', '<', 0.15], ['hopTo', 1, 'rollers', 0, 0], ['stayOn', 'rollers', 0, 'x', '>', 10.2], ['hop', 2, 23.5]] },
-    { name: 'Branches → cabane → rondins', start: [24, 0], goal: ['on', 42, 48, 7.6], plan: [['goTo', 27.25], ['hopTo', 4, 'branches', 0, 1.25], ['hopTo', 2, 'branches', 1, 1.25], ['charge', 2], ['jump', 1, 34.8], ['goTo', 34.9], ['wait', 2], ['charge', 2], ['dodgeBoulders', 42.6, 3, 39.6]] },
-    { name: 'Souche → panier', start: [42.6, 7.6], goal: ['win'], plan: 'shot' },
-  ],
-};
-
-const F9 = {
-  id: 'forest-9',
-  difficulty: 'extreme',
-  number: 9,
-  nameKey: 'level.forest.9',
-  bounds: bounds(60, 12),
-  spawn: { x: 3, y: 0 },
-  solids: [...walls(60), floor(-4, 11, 'ground'), basin(11, 36, 'ground'), floor(36, 64, 'ground')],
-  water: [water(11, 36)],
-  vines: [{ x: 13.4, y: 9.6, len: 6.4 }, { x: 19.2, y: 9.6, len: 6.4 }, { x: 25, y: 9.6, len: 6.4 }, { x: 30.8, y: 9.6, len: 6.4 }],
-  logs: [{ x: 41, y: 0.6, r: 0.6, path: { dx: 4.4, dy: 0, period: 5, phase: 0 } }],
-  crushers: [{ x: 49.4, w: 2.2, top: 2.8, bottom: 0, period: 2.2, phase: 0 }],
-  checkpoints: [{ x: 37.6, y: 0 }],
-  stars: [{ x: 16.3, y: 5.4 }, { x: 27.9, y: 4.2 }, { x: 43.2, y: 2.4 }],
-  hoop: hoopAt(58),
-  passages: [
-    { name: 'Quatre lianes', start: [3, 0], goal: ['on', 36, 39.6, 0], plan: [['goTo', 10.2], ['charge', 4], ['vines', 36], ['goTo', 38]] },
-    { name: 'Par-dessus le tronc', start: [38, 0], goal: ['on', 46.6, 48.8, 0], plan: [['waitMover', 'rollers', 0, 'x', '<', 0.3], ['jumpOver', 'rollers', 0], ['goTo', 48]] },
-    { name: 'Tronc-marteau', start: [48, 0], goal: ['on', 52.2, 60, 0], plan: [['goTo', 48.2], ['waitCycle', 2.2, 1.9, 2.0], ['run', 1, 52.4, 60, 0]] },
-    { name: 'Rive → panier', start: [52.6, 0], goal: ['win'], plan: 'shot' },
-  ],
-};
-
-const F10 = {
-  id: 'forest-10',
-  difficulty: 'extreme',
-  number: 10,
-  nameKey: 'level.forest.10',
-  bounds: bounds(76, 17),
-  spawn: { x: 3, y: 0 },
-  solids: [
-    ...walls(76),
-    floor(-4, 14, 'ground'),
-    { x: 10, y: 0, w: 4, h: 4.2, style: 'wood' },
-    basin(14, 34, 'ground'),
-    floor(34, 80, 'ground'),
-    { x: 58, y: 0, w: 18, h: 8, style: 'wood' },
-  ],
-  water: [water(14, 34)],
-  mushrooms: [{ x: 6, y: 1.0, w: 1.8, height: 6 }],
-  vines: [{ x: 16.4, y: 12, len: 7.4 }, { x: 22.2, y: 12, len: 6.8 }, { x: 28, y: 12, len: 6.4 }],
-  logs: [{ x: 38, y: 0.6, r: 0.6, path: { dx: 5, dy: 0, period: 5, phase: 0 } }],
-  branches: [
-    { x1: 46, x2: 48.5, y: 2.6, path: { dx: 0, dy: 1.2, period: 4, phase: 0 } },
-    { x1: 50, x2: 52.5, y: 4.8, path: { dx: 0.8, dy: 0, period: 3.6, phase: 0.25 } },
-    { x1: 54, x2: 56.5, y: 7, path: { dx: 0, dy: 1, period: 4.4, phase: 0.5 } },
-  ],
-  maces: [{ x: 26.4, y: 15, len: 5.2, r: 0.5, amp: 0.55, period: 3.4, phase: 0 }],
-  crushers: [{ x: 63.4, w: 2.4, top: 10.8, bottom: 8, period: 2.1, phase: 0 }],
-  checkpoints: [{ x: 35.6, y: 0 }, { x: 60.6, y: 8 }],
-  stars: [{ x: 6.9, y: 7.2 }, { x: 26.3, y: 7.4 }, { x: 52, y: 8 }],
-  hoop: hoopAt(72, 3.4, 8),
-  passages: [
-    { name: 'Champignon → souche', start: [3, 0], goal: ['on', 10, 14, 4.2], plan: [['goTo', 4.2], ['hop', 2, 6.9], ['fly', 12]] },
-    { name: 'Trois lianes', start: [12, 4.2], goal: ['on', 34, 37, 0], plan: [['goTo', 13.2], ['waitCycle', 3.4, 0.25, 0.35], ['charge', 2], ['vines', 34], ['goTo', 35.4]] },
-    { name: 'Par-dessus le tronc', start: [35.4, 0], goal: ['on', 44, 45.6, 0], plan: [['waitMover', 'rollers', 0, 'x', '<', 0.3], ['jumpOver', 'rollers', 0], ['goTo', 44.8]] },
-    { name: 'Branches → cabane', start: [44.8, 0], goal: ['on', 58, 63, 8], plan: [['hopTo', 4, 'branches', 0, 1.25], ['hopTo', 3, 'branches', 1, 1.25], ['hopTo', 3, 'branches', 2, 1.25], ['hop', 2, 60], ['goTo', 62.2]] },
-    { name: 'Tronc-marteau de la cabane', start: [62.2, 8], goal: ['on', 66.4, 76, 8], plan: [['goTo', 62.2], ['waitCycle', 2.1, 1.8, 1.9], ['run', 1, 66.6, 76, 8]] },
-    { name: 'Cabane → panier', start: [66.6, 8], goal: ['win'], plan: 'shot' },
-  ],
-};
-
-export const FOREST_LEVELS = [F1, F2, F3, F4, F5, F6, F7, F8, F9, F10];
+export const FOREST_LEVELS = [L31, L32, L33, L34, L35, F6, F7, F8, F9, F10];
