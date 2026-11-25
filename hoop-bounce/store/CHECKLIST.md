@@ -1,196 +1,157 @@
-# HoopBounce 1.0.0 — Checklist avant publication sur Google Play
+# Hoop Bounce 1.0.0 — Checklist de publication Google Play
 
-Légende : ✅ prêt dans le projet · 🟡 prêt, à finaliser par le porteur du projet · 🔴 à faire dans la Play Console
-ou la console AdMob (compte requis).
+Légende : ✅ **prêt** dans le projet · ✍️ **à renseigner** dans la Play Console (réponse fournie ci-dessous) ·
+🔑 **à faire par le porteur du projet** (compte, coordonnées, mise en ligne).
 
-> Rien n'est publié. Ce document liste **tout** ce qu'il faut pour envoyer la version 1.0.0, dans l'ordre.
+> Récapitulatif pas à pas : `store/PUBLICATION.md`. Rien n'est publié.
 
 ## Résumé
 
-| Élément | Statut | Où |
+| Élément | Statut | Fichier / réponse |
 |---|---|---|
-| Icône 512 × 512 | ✅ | `store/icon/icon-512.png` (source : `store/src/icon.svg`) |
-| Icônes de l'application (adaptative, ronde, classique) | ✅ | `android/app/src/main/res/mipmap-*` |
-| Écran de démarrage natif | ✅ | `android/app/src/main/res/drawable*/splash.png` + thème (fond `#04070F`) |
-| Feature graphic 1024 × 500 | ✅ | `store/feature-graphic/feature-graphic-{fr,en,es}.png` |
-| Captures d'écran (10 × 3 langues) | ✅ | `store/screenshots/{fr,en,es}/` — choix des 8 par appareil : `SCREENSHOTS.md` |
-| Titre, descriptions, points forts, mots-clés | ✅ | `store/LISTING.md` (FR, EN, ES) |
-| Politique de confidentialité | 🟡 | `store/privacy-policy.html` : mettre l'e-mail de contact, puis l'héberger en ligne |
-| Catégorie | 🔴 | Jeux › Arcade (voir § 4) |
-| Classification par âge | 🔴 | questionnaire IARC (voir § 5) |
-| Public cible | 🔴 | 13 ans et plus recommandé (voir § 5) |
-| Sécurité des données | 🔴 | formulaire (réponses § 6) |
-| Pays de diffusion | 🔴 | tous les pays (voir § 7) |
-| Langues | ✅ / 🔴 | jeu en FR / EN / ES ; fiches à créer dans la console (§ 8) |
-| Version | ✅ | `versionName 1.0.0` (`package.json`, `src/shared/version.js`, `android/app/build.gradle`) |
-| Numéro de build | ✅ | `versionCode 1` — à augmenter à chaque envoi |
-| Fichier AAB | 🟡 | à construire et signer (§ 10) |
-| Publicités AdMob en production | 🔴 | vrais identifiants, `app-ads.txt`, message de consentement (§ 11) |
-| Tests fermés | 🔴 | 12 testeurs pendant 14 jours si compte personnel récent (§ 12) |
+| Fichier **AAB** signé (com.echospeed.hoopbounce, 1.0.0, versionCode 15) | ✅ | `dist/HoopBounce-1.0.0-release.aab` |
+| APK release de la même version (tests) | ✅ | `dist/HoopBounce-1.0.0-release.apk` |
+| Clé d'import (upload key) + mot de passe | ✅ 🔑 | `native/release/keys/` (non versionné) — **à copier en lieu sûr** |
+| Icône 512 × 512 (Noël + intemporelle) | ✅ | `store/icon/icon-512-winter.png` · `icon-512.png` |
+| Bannière 1024 × 500 (Noël + intemporelle, FR/EN/ES) | ✅ | `store/feature-graphic/` |
+| 8 captures 1920 × 1080 (FR/EN/ES) | ✅ | `store/screenshots/{fr,en,es}/` |
+| Nom, description courte, description complète (FR/EN/ES) | ✅ ✍️ | `store/LISTING.md` |
+| Vidéo YouTube (facultative) | 🔑 | storyboard : `store/VIDEO.md` |
+| Catégorie, tags | ✍️ | Jeux › Arcade ; tags : `store/LISTING.md` |
+| Coordonnées (e-mail obligatoire) | 🔑 ✍️ | § 2 |
+| Politique de confidentialité en ligne | 🔑 ✍️ | `store/privacy-policy.html` (mettre l'e-mail, héberger, coller l'adresse) |
+| Accès à l'application | ✍️ | § 4 |
+| Annonces | ✍️ | **Non** (§ 4) |
+| Classification du contenu (IARC) | ✍️ | § 5 |
+| Public cible | ✍️ | § 4 |
+| Sécurité des données | ✍️ | **Aucune donnée collectée ni partagée** (§ 6) |
+| Achats intégrés | ✅ | aucun dans la version 1.0.0 (§ 8) |
+| Compatibilité Android | ✅ | Android 7.0 (API 24) → Android 16 (API 36 ciblée), paysage, sans code natif (§ 9) |
+| Test fermé (compte personnel récent) | 🔑 | 12 testeurs pendant 14 jours (§ 10) |
 
 ---
 
-## 1. Compte Google Play Console
+## 1. Compte développeur 🔑
 
-- [ ] Compte développeur créé (frais uniques de 25 $), identité vérifiée.
-- [ ] Nom du développeur affiché : **EchoSpeed**.
-- [ ] Adresse e-mail de contact publique et, si possible, un site web : le site est nécessaire pour `app-ads.txt`.
-- [ ] Compte **personnel** créé après novembre 2023 : un **test fermé** avec au moins 12 testeurs pendant
-      14 jours est obligatoire avant la production (§ 12). Un compte d'organisation n'est pas concerné.
+- [ ] Compte Google Play Console (frais uniques de 25 $), identité vérifiée.
+- [ ] Nom du développeur affiché sur la fiche : **EchoSpeed**.
+- [ ] **Statut de « professionnel » (DSA, Union européenne)** : la Console demande si tu es un professionnel
+      (« trader »). Un développeur qui ne gagne pas d'argent avec le jeu peut répondre **non** ; s'il monétise plus
+      tard (publicités, achats), il devra répondre **oui**, et son **adresse et son téléphone deviennent publics**
+      sur la fiche dans l'UE.
 
-## 2. Créer l'application
+## 2. Coordonnées de la fiche (Présence sur le Store › Fiche › Coordonnées) 🔑
 
-- [ ] Nom : **Hoop Bounce** · langue par défaut : **français (France)** · type : **Jeu** · **Gratuit**.
-- [ ] Identifiant du paquet : **`com.echospeed.hoopbounce`** (défini dans `capacitor.config.json` et `android/`).
-      ⚠️ **Définitif** après le premier envoi : le confirmer avant.
+| Champ | Obligatoire ? | À saisir |
+|---|---|---|
+| Adresse e-mail | **Obligatoire** (affichée publiquement) | une adresse dédiée au jeu, par ex. `hoopbounce.contact@…` (conseillé : pas l'adresse personnelle) |
+| Site web | Facultatif | la page qui héberge la politique de confidentialité peut servir de site (GitHub Pages, Google Sites) |
+| Téléphone | Facultatif (obligatoire et public pour un « professionnel » dans l'UE) | laisser vide sinon |
+| Adresse postale | Seulement pour un « professionnel » (DSA) | — |
 
-## 3. Fiche du Store (Présence sur le Store › Fiche principale)
+## 3. Créer l'application ✍️
 
-- [x] Titre, description courte, description complète : `store/LISTING.md`.
-- [x] Icône 512 × 512 PNG 32 bits : `store/icon/icon-512.png`.
-- [x] Feature graphic 1024 × 500 PNG 24 bits : `store/feature-graphic/feature-graphic-fr.png`.
-- [x] Captures téléphone (8) et tablettes 7" et 10" (8 chacune) : `store/screenshots/fr/`, ordre dans
-      `SCREENSHOTS.md`.
-- [ ] Vidéo YouTube (facultative) : plan dans `SCREENSHOTS.md`.
-- [ ] Fiches traduites : anglais (en-US) et espagnol (es-ES), avec leurs visuels `en/` et `es/`.
-- [ ] Coordonnées : e-mail (obligatoire), site web, téléphone (facultatif).
+- [ ] Nom : **Hoop Bounce** · langue par défaut : **Français (France) – fr-FR** · **Jeu** · **Gratuit**.
+- [ ] Déclarations : respect des règles du programme pour les développeurs et des lois d'export américaines.
+- [ ] L'identifiant **`com.echospeed.hoopbounce`** est lu dans l'AAB au premier import ; il devient **définitif**.
 
-## 4. Catégorie et tags
+## 4. Contenu de l'application (Règles et programmes › Contenu de l'application) ✍️
 
-- **Catégorie : Jeux › Arcade.** Hoop Bounce est un jeu d'adresse en niveaux courts, ce qui correspond aux jeux de
-  plateforme sur Google Play. Alternatives possibles : Action, ou Sport (le basket est le thème, mais pas un vrai
-  match).
-- Tags (jusqu'à 5) : Plateforme · Arcade · Hors ligne · Solo · Sport.
+| Formulaire | Réponse |
+|---|---|
+| Règles de confidentialité | l'adresse publique de `store/privacy-policy.html` (une fois hébergée) |
+| Accès à l'application | **Toutes les fonctionnalités sont disponibles sans accès particulier** (pas de compte, pas de connexion) |
+| Annonces | **Non, mon application ne contient pas d'annonces** (version 1.0.0 : aucun SDK publicitaire). Répondre « Oui » le jour où AdMob sera ajouté. |
+| Public cible et contenu | tranches **13–15, 16–17, 18 ans et plus** ; « L'application pourrait-elle attirer involontairement les enfants ? » → **Non** (jeu d'adresse au style « néon de nuit », sans personnage enfantin, exigeant). Cible 13+ = pas d'obligations du programme Familles. |
+| Applications d'actualités | Non |
+| Applications liées à la COVID-19 | Non |
+| Applications gouvernementales | Non |
+| Fonctionnalités financières | Aucune |
+| Santé | Aucune |
+| Classification du contenu | questionnaire IARC (§ 5) |
+| Sécurité des données | § 6 |
 
-## 5. Contenu de l'application (Règles › Contenu de l'application)
+## 5. Classification du contenu (questionnaire IARC) ✍️
 
-- [ ] **Politique de confidentialité** : URL publique de `store/privacy-policy.html`. Avant de la mettre en ligne,
-      remplacer `[E-MAIL DE CONTACT]` par l'adresse de contact.
-      Hébergement simple : GitHub Pages (Paramètres du dépôt › Pages), ou le site du développeur.
-      Une fois en ligne, mettre aussi l'adresse dans `src/shared/about.js` (`LINKS.privacy`) : le bouton de la
-      page À propos ouvrira la page en ligne.
-- [ ] **Annonces** : « Oui, mon application contient des annonces ». Ce sont uniquement des annonces
-      récompensées et facultatives.
-- [ ] **Accès à l'application** : aucune restriction (pas de compte, pas de code).
-- [ ] **Identifiant publicitaire** : oui, utilisé pour la publicité (SDK Google Mobile Ads).
-- [ ] **Classification du contenu** (questionnaire IARC) :
-  - catégorie « Jeu » ;
-  - violence : non (des obstacles, un ballon qui éclate, aucun personnage blessé) ;
-  - peur, sexualité, langage, drogues, jeux d'argent : non ;
-  - interactions entre utilisateurs : non ; partage de position : non ;
-  - achats numériques : non (les coffres et la roue ne s'achètent pas, on ne peut pas y miser d'argent réel).
-  - Classification attendue : **PEGI 3 · ESRB Everyone · USK 0**.
-- [ ] **Public cible et contenu** : recommandation **13 ans et plus** (tranches 13–15, 16–17, 18+) pour la v1.0 :
-  - pas d'obligations du programme Familles ;
-  - publicités AdMob classées « PG » au maximum (`ads-config.js`).
-  - Si le jeu doit viser aussi les moins de 13 ans : cocher ces tranches, respecter les règles Familles, et
-    régler `childDirected: true` et `maxAdContentRating: 'G'` dans `ads-config.js`.
-- [ ] Application d'actualités : non · Application gouvernementale : non · Fonctionnalités financières : non ·
-      Santé : non.
-
-## 6. Sécurité des données (réponses au formulaire)
-
-Le jeu lui-même ne collecte rien (tout reste sur l'appareil). Seul le **SDK Google Mobile Ads** collecte des
-données, quand le joueur choisit de regarder une publicité :
+Catégorie de l'application : **Jeu**. Adresse e-mail pour le certificat : celle du § 2.
 
 | Question | Réponse |
 |---|---|
-| L'application collecte ou partage-t-elle des données ? | **Oui** (via le SDK publicitaire) |
-| Données chiffrées en transit ? | **Oui** |
-| Les utilisateurs peuvent-ils demander la suppression ? | Les données du jeu sont locales ; pour la publicité, renvoyer vers Google |
-| **Position** › position approximative | Collectée et partagée · Publicité, Prévention de la fraude |
-| **Activité dans l'application** › interactions avec l'application | Collectée et partagée · Publicité, Analyse |
-| **Infos et performances de l'application** › journaux de plantage, diagnostics | Collectés et partagés · Analyse |
-| **Identifiants de l'appareil ou autres** › identifiant publicitaire | Collecté et partagé · Publicité, Prévention de la fraude |
-| Collecte obligatoire ? | Facultative pour le joueur (publicités facultatives) |
+| Violence (dessin animé, fantastique, réaliste, sang) | **Non** — un ballon qui rebondit ; une chute fait simplement recommencer le niveau |
+| Peur, horreur | Non |
+| Sexualité, nudité | Non |
+| Langage grossier | Non |
+| Drogues, alcool, tabac | Non |
+| Jeux d'argent simulés (casino, paris) | **Non** — la roulette quotidienne et les coffres donnent des récompenses de jeu gratuites, sans mise ni argent réel |
+| Achat d'objets aléatoires avec de l'argent réel (« loot boxes ») | Non (aucun achat dans le jeu) |
+| Interaction entre utilisateurs, partage de contenu, discussion | Non |
+| Partage de la position | Non |
+| Achats numériques | Non (version 1.0.0) |
+| Contenu non filtré d'Internet | Non |
 
-À vérifier au moment de remplir : la page « Data disclosure » d'AdMob indique les catégories à jour du SDK.
+Classification attendue : **PEGI 3 · ESRB Everyone · USK 0 · ClassInd L · IARC 3+**.
 
-## 7. Pays de diffusion
+## 6. Sécurité des données ✍️
 
-- [ ] **Tous les pays et régions** (≈ 175).
-  - Le jeu est en FR / EN / ES et se joue sans texte essentiel.
-  - Le consentement RGPD (EEE, Royaume-Uni, Suisse) est géré par le formulaire Google (UMP).
-- Option prudente : lancer d'abord en France, Belgique, Suisse, Canada, Espagne et Amérique latine, puis
-  élargir.
+| Question | Réponse |
+|---|---|
+| Votre application collecte-t-elle ou partage-t-elle des données utilisateur des types requis ? | **Non** |
+| (en conséquence) | la fiche affichera « **Aucune donnée collectée** » et « **Aucune donnée partagée avec des tiers** » |
 
-## 8. Langues
+Justification (à garder) : la version 1.0.0 ne demande **pas la permission Internet** et n'embarque **aucun SDK
+tiers** (ni publicité, ni statistiques, ni plantages) ; toutes les données (progression, pièces, réglages,
+fantômes) restent dans le stockage local de l'application. La sauvegarde automatique d'Android est gérée par
+Google et l'utilisateur : elle ne compte pas comme une collecte par le développeur.
+⚠️ Quand AdMob sera ajouté : mettre à jour ce formulaire (identifiant publicitaire, interactions, diagnostics,
+partagés avec Google pour la publicité) **avant** l'envoi de cette mise à jour.
 
-- [x] Jeu : **français, anglais, espagnol** (langue de l'appareil par défaut, réglable dans le jeu).
-- [ ] Fiche par défaut **fr-FR** ; traductions **en-US** et **es-ES** à ajouter avec les textes de `LISTING.md`
-      et les visuels `en/`, `es/`.
+## 7. Fiche du Store ✍️
 
-## 9. Version et numéro de build
+- [ ] Nom, descriptions : `store/LISTING.md` (FR par défaut, puis Traductions › anglais (en-US), espagnol (es-ES)).
+- [ ] Icône : `store/icon/icon-512-winter.png` pendant la saison de Noël, puis `icon-512.png`.
+- [ ] Bannière : `store/feature-graphic/feature-graphic-winter-fr.png` (et `-en`, `-es` dans les traductions).
+- [ ] Captures téléphone : `store/screenshots/fr/01 … 08` ; tablettes 7" et 10" : les mêmes.
+- [ ] Vidéo : lien YouTube (facultatif, `store/VIDEO.md`).
+- [ ] Paramètres du Store : catégorie **Arcade**, tags (`store/LISTING.md`), coordonnées (§ 2).
 
-| Champ | Valeur | Fichier |
-|---|---|---|
-| Version (visible) | **1.0.0** | `package.json`, `src/shared/version.js` (affichée dans Paramètres), `android/app/build.gradle` (`versionName`) |
-| Numéro de build | **1** | `android/app/build.gradle` (`versionCode`) — **+1 à chaque envoi** (1.0.1 → 2…) |
-| SDK cible | **Android 16 (API 36)** | `android/variables.gradle` (exigence Google Play pour les nouvelles applications) |
-| SDK minimum | Android 7.0 (API 24) | `android/variables.gradle` |
-| Nom de la version (console) | « 1.0.0 (1) — Première version » | à saisir dans la console |
+## 8. Monétisation
 
-## 10. Fichier AAB (Android App Bundle)
+- Version 1.0.0 : **aucune publicité, aucun achat intégré** ; le jeu est **gratuit**. Le Premium du Hoop Pass
+  s'obtient avec des gemmes gagnées en jouant.
+- **Plus tard — achats intégrés** : créer un compte marchand (Play Console › Configurer un profil de paiement),
+  créer le produit (identifiant `season.premium.productId`), brancher Google Play Billing (`src/shared/billing.js`,
+  plugin Capacitor), déclarer « Achats numériques » dans l'IARC, mettre à jour la politique de confidentialité.
+- **Plus tard — publicités** : projet Capacitor (`android/`) avec le plugin AdMob, identifiants dans
+  `src/shared/ads-config.js`, `app-ads.txt` sur le site, formulaires « Annonces » et « Sécurité des données ».
+  (Le changement de « Gratuit » à « Payant » est impossible ; l'inverse aussi : le jeu reste gratuit.)
 
-Prérequis : **Android Studio** (à jour, avec le SDK Android 36) et **JDK 21**.
+## 9. Compatibilité Android ✅
 
-```bash
-cd hoop-bounce
-npm install                 # Capacitor 8 et le plugin AdMob
-npm run android:sync        # copie le jeu (www/) dans le projet Android
-```
+| | |
+|---|---|
+| Android minimum | **7.0 (API 24)** |
+| API ciblée | **36 (Android 16)** — exigence de Google Play pour les nouvelles applications |
+| Format | Android App Bundle signé ; aucun code natif (fonctionne sur tous les processeurs, 32 et 64 bits) |
+| Orientation | paysage (y compris sur tablette sous Android 16, propriété de compatibilité déclarée) |
+| Permissions | **vibreur uniquement** |
+| Appareils | téléphones et tablettes ; Chromebook possible (écran tactile non obligatoire) |
+| Taille | ≈ 1 Mo |
 
-1. **Clé d'importation** (une seule fois). À garder précieusement, avec une copie de sauvegarde hors du dépôt :
-   ```bash
-   keytool -genkeypair -v -keystore hoopbounce-upload.jks -alias hoopbounce -keyalg RSA -keysize 2048 -validity 10000
-   ```
-2. Copier `android/keystore.properties.example` en `android/keystore.properties` (ignoré par Git) et le remplir.
-3. Construire :
-   ```bash
-   cd android && ./gradlew bundleRelease
-   ```
-   → `android/app/build/outputs/bundle/release/app-release.aab`. On peut aussi passer par Android Studio :
-   Build › Generate Signed App Bundle.
-4. Dans la console, accepter **la signature d'application par Google Play** (Play App Signing) : Google garde la
-   clé de signature finale, la clé ci-dessus ne sert qu'à l'envoi.
-5. Avant l'envoi, vérifier :
-   - [ ] `ads-config.js` contient les vrais identifiants, et `useTestAds` vaut `false` (§ 11) ;
-   - [ ] `versionCode` a bien été augmenté.
+## 10. Tests avant la production 🔑
 
-## 11. Publicités AdMob en production
+- **Compte personnel créé après le 13 novembre 2023** : obligatoire avant la production — un **test fermé** avec
+  **au moins 12 testeurs** inscrits **pendant 14 jours d'affilée**, puis la demande d'accès à la production.
+  (Compte d'organisation : pas concerné.)
+- Conseillé dans tous les cas : un test interne (jusqu'à 100 testeurs, disponible en quelques minutes) avec
+  l'AAB, pour vérifier l'installation depuis Google Play.
+- L'APK release (`dist/HoopBounce-1.0.0-release.apk`) permet de tester exactement la même version avant l'envoi
+  (voir `store/PUBLICATION.md` § Tester avant de publier).
 
-- [ ] Console AdMob : créer l'application Android « Hoop Bounce » et la **relier à la fiche Play**.
-- [ ] Créer **3 blocs « Avec récompense »** : `doubleCoins`, `checkpoint` et `wheelSpin`.
-- [ ] `src/shared/ads-config.js` : remplacer les 3 identifiants `prod` et l'identifiant d'application, puis
-      passer `useTestAds: false`. Garde-fou : tant qu'un `XXXX` reste, le jeu reste en mode test.
-- [ ] `android/app/src/main/res/values/strings.xml` : `admob_app_id` = vrai identifiant d'application.
-- [ ] **`app-ads.txt`** à la racine du site web indiqué dans la fiche. Le contenu est fourni par AdMob.
-- [ ] « Confidentialité et messages » : publier un message **RGPD** (EEE, Royaume-Uni). Le jeu l'affiche avant
-      la première annonce.
-- [ ] Déclarer son téléphone comme **appareil de test** (`testDeviceIds`), et ne jamais cliquer sur ses propres
-      annonces réelles.
+## 11. Le jour de la publication 🔑
 
-## 12. Tests avant la production
-
-- [ ] **Test interne** (jusqu'à 100 testeurs, disponible en quelques minutes) : installer depuis le Play Store
-      et vérifier :
-  - [ ] démarrage : écran natif puis écran de chargement, sans flash blanc ;
-  - [ ] paysage forcé et plein écran ; encoche (notch) non gênante ;
-  - [ ] boutons tactiles réactifs, multitouche ;
-  - [ ] son, musique, vibrations ; pause quand l'application passe en arrière-plan ;
-  - [ ] bouton Retour d'Android : il navigue dans le menu et ne quitte pas pendant une partie ;
-  - [ ] publicités de test : doubler les pièces, reprendre au drapeau, coffre amélioré, roue ;
-  - [ ] récompense reçue seulement à la fin de l'annonce, rien en cas de fermeture ;
-  - [ ] formulaire de consentement (avec un VPN européen, ou un appareil en Europe) ;
-  - [ ] progression conservée après fermeture puis relance ;
-  - [ ] fluidité sur un téléphone d'entrée de gamme (qualité « Basse ») et sur un récent.
-- [ ] **Rapport de pré-lancement** de la console : aucun plantage, aucune alerte d'accessibilité bloquante.
-- [ ] **Test fermé** : au moins 12 testeurs inscrits pendant 14 jours consécutifs (compte personnel), puis
-      demande d'accès à la production.
-
-## 13. Publication (le jour J — pas maintenant)
-
-- [ ] Version de production 1.0.0 (1), notes de version FR / EN / ES :
-      « Première version : 50 niveaux, 5 mondes, boutique, récompenses quotidiennes, missions et succès. »
-- [ ] **Déploiement progressif** : 20 %, puis 50 %, puis 100 % après 2–3 jours sans problème.
-- [ ] Ensuite : surveiller Android Vitals (plantages, ANR) et les avis ; répondre aux premiers commentaires.
+- [ ] Production › Créer une release › importer `dist/HoopBounce-1.0.0-release.aab`.
+- [ ] Signature d'application par Google Play : accepter (clé gérée par Google, clé d'import = la nôtre).
+- [ ] Notes de version : « Première version de Hoop Bounce ! » (FR) · « The first release of Hoop Bounce! » (EN) ·
+      « ¡La primera versión de Hoop Bounce! » (ES).
+- [ ] Pays : tous ; lancement progressif conseillé (20 % puis 100 %).
+- [ ] Envoyer pour examen (quelques heures à quelques jours pour une première application).

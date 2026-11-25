@@ -4,9 +4,12 @@
 //   node store/tools/render-assets.mjs
 //
 // Produit :
-//   store/icon/icon-512.png                    icône haute résolution Google Play (512 × 512, PNG 32 bits)
-//   store/icon/icon-1024.png                   même icône en grand (réseaux sociaux, site)
-//   store/feature-graphic/feature-graphic-{fr,en,es}.png   bannière 1024 × 500 (PNG 24 bits, sans transparence)
+//   store/icon/icon-512.png                    icône Google Play INTEMPORELLE (512 × 512, PNG 32 bits) — après Noël
+//   store/icon/icon-512-winter.png             icône Google Play de la SAISON DE NOËL (à envoyer maintenant)
+//   store/icon/icon-1024*.png                  mêmes icônes en grand (réseaux sociaux, site)
+//   store/feature-graphic/feature-graphic-{fr,en,es}.png          bannière intemporelle 1024 × 500 (PNG 24 bits)
+//   store/feature-graphic/feature-graphic-winter-{fr,en,es}.png   bannière de la saison de Noël
+// L'application (icônes Android) utilise toujours l'icône INTEMPORELLE : pas de mise à jour à faire après Noël.
 //   android/app/src/main/res/mipmap-*/ic_launcher*.png     icônes Android (classique, ronde, adaptative)
 //   android/app/src/main/res/drawable*/splash.png          écran de démarrage natif (fond du jeu + ballon)
 
@@ -39,10 +42,11 @@ const base = `http://127.0.0.1:${server.address().port}`;
 
 const browser = await chromium.launch();
 const icon = readFileSync(join(ROOT, 'store/src/icon.svg'), 'utf8');
+const iconWinter = readFileSync(join(ROOT, 'store/src/icon-winter.svg'), 'utf8');
 
 /** Variante de l'icône : 'full', 'background' (fond seul), 'foreground' (motif seul, réduit à la zone sûre). */
-function iconVariant(kind) {
-  let s = icon;
+function iconVariant(kind, src = icon) {
+  let s = src;
   if (kind === 'background') s = s.replace('<g id="fg-layer">', '<g id="fg-layer" display="none">');
   if (kind === 'foreground') {
     // Icône adaptative : 108 dp dont ~72 dp visibles → motif réduit aux 2/3, fond transparent
@@ -66,6 +70,8 @@ async function renderSvg(svg, size, out, { shape = 'square', transparent = false
 // ─── Icônes de la fiche ──────────────────────────────────────────────────────
 await renderSvg(iconVariant('full'), 512, join(ROOT, 'store/icon/icon-512.png'));
 await renderSvg(iconVariant('full'), 1024, join(ROOT, 'store/icon/icon-1024.png'));
+await renderSvg(iconVariant('full', iconWinter), 512, join(ROOT, 'store/icon/icon-512-winter.png'));
+await renderSvg(iconVariant('full', iconWinter), 1024, join(ROOT, 'store/icon/icon-1024-winter.png'));
 
 // ─── Icônes Android ─────────────────────────────────────────────────────────
 const DENSITIES = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };
@@ -97,13 +103,13 @@ for (const [dir, [w, h]] of Object.entries(SPLASH)) {
 }
 
 // ─── Feature graphic 1024 × 500 ─────────────────────────────────────────────
-for (const lang of ['fr', 'en', 'es']) {
+for (const season of ['', 'winter']) for (const lang of ['fr', 'en', 'es']) {
   const page = await browser.newPage({ viewport: { width: 1024, height: 500 }, deviceScaleFactor: 1 });
-  await page.goto(`${base}/store/src/feature-graphic.html?lang=${lang}`);
+  await page.goto(`${base}/store/src/feature-graphic.html?lang=${lang}${season ? `&season=${season}` : ''}`);
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(200);
   mkdirSync(join(ROOT, 'store/feature-graphic'), { recursive: true });
-  await page.locator('#fg').screenshot({ path: join(ROOT, `store/feature-graphic/feature-graphic-${lang}.png`) });
+  await page.locator('#fg').screenshot({ path: join(ROOT, `store/feature-graphic/feature-graphic${season ? `-${season}` : ''}-${lang}.png`) });
   await page.close();
 }
 

@@ -3,11 +3,12 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 25/11/2026 · **Version :** 1.10.0-dev (non publiée ; la version publiable reste
-> 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1 : menu décoré + **Hoop Pass**) · **Version de
-> test Android :** **`HoopBounce_Test_v14.apk` (1.12.0-test14, mise à jour)** · **iOS :** projet Xcode prêt
-> (`ios/`) · **Phase en cours :** **finition (polish)** — fonctionnalités terminées, plus aucune nouvelle
-> fonctionnalité : présentation, sensations, sons et ambiance uniquement ; rien n'est publié.
+> **Dernière mise à jour :** 25/11/2026 · **Version publiée prête :** **1.0.0** (versionCode 15,
+> `com.echospeed.hoopbounce`) · **Fichiers :** `dist/HoopBounce-1.0.0-release.aab` (Google Play) et
+> `dist/HoopBounce-1.0.0-release.apk` (même version, pour tester) · **Version de test Android :**
+> `HoopBounce_Test_v14.apk` (1.12.0-test14) · **Saison en cours :** 🎄 **Noël** · **iOS :** projet Xcode prêt (`ios/`)
+> · **Phase en cours :** **préparation de la publication Google Play** — le jeu n'est plus modifié ; tout est prêt
+> (`store/PUBLICATION.md`), il reste les actions dans la Play Console ; rien n'est publié.
 
 ## Sommaire
 
@@ -518,6 +519,8 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tools/route-check.mjs` | Outil de level design : essaie des centaines de séquences de commandes par passage et mesure la difficulté ; « pilote » pour écrire les solutions expertes (rouler jusqu'à, charger, sauter, viser, flotter, tirer au panier). `N`, `id` ou plage `a-b` ; `--save` ; `--part=` (calcul réparti). |
 | `tools/economy-sim.mjs` | ★ Phase 4 : **simulateur de l'économie** : des joueurs types (actif, occasionnel ; avec ou sans publicités) jouent N jours avec le vrai code (porte-monnaie, coffres, calendrier, roulette, missions, succès, Pass, boutique) et une horloge simulée. `node tools/economy-sim.mjs 30`. |
 | `tools/route-merge.mjs` | Fusionne les fichiers partiels de `route-check --part` dans `tests/fixtures/routes.json`. |
+| `tools/build-release.mjs` | ★ **Version publiée** : construit `dist/HoopBounce-<version>-release.aab` (Android App Bundle au format protobuf d'aapt2, module `base`, `BundleConfig.pb`, signé avec jarsigner) et l'APK release de la même version (apksigner), avec l'enveloppe `native/release/` et la clé d'import `native/release/keys/` ; vérifie identifiant, versions, clé (`native/release/upload-key.sha256`), permissions et contenu identique APK / AAB ; version sans SDK publicitaire (boutons de publicité masqués). |
+| `store/tools/*.mjs` | Fiche Google Play : `render-assets` (icônes Noël et intemporelle, bannières, icônes Android), `screenshots` (8 captures titrées, 3 langues), `make-ghost` (vrai fantôme pour la capture), `check-listing` (longueurs des textes). |
 | `tools/level-run.mjs` | ★ Phase 2 : joue un niveau **en entier** (tous les passages à la suite, du départ au panier) et mesure la durée experte → durée joueur estimée (× 1,4), comparée à la fourchette du monde. Utilisé par `tests/routes.test.mjs`. |
 | `tools/level-map.mjs` | ★ Phase 2 : plan PNG d'un niveau (géométrie, pièges, étoiles, panier) avec la trajectoire du pilote et les morts. |
 | `tools/tune.mjs` | ★ Phase 2 : balaie toutes les fenêtres de départ d'un passage chronométré (`--full` : état réel d'arrivée) pour choisir une fenêtre sûre. |
@@ -2186,81 +2189,74 @@ niveaux plus longs et plus difficiles rapportent un peu plus.
 
 ## 5 bis. Publication Google Play (version 1.0.0)
 
-**Rien n'est publié.** Tout ce qu'il faut pour une fiche professionnelle et un premier envoi est prêt dans
-`store/` et `android/`. Le détail pas à pas est dans **`store/CHECKLIST.md`**.
+**Rien n'est publié, mais tout est prêt** : il ne reste qu'à importer l'AAB dans la Play Console et à remplir les
+champs administratifs. Récapitulatif et actions restantes : **`store/PUBLICATION.md`** ; checklist et réponses
+aux formulaires : **`store/CHECKLIST.md`**.
 
 ### Identité
 
 | Élément | Valeur |
 |---|---|
-| Nom sur le téléphone | Hoop Bounce |
-| Titre Play Store | « Hoop Bounce: Basket & Rebonds » (FR) · « Hoop Bounce: Basketball Jump » (EN) · « Hoop Bounce: Bota y Encesta » (ES) |
+| Nom (téléphone et fiche) | **Hoop Bounce** (inchangé ; les mots-clés sont dans les descriptions) |
 | Développeur | EchoSpeed |
-| Identifiant du paquet | `com.echospeed.hoopbounce` (⚠️ définitif après le premier envoi) |
-| Version / build | 1.0.0 / 1 |
+| Identifiant du paquet | `com.echospeed.hoopbounce` (⚠️ définitif après le premier import) |
+| Version / build | **1.0.0 / 15** (versionCode supérieur à la dernière version de test, 14) |
 | SDK cible / minimum | Android 16 (API 36) / Android 7.0 (API 24) |
-| Catégorie | Jeux › Arcade |
-| Classification attendue | PEGI 3 · ESRB Everyone (questionnaire IARC) |
-| Public cible recommandé | 13 ans et plus (pas d'obligations Familles ; annonces « PG » maximum) |
-| Prix | Gratuit, aucun achat intégré, publicités récompensées facultatives |
-| Pays | Tous |
+| Catégorie / tags | Jeux › Arcade ; Arcade, Plates-formes, Basket-ball, Adresse, Hors ligne |
+| Classification attendue | PEGI 3 · ESRB Everyone · USK 0 (questionnaire IARC) |
+| Public cible recommandé | 13 ans et plus |
+| Prix | Gratuit ; **aucune publicité, aucun achat intégré** dans la version 1.0.0 |
+| Sécurité des données | **aucune donnée collectée ni partagée** (pas de permission Internet, aucun SDK tiers) |
 | Langues | Français (par défaut), anglais, espagnol |
+
+### Identité visuelle (`store/BRAND.md`)
+
+Charte officielle tirée du jeu (`css/tokens.css`) : « terrain de nuit », palette (nuit, orange ballon, or, bleu
+gemme, menthe, raretés), Outfit seule, arrondis 8 → 26 px, cartes en verre sombre, boutons et pression uniques,
+effets, illustrations, règles du logo (HOOP blanc / BOUNCE orange, toujours en deux mots).
 
 ### Visuels
 
-- **Icône** (`store/src/icon.svg` → `store/icon/icon-512.png`) :
-  - un gros ballon de basket qui plonge dans un cercle blanc avec son filet, sur fond bleu nuit et halo orange ;
-  - formes épaisses, aucun petit détail : lisible à 48 px et reconnaissable à 16 px.
-  - Déclinée en icône adaptative Android (motif dans la zone sûre + fond), ronde et classique, pour toutes les
-    densités.
-- **Feature graphic 1024 × 500** (`store/src/feature-graphic.html` → `store/feature-graphic/`, FR / EN / ES) :
-  - salle de basket la nuit : projecteurs, parquet en perspective, tribunes floues ;
-  - logo HoopBounce, « Dribble · Rebondis · Marque », « Par EchoSpeed » ;
-  - un ballon lumineux qui file vers un panier (panneau de verre, cercle, filet), avec traînée, impact de
-    rebond et étincelles.
-- **Écran de démarrage natif** : le fond du jeu (`#04070F`) et le ballon, puis l'écran de chargement du jeu
-  (enchaînement sans flash blanc).
-- **Captures** (`store/screenshots/`, 10 par langue, 1920 × 1080) : Gameplay (panier « SWISH ! »), Menu, Ville,
-  Neige, Volcan, Forêt, Espace, Boutique, Missions, Récompenses quotidiennes.
-  - Chaque capture existe en version « fiche » (légende + cadre) et en version brute.
-  - Ce que chacune doit montrer et l'ordre conseillé : `store/SCREENSHOTS.md`. Google n'en accepte que 8 par
-    type d'appareil.
-- Tous les visuels se régénèrent :
-  - `node store/tools/render-assets.mjs` pour l'icône, la bannière, les icônes et les écrans de démarrage ;
-  - `node store/tools/screenshots.mjs fr|en|es` pour les captures, prises dans le vrai jeu avec un profil de
-    joueur préparé.
+- **Icône** refaite (`store/src/icon.svg`, `icon-winter.svg`) : le ballon plonge dans un panier stylisé
+  (planche de verre bleutée à liseré blanc, carré orange, cercle orange, filet blanc), traits de vitesse, halo
+  chaud, lumière d'en haut à gauche, fond nuit ; lisible à 48 px. **Version Noël** pour la fiche (liseré de neige
+  sur la planche, quelques flocons) et **version intemporelle** (après Noël, et dans l'application : icônes
+  classique, ronde et adaptative).
+- **Bannière** 1024 × 500 (FR / EN / ES, Noël et intemporelle) : salle de basket la nuit, logo HOOP / BOUNCE,
+  signature, trois repères (50 niveaux · 50 Trickshots · Hoop Pass), centre dégagé pour le bouton de la vidéo.
+- **8 captures** 1920 × 1080 avec titres marketing (FR / EN / ES) : 50 niveaux, 50 Trickshots, Débloquez des
+  skins, Complétez le Hoop Pass, Défiez votre fantôme (vrai fantôme du pilote expert), Ouvrez des coffres,
+  Relevez des défis, Votre collection.
+- **Vidéo** : storyboard de 25 s (`store/VIDEO.md`) — logo, gameplay, Trickshot, skins et coffre, Hoop Pass,
+  fantôme, succès, écran final.
 
-### Textes (`store/LISTING.md`)
+### Textes et référencement (`store/LISTING.md`)
 
-- Pour chaque langue (FR, EN, ES) : titre, description courte, description complète, points forts et
-  mots-clés, avec un ton dynamique.
-- Longueurs vérifiées (titre ≤ 30, courte ≤ 80, complète ≤ 4 000).
-- Les mots-clés sont intégrés au texte, car Google Play n'a pas de champ dédié.
+- FR / EN / ES : nom, description courte (78, 76 et 75 caractères), description complète (≈ 2 100 à 2 400) :
+  gameplay, 5 mondes, Trickshots, fantôme, Hoop Pass, collection, succès, saisons, mobile. Vérifiés par
+  `store/tools/check-listing.mjs`.
+- Référencement : mots-clés principaux et secondaires par langue, catégorie, tags, bonnes pratiques.
 
 ### Politique de confidentialité (`store/privacy-policy.html`)
 
-- Page autonome en FR / EN / ES, à héberger (GitHub Pages ou site du développeur). Son URL est obligatoire.
-- Elle explique :
-  - données uniquement sur l'appareil, aucun compte ;
-  - publicités AdMob facultatives et données collectées par le SDK ;
-  - consentement UMP, enfants, permissions, suppression.
-- Reste à remplacer : `[E-MAIL DE CONTACT]`.
+Réécrite pour la version 1.0.0 (FR / EN / ES) : aucune donnée collectée, aucun compte, aucune connexion, aucune
+publicité ni achat ; sauvegarde Android ; permission vibreur seule ; enfants ; suppression ; évolutions prévues
+(AdMob, achats Google Play : la politique sera complétée avant). Reste : `[E-MAIL DE CONTACT]` et l'hébergement.
 
-### Projet Android (`android/`, Capacitor 8)
+### Version publiée (`tools/build-release.mjs`, `native/release/`)
 
-- `npm run android:sync` copie le jeu (`tools/build-web.mjs` → `www/`) dans l'application ;
-  `npm run android:open` ouvre Android Studio.
-- Manifeste :
-  - paysage forcé (`sensorLandscape`) ;
-  - identifiant d'application AdMob (test) ;
-  - permissions Internet et Vibreur.
-- `MainActivity` : plein écran immersif (barres système masquées).
-- Thème : fond `#04070F` sur l'écran de démarrage, la fenêtre et les barres système.
-- Signature de la version publiée via `android/keystore.properties` (ignoré par Git, modèle
-  `keystore.properties.example`).
-- Construction de l'AAB : `./gradlew bundleRelease`, avec la signature d'application par Google Play.
-- Elle n'a pas pu être faite dans l'environnement de développement : le téléchargement du SDK Android y est
-  bloqué. Elle se fait dans Android Studio (`store/CHECKLIST.md` § 10).
+- Enveloppe Android minimale (une WebView plein écran qui sert le jeu depuis l'application, comme la version de
+  test) sous l'identifiant officiel, sans débogage à distance, icône intemporelle, propriété Android 16 qui garde
+  le paysage sur tablette.
+- **AAB** assemblé sans Gradle (aapt2 en format protobuf → module `base` : `manifest/`, `dex/`, `res/`,
+  `assets/`, `resources.pb` ; `BundleConfig.pb`), signé avec la **clé d'import** ; **APK release** de la même
+  version (zipalign, apksigner v1 + v2 + v3). Contrôles : identité, versions, permissions, clé, mêmes fichiers.
+- **Sans SDK publicitaire** : le jeu ne montre aucune annonce (pas les annonces de test simulées) ; les boutons
+  « Regarder une publicité » sont masqués et la reprise au drapeau est offerte (comportement hors ligne du jeu).
+- **Clé d'import** : `native/release/keys/hoopbounce-release.jks` + `keystore.properties` (ignorés par Git),
+  empreinte publique `native/release/upload-key.sha256`. À sauvegarder hors du projet.
+- Le projet Capacitor (`android/`) reste la voie pour ajouter AdMob et Google Play Billing plus tard (Android
+  Studio), avec le même identifiant et la même clé d'import.
 
 ### Version de test Android — APK (étape 20)
 
@@ -2639,19 +2635,24 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Parcours complet, sauvegarde et tailles d'iPhone vérifiés dans WebKit
 - 🔴 Compilation dans Xcode sur un Mac, essai sur iPhone, TestFlight
 
-### Phase 9 — Publication 🟡
-- ✅ Fiche Play Store : icône 512, feature graphic 1024 × 500, 10 captures × 3 langues, textes FR / EN / ES
-- ✅ Checklist complète avant publication (`store/CHECKLIST.md`)
-- 🟡 Politique de confidentialité prête (`store/privacy-policy.html`) : e-mail à ajouter, puis hébergement
-- 🔴 Vrais identifiants AdMob, `app-ads.txt`, message de consentement
-- 🔴 Déclarations Play Console : annonces, classification, public cible, sécurité des données
-- 🔴 Test interne, test fermé (12 testeurs × 14 jours), puis publication progressive
+### Phase 9 — Publication 🟡 (tout est prêt, actions Play Console restantes)
+- ✅ Identité visuelle officielle (`store/BRAND.md`) ; icône refaite (Noël + intemporelle) ; bannières FR / EN / ES
+- ✅ 8 captures titrées × 3 langues ; storyboard vidéo ; textes FR / EN / ES et référencement
+- ✅ Politique de confidentialité conforme à la 1.0.0 ; réponses aux formulaires (IARC, sécurité des données…)
+- ✅ **AAB release signé** (1.0.0, versionCode 15) + APK release de la même version ; clé d'import créée
+- ✅ `store/PUBLICATION.md` : ce qui est fait, ce qui reste
+- 🔴 Porteur du projet : sauvegarder la clé d'import, e-mail public, héberger la politique, remplir la Console
+- 🔴 Test fermé (12 testeurs × 14 jours si compte personnel récent), puis production
+- 🔴 Plus tard : AdMob et Google Play Billing (projet Capacitor), avec mise à jour des déclarations
 
 ---
 
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Préparation de la publication Google Play** : identité visuelle, icône (Noël + intemporelle), bannières,
+  8 captures titrées × 3 langues, storyboard vidéo, textes et référencement, politique de confidentialité,
+  réponses aux formulaires, **AAB et APK release 1.0.0**, `store/PUBLICATION.md`
 - ✅ **Phase de finition (polish)** : scène de Noël vivante, neige réaliste, pression unifiée des boutons,
   pièce / gemme / étoile redessinées, coffres par rareté, traînée des ballons rares, nouveaux sons, fondus de
   musique, APK de test v14
@@ -2712,6 +2713,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Publication** (porteur du projet) : sauvegarder la clé d'import, puis suivre `store/PUBLICATION.md` § 2
+  (Play Console, test fermé, production) ; tester `dist/HoopBounce-1.0.0-release.apk` sur téléphone
 - 🟡 **Validation de la phase de finition** avec `HoopBounce_Test_v14.apk` : menu (aurore, brume, neige,
   inclinaison du téléphone), pièces / gemmes / étoiles, ouverture des coffres, sons, fluidité
 - 🟡 **Validation du correctif « Premier essai »** (Trickshot) avec `HoopBounce_Test_v13.apk` : ↺ puis panier au
@@ -2984,6 +2987,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | Publication : l'AAB est assemblé sans Gradle ni bundletool (non exécutable dans l'environnement de développement). Sa structure, sa signature et son manifeste sont vérifiés par le script ; la Play Console le valide à l'import. | 🟡 Vérifier avec `bundletool validate` sur un ordinateur (facultatif) ou au premier import |
+| Info | Publication : la version 1.0.0 n'a pas de publicités (pas de SDK AdMob dans l'enveloppe minimale) ; les boutons de publicité sont masqués. | 🟡 Voulu — AdMob arrivera par le projet Capacitor |
+| Info | La progression de l'APK de test (`com.echospeed.hoopbounce.test`) ne se retrouve pas dans la version Play (`com.echospeed.hoopbounce`) : Android sépare les données de chaque application. | 🟡 Normal (testeurs seulement) |
 | Info | Finition : le menu en grand écran (tablette 1180 × 820) tourne ≈ 36 i/s dans le navigateur de test sans GPU (≈ 38 avant la phase). Sur téléphone, le canvas est accéléré par le GPU. | 🔴 À confirmer sur téléphone / tablette (v14) |
 | Info | Identité des mondes : la demande citait nature, grotte, usine, temple, ciel ; les mondes du jeu sont Ville, Neige, Volcan, Forêt, Espace (leurs mécaniques — glace, lave, lianes, gravité réduite — en dépendent). Leur identité existante (palette, décor, ambiance, sons, musique) est gardée. | 🟡 À décider par le porteur du projet |
 | Important | Trickshot : ↺ Recommencer remettait les essais à zéro ; on pouvait s'entraîner puis obtenir quand même ★★★ « Premier essai ». | ✅ Résolu (v13) : ↺ désactive le défi pour la tentative ; quitter après un tir ne le rend pas ; les étoiles déjà gagnées restent |
@@ -3055,6 +3061,37 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 25/11/2026 — Préparation de la publication Google Play (version 1.0.0, AAB release)
+
+> Le jeu n'est plus modifié (gameplay, niveaux, équilibrage, fonctionnalités inchangés). Cette étape prépare tout
+> ce qu'il faut pour publier : il ne reste que la Play Console.
+
+**Ajouté**
+- `store/BRAND.md` (identité visuelle officielle), `store/PUBLICATION.md` (récapitulatif et actions restantes),
+  `store/VIDEO.md` (storyboard de 25 s), `store/tools/check-listing.mjs`, `store/tools/make-ghost.mjs`.
+- Icône refaite : `store/src/icon.svg` (intemporelle, aussi dans l'application) et `icon-winter.svg` (Noël) →
+  `store/icon/icon-512.png`, `icon-512-winter.png` ; icônes Android régénérées.
+- Bannières 1024 × 500 intemporelles et de Noël, FR / EN / ES (Outfit, nom en deux mots, trois repères).
+- 8 captures titrées 1920 × 1080 × 3 langues (gameplay, Trickshot, skins, Hoop Pass, fantôme, coffre, succès,
+  collection), avec un vrai fantôme enregistré par le pilote expert ; les 10 anciennes captures sont remplacées.
+- **Version publiée** : `native/release/` (enveloppe, manifeste API 36, activité sans débogage) et
+  `tools/build-release.mjs` → `dist/HoopBounce-1.0.0-release.aab` et `.apk` (versionCode 15), clé d'import
+  `native/release/keys/` (ignorée par Git) et son empreinte `native/release/upload-key.sha256`.
+
+**Modifié**
+- `store/LISTING.md` réécrit : nom « Hoop Bounce » conservé, descriptions FR / EN / ES, référencement, tags.
+- `store/privacy-policy.html` réécrite pour la 1.0.0 (aucune donnée, aucune publicité, aucun achat).
+- `store/CHECKLIST.md`, `store/SCREENSHOTS.md`, `store/README.md` réécrits ; `.gitignore` (clé d'import).
+
+**Vérifié**
+- **664 tests** passent. Script de construction : identité, versions, signature, permissions (vibreur seul), même
+  contenu APK / AAB. Jeu extrait de l'APK release ouvert dans Chromium sous l'adresse de l'application : menu,
+  jeu, Trickshot, boutique, roulette, 0 erreur, version 1.0.0, aucun bouton ni annonce publicitaire.
+
+**Reste à faire**
+- Porteur du projet : sauvegarder la clé d'import, e-mail public, héberger la politique, remplir la Play Console,
+  test fermé, production (`store/PUBLICATION.md` § 2).
 
 ### 25/11/2026 — Phase de finition : présentation, sensations, sons (v1.10.0-dev, APK de test v14)
 

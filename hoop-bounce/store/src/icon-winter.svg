@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Icône Hoop Bounce (saison de Noël) : un grand ballon qui plonge dans un panier stylisé
+       (planche de verre, cercle orange, filet), lumière venue d'en haut à gauche, halo chaud derrière le ballon.
+       Formes épaisses et contrastées : lisible jusqu'à 48 px. Couches bg-layer / fg-layer : icône adaptative Android. -->
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="28%" r="85%">
+      <stop offset="0" stop-color="#22357a"/>
+      <stop offset=".5" stop-color="#0d1838"/>
+      <stop offset="1" stop-color="#050913"/>
+    </radialGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9fc0ff" stop-opacity=".22"/>
+      <stop offset=".6" stop-color="#9fc0ff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ff8a3d" stop-opacity=".75"/>
+      <stop offset=".55" stop-color="#ff6a1a" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#ff6a1a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="board" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9fc0ff" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#3a5aa8" stop-opacity=".18"/>
+    </linearGradient>
+    <radialGradient id="ball" cx="34%" cy="28%" r="80%">
+      <stop offset="0" stop-color="#ffc38a"/>
+      <stop offset=".38" stop-color="#ff8436"/>
+      <stop offset=".8" stop-color="#e2560f"/>
+      <stop offset="1" stop-color="#a8360a"/>
+    </radialGradient>
+    <linearGradient id="rimF" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb066"/>
+      <stop offset=".5" stop-color="#ff6a1a"/>
+      <stop offset="1" stop-color="#c2430a"/>
+    </linearGradient>
+  </defs>
+  <g id="bg-layer">
+    <rect width="512" height="512" fill="url(#bg)"/>
+    <path d="M0 0H300L0 300z" fill="url(#beam)"/>
+    <g stroke="#dfe9ff" stroke-opacity=".5" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M70 83V101M62.2 87.5L77.8 96.5M62.2 96.5L77.8 87.5"/><path d="M448 63V77M441.9 66.5L454.1 73.5M441.9 73.5L454.1 66.5"/><path d="M430 163V173M425.6 165.5L434.4 170.5M425.6 170.5L434.4 165.5"/><path d="M92 209V219M87.7 211.5L96.3 216.5M87.7 216.5L96.3 211.5"/><path d="M462 294V306M456.8 297.0L467.2 303.0M456.8 303.0L467.2 297.0"/><path d="M58 361V375M51.9 364.5L64.1 371.5M51.9 371.5L64.1 364.5"/><path d="M400 435V445M395.6 437.5L404.4 442.5M395.6 442.5L404.4 437.5"/></g>
+  </g>
+  <g id="fg-layer">
+  <!-- planche de verre (derrière) -->
+  <rect x="118" y="78" width="276" height="200" rx="26" fill="url(#board)"/>
+  <rect x="118" y="78" width="276" height="200" rx="26" fill="none" stroke="#ffffff" stroke-width="9" stroke-opacity=".95"/>
+  <path d="M140 92h120" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-opacity=".5"/>
+  <rect x="200" y="112" width="112" height="84" rx="10" fill="none" stroke="#ff7a2a" stroke-width="12"/>
+  <path d="M114 94c0-14 10-22 26-22h232c16 0 26 8 26 22c-8-6-14-6-20-2c-6 6-12 7-20 2c-8-5-14-5-22 1c-8 6-16 6-24 0c-8-6-16-6-24 0c-8 6-16 6-24 0c-8-6-16-6-24 0c-8 6-16 6-24 0c-8-6-14-6-22-1c-8 5-14 4-20-2c-6-4-12-4-20 2z" fill="#f6f9ff"/>
+  <path d="M118 84c40-10 236-10 276 0" fill="none" stroke="#fff" stroke-width="3" stroke-opacity=".9" stroke-linecap="round"/>
+  <!-- halo chaud derrière le ballon -->
+  <circle cx="256" cy="250" r="190" fill="url(#glow)"/>
+  <!-- arrière du cercle -->
+  <path d="M120 318 A136 30 0 0 1 392 318" fill="none" stroke="#8a3208" stroke-width="20" stroke-linecap="round"/>
+  <!-- traits de vitesse : le ballon arrive d'en haut à gauche -->
+  <g fill="none" stroke="#ffffff" stroke-linecap="round">
+    <path d="M78 150 Q104 118 142 102" stroke-width="12" stroke-opacity=".5"/>
+    <path d="M62 206 Q84 176 118 156" stroke-width="9" stroke-opacity=".32"/>
+  </g>
+  <g transform="translate(256 262) scale(0.86) translate(-256 -222)">
+  <g transform="translate(256 222)">
+    <circle r="132" fill="url(#ball)"/>
+    <g fill="none" stroke="#2a1206" stroke-width="14" stroke-linecap="round" opacity=".88">
+      <path d="M0 -132V132M-132 0H132"/>
+      <path d="M-92 -94c40 30 54 64 54 94s-14 64-54 94"/>
+      <path d="M92 -94c-40 30 -54 64 -54 94s14 64 54 94"/>
+    </g>
+    <path d="M60 116a132 132 0 0 0 66-78" fill="none" stroke="#ffd2a8" stroke-width="6" stroke-linecap="round" stroke-opacity=".7"/>
+    <ellipse cx="-50" cy="-70" rx="46" ry="24" fill="#fff" opacity=".32" transform="rotate(-30 -50 -70)"/>
+    <circle cx="-74" cy="-38" r="8" fill="#fff" opacity=".45"/>
+  </g>
+  </g>
+  <!-- filet -->
+  <g fill="none" stroke="#f2f6ff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M136 332 L188 446"/>
+    <path d="M196 342 L222 456"/>
+    <path d="M256 346 L256 462"/>
+    <path d="M316 342 L290 456"/>
+    <path d="M376 332 L324 446"/>
+    <path d="M150 382 Q256 414 362 382" stroke-opacity=".9"/>
+    <path d="M176 428 Q256 450 336 428" stroke-opacity=".8"/>
+  </g>
+  <!-- avant du cercle -->
+  <path d="M120 318 A136 30 0 0 0 392 318" fill="none" stroke="url(#rimF)" stroke-width="24" stroke-linecap="round"/>
+  <path d="M146 334 A120 22 0 0 0 366 334" fill="none" stroke="#ffd0a0" stroke-width="5" stroke-linecap="round" stroke-opacity=".75"/>
+  </g>
+</svg>

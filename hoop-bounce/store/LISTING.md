@@ -1,32 +1,29 @@
-# HoopBounce — Fiche Google Play (textes)
+# Hoop Bounce — Fiche Google Play (textes et référencement)
 
-Textes prêts à coller dans la Play Console : **Présence sur le Store → Fiche principale**.
+Textes prêts à coller dans la Play Console : **Développer la présence sur le Store → Fiche principale** (puis
+**Traductions** pour l'anglais et l'espagnol). Les longueurs sont vérifiées par `store/tools/check-listing.mjs`.
 
-- Langue par défaut : **français (fr-FR)**. Traductions : anglais (en-US) et espagnol (es-ES), comme le jeu.
-- Limites de Google Play : titre ≤ 30 caractères, description courte ≤ 80, description complète ≤ 4 000. Toutes
-  sont vérifiées ci-dessous.
-- Règles Play respectées :
-  - pas d'emoji, de majuscules en série ni de « n° 1 », « meilleur » ou « gratuit » dans le titre ;
-  - pas de faux avis ni de prix dans la description ;
-  - les publicités sont mentionnées honnêtement (facultatives, récompensées).
-- Google Play n'a **pas de champ « mots-clés »** : le référencement vient du titre, de la description courte et de
-  la description complète. Les mots-clés ci-dessous y sont déjà placés naturellement. Ne pas les empiler en liste
-  dans la description : c'est interdit (« keyword stuffing »).
+- Langue par défaut : **français (fr-FR)**. Traductions : **anglais (en-US)** et **espagnol (es-ES)**, comme le jeu.
+- Limites Google Play : nom ≤ 30 caractères · description courte ≤ 80 · description complète ≤ 4 000.
+- Règles Play respectées : pas de « n° 1 », « meilleur », « gratuit » ni d'emoji dans le nom ; pas de faux avis, de
+  prix, de promesse de gain ni de liste de mots-clés ; rien qui ne soit vraiment dans le jeu.
+- Google Play n'a **pas de champ « mots-clés »** : le référencement vient du nom, de la description courte et de la
+  description complète (voir § Référencement). Les mots-clés y sont placés naturellement, sans répétition forcée.
 
 ---
 
 ## Français (fr-FR) — langue par défaut
 
-### Titre (29 / 30)
+### Nom de l'application (11 / 30)
 
 ```
-Hoop Bounce: Basket & Rebonds
+Hoop Bounce
 ```
 
-### Description courte (79 / 80)
+### Description courte (78 / 80)
 
 ```
-Dribble, rebondis, marque ! 50 niveaux de plateforme basket dans 5 mondes fous.
+Dribble, rebondis, marque ! 50 niveaux, 50 trickshots et ton fantôme à battre.
 ```
 
 ### Description complète
@@ -34,73 +31,52 @@ Dribble, rebondis, marque ! 50 niveaux de plateforme basket dans 5 mondes fous.
 ```
 Fais rebondir ton ballon de basket jusqu'au panier !
 
-Hoop Bounce est un jeu de plateforme nerveux et précis où tu contrôles un ballon de basket. Roule, enchaîne les appuis pour charger ton rebond comme un dribble, saute au-dessus des pièges et marque le panier. Simple à prendre en main, difficile à maîtriser : chaque niveau est un petit défi d'adresse et de timing.
+Hoop Bounce est un jeu de plateforme et d'adresse où tu incarnes un ballon de basket. Roule, enchaîne les appuis pour charger ton rebond comme un vrai dribble, franchis les pièges et marque le panier. Deux boutons pour rouler, un bouton pour rebondir : simple à prendre en main, exigeant à maîtriser.
 
-🏀 UN DRIBBLE QUI SE SENT
-Deux boutons pour rouler, un bouton pour rebondir. Plus tu enchaînes les appuis au bon moment, plus le ballon monte : jusqu'à 5 niveaux de puissance. Une physique soignée, fluide à 60 images par seconde, et un panier validé seulement quand le ballon passe vraiment dans le filet. Et si tu marques sans toucher le cercle ? SWISH !
+UNE AVENTURE EN 5 MONDES
+Traverse 50 niveaux, de la Ville à l'Espace en passant par la Neige, le Volcan et la Forêt. Plateformes mobiles, trampolines, glace, lave, lianes, portails, gravité réduite : chaque monde a ses mécaniques, son décor animé, sa musique et ses surprises. Chaque niveau raconte une idée, et quelques-uns cachent même une bonne blague.
 
-🌍 5 MONDES, 50 NIVEAUX
-• La Ville : néons, toits, trampolines, scies et lasers
-• La Neige : sol glissant, vent, stalactites et boules de neige
-• Le Volcan : rivières de lave, geysers, plateformes fragiles et jets de flammes
-• La Forêt : lianes, champignons rebondissants, troncs et rivières
-• L'Espace : gravité réduite, portails, astéroïdes, gravité inversée et trous noirs
-Chaque monde a ses décors animés, sa musique et son ambiance sonore. Chaque niveau ajoute une nouvelle difficulté.
+50 TRICKSHOTS, DU FACILE À L'IMPOSSIBLE
+Dans le laboratoire Trickshot, tu n'as qu'un geste : vise, tire, et compte sur les rebonds, les portails, les trampolines et les bumpers. Cinq paliers de difficulté, et des cartes Impossibles réservées aux plus précis. Réussis du premier coup pour décrocher les trois étoiles.
 
-⭐ 3 ÉTOILES PAR NIVEAU
-Ramasse les étoiles cachées dans les passages les plus risqués, bats tes records de temps et vise le parfait sur les 50 niveaux.
+DÉFIE TON FANTÔME
+Ton meilleur essai est enregistré sur chaque niveau. Rejoue-le et fais la course contre ton propre fantôme pour grappiller les dixièmes qui manquent.
 
-🎨 PERSONNALISE TON BALLON
-Gagne des pièces en jouant et collectionne 51 objets : ballons (Néon, Magma, Galaxie, Diamant…), ballons rigolos avec un visage (robot, pirate, ninja, extraterrestre…), effets de rebond, traînées et animations de panier, en 4 raretés. Les légendaires ont une aura et des effets spectaculaires. Des objets exclusifs se gagnent uniquement avec les récompenses quotidiennes et les succès.
+LE HOOP PASS
+Chaque saison apporte son Hoop Pass : 50 niveaux de récompenses à débloquer en jouant, avec une ligne gratuite et une ligne Premium. Pièces, gemmes, coffres et objets exclusifs t'attendent tout au long de la saison.
 
-🎁 UNE RAISON DE REVENIR CHAQUE JOUR
-• Une récompense quotidienne sur 7 jours, avec un ballon exclusif au 7e jour
-• 3 nouvelles missions chaque jour
-• 40 succès, du Débutant à la Légende
-• Une roulette quotidienne avec un lancer gratuit chaque jour
+COLLECTIONNE ET PERSONNALISE
+Gagne des pièces et ouvre des coffres, du commun au légendaire, pour débloquer 63 objets : ballons, ballons rigolos avec un visage, effets de rebond, traînées et animations de panier. Les plus rares ont leur aura et leurs effets spectaculaires.
 
-✅ UN JEU RESPECTUEUX
-• Aucun achat intégré : tout se débloque en jouant
-• Aucune publicité imposée : les publicités sont uniquement facultatives, quand tu choisis d'en regarder une pour doubler tes pièces, reprendre au dernier drapeau ou ouvrir un coffre amélioré
-• Jouable hors connexion
-• En français, en anglais et en espagnol
+DES DÉFIS POUR LES PLUS ACHARNÉS
+62 succès à décrocher, dont des défis cachés à découvrir par toi-même. Trois étoiles par niveau, des records de temps, des missions chaque jour, un calendrier de récompenses et une roulette quotidienne.
 
-Prêt à marquer ? Télécharge Hoop Bounce et fais rebondir ton ballon jusqu'au sommet !
+DES SAISONS QUI SE RENOUVELLENT
+En ce moment, c'est la saison de Noël : menu enneigé, ambiance d'hiver et Hoop Pass de saison. De nouvelles saisons, de nouveaux objets et du nouveau contenu arriveront avec les mises à jour.
+
+PENSÉ POUR LE MOBILE
+• Jouable hors ligne, sans compte
+• Aucune publicité imposée
+• Commandes tactiles réactives, vibrations et sons soignés
+• Disponible en français, en anglais et en espagnol
+
+Prêt à dribbler jusqu'au panier ?
 ```
-
-### Points forts (pour la fiche, les visuels et les réseaux)
-
-- Un **dribble unique** : enchaîner les appuis pour charger le rebond (5 niveaux de puissance).
-- **50 niveaux** faits main dans **5 mondes** très différents, avec plus de **35 mécaniques et pièges**.
-- **3 étoiles** par niveau, des records de temps et des « swish » pour les joueurs exigeants.
-- **51 objets** à collectionner en jouant (ballons, ballons à visage, effets, traînées, animations de panier), 4 raretés et des
-  exclusifs.
-- **Récompense quotidienne, missions, succès et roulette quotidienne** : du contenu chaque jour.
-- **Aucun achat intégré**, publicités **uniquement facultatives**, jouable **hors connexion**.
-- Décors animés, musique et ambiance sonore propres à chaque monde ; **60 images par seconde**.
-- Français, anglais, espagnol.
-
-### Mots-clés (référencement)
-
-Principaux : `basket`, `basketball`, `ballon`, `panier`, `jeu de plateforme`, `rebond`, `dribble`.
-
-Secondaires : `jeu d'adresse`, `arcade`, `hors ligne`, `sans connexion`, `niveaux`, `étoiles`, `skins`,
-`jeu de saut`, `casual`, `défi`.
 
 ---
 
 ## English (en-US)
 
-### Title (28 / 30)
+### App name (11 / 30)
 
 ```
-Hoop Bounce: Basketball Jump
+Hoop Bounce
 ```
 
-### Short description (80 / 80)
+### Short description (76 / 80)
 
 ```
-Dribble, bounce and score! 50 basketball platformer levels across 5 wild worlds.
+Dribble, bounce, score! 50 levels, 50 trickshots and your own ghost to beat.
 ```
 
 ### Full description
@@ -108,125 +84,116 @@ Dribble, bounce and score! 50 basketball platformer levels across 5 wild worlds.
 ```
 Bounce your basketball all the way to the hoop!
 
-Hoop Bounce is a fast, precise platformer where you control a basketball. Roll, chain your taps to charge your bounce like a dribble, leap over traps and sink the shot. Easy to pick up, hard to master: every level is a little test of skill and timing.
+Hoop Bounce is a skill-based platformer where you play as a basketball. Roll, chain taps to charge your bounce like a real dribble, clear the traps and score. Two buttons to roll, one to bounce: easy to pick up, hard to master.
 
-🏀 A DRIBBLE YOU CAN FEEL
-Two buttons to roll, one button to bounce. Chain your taps at the right moment and the ball flies higher: up to 5 power levels. Polished physics, smooth at 60 frames per second, and a basket only counts when the ball truly drops through the net. Score without touching the rim? SWISH!
+AN ADVENTURE ACROSS 5 WORLDS
+Play through 50 levels, from the City to Space by way of the Snow, the Volcano and the Forest. Moving platforms, trampolines, ice, lava, vines, portals, low gravity: every world has its own mechanics, animated scenery, music and surprises. Each level is built around one idea, and a few of them even hide a good joke.
 
-🌍 5 WORLDS, 50 LEVELS
-• The City: neon lights, rooftops, trampolines, saws and lasers
-• The Snow: slippery ice, wind, icicles and snowballs
-• The Volcano: lava rivers, geysers, crumbling platforms and flame jets
-• The Forest: vines, bouncy mushrooms, logs and rivers
-• Space: low gravity, portals, asteroids, inverted gravity and black holes
-Every world has its own animated scenery, music and soundscape. Every level adds a new challenge.
+50 TRICKSHOTS, FROM EASY TO IMPOSSIBLE
+In the Trickshot lab you get a single move: aim, shoot, and count on bounces, portals, trampolines and bumpers. Five difficulty tiers, with Impossible cards reserved for the sharpest shooters. Nail it on the first try to earn all three stars.
 
-⭐ 3 STARS PER LEVEL
-Grab the stars hidden on the riskiest paths, beat your best times and go for a perfect run across all 50 levels.
+RACE YOUR GHOST
+Your best run is saved on every level. Replay it and race your own ghost to shave off those last tenths of a second.
 
-🎨 CUSTOMIZE YOUR BALL
-Earn coins as you play and collect 51 items: balls (Neon, Magma, Galaxy, Diamond…), funny balls with faces (robot, pirate, ninja, alien…), bounce effects, trails and hoop celebrations, in 4 rarities. Legendary items have an aura and spectacular effects. Exclusive items can only be earned through daily rewards and achievements.
+THE HOOP PASS
+Every season brings its own Hoop Pass: 50 tiers of rewards to unlock by playing, with a free track and a Premium track. Coins, gems, chests and exclusive items await you throughout the season.
 
-🎁 A REASON TO COME BACK EVERY DAY
-• A 7-day daily reward, with an exclusive ball on day 7
-• 3 new missions every day
-• 40 achievements, from Beginner to Legend
-• A bonus chest and a wheel of fortune every day
+COLLECT AND CUSTOMIZE
+Earn coins and open chests, from common to legendary, to unlock 63 items: balls, funny balls with faces, bounce effects, trails and hoop animations. The rarest ones come with their own aura and spectacular effects.
 
-✅ A FAIR GAME
-• No in-app purchases: everything is unlocked by playing
-• No forced ads: ads are strictly optional, only when you choose to watch one to double your coins, continue from the last flag or open an upgraded chest
-• Play offline
-• In English, French and Spanish
+CHALLENGES FOR THE DEDICATED
+62 achievements to earn, including hidden challenges for you to discover. Three stars per level, best times, daily missions, a reward calendar and a daily prize wheel.
 
-Ready to score? Download Hoop Bounce and bounce your way to the top!
+SEASONS THAT KEEP CHANGING
+Right now it's the Christmas season: a snowy menu, a winter mood and a seasonal Hoop Pass. New seasons, new items and new content will arrive with updates.
+
+BUILT FOR MOBILE
+• Play offline, no account needed
+• No forced ads
+• Responsive touch controls, polished haptics and sound
+• Available in English, French and Spanish
+
+Ready to dribble your way to the hoop?
 ```
-
-### Highlights
-
-- A **unique dribble**: chain taps to charge your bounce (5 power levels).
-- **50 handcrafted levels** across **5 distinct worlds**, with **35+ mechanics and traps**.
-- **3 stars** per level, best times and swishes for skilled players.
-- **51 items** to collect by playing, including funny balls with faces, 4 rarities and exclusives.
-- **Daily reward, missions, achievements, bonus chest and wheel of fortune.**
-- **No in-app purchases**, **optional ads only**, **plays offline**.
-- Animated scenery, music and soundscape per world; **60 FPS**.
-
-### Keywords
-
-Primary: `basketball`, `basketball game`, `hoop`, `platformer`, `bounce`, `dribble`, `ball jump`.
-
-Secondary: `skill game`, `arcade`, `offline game`, `no wifi`, `levels`, `stars`, `skins`, `jump game`, `casual`.
 
 ---
 
 ## Español (es-ES)
 
-### Título (27 / 30)
+### Nombre de la aplicación (11 / 30)
 
 ```
-Hoop Bounce: Bota y Encesta
+Hoop Bounce
 ```
 
-### Descripción breve (77 / 80)
+### Descripción breve (75 / 80)
 
 ```
-¡Bota, rebota y encesta! 50 niveles de plataformas de baloncesto en 5 mundos.
+¡Bota, rebota y encesta! 50 niveles, 50 trickshots y tu fantasma por batir.
 ```
 
 ### Descripción completa
 
 ```
-¡Haz rebotar tu balón de baloncesto hasta la canasta!
+¡Haz rebotar tu balón de baloncesto hasta el aro!
 
-Hoop Bounce es un juego de plataformas rápido y preciso en el que controlas un balón de baloncesto. Rueda, encadena toques para cargar el rebote como un bote, salta por encima de las trampas y encesta. Fácil de aprender, difícil de dominar: cada nivel es un pequeño reto de habilidad y de ritmo.
+Hoop Bounce es un juego de plataformas y habilidad en el que eres un balón de baloncesto. Rueda, encadena toques para cargar el rebote como un auténtico bote, supera las trampas y encesta. Dos botones para rodar y uno para rebotar: fácil de aprender, difícil de dominar.
 
-🏀 UN BOTE QUE SE SIENTE
-Dos botones para rodar y uno para rebotar. Cuanto mejor encadenes los toques, más alto sube el balón: hasta 5 niveles de potencia. Una física cuidada, fluida a 60 imágenes por segundo, y una canasta que solo cuenta cuando el balón pasa de verdad por la red. ¿Y si encestas sin tocar el aro? ¡SWISH!
+UNA AVENTURA EN 5 MUNDOS
+Recorre 50 niveles, de la Ciudad al Espacio pasando por la Nieve, el Volcán y el Bosque. Plataformas móviles, trampolines, hielo, lava, lianas, portales, gravedad reducida: cada mundo tiene sus mecánicas, su escenario animado, su música y sus sorpresas. Cada nivel gira en torno a una idea, y algunos incluso esconden una buena broma.
 
-🌍 5 MUNDOS, 50 NIVELES
-• La Ciudad: neones, tejados, trampolines, sierras y láseres
-• La Nieve: hielo resbaladizo, viento, estalactitas y bolas de nieve
-• El Volcán: ríos de lava, géiseres, plataformas frágiles y chorros de fuego
-• El Bosque: lianas, setas que rebotan, troncos y ríos
-• El Espacio: gravedad reducida, portales, asteroides, gravedad invertida y agujeros negros
-Cada mundo tiene sus escenarios animados, su música y su ambiente sonoro. Cada nivel añade un nuevo reto.
+50 TRICKSHOTS, DE FÁCIL A IMPOSIBLE
+En el laboratorio Trickshot solo tienes un gesto: apunta, lanza y confía en los rebotes, los portales, los trampolines y los bumpers. Cinco niveles de dificultad y cartas Imposibles para los más precisos. Acierta a la primera para conseguir las tres estrellas.
 
-⭐ 3 ESTRELLAS POR NIVEL
-Recoge las estrellas escondidas en los caminos más arriesgados, bate tus récords de tiempo y busca la perfección en los 50 niveles.
+RETA A TU FANTASMA
+Tu mejor intento queda guardado en cada nivel. Vuelve a jugarlo y compite contra tu propio fantasma para arañar las décimas que faltan.
 
-🎨 PERSONALIZA TU BALÓN
-Gana monedas jugando y colecciona 51 objetos: balones (Neón, Magma, Galaxia, Diamante…), balones divertidos con cara (robot, pirata, ninja, extraterrestre…), efectos de rebote, estelas y animaciones de canasta, en 4 rarezas. Los legendarios tienen aura y efectos espectaculares. Los objetos exclusivos solo se consiguen con los premios diarios y los logros.
+EL HOOP PASS
+Cada temporada trae su Hoop Pass: 50 niveles de recompensas que se desbloquean jugando, con una línea gratuita y una línea Premium. Monedas, gemas, cofres y objetos exclusivos te esperan durante toda la temporada.
 
-🎁 UN MOTIVO PARA VOLVER CADA DÍA
-• Un premio diario durante 7 días, con un balón exclusivo el 7.º día
-• 3 misiones nuevas cada día
-• 40 logros, de Principiante a Leyenda
-• Un cofre bonus y una rueda de la suerte cada día
+COLECCIONA Y PERSONALIZA
+Gana monedas y abre cofres, del común al legendario, para desbloquear 63 objetos: balones, balones divertidos con cara, efectos de rebote, estelas y animaciones de canasta. Los más raros tienen su propia aura y efectos espectaculares.
 
-✅ UN JUEGO RESPETUOSO
-• Sin compras integradas: todo se desbloquea jugando
-• Sin anuncios obligatorios: los anuncios son solo opcionales, cuando eliges ver uno para duplicar tus monedas, continuar desde la última bandera o abrir un cofre mejorado
-• Se puede jugar sin conexión
-• En español, francés e inglés
+DESAFÍOS PARA LOS MÁS CONSTANTES
+62 logros por conseguir, incluidos desafíos ocultos que tendrás que descubrir. Tres estrellas por nivel, récords de tiempo, misiones diarias, un calendario de recompensas y una ruleta diaria.
 
-¿Listo para encestar? ¡Descarga Hoop Bounce y rebota hasta la cima!
+TEMPORADAS QUE SE RENUEVAN
+Ahora mismo es la temporada de Navidad: menú nevado, ambiente invernal y Hoop Pass de temporada. Nuevas temporadas, nuevos objetos y nuevo contenido llegarán con las actualizaciones.
+
+PENSADO PARA EL MÓVIL
+• Se juega sin conexión y sin cuenta
+• Sin anuncios obligatorios
+• Controles táctiles precisos, vibraciones y sonido cuidados
+• Disponible en español, francés e inglés
+
+¿Listo para botar hasta el aro?
 ```
 
-### Puntos fuertes
+---
 
-- Un **bote único**: encadena toques para cargar el rebote (5 niveles de potencia).
-- **50 niveles** hechos a mano en **5 mundos**, con más de **35 mecánicas y trampas**.
-- **51 objetos** para coleccionar jugando, con balones con cara, 4 rarezas y exclusivos.
-- **Premio diario, misiones, logros, cofre bonus y rueda de la suerte.**
-- **Sin compras integradas**, **anuncios solo opcionales**, **sin conexión**.
+## Référencement (ASO)
 
-### Palabras clave
+Google Play classe une fiche d'après le **nom**, la **description courte**, la **description complète**, la
+catégorie, les tags, les installations, les notes et l'engagement. Les mots-clés ci-dessous sont déjà présents
+naturellement dans les textes : ne pas les ajouter en liste (interdit, et contre-productif).
 
-Principales: `baloncesto`, `basket`, `canasta`, `balón`, `plataformas`, `rebote`, `bote`.
+| | Français | English | Español |
+|---|---|---|---|
+| **Principaux** | jeu de basket, ballon de basket, jeu de plateforme, rebond, trickshot, adresse | basketball game, basketball, platformer, bounce, trickshot, skill game | juego de baloncesto, balón, plataformas, rebote, trickshot, habilidad |
+| **Secondaires** | panier, dribble, niveaux, défis, skins, fantôme, hors ligne, arcade, physique, casse-tête | hoop, dribble, levels, challenges, skins, ghost, offline, arcade, physics, puzzle | aro, bote, niveles, desafíos, skins, fantasma, sin conexión, arcade, física, puzle |
 
-Secundarias: `juego de habilidad`, `arcade`, `sin conexión`, `sin internet`, `niveles`, `estrellas`, `skins`,
-`juego de saltos`, `casual`.
+**Catégorie conseillée : Jeux › Arcade.** Hoop Bounce est un jeu d'adresse en niveaux courts avec un mode
+« un tir » : c'est le profil des jeux Arcade, où il sera comparé à des jeux de même nature. (Alternative possible :
+Sports — moins adaptée, car on n'y joue pas de match de basket.)
+
+**Tags Google Play** (Play Console › Paramètres du Store › Tags, 5 au plus, à choisir dans la liste proposée) :
+1. **Arcade** · 2. **Plates-formes** (Platformer) · 3. **Basket-ball** · 4. **Adresse / physique** (Skill /
+Physics, selon la liste) · 5. **Hors ligne** (Offline) — à défaut : **Un joueur** (Single player).
+
+**Bonnes pratiques pour la suite** : répondre aux avis (surtout les premiers) ; garder une note élevée en
+corrigeant vite ; mettre à jour l'icône et la bannière à chaque saison (versions d'hiver et intemporelles prêtes) ;
+utiliser les « Fiches personnalisées » et les « Expériences sur la fiche » de la Play Console pour tester une autre
+icône ou d'autres captures quand le jeu aura des visiteurs.
 
 ---
 
@@ -234,11 +201,9 @@ Secundarias: `juego de habilidad`, `arcade`, `sin conexión`, `sin internet`, `n
 
 | Champ | Valeur |
 |---|---|
-| Nom de l'application (sur le téléphone) | Hoop Bounce |
-| Développeur | EchoSpeed |
-| Catégorie | Jeux › **Arcade** (voir CHECKLIST.md) |
-| Tags | Plateforme, Arcade, Sport, Hors ligne, Solo |
-| E-mail de contact | adresse du développeur (obligatoire, publique) — à renseigner |
-| Site web | facultatif (utile pour `app-ads.txt` d'AdMob) |
-| Politique de confidentialité | URL publique de `store/privacy-policy.html` une fois hébergée |
-| Vidéo (facultatif) | lien YouTube, 30 s de gameplay en paysage (voir SCREENSHOTS.md) |
+| Icône (512 × 512, PNG 32 bits) | Saison de Noël : `store/icon/icon-512-winter.png` · après Noël : `store/icon/icon-512.png` |
+| Bannière (1024 × 500, PNG 24 bits) | Saison de Noël : `store/feature-graphic/feature-graphic-winter-<langue>.png` · après Noël : `feature-graphic-<langue>.png` |
+| Captures téléphone (8, 1920 × 1080) | `store/screenshots/<langue>/01 … 08` (ordre : `store/SCREENSHOTS.md`) |
+| Captures tablettes 7" et 10" (facultatives) | les mêmes 8 fichiers (16:9, 1920 × 1080 : acceptés pour les tablettes) |
+| Vidéo (facultative) | lien YouTube — storyboard prêt : `store/VIDEO.md` |
+| Coordonnées | voir `store/PUBLICATION.md` § Informations développeur |

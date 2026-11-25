@@ -3,3 +3,6 @@ www/
 build/
 # Clé de signature des versions de TEST (ne pas publier ; à garder pour les mises à jour des testeurs)
 native/test-apk/keys/
+
+# Clé d'import Google Play (version publiée) : À GARDER EN LIEU SÛR, ne jamais publier
+native/release/keys/
