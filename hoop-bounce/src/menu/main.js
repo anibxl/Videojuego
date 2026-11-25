@@ -499,6 +499,7 @@ function launchGame(e, url = 'play.html') {
   curtain.style.setProperty('--cx', `${e.clientX}px`);
   curtain.style.setProperty('--cy', `${e.clientY}px`);
   setTimeout(() => curtain.classList.add('on'), 220);
+  setTimeout(() => sound.fadeOut(0.55), 200);
   setTimeout(() => {
     location.href = url;
   }, 820);
@@ -547,6 +548,20 @@ window.addEventListener('resize', resize);
 
 window.addEventListener('pointermove', (e) => {
   scene.setPointer((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
+});
+// Téléphone : parallaxe très subtile en inclinant l'appareil (par rapport à la position de départ, en paysage)
+let tiltRef = null;
+window.addEventListener('deviceorientation', (e) => {
+  if (e.beta == null || e.gamma == null) return;
+  const landscape = Math.abs(screen.orientation?.angle ?? window.orientation ?? 0) === 90;
+  const sign = (screen.orientation?.angle ?? window.orientation ?? 0) === -90 || screen.orientation?.angle === 270 ? -1 : 1;
+  const ax = landscape ? e.beta * sign : e.gamma;
+  const ay = landscape ? -e.gamma * sign : e.beta;
+  tiltRef ??= { x: ax, y: ay };
+  // La référence suit lentement la tenue du téléphone : seul un mouvement récent déplace le décor
+  tiltRef.x += (ax - tiltRef.x) * 0.01;
+  tiltRef.y += (ay - tiltRef.y) * 0.01;
+  scene.setPointer((ax - tiltRef.x) / 12, (ay - tiltRef.y) / 12);
 });
 
 let last = performance.now();

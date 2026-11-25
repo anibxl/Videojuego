@@ -1,10 +1,14 @@
 // Décor du menu pour la SAISON DE NOËL (saison 1, étape 1) : un soir d'hiver dans la montagne.
 //
 // Plans (du plus lointain au plus proche, chacun avec sa propre parallaxe) :
-//   ciel du soir (bleu nuit → lueur rose et pêche à l'horizon), étoiles qui scintillent, lune
-//   → montagnes enneigées (deux chaînes) → brume légère qui dérive → collines et forêt de sapins
+//   ciel du soir (bleu nuit → lueur rose et pêche à l'horizon), aurore boréale très douce qui ondule,
+//   étoiles qui scintillent, lune
+//   → montagnes enneigées (trois chaînes en perspective atmosphérique : la plus lointaine floue et bleutée,
+//     crêtes éclairées par la lueur du couchant) → bancs de brume qui dérivent à deux vitesses
+//   → collines et forêt de sapins, lumières chaudes d'un village lointain
 //   → chalet aux fenêtres chaudes, guirlande sur le toit, fumée de cheminée
-//   → champ de neige, grands sapins décorés (boules, guirlandes qui scintillent, étoile)
+//   → champ de neige en relief (congères éclairées par le haut, ombres bleues), reflets des guirlandes
+//   → grands sapins décorés (boules, guirlandes qui scintillent, étoile), poussières lumineuses chaudes
 //   → le panier enneigé et la balle qui rebondit dans la neige (l'identité du jeu reste là)
 //   → neige qui tombe en permanence (src/menu/snowfall.js : flocons lointains derrière les sapins,
 //     cristaux qui tournent, grands flocons flous au premier plan).
@@ -129,7 +133,31 @@ export class ChristmasScene extends MenuScene {
       s.fill();
     }
 
-    // 2. Montagnes enneigées (deux chaînes), un peu plus larges que l'écran pour la parallaxe
+    // 1 bis. Aurore boréale : deux voiles précalculés (dégradés vert d'eau → violet), animés par simple
+    // déplacement et respiration de l'opacité (aucun calcul par pixel à chaque image)
+    this.auroras = [0, 1].map((i) => {
+      const aw = Math.round(w * 1.15);
+      const ah = Math.round(this.horizon * 0.5);
+      const c = makeCanvas(aw, ah);
+      const a = c.getContext('2d');
+      const r4 = createRng(60 + i);
+      for (let j = 0; j < 7; j++) {
+        const x0 = (j / 6) * aw;
+        const y0 = ah * (0.35 + Math.sin(j * 1.3 + i * 2) * 0.18);
+        const gr = a.createLinearGradient(0, y0 - ah * 0.35, 0, y0 + ah * 0.25);
+        gr.addColorStop(0, 'rgba(120,255,210,0)');
+        gr.addColorStop(0.55, i ? 'rgba(150,120,255,0.28)' : 'rgba(110,255,200,0.3)');
+        gr.addColorStop(0.8, i ? 'rgba(255,140,220,0.12)' : 'rgba(120,200,255,0.14)');
+        gr.addColorStop(1, 'rgba(120,255,210,0)');
+        a.fillStyle = gr;
+        a.beginPath();
+        a.ellipse(x0, y0, aw * (0.12 + r4() * 0.08), ah * 0.42, 0.1 * Math.sin(j), 0, Math.PI * 2);
+        a.fill();
+      }
+      return { c, w: aw, h: ah, y: this.horizon * (0.06 + i * 0.1), speed: 3 + i * 2, ph: i * 2.1 };
+    });
+
+    // 2. Montagnes enneigées (trois chaînes), un peu plus larges que l'écran pour la parallaxe
     const bgW = w * 1.12;
     this.bgW = bgW;
     const mt = makeCanvas(bgW * k, this.horizon * k);
@@ -139,8 +167,10 @@ export class ChristmasScene extends MenuScene {
     m.drawImage(sky, 0, 0, sky.width, (this.horizon * k), (bgW - w) / 2, 0, w, this.horizon);
     m.drawImage(sky, 0, 0, 2, this.horizon * k, 0, 0, (bgW - w) / 2 + 1, this.horizon);
     m.drawImage(sky, sky.width - 2, 0, 2, this.horizon * k, (bgW + w) / 2 - 1, 0, (bgW - w) / 2 + 1, this.horizon);
-    const ridge = (base, amp, seed, body, snowTop) => {
+    const ridge = (base, amp, seed, body, snowTop, blur = 0, rim = 0) => {
       const r2 = createRng(seed);
+      m.save();
+      if (blur && 'filter' in m) m.filter = `blur(${blur}px)`;
       const pts = [];
       let x = -20;
       while (x < bgW + 40) {
@@ -173,9 +203,31 @@ export class ChristmasScene extends MenuScene {
         m.closePath();
         m.fill();
       }
+      // Lueur du couchant sur les crêtes (côté gauche des sommets) : un liseré chaud très fin
+      if (rim > 0) {
+        m.strokeStyle = `rgba(255,196,160,${rim})`;
+        m.lineWidth = 1.2;
+        m.beginPath();
+        for (let i = 1; i < pts.length - 1; i++) {
+          const [px, py] = pts[i];
+          const [lx, ly] = pts[i - 1];
+          if (py > ly) continue;
+          m.moveTo(px + (lx - px) * 0.45, py + (ly - py) * 0.45);
+          m.lineTo(px, py);
+        }
+        m.stroke();
+      }
+      // Pied des montagnes noyé dans la brume (perspective atmosphérique)
+      const haze = m.createLinearGradient(0, base - amp * 0.2, 0, this.horizon);
+      haze.addColorStop(0, 'rgba(150,140,190,0)');
+      haze.addColorStop(1, 'rgba(170,150,190,0.45)');
+      m.fillStyle = haze;
+      m.fillRect(-20, base - amp * 0.2, bgW + 60, this.horizon - base + amp * 0.2);
+      m.restore();
     };
-    ridge(this.horizon * 0.86, this.horizon * 0.42, 3, '#4a5585', 'rgba(232,236,255,0.85)');
-    ridge(this.horizon * 0.95, this.horizon * 0.3, 9, '#2e3a68', 'rgba(244,247,255,0.92)');
+    ridge(this.horizon * 0.8, this.horizon * 0.5, 17, '#7a7fae', 'rgba(214,218,246,0.7)', 2.2, 0.25);
+    ridge(this.horizon * 0.88, this.horizon * 0.4, 3, '#4a5585', 'rgba(232,236,255,0.85)', 0.8, 0.45);
+    ridge(this.horizon * 0.96, this.horizon * 0.28, 9, '#2e3a68', 'rgba(244,247,255,0.92)', 0, 0.55);
     this.bgLayer = mt;
 
     // 3. Collines enneigées et forêt de sapins (plan moyen) + chalet
@@ -201,6 +253,22 @@ export class ChristmasScene extends MenuScene {
       const x = rng() * midW;
       const y = midH * 0.5 + Math.sin(x * 0.006 + 1.1) * midH * 0.06 + 4;
       drawFir(d, x, y, midH * (0.12 + rng() * 0.1), '#1d3a46', 0.55);
+    }
+    this.village = [];
+    for (let i = 0; i < 14; i++) {
+      const x = midW * (0.08 + rng() * 0.84);
+      const y = midH * 0.5 + Math.sin(x * 0.006 + 1.1) * midH * 0.06 + 1 - rng() * midH * 0.03;
+      // Petite maison : toit enneigé, une fenêtre (allumée en direct)
+      d.fillStyle = '#2a2f4a';
+      d.fillRect(x - 3, y - 4, 6, 4);
+      d.fillStyle = '#eef3ff';
+      d.beginPath();
+      d.moveTo(x - 4, y - 4);
+      d.lineTo(x, y - 7);
+      d.lineTo(x + 4, y - 4);
+      d.closePath();
+      d.fill();
+      this.village.push({ x, y: y - 2, ph: rng() * Math.PI * 2 });
     }
     hill(midH * 0.66, midH * 0.05, 0.009, '#dfe7f8', 2.4);
     for (let i = 0; i < 26; i++) {
@@ -270,6 +338,25 @@ export class ChristmasScene extends MenuScene {
     f.lineTo(floorW, fh);
     f.closePath();
     f.fill();
+    // Congères en relief : bosses éclairées par le haut (lune), ombre bleutée en dessous
+    for (let i = 0; i < 6; i++) {
+      const cx2 = rng() * floorW;
+      const cy2 = fh * (0.25 + rng() * 0.55);
+      const rw = fh * (0.6 + rng() * 0.7);
+      const rh = rw * 0.16;
+      const sh = f.createLinearGradient(0, cy2 - rh, 0, cy2 + rh * 1.6);
+      sh.addColorStop(0, 'rgba(255,255,255,0.55)');
+      sh.addColorStop(0.45, 'rgba(240,246,255,0.1)');
+      sh.addColorStop(0.75, 'rgba(110,135,195,0.22)');
+      sh.addColorStop(1, 'rgba(110,135,195,0)');
+      f.fillStyle = sh;
+      f.beginPath();
+      f.ellipse(cx2, cy2, rw, rh * 1.6, 0, Math.PI, 0);
+      f.lineTo(cx2 + rw, cy2 + rh * 0.8);
+      f.ellipse(cx2, cy2 + rh * 0.8, rw, rh * 0.8, 0, 0, Math.PI);
+      f.closePath();
+      f.fill();
+    }
     // Ombres douces des congères
     for (let i = 0; i < 9; i++) {
       const x = rng() * floorW;
@@ -340,6 +427,40 @@ export class ChristmasScene extends MenuScene {
     gg.fillRect(0, 0, 128, 128);
     this.glow = gl;
 
+    // Banc de brume : bande horizontale faite de nappes douces, répétable (dérive sans couture)
+    const fw = Math.round(w * 1.2);
+    const fhh = Math.round(h * 0.18);
+    const fogC = makeCanvas(fw, fhh);
+    const fgc = fogC.getContext('2d');
+    const r5 = createRng(77);
+    for (let i = 0; i < 18; i++) {
+      const x = r5() * fw;
+      const y = fhh * (0.35 + r5() * 0.35);
+      const rx = fw * (0.08 + r5() * 0.1);
+      for (const ox of [x - fw, x, x + fw]) {
+        const gr = fgc.createRadialGradient(ox, y, 0, ox, y, rx);
+        gr.addColorStop(0, 'rgba(225,232,255,0.5)');
+        gr.addColorStop(1, 'rgba(225,232,255,0)');
+        fgc.fillStyle = gr;
+        fgc.save();
+        fgc.translate(ox, y);
+        fgc.scale(1, 0.32);
+        fgc.translate(-ox, -y);
+        fgc.fillRect(ox - rx, y - rx, rx * 2, rx * 2);
+        fgc.restore();
+      }
+    }
+    this.fog = { c: fogC, w: fw, h: fhh };
+
+    // Poussières lumineuses chaudes qui montent doucement près des sapins (« lucioles d'hiver »)
+    this.motes = Array.from({ length: this.q.particles ? 14 : 5 }, () => ({
+      x: w * (0.5 + rng() * 0.5),
+      y: h * (0.35 + rng() * 0.55),
+      v: 4 + rng() * 6,
+      r: 0.8 + rng() * 1.4,
+      ph: rng() * Math.PI * 2,
+    }));
+
     // Voile de lisibilité (côté gauche, derrière le logo et JOUER) + vignette, en basse résolution
     const vw = Math.round(w / 3);
     const vh = Math.round(h / 3);
@@ -390,18 +511,30 @@ export class ChristmasScene extends MenuScene {
       ctx.fillRect(s.x - camX * 0.2, s.y - camY * 0.2, s.r, s.r);
     }
     ctx.globalAlpha = 1;
-
-    // 2. Montagnes : dans le même calque que le ciel
-
-    // 3. Brume légère qui dérive au pied des montagnes
+    // Aurore boréale : ondule lentement, respire (très discrète : le ciel reste un ciel du soir)
     ctx.globalCompositeOperation = 'lighter';
-    for (let i = 0; i < 3; i++) {
-      const mx = ((t * 6 * (i + 1) + i * w * 0.4) % (w * 1.6)) - w * 0.3;
-      ctx.globalAlpha = 0.07;
-      ctx.drawImage(this.glow, mx - w * 0.35, this.horizon * 0.8 + i * h * 0.02, w * 0.7, h * 0.12);
+    // Un seul dessin par voile : il se balance lentement (aller-retour), sans copie pour boucler
+    for (const a of this.auroras) {
+      const ax = -w * 0.075 + Math.sin(t * 0.02 * a.speed + a.ph) * w * 0.07 - camX * 0.15;
+      ctx.globalAlpha = 0.38 + 0.22 * Math.sin(t * 0.21 + a.ph);
+      ctx.drawImage(a.c, ax, a.y - camY * 0.15 + Math.sin(t * 0.13 + a.ph) * 4, a.w, a.h);
     }
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
+
+    // 2. Montagnes : dans le même calque que le ciel
+
+    // 3. Bancs de brume au pied des montagnes : deux nappes, deux vitesses (profondeur)
+    const fog = this.fog;
+    // Un seul dessin par nappe (la bande dépasse l'écran de 20 %) : dérive en aller-retour très lent
+    const fogLayers = this.q.particles ? 2 : 1;
+    for (let i = 0; i < fogLayers; i++) {
+      const fx = -(fog.w - w) / 2 + Math.sin(t * (0.045 + i * 0.03) + i * 2) * (fog.w - w) * 0.45 - camX * (0.3 + i * 0.1);
+      const fy = this.horizon * (0.72 + i * 0.1) - camY * 0.3;
+      ctx.globalAlpha = i ? 0.55 : 0.4;
+      ctx.drawImage(fog.c, fx, fy, fog.w, fog.h);
+    }
+    ctx.globalAlpha = 1;
 
     // 4. Collines, forêt, chalet
     const midX = -(this.midW - w) / 2 - camX * 0.45;
@@ -410,6 +543,15 @@ export class ChristmasScene extends MenuScene {
     // Fenêtres qui rayonnent, guirlande du toit, fumée de cheminée
     const c = this.cabin;
     ctx.globalCompositeOperation = 'lighter';
+    // Village lointain : fenêtres chaudes qui vacillent à peine
+    for (const v of this.village) {
+      const on = 0.75 + 0.25 * Math.sin(t * 1.3 + v.ph);
+      ctx.globalAlpha = 0.9 * on;
+      ctx.fillStyle = '#ffc06a';
+      ctx.fillRect(midX + v.x - 0.8, midY + v.y - 0.8, 1.6, 1.6);
+      ctx.globalAlpha = 0.22 * on;
+      ctx.drawImage(this.glow, midX + v.x - 6, midY + v.y - 6, 12, 12);
+    }
     for (const win of this.windows) {
       ctx.globalAlpha = 0.32 + 0.06 * Math.sin(t * 2.3 + win.x);
       ctx.drawImage(this.glow, midX + win.x - win.w * 2, midY + win.y - win.h * 2, win.w * 5, win.h * 5);
@@ -474,6 +616,20 @@ export class ChristmasScene extends MenuScene {
     ctx.ellipse(hx, hfy - hu * 30 - hu * 0.6, hu * 1.3, hu * 0.6, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    // Reflets des guirlandes sur la neige gelée, sous les grands sapins (traînées verticales très douces)
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [i, L] of this.treeLights.entries()) {
+      if (i % 3) continue;
+      const on = 0.5 + 0.5 * Math.sin(t * 2.6 + L.ph);
+      const tr2 = this.trees[L.x > w * 0.82 ? 0 : 1];
+      const x = L.x - camX * 0.7;
+      const y = tr2.y + (tr2.y - L.y) * 0.08 - camY * 0.55;
+      ctx.globalAlpha = 0.07 * on;
+      ctx.drawImage(this.bulbs[L.c] ?? this.glow, x - L.r * 2, y, L.r * 4, L.r * 10);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
     // 7. Grands sapins décorés : ampoules qui scintillent, étoile qui brille
     ctx.drawImage(this.treeLayer, this.treeBox.x - camX * 0.7, this.treeBox.y - camY * 0.55, this.treeBox.w, this.treeBox.h);
     ctx.globalCompositeOperation = 'lighter';
@@ -532,6 +688,22 @@ export class ChristmasScene extends MenuScene {
     }
     ctx.globalAlpha = 1;
 
+    // Poussières lumineuses chaudes : montent lentement en ondulant, s'éteignent et renaissent
+    ctx.globalCompositeOperation = 'lighter';
+    for (const m2 of this.motes) {
+      m2.y -= m2.v * dt * motion;
+      if (m2.y < h * 0.2) {
+        m2.y = h * (0.85 + Math.random() * 0.15);
+        m2.x = w * (0.5 + Math.random() * 0.5);
+      }
+      const life = clamp((m2.y - h * 0.2) / (h * 0.2), 0, 1);
+      const x = m2.x + Math.sin(t * 0.7 + m2.ph) * 10 - camX * 0.9;
+      ctx.globalAlpha = (0.35 + 0.35 * Math.sin(t * 2 + m2.ph)) * life;
+      ctx.drawImage(this.bulbs['255,206,84'], x - m2.r * 2, m2.y - m2.r * 2 - camY * 0.6, m2.r * 4, m2.r * 4);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
     // 9. Cristaux de neige qui tournent lentement, devant le décor
     this.snow.draw(ctx, 'mid', { w, h, camX, camY });
 
@@ -551,6 +723,5 @@ export class ChristmasScene extends MenuScene {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
     }
-    void clamp;
   }
 }

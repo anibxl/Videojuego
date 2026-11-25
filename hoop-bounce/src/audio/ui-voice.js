@@ -223,6 +223,16 @@ export class UiVoice {
     for (let i = 0; i < 10; i++) this.coin(i), this.note(1900 + ((i * 377) % 900), 0.08, 0.035, { delay: 0.08 + i * 0.065, send: 0.25 });
   }
 
+  /** Gemmes gagnées : carillon de cristal (notes aiguës en cascade, éclat très clair), distinct des pièces. */
+  gems() {
+    this.air(0.5, 0.05, 3000, 11000, { q: 0.6, send: 0.5 });
+    [14, 12, 15, 13, 16].forEach((k, i) => {
+      const f = PENTA[Math.min(PENTA.length - 1, k)];
+      this.note(f, 0.5, 0.045, { delay: i * 0.07, send: 0.85 });
+      this.note(f * 2.01, 0.25, 0.012, { type: 'triangle', delay: i * 0.07 + 0.01, send: 0.6 });
+    });
+  }
+
   /** Récompense ouverte : éclat de lumière + motif du rebond en cloches. */
   reward() {
     this.air(0.7, 0.07, 500, 7000, { q: 0.8 });

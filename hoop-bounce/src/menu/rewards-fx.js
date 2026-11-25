@@ -14,8 +14,18 @@ import { lt } from '../shared/live-i18n.js';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Coffre dessiné en CSS (corps, couvercle, ferrures, serrure) — couleur selon le type. */
+/** Ouverture des coffres selon la rareté : attente (ms), vibrations, particules, étoiles, éclair, fanfare. */
+const CHEST_TIERS = {
+  common: { charge: 800, sparks: 18, stars: 0, flash: false, fanfare: false, chargeBuzz: [6, 90, 8], burstBuzz: [18] },
+  rare: { charge: 1050, sparks: 28, stars: 0, flash: false, fanfare: false, chargeBuzz: [6, 90, 8, 70, 12], burstBuzz: [25, 40, 30] },
+  premium: { charge: 1050, sparks: 30, stars: 4, flash: false, fanfare: false, chargeBuzz: [6, 90, 8, 70, 12], burstBuzz: [25, 40, 30] },
+  epic: { charge: 1300, sparks: 40, stars: 6, flash: false, fanfare: true, chargeBuzz: [6, 80, 8, 60, 12, 50, 16], burstBuzz: [30, 40, 40] },
+  super: { charge: 1300, sparks: 40, stars: 6, flash: false, fanfare: true, chargeBuzz: [6, 80, 8, 60, 12, 50, 16], burstBuzz: [30, 40, 40] },
+  legendary: { charge: 1700, sparks: 60, stars: 14, flash: true, fanfare: true, chargeBuzz: [6, 80, 8, 60, 12, 50, 16, 40, 22], burstBuzz: [45, 50, 60, 50, 35] },
+};
+
 export function chestHtml(kind = 'common', extra = '') {
-  return `<span class="chest ${kind} ${extra}" aria-hidden="true"><span class="chest-glow"></span><span class="chest-body"></span><span class="chest-lid"></span><span class="chest-seam"></span></span>`;
+  return `<span class="chest ${kind} ${extra}" aria-hidden="true"><span class="chest-aura"></span><span class="chest-glow"></span><span class="chest-body"></span><span class="chest-lid"></span><span class="chest-seam"></span></span>`;
 }
 
 export class RewardFx {
@@ -65,6 +75,7 @@ export class RewardFx {
     el.classList.toggle('many', items.length > 1);
     el.classList.remove('open', 'is-burst', 'is-charge', 'done', 'from-chest');
     el.classList.toggle('from-chest', !!r.chest);
+    el.dataset.chest = r.chest ?? '';
     el.hidden = false;
     void el.offsetWidth;
     el.classList.add('open');
@@ -74,16 +85,22 @@ export class RewardFx {
       // Ouverture d'un coffre : il apparaît au centre, tremble de plus en plus fort pendant que la
       // lumière s'échappe par la fente, s'ouvre dans un éclair et une gerbe de particules, puis la
       // récompense sort du coffre.
-      center.innerHTML = `<span class="rfx-halo"></span>${chestHtml(r.chest, 'enter')}<span class="rfx-sparks" aria-hidden="true"></span><span class="rfx-chest-name">${lt(l, `chest.${r.chest}`)}</span>`;
+      // Mise en scène graduée selon la rareté : plus le coffre est rare, plus l'attente est longue, la secousse
+      // forte, la gerbe de particules fournie ; le légendaire ajoute un éclair blanc et des étoiles dorées.
+      const tier = CHEST_TIERS[r.chest] ?? CHEST_TIERS.common;
+      el.style.setProperty('--charge', `${tier.charge}ms`);
+      center.innerHTML = `<span class="rfx-halo"></span><span class="rfx-godrays" aria-hidden="true"></span>${chestHtml(r.chest, 'enter')}<span class="rfx-sparks" aria-hidden="true"></span><span class="rfx-chest-name">${lt(l, `chest.${r.chest}`)}</span>`;
       this.env.sound.chest?.();
       await wait(520);
       el.classList.add('is-charge');
-      this.env.vibrate([6, 90, 8, 70, 12]);
-      await wait(1050);
+      this.env.vibrate(tier.chargeBuzz);
+      await wait(tier.charge);
       el.classList.add('is-burst');
-      this.sparks(center.querySelector('.rfx-sparks'), 30);
+      this.sparks(center.querySelector('.rfx-sparks'), tier.sparks, tier.stars);
+      if (tier.flash) this.flash(el);
       this.env.sound.reward?.();
-      this.env.vibrate([25, 40, 35]);
+      if (tier.fanfare) setTimeout(() => this.env.sound.surprise?.(), 160);
+      this.env.vibrate(tier.burstBuzz);
       await wait(420);
     } else {
       center.innerHTML = items.length ? '' : r.gems && !r.coins ? `<span class="rfx-bigcoin gem">${ICONS.gem}</span>` : `<span class="rfx-bigcoin">${ICONS.coin}</span>`;
@@ -103,6 +120,7 @@ export class RewardFx {
     const cvs = [...loot.querySelectorAll('canvas')];
     if (cvs.length) requestAnimationFrame(() => cvs.forEach((cv, i) => drawThumb(cv, items[i], Math.min(window.devicePixelRatio || 1, 2))));
     if (r.coins) this.coinRain(Math.min(40, 12 + Math.round(r.coins / 25)));
+    if (r.gems) setTimeout(() => this.env.sound.gems?.(), r.coins ? 260 : 60); // carillon de cristal
     await wait(450);
     el.classList.add('done');
     ok.focus({ preventScroll: true });
@@ -123,8 +141,18 @@ export class RewardFx {
     this.busy = false;
   }
 
+  /** Éclair blanc plein écran (coffre légendaire), bref et doux. */
+  flash(el) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const f = document.createElement('span');
+    f.className = 'rfx-flash';
+    el.appendChild(f);
+    f.addEventListener('animationend', () => f.remove(), { once: true });
+    setTimeout(() => f.remove(), 900);
+  }
+
   /** Gerbe de particules qui jaillit du coffre à l'ouverture (transform / opacity seulement). */
-  sparks(host, n = 28) {
+  sparks(host, n = 28, stars = 0) {
     if (!host || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     host.innerHTML = '';
     for (let i = 0; i < n; i++) {
@@ -133,6 +161,7 @@ export class RewardFx {
       const d = 70 + Math.random() * 130;
       p.style.cssText = `--dx:${(Math.cos(a) * d).toFixed(0)}px;--dy:${(Math.sin(a) * d).toFixed(0)}px;--s:${(0.5 + Math.random() * 0.9).toFixed(2)};animation-delay:${(Math.random() * 0.12).toFixed(2)}s`;
       if (i % 3 === 0) p.className = 'w';
+      if (i < stars) p.className = 'st';
       host.appendChild(p);
     }
     setTimeout(() => (host.innerHTML = ''), 1600);

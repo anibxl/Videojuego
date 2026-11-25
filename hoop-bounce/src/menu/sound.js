@@ -77,6 +77,15 @@ export class MenuSound {
     if (this._winter && !this._bellTimer) this._scheduleBells();
   }
 
+  /** Départ vers une autre page : la musique du menu s'éteint en fondu, les sons restent. */
+  fadeOut(sec = 0.5) {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this.musicBus.gain.cancelScheduledValues(now);
+    this.musicBus.gain.setValueAtTime(this.musicBus.gain.value, now);
+    this.musicBus.gain.linearRampToValueAtTime(0, now + sec);
+  }
+
   setVolumes(music, sfx) {
     this.musicVolume = music;
     this.sfxVolume = sfx;
@@ -133,6 +142,7 @@ export class MenuSound {
   wheelTick(speed = 1) { if (this._ok) this.voice.wheelTick(speed); }
   surprise() { if (this._ok) this.voice.surprise(); }
   coins() { if (this._ok) this.voice.coins(); }
+  gems() { if (this._ok) this.voice.gems?.(); }
   coin(i = 0) { if (this._ok) this.voice.coin(i); }
   mission() { if (this._ok) this.voice.mission(); }
   achievement(hidden = false) { if (this._ok) this.voice.achievement(hidden); }

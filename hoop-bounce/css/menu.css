@@ -101,8 +101,9 @@ svg {
 }
 
 .pressable.is-pressed {
-  transform: scale(0.94);
-  transition-duration: 0.09s;
+  transform: scale(var(--press-scale, 0.94));
+  filter: var(--press-glow, brightness(1.1));
+  transition-duration: 0.08s;
   transition-timing-function: ease-out;
 }
 
@@ -110,9 +111,10 @@ svg {
   animation: release 0.42s var(--ease-out);
 }
 
+/* Retour élastique, volontairement discret (pas de « boing » exagéré) */
 @keyframes release {
-  0% { transform: scale(0.94); }
-  45% { transform: scale(1.05); }
+  0% { transform: scale(var(--press-scale, 0.94)); }
+  45% { transform: scale(1.035); }
   100% { transform: scale(1); }
 }
 

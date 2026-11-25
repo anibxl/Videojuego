@@ -211,6 +211,15 @@ export class Music {
     if (this.out) this.out.gain.setTargetAtTime(this._targetGain(), this.ctx.currentTime, 0.25);
   }
 
+  /** Départ vers une autre page : la musique et l'ambiance s'éteignent en fondu (au lieu d'être coupées). */
+  fadeOut(sec = 0.3) {
+    if (!this.out || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    this.out.gain.cancelScheduledValues(now);
+    this.out.gain.setValueAtTime(this.out.gain.value, now);
+    this.out.gain.linearRampToValueAtTime(0, now + sec);
+  }
+
   /** Change de monde : fondu enchaîné vers son morceau et son ambiance. */
   play(theme) {
     if (this.theme === theme && this.song) return;

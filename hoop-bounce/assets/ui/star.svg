@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs><radialGradient id="g" cx="50%" cy="52%" r="50%"><stop offset="0" stop-color="#ffd65a" stop-opacity=".45"/><stop offset="1" stop-color="#ffd65a" stop-opacity="0"/></radialGradient></defs>
+<circle cx="32" cy="33" r="31" fill="url(#g)"/>
+<polygon points="32.0,5.0 39.4,22.8 58.6,24.3 44.0,36.9 48.5,55.7 32.0,45.6 15.5,55.7 20.0,36.9 5.4,24.3 24.6,22.8" fill="#b86a06" transform="translate(0 1.6)"/>
+<polygon points="32,33 32.0,5.0 39.4,22.8" fill="rgb(255, 239, 144)"/><polygon points="32,33 39.4,22.8 58.6,24.3" fill="rgb(255, 187, 66)"/><polygon points="32,33 58.6,24.3 44.0,36.9" fill="rgb(255, 193, 75)"/><polygon points="32,33 44.0,36.9 48.5,55.7" fill="rgb(255, 170, 40)"/><polygon points="32,33 48.5,55.7 32.0,45.6" fill="rgb(255, 170, 40)"/><polygon points="32,33 32.0,45.6 15.5,55.7" fill="rgb(255, 193, 75)"/><polygon points="32,33 15.5,55.7 20.0,36.9" fill="rgb(255, 201, 87)"/><polygon points="32,33 20.0,36.9 5.4,24.3" fill="rgb(255, 225, 123)"/><polygon points="32,33 5.4,24.3 24.6,22.8" fill="rgb(255, 244, 151)"/><polygon points="32,33 24.6,22.8 32.0,5.0" fill="rgb(255, 222, 118)"/>
+<polygon points="32.0,5.0 39.4,22.8 58.6,24.3 44.0,36.9 48.5,55.7 32.0,45.6 15.5,55.7 20.0,36.9 5.4,24.3 24.6,22.8" fill="none" stroke="#fff6d0" stroke-opacity=".85" stroke-width="1.2" stroke-linejoin="round"/>
+<path d="M30.6 9.5 26.4 19" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-opacity=".85"/>
+<circle cx="32" cy="33" r="2.2" fill="#fffbe6" fill-opacity=".9"/>
+</svg>

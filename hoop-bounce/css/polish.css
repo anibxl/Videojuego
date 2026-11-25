@@ -3,6 +3,10 @@
 
 :root {
   --polish-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Une seule animation de pression pour TOUS les boutons du jeu (menu, boutique, jeu, Trickshot) :
+     enfoncement à 94 %, petit éclat lumineux, retour élastique (--polish-spring) */
+  --press-scale: 0.94;
+  --press-glow: brightness(1.1) saturate(1.05);
 }
 
 /* iPhone : pas d'agrandissement automatique du texte en paysage, pas de menu « aperçu » au toucher long */
@@ -50,16 +54,12 @@ canvas {
 .primary:active,
 .secondary:active,
 .action:active,
-.shop-chip:active {
-  transform: scale(0.93);
-  transition-duration: 0.08s;
-  filter: brightness(1.12);
-}
-
+.shop-chip:active,
 .btn:active,
 .icon-btn:active {
-  transform: scale(0.86);
+  transform: scale(var(--press-scale));
   transition-duration: 0.08s;
+  filter: var(--press-glow);
 }
 
 @media (hover: hover) {

@@ -5,6 +5,10 @@
 //   - MILIEU : des cristaux à six branches de tailles variées, qui tournent lentement sur eux-mêmes ;
 //   - PRÈS   : quelques grands flocons flous qui passent devant, plus vite (effet de profondeur de champ).
 // Un vent commun souffle par rafales douces ; chaque flocon se balance à son rythme.
+// Polish : tailles réparties comme dans une vraie chute (beaucoup de petits, peu de gros), vitesse liée à la
+// taille et à la profondeur, cristaux qui basculent en 3D (la largeur suit le cosinus de leur bascule),
+// apparition en fondu en haut et disparition en fondu avant le sol, et les grands flocons flous ne passent
+// que de temps en temps devant l'écran (pas en permanence).
 // Les flocons sont des images précalculées (dessinées une fois) : le coût par image reste très faible.
 
 const COUNTS = {
@@ -104,22 +108,32 @@ export class Snowfall {
     const n = COUNTS[name] ?? COUNTS.high;
     const R = this.rng;
     const make = (layer, count) =>
-      Array.from({ length: count }, () => ({
-        layer,
-        x: R(),
-        y: R(),
-        // Taille (px), vitesse de chute (hauteurs d'écran par seconde), opacité, balancement, rotation
-        s: layer === 'far' ? 1.4 + R() * 1.8 : layer === 'mid' ? 3.5 + R() * 5 : 16 + R() * 18,
-        v: layer === 'far' ? 0.022 + R() * 0.018 : layer === 'mid' ? 0.045 + R() * 0.035 : 0.1 + R() * 0.06,
-        a: layer === 'far' ? 0.35 + R() * 0.35 : layer === 'mid' ? 0.4 + R() * 0.3 : 0.1 + R() * 0.1,
-        sway: 0.4 + R() * 0.9,
-        amp: layer === 'far' ? 4 + R() * 6 : layer === 'mid' ? 8 + R() * 14 : 18 + R() * 24,
-        phase: R() * Math.PI * 2,
-        rot: R() * Math.PI * 2,
-        vr: (R() - 0.5) * 0.9,
-        kind: Math.floor(R() * 3),
-      }));
+      Array.from({ length: count }, () => {
+        // u ∈ [0,1[ tiré « au carré » : beaucoup de petits flocons, quelques gros
+        const u = R() * R();
+        return {
+          layer,
+          x: R(),
+          y: R(),
+          u,
+          // Taille (px), vitesse de chute (hauteurs d'écran par seconde), opacité, balancement, rotation
+          s: layer === 'far' ? 1.1 + u * 2.6 : layer === 'mid' ? 3 + u * 7 : 16 + R() * 18,
+          v: (layer === 'far' ? 0.02 + u * 0.02 : layer === 'mid' ? 0.04 + u * 0.045 : 0.1 + R() * 0.06) * (0.85 + R() * 0.3),
+          a: layer === 'far' ? 0.3 + R() * 0.4 : layer === 'mid' ? 0.45 + R() * 0.3 : 0.1 + R() * 0.1,
+          sway: 0.3 + R() * 1.1,
+          amp: layer === 'far' ? 3 + R() * 6 : layer === 'mid' ? 8 + R() * 16 : 18 + R() * 24,
+          phase: R() * Math.PI * 2,
+          rot: R() * Math.PI * 2,
+          vr: (R() - 0.5) * 1.1,
+          tilt: R() * Math.PI * 2, // bascule 3D du cristal
+          vt: 0.4 + R() * 1.2,
+          kind: Math.floor(R() * 3),
+          // Grands flocons du premier plan : attente avant le prochain passage (s)
+          wait: layer === 'near' ? R() * 6 : 0,
+        };
+      });
     this.layers = { far: make('far', n.far), mid: make('mid', n.mid), near: make('near', n.near) };
+    for (const f of this.layers.near) f.y = -0.1 - this.rng() * 0.3; // ils entrent un par un
   }
 
   update(dt, motion = 1) {
@@ -130,12 +144,19 @@ export class Snowfall {
     for (const list of Object.values(this.layers)) {
       for (const f of list) {
         const depth = f.layer === 'far' ? 0.4 : f.layer === 'mid' ? 1 : 1.8;
+        if (f.wait > 0) {
+          f.wait -= dt * motion;
+          continue;
+        }
         f.y += f.v * dt * motion;
         f.x += this.wind * 0.012 * depth * dt * motion;
         f.rot += f.vr * dt * motion;
+        f.tilt += f.vt * dt * motion;
         if (f.y > 1.06) {
           f.y = -0.06;
           f.x = this.rng();
+          // Un grand flocon flou ne repasse qu'après une pause de 3 à 9 s
+          if (f.layer === 'near') f.wait = 3 + this.rng() * 6;
         }
         if (f.x > 1.05) f.x -= 1.1;
         else if (f.x < -0.05) f.x += 1.1;
@@ -154,17 +175,25 @@ export class Snowfall {
     const k = layer === 'far' ? 0.25 : layer === 'mid' ? 0.7 : 1.6; // parallaxe
     const t = this.time;
     const { dot, crystals, bokeh: bk } = this.sprites;
+    // Fondu d'apparition (haut) et de disparition (bas : les flocons lointains se posent avant l'horizon)
+    const fadeEnd = layer === 'far' ? 0.78 : 1.02;
     for (const f of list) {
+      if (f.wait > 0) continue;
       const sx = f.x * w + Math.sin(t * f.sway + f.phase) * f.amp - camX * k;
       const x = ((sx % (w + 40)) + w + 40) % (w + 40) - 20;
       const y = f.y * h - camY * k;
-      ctx.globalAlpha = f.a * alpha;
+      const life = Math.min(1, Math.max(0, (f.y + 0.06) / 0.12), Math.max(0, (fadeEnd - f.y) / 0.14));
+      if (life <= 0.01) continue;
+      ctx.globalAlpha = f.a * alpha * life;
       if (layer === 'far') {
         ctx.drawImage(dot, x - f.s, y - f.s, f.s * 2, f.s * 2);
       } else if (layer === 'mid') {
+        // Cristal qui tourne ET bascule : sa largeur apparente suit la bascule (effet 3D léger)
+        const sxk = 0.35 + 0.65 * Math.abs(Math.cos(f.tilt));
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(f.rot);
+        ctx.scale(sxk, 1);
         ctx.drawImage(crystals[f.kind], -f.s, -f.s, f.s * 2, f.s * 2);
         ctx.restore();
       } else {

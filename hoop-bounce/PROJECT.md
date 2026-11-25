@@ -3,12 +3,11 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 24/11/2026 · **Version :** 1.9.1-dev (non publiée ; la version publiable reste
+> **Dernière mise à jour :** 25/11/2026 · **Version :** 1.10.0-dev (non publiée ; la version publiable reste
 > 1.0.0, build 1) · **Saison en cours :** 🎄 **Noël** (saison 1 : menu décoré + **Hoop Pass**) · **Version de
-> test Android :** **`HoopBounce_Test_v13.apk` (1.11.1-test13, mise à jour)** · **iOS :** projet Xcode prêt
-> (`ios/`) · **Phase en cours :** **refonte de la campagne** (50 niveaux plus longs à étapes, 11 pièges surprises
-> annoncés, 3 niveaux trolls, Trickshot expert en 50 cartes et 5 paliers, progression des niveaux remise à zéro) ;
-> phases 2 à 5 terminées ; rien n'est publié.
+> test Android :** **`HoopBounce_Test_v14.apk` (1.12.0-test14, mise à jour)** · **iOS :** projet Xcode prêt
+> (`ios/`) · **Phase en cours :** **finition (polish)** — fonctionnalités terminées, plus aucune nouvelle
+> fonctionnalité : présentation, sensations, sons et ambiance uniquement ; rien n'est publié.
 
 ## Sommaire
 
@@ -858,6 +857,64 @@ décrit l'ancienne page (étapes 7 à 10), conservé pour l'historique :
   (pulsation), verrouillés, « Bientôt » pour ceux qui ne sont pas encore créés. Lancer un niveau : un pan de
   la couleur du monde balaie l'écran, puis l'introduction du monde.
 - `?unlock=all` : tout est ouvert (pour tester), sans rien enregistrer en plus.
+
+### Phase de finition (polish, 25/11/2026)
+
+> Les fonctionnalités sont terminées. Cette phase améliore **uniquement la présentation** : aucun gameplay,
+> aucune physique, aucune progression, aucun équilibrage n'a changé (664 tests inchangés le prouvent).
+
+**Menu principal — scène de Noël vivante** (`src/menu/scene-christmas.js`)
+- Ciel du soir avec **aurore boréale** très douce (deux voiles précalculés qui se balancent et respirent).
+- **Trois chaînes de montagnes en perspective atmosphérique** : la plus lointaine floue et bleutée, les crêtes
+  éclairées d'un liseré chaud par le couchant, le pied noyé dans la brume.
+- **Bancs de brume** en nappes qui dérivent à deux vitesses ; **lumières chaudes d'un village** lointain sur les
+  collines ; chalet, fumée, sapins enneigés et guirlandes (déjà présents).
+- **Champ de neige en relief** : congères éclairées par le haut, ombres bleues ; paillettes de givre ;
+  **reflets des guirlandes** sur la neige gelée ; **poussières lumineuses chaudes** qui montent près des sapins.
+- **Parallaxe** : très lente dérive automatique, souris, et **inclinaison du téléphone** (gyroscope, mesurée par
+  rapport à la tenue du joueur, qui se recentre seule).
+
+**Neige réaliste** (`src/menu/snowfall.js`) : trois plans (lointain derrière les sapins, cristaux, grands
+flocons flous devant l'écran) ; tailles réparties comme une vraie chute (beaucoup de petits, peu de gros), vitesse
+liée à la taille, vent en rafales douces, balancement propre à chaque flocon, **cristaux qui basculent en 3D**,
+**apparition et disparition en fondu**, et les grands flocons flous ne passent **que de temps en temps**.
+
+**Interface** : une seule animation de pression pour tous les boutons du jeu (menu, boutique, jeu, Trickshot) —
+enfoncement à 94 % (`--press-scale`), petit éclat lumineux (`--press-glow`), retour élastique discret, son
+adapté. **Police** : Outfit est conservée (moderne, lisible, une seule famille pour tout le jeu, hiérarchie
+display / titre / sous-titre / texte / étiquette déjà définie dans `css/tokens.css`).
+
+**Pièces, gemmes, étoiles** (`assets/ui/`) : **pièce frappée** (tranche cannelée, double biseau, champ en métal
+brossé, emblème en relief, reflet spéculaire, ombre portée) ; **gemme taillée en brillant** (table, couronne,
+pavillon, feux rosés et dorés, éclat) ; **étoile premium à facettes** (`star.svg`) éclairée d'en haut à gauche,
+utilisée dans le HUD, l'écran de victoire (reflet qui la balaie) et pour les étoiles à ramasser des niveaux
+(même dessin, en sprite précalculé). Les animations existantes (scintillement, rotation, apparition) sont gardées.
+
+**Coffres** : chaque rareté a son effet au repos — commun sobre, **rare** reflet glacé qui balaie le coffre,
+**épique** aura violette qui respire, **légendaire** aura dorée plus large et reflet doré. **Ouverture graduée**
+(`CHEST_TIERS`, `src/menu/rewards-fx.js`) : attente de 0,8 s (commun) à 1,7 s (légendaire), secousses et
+vibrations de plus en plus fortes, 18 → 60 particules, étoiles dorées dès l'épique, **rayons de lumière** qui
+tournent derrière les coffres épiques et légendaires, **éclair blanc** et fanfare pour le légendaire.
+
+**Ballon** : texture, ombre, rotation et squash & stretch existaient ; ajout d'une **traînée lumineuse discrète à
+la couleur de la rareté** pour les ballons rares, épiques, légendaires et mythiques (seulement en vitesse et si
+aucune traînée n'est équipée).
+
+**Sons et musiques** : chaque événement de la liste a son son dédié (tir, rebond, panier, laser, téléporteur,
+trampoline, bouton, coffre, pièces, niveau terminé, Trickshot, Pass, succès) ; **nouveaux** : carillon de cristal
+des **gemmes** (`gems()`, distinct des pièces) et accord final des **trois étoiles** (`threeStars()`). Musiques :
+menu, 5 mondes, Trickshot, victoire, défaite (existantes) ; **fondu de sortie** de la musique à chaque changement
+de page (menu → jeu, jeu → menu, Trickshot → menu), en plus des fondus d'entrée et des fondus enchaînés entre
+mondes qui existaient déjà.
+
+**Vibrations** (courtes, discrètes) : panier, rebond puissant, succès, montée de niveau du Pass (existantes) ;
+coffres graduées par rareté ; **trois étoiles** (nouvelle).
+
+**Performances** (navigateur de test sans carte graphique, rendu logiciel) : 60 i/s au format téléphone
+(844 × 390 et 640 × 360) dans le menu, le jeu et le Trickshot ; menu en tablette (1180 × 820) ≈ 36 i/s contre ≈ 38
+avant la phase (même écart de rendu logiciel ; sur téléphone le canvas est accéléré par le GPU). Tous les décors
+nouveaux sont **précalculés** (aurore, brume, montagnes floues, congères) : par image, seulement des copies
+d'images et des opacités.
 
 ### Direction artistique et système de design (étape 25)
 
@@ -2207,9 +2264,14 @@ niveaux plus longs et plus difficiles rapportent un peu plus.
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v13.apk` (≈ 0,6 Mo, **1.11.1-test13**, correctif « Premier essai » du Trickshot) —
+**Fichier actuel :** `dist/HoopBounce_Test_v14.apk` (≈ 0,65 Mo, **1.12.0-test14**, phase de finition) —
 une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
+
+**Mise à jour v14 (phase de finition) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé
+identique (SHA-256 `894f0b7d…`), versionCode 14, versionName 1.12.0-test14, signature valide ; 18 fichiers
+modifiés extraits de l'APK identiques aux sources testées. Aucune donnée de sauvegarde n'est modifiée par cette
+version (aucun code de sauvegarde touché ; vérifié en naviguant dans toutes les pages).
 
 **Mise à jour v13 (correctif du Trickshot) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé
 identique (SHA-256 `894f0b7d…`), versionCode 13, versionName 1.11.1-test13, signature valide ; fichiers du Trickshot
@@ -2259,7 +2321,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · v10 : `1.9.0-test10` (10) · v11 : `1.10.0-test11` (11) · v12 : `1.11.0-test12` (12) · **v13 : `1.11.1-test13` (13)** ; « 1.11.1 (test 13) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · v10 : `1.9.0-test10` (10) · v11 : `1.10.0-test11` (11) · v12 : `1.11.0-test12` (12) · v13 : `1.11.1-test13` (13) · **v14 : `1.12.0-test14` (14)** ; « 1.12.0 (test 14) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -2527,6 +2589,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 🔴 Retours du porteur du projet et de vrais joueurs : durées réelles, pièges compris au 2e essai, trolls drôles,
   cartes Impossibles jugées faisables
 
+### Phase 6 terdecies — Finition (polish) ✅ (en attente de validation)
+- ✅ Scène de Noël vivante (aurore, montagnes en perspective, brume, village, reflets, lumières, gyroscope)
+- ✅ Neige réaliste (tailles, vitesses, bascule 3D, vent, fondus, grands flocons occasionnels)
+- ✅ Langage d'interface : une seule animation de pression ; pièce, gemme et étoile redessinées
+- ✅ Coffres par rareté (effets au repos, ouverture graduée, rayons, éclair) ; traînée des ballons rares
+- ✅ Sons gemmes et trois étoiles ; fondus de musique entre les pages ; vibration trois étoiles ; APK v14
+- 🔴 Retours du porteur du projet sur téléphone (fluidité réelle, ambiance du menu, sons)
+
 ### Phase 7 bis — Saisons 🟡
 - ✅ Interrupteur de saison ; **Saison 1 — Noël, étape 1** : menu principal décoré et ambiance d'hiver
 - ✅ **Hoop Pass « Saison 1 · Noël »** : 50 niveaux, lignes Gratuit / Premium, XP en jouant, 9 objets
@@ -2582,6 +2652,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ## 7. Liste des tâches
 
 ### Fait ✅
+- ✅ **Phase de finition (polish)** : scène de Noël vivante, neige réaliste, pression unifiée des boutons,
+  pièce / gemme / étoile redessinées, coffres par rareté, traînée des ballons rares, nouveaux sons, fondus de
+  musique, APK de test v14
 - ✅ **Correctif Trickshot « Premier essai »** : ↺ Recommencer ne permet plus d'obtenir la 3e étoile, message
   discret, tentative entamée gardée si on quitte, étoiles déjà gagnées conservées, APK de test v13
 - ✅ **Refonte de la campagne** : 50 niveaux plus longs à étapes, 11 pièges surprises annoncés, 3 niveaux trolls,
@@ -2639,6 +2712,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - ✅ Documentation (README, PROJECT.md, format des niveaux)
 
 ### En cours 🟡
+- 🟡 **Validation de la phase de finition** avec `HoopBounce_Test_v14.apk` : menu (aurore, brume, neige,
+  inclinaison du téléphone), pièces / gemmes / étoiles, ouverture des coffres, sons, fluidité
 - 🟡 **Validation du correctif « Premier essai »** (Trickshot) avec `HoopBounce_Test_v13.apk` : ↺ puis panier au
   premier tir → ★★ et message ; nouvelle entrée → ★★★ possible ; tir, sortie, retour → défi perdu
 - 🟡 **Validation de la refonte de la campagne** avec `HoopBounce_Test_v12.apk` (ou v13) : durées ressenties monde par
@@ -2735,6 +2810,14 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 9. Optimisations
+
+**Finition (polish)**
+- Aurore, bancs de brume, montagnes floues (flou appliqué une seule fois au précalcul), congères, village :
+  tout est dessiné une fois au redimensionnement ; à chaque image, seulement des copies d'images.
+- Aurore et brume : un seul dessin par voile (balancement aller-retour au lieu d'un défilement qui demande deux
+  copies) ; une seule nappe de brume en qualité basse.
+- Coffres : effets au repos en transform / opacity (GPU) ; particules en CSS ; éclair supprimé en mouvement réduit.
+- Traînée des ballons rares : 7 segments au plus, seulement au-dessus d'une vitesse donnée.
 
 **Refonte de la campagne**
 - Pièges surprises : états calculés à chaque pas sans allocation ; un piège au repos n'a pas de collision
@@ -2901,6 +2984,8 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 | Gravité | Bug | Statut |
 |---|---|---|
+| Info | Finition : le menu en grand écran (tablette 1180 × 820) tourne ≈ 36 i/s dans le navigateur de test sans GPU (≈ 38 avant la phase). Sur téléphone, le canvas est accéléré par le GPU. | 🔴 À confirmer sur téléphone / tablette (v14) |
+| Info | Identité des mondes : la demande citait nature, grotte, usine, temple, ciel ; les mondes du jeu sont Ville, Neige, Volcan, Forêt, Espace (leurs mécaniques — glace, lave, lianes, gravité réduite — en dépendent). Leur identité existante (palette, décor, ambiance, sons, musique) est gardée. | 🟡 À décider par le porteur du projet |
 | Important | Trickshot : ↺ Recommencer remettait les essais à zéro ; on pouvait s'entraîner puis obtenir quand même ★★★ « Premier essai ». | ✅ Résolu (v13) : ↺ désactive le défi pour la tentative ; quitter après un tir ne le rend pas ; les étoiles déjà gagnées restent |
 | Info | Trickshot : la description du mode annonçait encore « 20 casse-têtes ». | ✅ Résolu (v13) : 50 |
 | Info | Refonte de la campagne : les durées sont **estimées** (1,4 × la solution experte) ; l'Espace est au plafond de sa fourchette (niveau 42 ≈ 124 s pour 120 visées, toléré par le test). | 🔴 À éprouver avec de vrais joueurs |
@@ -2970,6 +3055,40 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 25/11/2026 — Phase de finition : présentation, sensations, sons (v1.10.0-dev, APK de test v14)
+
+> Plus aucune nouvelle fonctionnalité : uniquement la qualité de présentation. Gameplay, physique, progression,
+> équilibrage et sauvegardes **inchangés**.
+
+**Ajouté**
+- Menu : aurore boréale, troisième chaîne de montagnes floue, perspective atmosphérique et liseré du couchant,
+  bancs de brume, village lointain, congères en relief, reflets des guirlandes, poussières lumineuses, parallaxe
+  au gyroscope.
+- Neige : répartition naturelle des tailles, bascule 3D des cristaux, fondus d'apparition et de disparition,
+  grands flocons flous occasionnels.
+- `assets/ui/star.svg` (étoile premium à facettes) ; HUD, victoire (reflet) et étoiles des niveaux.
+- Coffres : effets au repos par rareté (`.chest-aura`, reflets), ouverture graduée `CHEST_TIERS` (attente,
+  secousses, vibrations, particules, étoiles dorées, rayons, éclair légendaire).
+- Traînée lumineuse des ballons rares et au-delà (couleur de la rareté).
+- Sons `gems()` (carillon de cristal) et `threeStars()` ; vibration aux trois étoiles ; `Music.fadeOut()` et
+  `MenuSound.fadeOut()` au changement de page.
+
+**Modifié**
+- `assets/ui/coin.svg` (pièce frappée : tranche cannelée, biseau, métal brossé, reflet) et `gem.svg` (taille
+  brillant, feux). Pression des boutons unifiée (`--press-scale` 94 %, `--press-glow`, retour élastique 1,035).
+
+**Vérifié**
+- **664 tests** passent. Chromium (fichiers servis par Playwright) : menu, jeu, Trickshot, boutique en 844 × 390,
+  640 × 360 et 1180 × 820, 0 erreur ; 60 i/s au format téléphone ; ouverture d'un coffre légendaire capturée.
+- **Sauvegardes** : joueur simulé (pièces, gemmes, skin équipé, progression, Trickshot, réglages, calendrier)
+  promené dans toutes les pages : rien n'est perdu ni modifié (seul le compteur de parties jouées avance).
+- `dist/HoopBounce_Test_v14.apk` (1.12.0-test14) : même identifiant, même clé, versionCode 14, fichiers
+  identiques aux sources.
+
+**Reste à faire**
+- Essai sur téléphone : fluidité réelle, ambiance du menu, volume et caractère des nouveaux sons.
+- Décision sur l'identité des mondes (voir Bugs connus).
 
 ### 24/11/2026 — Correctif Trickshot : le défi « Premier essai » ne se contourne plus avec ↺ (v1.9.1-dev, APK de test v13)
 

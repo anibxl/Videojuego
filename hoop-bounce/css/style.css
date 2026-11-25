@@ -144,9 +144,27 @@ svg {
 }
 
 .star.on {
-  background: var(--gold);
+  /* Étoile premium (assets/ui/star.svg) : facettes éclairées d'en haut à gauche, liseré, halo doré */
+  background: url("../assets/ui/star.svg") center / contain no-repeat;
+  -webkit-mask: none;
+  mask: none;
   animation: star-pop 0.5s var(--ease-spring);
 }
+.star.big.on { position: relative; overflow: hidden; }
+/* Reflet qui balaie l'étoile gagnée, de temps en temps */
+.star.big.on::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.75) 50%, transparent 62%);
+  -webkit-mask: url("../assets/ui/star.svg") center / contain no-repeat;
+  mask: url("../assets/ui/star.svg") center / contain no-repeat;
+  transform: translateX(-120%);
+  animation: star-sheen 3.2s ease-in-out 1.2s infinite;
+  pointer-events: none;
+}
+@keyframes star-sheen { 0%, 70% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
+@media (prefers-reduced-motion: reduce) { .star.big.on::after { animation: none; } }
 
 @keyframes star-pop {
   0% { transform: scale(0.3); }

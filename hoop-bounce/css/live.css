@@ -519,7 +519,7 @@ html.fit-760 .hub { padding: 0 9px; }
 .rfx .chest.enter { animation: chest-enter 0.55s cubic-bezier(0.3, 1.45, 0.5, 1) both; }
 @keyframes chest-enter { from { transform: translateY(26px) scale(0.35); opacity: 0; } }
 /* Anticipation : secousses de plus en plus fortes, le coffre se gonfle */
-.rfx.is-charge .chest { animation: chest-charge 1.05s ease-in both; }
+.rfx.is-charge .chest { animation: chest-charge var(--charge, 1.05s) ease-in both; }
 @keyframes chest-charge {
   0% { transform: none; }
   12% { transform: rotate(-3deg); }
@@ -532,7 +532,7 @@ html.fit-760 .hub { padding: 0 9px; }
   100% { transform: translateY(-2px) scale(1.04); }
 }
 .chest-seam { transition: opacity 0.3s ease; }
-.rfx.is-charge .chest-seam { animation: seam-glow 1.05s ease-in forwards; }
+.rfx.is-charge .chest-seam { animation: seam-glow var(--charge, 1.05s) ease-in forwards; }
 @keyframes seam-glow { 0% { opacity: 0; transform: scaleX(0.5); } 40% { opacity: 0.6; } 55% { opacity: 0.4; } 100% { opacity: 1; transform: scaleX(1.2); } }
 /* Fente lumineuse plus franche dans la grande révélation, avec des rayons qui s'échappent vers le haut */
 .rfx .chest-seam { left: -6%; right: -6%; top: 38%; height: 22%; mix-blend-mode: screen; background: radial-gradient(ellipse closest-side, #fffdf2, rgba(var(--chest-glow), 0.85) 40%, rgba(var(--chest-glow), 0) 100%); }
@@ -560,12 +560,53 @@ html.fit-760 .hub { padding: 0 9px; }
 .rfx.is-burst .chest-seam { opacity: 0; }
 .rfx.is-burst .chest-lid { animation: lid-open 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) forwards; }
 @keyframes lid-open { to { transform: translate(-6%, -52%) rotate(-18deg); } }
-.rfx.is-burst .chest-glow { animation: chest-burst 0.9s var(--ease-out) forwards; }
+.rfx.is-burst .chest .chest-glow { animation: chest-burst 0.9s var(--ease-out) forwards; }
 @keyframes chest-burst { 0% { opacity: 1; transform: scale(1); } 55% { opacity: 1; transform: scale(28); } 100% { opacity: 0.3; transform: scale(18); } }
 /* Particules qui jaillissent */
 .rfx-sparks { position: absolute; left: 50%; top: 47px; width: 0; height: 0; pointer-events: none; }
 .rfx-sparks i { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, #fff, rgba(var(--glow), 0.9) 55%, transparent); opacity: 0; animation: spark-fly 1.1s cubic-bezier(0.15, 0.7, 0.3, 1) forwards; }
 .rfx-sparks i.w { background: radial-gradient(closest-side, #fff, rgba(255, 255, 255, 0.6) 50%, transparent); }
+/* Étoiles dorées (coffres épiques et légendaires) */
+.rfx-sparks i.st { width: 14px; height: 14px; left: -7px; top: -7px; border-radius: 0; background: url("../assets/ui/star.svg") center / contain no-repeat; animation-duration: 1.5s; }
+
+/* ── Effets propres à chaque rareté (refonte « polish ») ───────────────────────────────────────
+   Commun : bois et fer, sobre. Rare : reflet glacé qui balaie le coffre. Épique : aura violette qui
+   respire. Légendaire : rayons dorés qui tournent derrière, poussières d'or, éclair à l'ouverture. */
+.chest.rare::after,
+.chest.epic::after,
+.chest.legendary::after {
+  content: '';
+  position: absolute;
+  inset: 4% 6% 6%;
+  pointer-events: none;
+  -webkit-mask: var(--body) center bottom / 100% auto no-repeat;
+  mask: var(--body) center bottom / 100% auto no-repeat;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%) -200% 0 / 200% 100% no-repeat;
+  animation: chest-sheen 3.8s ease-in-out infinite;
+}
+.chest.epic::after { animation-duration: 3.2s; }
+.chest.legendary::after { animation-duration: 2.6s; background-image: linear-gradient(110deg, transparent 35%, rgba(255, 244, 200, 0.75) 50%, transparent 65%); }
+@keyframes chest-sheen { 0%, 60% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+/* Aura derrière les coffres épiques et légendaires : halo qui respire (transform / opacity seulement) */
+.chest-aura { position: absolute; left: -22%; right: -22%; top: -18%; bottom: -10%; border-radius: 50%; pointer-events: none; opacity: 0;
+  background: radial-gradient(closest-side, rgba(var(--chest-glow), 0.55), rgba(var(--chest-glow), 0.18) 55%, transparent); }
+.chest.epic .chest-aura,
+.chest.super .chest-aura,
+.chest.legendary .chest-aura { animation: chest-aura 2.4s ease-in-out infinite; }
+.chest.legendary .chest-aura { left: -34%; right: -34%; top: -30%; animation-duration: 1.9s; }
+.chest.mini .chest-aura { display: none; }
+@keyframes chest-aura { 0%, 100% { opacity: 0.45; transform: scale(0.94); } 50% { opacity: 0.9; transform: scale(1.06); } }
+/* Grande révélation : rayons de lumière derrière les coffres épiques et légendaires */
+.rfx-godrays { position: absolute; left: 50%; top: 47px; width: 300px; height: 300px; margin: -150px 0 0 -150px; border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity 0.6s ease;
+  background: repeating-conic-gradient(rgba(var(--glow), 0.28) 0deg 6deg, transparent 6deg 18deg);
+  -webkit-mask: radial-gradient(closest-side, #000 20%, transparent 75%); mask: radial-gradient(closest-side, #000 20%, transparent 75%); }
+.rfx[data-chest='epic'] .rfx-godrays,
+.rfx[data-chest='super'] .rfx-godrays { opacity: 0.6; animation: rays-spin 18s linear infinite; }
+.rfx[data-chest='legendary'] .rfx-godrays { opacity: 1; animation: rays-spin 10s linear infinite; }
+.rfx[data-chest='legendary'].is-charge .rfx-godrays { animation-duration: 4s; }
+.rfx-flash { position: absolute; inset: 0; z-index: 5; pointer-events: none; background: radial-gradient(circle at 50% 40%, rgba(255, 252, 235, 0.95), rgba(255, 220, 140, 0.4) 45%, transparent 75%); animation: rfx-flash 0.75s ease-out forwards; }
+@keyframes rfx-flash { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .chest::after, .chest .chest-aura, .rfx-godrays { animation: none !important; } }
 @keyframes spark-fly { 0% { opacity: 1; transform: translate(0, 0) scale(var(--s)); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 40px)) scale(0.2); } }
 /* Les récompenses sortent du coffre */
 .rfx.from-chest .loot { animation: loot-from-chest 0.7s cubic-bezier(0.25, 1.35, 0.45, 1) both; }

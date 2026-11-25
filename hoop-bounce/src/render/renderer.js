@@ -13,6 +13,7 @@ import { clamp, lerp } from '../core/math.js';
 import { pathState } from '../physics/mover.js';
 import { createBallTextures, skinInfo, drawFace, drawAura } from './ball-sprite.js';
 import { drawTrail } from './cosmetics.js';
+import { itemById, RARITIES } from '../shared/catalog.js';
 import { makeGhostSprite, drawGhostRun } from './ghost-draw.js';
 import { Background } from './background.js';
 import { themeOf } from './themes.js';
@@ -77,6 +78,9 @@ export class Renderer {
     this.ballSkin = id;
     this.tex = createBallTextures(id);
     this.skin = skinInfo(id); // visage (ballons amusants), aura (légendaires)
+    // Ballons rares et au-delà : traînée lumineuse discrète à la couleur de leur rareté (sans traînée équipée)
+    const rarity = itemById(id)?.rarity;
+    this.skinStreak = rarity && RARITIES[rarity]?.order >= 1 ? { rgb: RARITIES[rarity].rgb, k: 0.6 + 0.15 * RARITIES[rarity].order } : null;
   }
 
   /** Nouveau niveau : décor et lumière de son monde, adaptés à sa longueur. */
@@ -201,7 +205,10 @@ export class Renderer {
     }
     if (s.ballVisible) {
       if (s.trail) drawTrail(ctx, s.trail.id, s.trail.pts, s.time, s.ball.r);
-      else if (s.ghost) this._drawGhosts(s);
+      else if (s.ghost) {
+        this._drawSkinStreak(s);
+        this._drawGhosts(s);
+      }
       this._drawShadow(s);
       this._drawPowerGlow(s);
       this._drawBall(s);
@@ -719,6 +726,35 @@ export class Renderer {
     ctx.globalAlpha = 1;
   }
 
+  /** Traînée des ballons rares : un ruban lumineux qui s'affine derrière le ballon, seulement en vitesse. */
+  _drawSkinStreak(s) {
+    const st = this.skinStreak;
+    const g = s.ghost;
+    if (!st || !g || g.length < 3) return;
+    const sp = Math.hypot(s.body.vx, s.body.vy);
+    const k = clamp((sp - 6) / 10, 0, 1) * st.k;
+    if (k <= 0.01) return;
+    const ctx = this.ctx;
+    const r = s.ball.r * s.ball.scale;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    const n = Math.min(g.length, 8);
+    for (let i = 1; i < n; i++) {
+      const a = g[g.length - i];
+      const b = g[g.length - i - 1];
+      if (!b) break;
+      const u = 1 - i / n;
+      ctx.strokeStyle = `rgba(${st.rgb},${(0.32 * u * k).toFixed(3)})`;
+      ctx.lineWidth = r * 1.5 * u;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   /** Gerbe de lumière derrière le panier au moment du panier. */
   _drawGoalBurst(g, time) {
     const age = time - g.t0;
@@ -1001,23 +1037,51 @@ function makeStarSprite() {
   g.fillStyle = glow;
   g.fillRect(0, 0, size, size);
   g.translate(r, r);
+  // Étoile premium à facettes (même dessin que assets/ui/star.svg) : chaque branche a une moitié claire et
+  // une moitié sombre selon la lumière venue d'en haut à gauche, liseré clair, petit reflet
   const outer = r * 0.5;
-  const inner = outer * 0.48;
-  g.beginPath();
+  const inner = outer * 0.45;
+  const pts = [];
   for (let i = 0; i < 10; i++) {
     const a = -Math.PI / 2 + (i * Math.PI) / 5;
     const rad = i % 2 === 0 ? outer : inner;
-    g.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+    pts.push([Math.cos(a) * rad, Math.sin(a) * rad]);
   }
-  g.closePath();
-  const fill = g.createLinearGradient(0, -outer, 0, outer);
-  fill.addColorStop(0, '#fff2b0');
-  fill.addColorStop(1, '#ffb52e');
-  g.fillStyle = fill;
-  g.lineJoin = 'round';
+  const path = () => {
+    g.beginPath();
+    for (const [x, y] of pts) g.lineTo(x, y);
+    g.closePath();
+  };
+  g.save();
+  g.translate(0, size * 0.012);
+  path();
+  g.fillStyle = '#b86a06';
   g.fill();
-  g.lineWidth = size * 0.025;
-  g.strokeStyle = 'rgba(255,255,255,0.7)';
+  g.restore();
+  for (let i = 0; i < 10; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % 10];
+    const tip = i % 2 === 0 ? a : b;
+    const light = (0.5 + 0.5 * Math.cos(Math.atan2(tip[1], tip[0]) + 2.3)) * (i % 2 === 0 ? 1 : 0.75);
+    g.fillStyle = `rgb(255,${Math.round(170 + 80 * light)},${Math.round(40 + 120 * light)})`;
+    g.beginPath();
+    g.moveTo(0, 0);
+    g.lineTo(a[0], a[1]);
+    g.lineTo(b[0], b[1]);
+    g.closePath();
+    g.fill();
+  }
+  path();
+  g.lineJoin = 'round';
+  g.lineWidth = size * 0.018;
+  g.strokeStyle = 'rgba(255,246,208,0.85)';
+  g.stroke();
+  g.strokeStyle = 'rgba(255,255,255,0.85)';
+  g.lineCap = 'round';
+  g.lineWidth = size * 0.022;
+  g.beginPath();
+  g.moveTo(-outer * 0.06, -outer * 0.82);
+  g.lineTo(-outer * 0.25, -outer * 0.48);
   g.stroke();
   return c;
 }

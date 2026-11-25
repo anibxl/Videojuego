@@ -701,6 +701,16 @@ export class Sfx {
     this._at(null);
   }
 
+  /** Trois étoiles : accord final lumineux (après la 3e étoile de l'écran de victoire). */
+  threeStars() {
+    if (!this.ready) return;
+    this._s = 0.5;
+    [0, 4, 7, 12].forEach((k, i) => this._tone(PENTA[8] * 2 ** (k / 12), PENTA[8] * 2 ** (k / 12), 0.9, 0.05, 'triangle', i * 0.05));
+    [0, 1, 2, 3, 4].forEach((i) => this._tone(PENTA[12 + (i % 3)], PENTA[12 + (i % 3)], 0.4, 0.02, 'sine', 0.25 + i * 0.07));
+    this._noiseBurst(0.6, 0.035, 'highpass', 7000, 1, 11000, 0.2);
+    this._at(null);
+  }
+
   checkpoint() {
     if (!this.ready) return;
     this._s = 0.3;

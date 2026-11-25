@@ -741,6 +741,11 @@ function showWin(r) {
       s.classList.add('on');
       sfx.star(i + 1);
       haptics.light();
+      // Trois étoiles : accord final et vibration un peu plus franche, juste après la dernière étoile
+      if (i === 2) setTimeout(() => {
+        sfx.threeStars?.();
+        haptics.success?.();
+      }, 220);
       // Chaque étoile qui se pose lance une petite gerbe de confettis dorés
       const b = s.getBoundingClientRect();
       confetti.pop(b.left + b.width / 2, b.top + b.height / 2, 14, ['#ffd65a', '#fff3c4', '#ffb547']);
@@ -1214,6 +1219,7 @@ for (const a of document.querySelectorAll('a[href]')) {
   a.addEventListener('click', (e) => {
     e.preventDefault();
     ui.fade.classList.remove('out');
+    music.fadeOut?.(0.28);
     setTimeout(() => (location.href = a.getAttribute('href')), 300);
   });
 }
