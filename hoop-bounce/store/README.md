@@ -6,7 +6,7 @@
 | `CHECKLIST.md` | Checklist complète : fiche, contenu de l'application, classification, sécurité des données, version, AAB, tests |
 | `LISTING.md` | Nom, description courte, description complète (FR, EN, ES), référencement (ASO), catégorie, tags |
 | `BRAND.md` | Identité visuelle officielle : palette, typographie, boutons, cartes, effets, illustrations, icône |
-| `SCREENSHOTS.md` | Les 8 captures, leurs titres, l'ordre conseillé, comment les refaire |
+| `SCREENSHOTS.md` | Les 18 captures (5 mondes et leurs pièges, modes, Pass…), leurs titres, la répartition téléphone / tablettes, comment les refaire |
 | `VIDEO.md` | Storyboard de la vidéo de 25 s |
 | `icon/` | Icône Google Play 512 × 512 : `icon-512-winter.png` (saison de Noël), `icon-512.png` (intemporelle) |
 | `feature-graphic/` | Bannière 1024 × 500 (FR, EN, ES) : `feature-graphic-winter-*.png` (Noël) et `feature-graphic-*.png` |
@@ -16,6 +16,7 @@
 | `tools/render-assets.mjs` | Régénère icônes, bannières, icônes et écrans de démarrage Android |
 | `tools/screenshots.mjs` | Régénère les captures dans le vrai jeu (`node store/tools/screenshots.mjs fr`) |
 | `tools/make-ghost.mjs` | Enregistre un vrai fantôme (pilote expert) pour la capture du Mode Fantôme |
+| `tools/find-traps.mjs` | Repère dans les niveaux les endroits où le plus de pièges sont visibles à la fois (captures des mondes) |
 | `tools/check-listing.mjs` | Vérifie les longueurs des textes de la fiche |
 
 Construction de la version publiée : `node tools/build-release.mjs` → `dist/HoopBounce-1.0.0-16-release.aab` (Google

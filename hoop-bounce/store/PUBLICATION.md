@@ -16,7 +16,7 @@
 | **Icône** | 512 × 512 : version **Noël** (neige discrète) et version **intemporelle** | `store/icon/` |
 | | Icônes de l'application (classique, ronde, adaptative) : version intemporelle | dans l'AAB |
 | **Bannière** | 1024 × 500, FR / EN / ES, versions Noël et intemporelle | `store/feature-graphic/` |
-| **Captures** | 8 captures 1920 × 1080 avec titres marketing, FR / EN / ES | `store/screenshots/` |
+| **Captures** | 18 captures 1920 × 1080 avec titres marketing, FR / EN / ES : les 5 mondes et leurs pièges (2 vues chacun), Trickshot, Hoop Pass, skins, fantôme, coffres, succès, collection | `store/screenshots/` |
 | **Vidéo** | Storyboard de 25 s, plan par plan | `store/VIDEO.md` |
 | **Textes** | Nom, description courte, description complète (FR / EN / ES), longueurs vérifiées | `store/LISTING.md` |
 | **Référencement** | Mots-clés principaux et secondaires, catégorie, tags | `store/LISTING.md` § Référencement |
@@ -49,7 +49,8 @@ Environ une heure dans la Play Console, puis 14 jours de test fermé si le compt
 5. **Contenu de l'application** : remplir les formulaires avec les réponses de `store/CHECKLIST.md` § 4 à 6
    (politique de confidentialité, accès, annonces = Non, public cible 13+, IARC, sécurité des données = aucune).
 6. **Fiche du Store** : coller les textes de `store/LISTING.md`, envoyer l'icône (Noël), la bannière (Noël) et les
-   8 captures ; ajouter les traductions EN et ES ; catégorie **Arcade**, tags, coordonnées.
+   captures (8 par type d'appareil : téléphone, tablette 7", tablette 10" — répartition dans `store/SCREENSHOTS.md`) ;
+   ajouter les traductions EN et ES ; catégorie **Arcade**, tags, coordonnées.
 7. **Test fermé** (compte personnel récent) : créer la piste, importer l'AAB, inviter 12 testeurs, attendre
    14 jours, demander l'accès à la production.
 8. **Production** : créer la release avec le même AAB (ou un AAB au versionCode supérieur s'il y a eu des

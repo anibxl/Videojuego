@@ -203,7 +203,7 @@ icône ou d'autres captures quand le jeu aura des visiteurs.
 |---|---|
 | Icône (512 × 512, PNG 32 bits) | Saison de Noël : `store/icon/icon-512-winter.png` · après Noël : `store/icon/icon-512.png` |
 | Bannière (1024 × 500, PNG 24 bits) | Saison de Noël : `store/feature-graphic/feature-graphic-winter-<langue>.png` · après Noël : `feature-graphic-<langue>.png` |
-| Captures téléphone (8, 1920 × 1080) | `store/screenshots/<langue>/01 … 08` (ordre : `store/SCREENSHOTS.md`) |
-| Captures tablettes 7" et 10" (facultatives) | les mêmes 8 fichiers (16:9, 1920 × 1080 : acceptés pour les tablettes) |
+| Captures téléphone (8 au plus, 1920 × 1080) | `store/screenshots/<langue>/` : 01, 02, 04, 07, 08, 03, 05, 06 (`store/SCREENSHOTS.md`) |
+| Captures tablettes 7" et 10" (facultatives) | 7" : 16, 14, 09, 15, 10, 17, 11, 18 · 10" : 01, 07, 08, 09, 12, 13, 11, 10 (18 captures en tout, 16:9 acceptées pour les tablettes) |
 | Vidéo (facultative) | lien YouTube — storyboard prêt : `store/VIDEO.md` |
 | Coordonnées | voir `store/PUBLICATION.md` § Informations développeur |

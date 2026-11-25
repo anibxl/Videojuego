@@ -14,7 +14,7 @@ Légende : ✅ **prêt** dans le projet · ✍️ **à renseigner** dans la Play
 | Clé d'import (upload key) + mot de passe | ✅ 🔑 | `native/release/keys/` (non versionné) — **à copier en lieu sûr** |
 | Icône 512 × 512 (Noël + intemporelle) | ✅ | `store/icon/icon-512-winter.png` · `icon-512.png` |
 | Bannière 1024 × 500 (Noël + intemporelle, FR/EN/ES) | ✅ | `store/feature-graphic/` |
-| 8 captures 1920 × 1080 (FR/EN/ES) | ✅ | `store/screenshots/{fr,en,es}/` |
+| 18 captures 1920 × 1080 (FR/EN/ES) : 5 mondes et leurs pièges, modes, Pass… | ✅ | `store/screenshots/{fr,en,es}/` |
 | Nom, description courte, description complète (FR/EN/ES) | ✅ ✍️ | `store/LISTING.md` |
 | Vidéo YouTube (facultative) | 🔑 | storyboard : `store/VIDEO.md` |
 | Catégorie, tags | ✍️ | Jeux › Arcade ; tags : `store/LISTING.md` |
@@ -110,7 +110,8 @@ partagés avec Google pour la publicité) **avant** l'envoi de cette mise à jou
 - [ ] Nom, descriptions : `store/LISTING.md` (FR par défaut, puis Traductions › anglais (en-US), espagnol (es-ES)).
 - [ ] Icône : `store/icon/icon-512-winter.png` pendant la saison de Noël, puis `icon-512.png`.
 - [ ] Bannière : `store/feature-graphic/feature-graphic-winter-fr.png` (et `-en`, `-es` dans les traductions).
-- [ ] Captures téléphone : `store/screenshots/fr/01 … 08` ; tablettes 7" et 10" : les mêmes.
+- [ ] Captures (8 au plus par appareil, répartition dans `store/SCREENSHOTS.md`) : téléphone 01, 02, 04, 07, 08, 03,
+      05, 06 ; tablette 7" 16, 14, 09, 15, 10, 17, 11, 18 ; tablette 10" 01, 07, 08, 09, 12, 13, 11, 10.
 - [ ] Vidéo : lien YouTube (facultatif, `store/VIDEO.md`).
 - [ ] Paramètres du Store : catégorie **Arcade**, tags (`store/LISTING.md`), coordonnées (§ 2).
 

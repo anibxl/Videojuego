@@ -520,7 +520,7 @@ présentation (son, vibrations, effets, caméra, interface) écoute. Les deux re
 | `tools/economy-sim.mjs` | ★ Phase 4 : **simulateur de l'économie** : des joueurs types (actif, occasionnel ; avec ou sans publicités) jouent N jours avec le vrai code (porte-monnaie, coffres, calendrier, roulette, missions, succès, Pass, boutique) et une horloge simulée. `node tools/economy-sim.mjs 30`. |
 | `tools/route-merge.mjs` | Fusionne les fichiers partiels de `route-check --part` dans `tests/fixtures/routes.json`. |
 | `tools/build-release.mjs` | ★ **Version publiée** : construit `dist/HoopBounce-<version>-release.aab` (Android App Bundle au format protobuf d'aapt2, module `base`, `BundleConfig.pb`, signé avec jarsigner) et l'APK release de la même version (apksigner), avec l'enveloppe `native/release/` et la clé d'import `native/release/keys/` ; vérifie identifiant, versions, clé (`native/release/upload-key.sha256`), permissions et contenu identique APK / AAB ; version sans SDK publicitaire (boutons de publicité masqués). |
-| `store/tools/*.mjs` | Fiche Google Play : `render-assets` (icônes Noël et intemporelle, bannières, icônes Android), `screenshots` (8 captures titrées, 3 langues), `make-ghost` (vrai fantôme pour la capture), `check-listing` (longueurs des textes). |
+| `store/tools/*.mjs` | Fiche Google Play : `render-assets` (icônes Noël et intemporelle, bannières, icônes Android), `screenshots` (18 captures titrées, 3 langues), `find-traps` (endroits riches en pièges), `make-ghost` (vrai fantôme pour la capture), `check-listing` (longueurs des textes). |
 | `tools/level-run.mjs` | ★ Phase 2 : joue un niveau **en entier** (tous les passages à la suite, du départ au panier) et mesure la durée experte → durée joueur estimée (× 1,4), comparée à la fourchette du monde. Utilisé par `tests/routes.test.mjs`. |
 | `tools/level-map.mjs` | ★ Phase 2 : plan PNG d'un niveau (géométrie, pièges, étoiles, panier) avec la trajectoire du pilote et les morts. |
 | `tools/tune.mjs` | ★ Phase 2 : balaie toutes les fenêtres de départ d'un passage chronométré (`--full` : état réel d'arrivée) pour choisir une fenêtre sûre. |
@@ -2217,9 +2217,13 @@ effets, illustrations, règles du logo (HOOP blanc / BOUNCE orange, toujours en 
   classique, ronde et adaptative).
 - **Bannière** 1024 × 500 (FR / EN / ES, Noël et intemporelle) : salle de basket la nuit, logo HOOP / BOUNCE,
   signature, trois repères (50 niveaux · 50 Trickshots · Hoop Pass), centre dégagé pour le bouton de la vidéo.
-- **8 captures** 1920 × 1080 avec titres marketing (FR / EN / ES) : 50 niveaux, 50 Trickshots, Débloquez des
-  skins, Complétez le Hoop Pass, Défiez votre fantôme (vrai fantôme du pilote expert), Ouvrez des coffres,
-  Relevez des défis, Votre collection.
+- **18 captures** 1920 × 1080 avec titres marketing (FR / EN / ES) : 50 niveaux ; **les 5 mondes avec leurs
+  pièges, 2 vues chacun** (Ville : presse et laser, scies ; Neige : blocs écraseurs, pont de glace qui tombe ;
+  Volcan : geysers en éruption, canons et boule de feu ; Forêt : rondin à pointes et tronc qui roule, rivière
+  aux lianes ; Espace : trou noir et plateformes clignotantes, gravité inversée avec astéroïdes et pics) ;
+  50 Trickshots, Complétez le Hoop Pass, Débloquez des skins, Défiez votre fantôme (vrai fantôme du pilote
+  expert), Ouvrez des coffres, Relevez des défis, Votre collection. Google Play en accepte 8 par type
+  d'appareil : répartition téléphone / tablette 7" / tablette 10" dans `store/SCREENSHOTS.md` (les 18 servent).
 - **Vidéo** : storyboard de 25 s (`store/VIDEO.md`) — logo, gameplay, Trickshot, skins et coffre, Hoop Pass,
   fantôme, succès, écran final.
 
@@ -2634,9 +2638,9 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 ### Phase 9 — Publication 🟡 (tout est prêt, actions Play Console restantes)
 - ✅ Identité visuelle officielle (`store/BRAND.md`) ; icône refaite (Noël + intemporelle) ; bannières FR / EN / ES
-- ✅ 8 captures titrées × 3 langues ; storyboard vidéo ; textes FR / EN / ES et référencement
+- ✅ 18 captures titrées × 3 langues (dont les 5 mondes et leurs pièges) ; storyboard vidéo ; textes FR / EN / ES et référencement
 - ✅ Politique de confidentialité conforme à la 1.0.0 ; réponses aux formulaires (IARC, sécurité des données…)
-- ✅ **AAB release signé** (1.0.0, versionCode 15) + APK release de la même version ; clé d'import créée
+- ✅ **AAB release signé** (1.0.0, versionCode 16) + APK release de la même version ; clé d'import créée
 - ✅ `store/PUBLICATION.md` : ce qui est fait, ce qui reste
 - 🔴 Porteur du projet : sauvegarder la clé d'import, e-mail public, héberger la politique, remplir la Console
 - 🔴 Test fermé (12 testeurs × 14 jours si compte personnel récent), puis production
@@ -2648,7 +2652,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 ### Fait ✅
 - ✅ **Préparation de la publication Google Play** : identité visuelle, icône (Noël + intemporelle), bannières,
-  8 captures titrées × 3 langues, storyboard vidéo, textes et référencement, politique de confidentialité,
+  18 captures titrées × 3 langues, storyboard vidéo, textes et référencement, politique de confidentialité,
   réponses aux formulaires, **AAB et APK release 1.0.0**, `store/PUBLICATION.md`
 - ✅ **Phase de finition (polish)** : scène de Noël vivante, neige réaliste, pression unifiée des boutons,
   pièce / gemme / étoile redessinées, coffres par rareté, traînée des ballons rares, nouveaux sons, fondus de
@@ -3058,6 +3062,36 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 ---
 
 ## 11. Journal des modifications
+
+### 25/11/2026 — Fiche Google Play : 18 captures, dont les 5 mondes avec leurs pièges
+
+> À la demande du porteur du projet : plus de captures, chaque monde montré avec plusieurs pièges à l'image, en
+> plus du Hoop Pass et des autres écrans. Le jeu n'est pas modifié (pas de nouvelle version APK / AAB).
+
+**Ajouté**
+- 10 captures de monde (2 par monde), titrées en FR / EN / ES, chacune avec 2 à 3 pièges visibles :
+  Ville 1-9 (presse à pointes + laser) et 1-7 (trois scies) ; Neige 2-7 (blocs de glace écraseurs) et 2-4 (pont de
+  dalles qui tombent, pics) ; Volcan 3-7 (trois geysers en éruption, lave) et 3-4 (canons, boule de feu, dalles
+  fragiles) ; Forêt 4-10 (rondin à pointes, tronc qui roule) et 4-2 (lianes au-dessus de la rivière) ; Espace 5-9
+  (trou noir, plateformes qui clignotent) et 5-8 (gravité inversée, astéroïdes, tapis de pics).
+- `store/tools/find-traps.mjs` : repère les fenêtres de 17 unités où le plus de pièges différents sont visibles.
+
+**Modifié**
+- `store/tools/screenshots.mjs` : scènes de monde (`spot` : ballon posé, caméra tenue sur les pièges, hors des
+  boutons tactiles ; textes d'aide masqués ; image figée au bon moment — geysers à pleine hauteur, boule de feu
+  en vol) ; fichiers servis par Playwright (plus de serveur local) ; captures renumérotées 01 → 18 (Trickshot 07,
+  Pass 08, skins 09, fantôme 10, coffre 11, succès 12, collection 13) ; plus de texte d'aide sur la capture du
+  fantôme.
+- `store/SCREENSHOTS.md` : les 18 captures et la répartition conseillée (8 au plus par appareil) : téléphone
+  01·02·04·07·08·03·05·06, tablette 7" 16·14·09·15·10·17·11·18, tablette 10" 01·07·08·09·12·13·11·10.
+- `store/LISTING.md`, `CHECKLIST.md`, `PUBLICATION.md`, `README.md` : 18 captures et leur répartition.
+
+**Vérifié**
+- 18 × 3 langues relues image par image : ballon visible et hors des boutons, pièges lisibles, aucun texte d'aide,
+  titres dans la police Outfit ; format 1920 × 1080 (règles Google Play inchangées).
+
+**Reste à faire**
+- Porteur du projet : envoyer les captures dans la Play Console selon la répartition de `store/SCREENSHOTS.md`.
 
 ### 25/11/2026 — Trickshot : retour au fonctionnement d'origine du bouton ↺ Recommencer (APK de test v15, AAB 1.0.0 build 16)
 
