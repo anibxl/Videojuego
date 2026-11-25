@@ -79,25 +79,6 @@ export class TrickshotProgress {
     };
   }
 
-  // Tentative entamée (au moins un tir) et pas encore terminée (ni victoire, ni 3 essais ratés). Si le joueur
-  // quitte la carte au milieu, la tentative reste ouverte : en revenant, le défi « Premier essai » est perdu.
-  // Champ `open` ajouté à la sauvegarde v3 (absent des anciennes : rien n'est ouvert).
-  attemptOpen(n) {
-    return !!this.data.open?.[n];
-  }
-
-  openAttempt(n) {
-    if (this.attemptOpen(n)) return;
-    this.data.open = { ...(this.data.open ?? {}), [n]: true };
-    this.save();
-  }
-
-  closeAttempt(n) {
-    if (!this.attemptOpen(n)) return;
-    delete this.data.open[n];
-    this.save();
-  }
-
   /** Un essai raté ou abandonné compte comme une partie jouée. */
   played(n) {
     const prev = this.level(n);

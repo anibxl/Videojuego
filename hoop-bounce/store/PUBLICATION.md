@@ -1,15 +1,15 @@
 # Hoop Bounce — Publication sur Google Play
 
 > **But** : il ne reste plus qu'à se connecter à la Google Play Console, importer le fichier `.aab` et remplir les
-> derniers champs administratifs. Tout le reste est prêt dans le projet. Version : **1.0.0** (versionCode 15),
+> derniers champs administratifs. Tout le reste est prêt dans le projet. Version : **1.0.0** (versionCode 16),
 > identifiant **`com.echospeed.hoopbounce`**.
 
 ## 1. Ce qui est déjà fait ✅
 
 | Domaine | Livrable | Où |
 |---|---|---|
-| **Build** | Android App Bundle signé, prêt pour Google Play | `dist/HoopBounce-1.0.0-release.aab` |
-| | APK release de **la même version**, pour tester sur un téléphone | `dist/HoopBounce-1.0.0-release.apk` |
+| **Build** | Android App Bundle signé, prêt pour Google Play | `dist/HoopBounce-1.0.0-16-release.aab` |
+| | APK release de **la même version**, pour tester sur un téléphone | `dist/HoopBounce-1.0.0-16-release.apk` |
 | | Script de construction et de vérification | `node tools/build-release.mjs` |
 | | Clé d'import (upload key) + mot de passe | `native/release/keys/` — **non versionnée, à sauvegarder** |
 | **Identité** | Charte : palette, typographie, boutons, cartes, effets, illustrations, icône | `store/BRAND.md` |
@@ -69,7 +69,7 @@ Environ une heure dans la Play Console, puis 14 jours de test fermé si le compt
   version Play garderont toute leur progression d'une mise à jour à l'autre.
 - ⚠️ **La progression de l'APK de test (`.test`) ne passe pas dans la version Play** : Android sépare les
   données de chaque application. C'est normal (et ça ne concerne que les testeurs).
-- **Tester avant de publier** : l'APK release (`dist/HoopBounce-1.0.0-release.apk`) s'installe à côté de la
+- **Tester avant de publier** : l'APK release (`dist/HoopBounce-1.0.0-16-release.apk`) s'installe à côté de la
   version de test (identifiant différent). Avec la signature par Google Play, la version téléchargée sur le Store
   sera signée par Google : il faudra **désinstaller l'APK release** avant d'installer la version du Store.
   (Option : dans la Console, choisir de faire signer par Google avec **notre propre clé** — importée avec l'outil
@@ -77,13 +77,13 @@ Environ une heure dans la Play Console, puis 14 jours de test fermé si le compt
 
 ## 4. Validation du bundle
 
-- Vérifié par le script : identifiant, versionCode 15, versionName 1.0.0, minSdk 24, targetSdk 36, permission
+- Vérifié par le script : identifiant, versionCode 16, versionName 1.0.0, minSdk 24, targetSdk 36, permission
   vibreur seule, signature (jarsigner) avec la clé d'import, présence de `BundleConfig.pb`, du manifeste,
-  des ressources et du code du module `base`, et **les mêmes 146 fichiers de jeu que dans l'APK release**.
+  des ressources et du code du module `base`, et **les mêmes 145 fichiers de jeu que dans l'APK release**.
 - Le bundle est assemblé sans Gradle (outils Android d'Ubuntu, format protobuf d'aapt2). L'outil officiel
   **bundletool** n'a pas pu être exécuté dans l'environnement de développement ; pour une vérification de plus,
   sur un ordinateur avec Java :
-  `java -jar bundletool-all.jar validate --bundle=HoopBounce-1.0.0-release.aab`
+  `java -jar bundletool-all.jar validate --bundle=HoopBounce-1.0.0-16-release.aab`
   (et `build-apks --bundle=… --output=hb.apks --mode=universal` pour en tirer un APK). La Play Console valide
   aussi le bundle à l'import et indique toute erreur avant l'envoi.
 

@@ -18,6 +18,6 @@
 | `tools/make-ghost.mjs` | Enregistre un vrai fantôme (pilote expert) pour la capture du Mode Fantôme |
 | `tools/check-listing.mjs` | Vérifie les longueurs des textes de la fiche |
 
-Construction de la version publiée : `node tools/build-release.mjs` → `dist/HoopBounce-1.0.0-release.aab` (Google
-Play) et `dist/HoopBounce-1.0.0-release.apk` (même version, pour tester). Les outils graphiques utilisent
+Construction de la version publiée : `node tools/build-release.mjs` → `dist/HoopBounce-1.0.0-16-release.aab` (Google
+Play) et `dist/HoopBounce-1.0.0-16-release.apk` (même version, pour tester). Les outils graphiques utilisent
 Playwright (Chromium).

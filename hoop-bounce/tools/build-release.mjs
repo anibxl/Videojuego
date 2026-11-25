@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 
 const VERSION_NAME = '1.0.0';
-const VERSION_CODE = 15; // > 14 (dernière version de test) ; à augmenter à CHAQUE envoi sur Google Play
+const VERSION_CODE = 16; // 15 : première version prête ; 16 : retour du ↺ Recommencer d'origine (Trickshot). À augmenter à CHAQUE envoi
 const PACKAGE = 'com.echospeed.hoopbounce';
 const MIN_SDK = 24; // Android 7.0
 const TARGET_SDK = 36; // Android 16 (exigence Google Play pour les nouvelles applications)
@@ -46,7 +46,7 @@ const ks = join(keyDir, 'hoopbounce-release.jks');
 const ksProps = join(keyDir, 'keystore.properties');
 const fpFile = join(shell, 'upload-key.sha256'); // empreinte publique de la clé (versionnée : contrôle)
 const ANDROID_JAR = ['/usr/lib/android-sdk/platforms/android-23/android.jar', ...(process.env.ANDROID_JAR ? [process.env.ANDROID_JAR] : [])].find(existsSync);
-const base = `HoopBounce-${VERSION_NAME}-release`;
+const base = `HoopBounce-${VERSION_NAME}-${VERSION_CODE}-release`; // ex. HoopBounce-1.0.0-16-release.aab
 
 const run = (cmd, args, opts = {}) => {
   try {

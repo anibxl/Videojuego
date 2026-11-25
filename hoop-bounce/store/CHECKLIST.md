@@ -9,8 +9,8 @@ Légende : ✅ **prêt** dans le projet · ✍️ **à renseigner** dans la Play
 
 | Élément | Statut | Fichier / réponse |
 |---|---|---|
-| Fichier **AAB** signé (com.echospeed.hoopbounce, 1.0.0, versionCode 15) | ✅ | `dist/HoopBounce-1.0.0-release.aab` |
-| APK release de la même version (tests) | ✅ | `dist/HoopBounce-1.0.0-release.apk` |
+| Fichier **AAB** signé (com.echospeed.hoopbounce, 1.0.0, versionCode 16) | ✅ | `dist/HoopBounce-1.0.0-16-release.aab` |
+| APK release de la même version (tests) | ✅ | `dist/HoopBounce-1.0.0-16-release.apk` |
 | Clé d'import (upload key) + mot de passe | ✅ 🔑 | `native/release/keys/` (non versionné) — **à copier en lieu sûr** |
 | Icône 512 × 512 (Noël + intemporelle) | ✅ | `store/icon/icon-512-winter.png` · `icon-512.png` |
 | Bannière 1024 × 500 (Noël + intemporelle, FR/EN/ES) | ✅ | `store/feature-graphic/` |
@@ -144,12 +144,12 @@ partagés avec Google pour la publicité) **avant** l'envoi de cette mise à jou
   (Compte d'organisation : pas concerné.)
 - Conseillé dans tous les cas : un test interne (jusqu'à 100 testeurs, disponible en quelques minutes) avec
   l'AAB, pour vérifier l'installation depuis Google Play.
-- L'APK release (`dist/HoopBounce-1.0.0-release.apk`) permet de tester exactement la même version avant l'envoi
+- L'APK release (`dist/HoopBounce-1.0.0-16-release.apk`) permet de tester exactement la même version avant l'envoi
   (voir `store/PUBLICATION.md` § Tester avant de publier).
 
 ## 11. Le jour de la publication 🔑
 
-- [ ] Production › Créer une release › importer `dist/HoopBounce-1.0.0-release.aab`.
+- [ ] Production › Créer une release › importer `dist/HoopBounce-1.0.0-16-release.aab`.
 - [ ] Signature d'application par Google Play : accepter (clé gérée par Google, clé d'import = la nôtre).
 - [ ] Notes de version : « Première version de Hoop Bounce ! » (FR) · « The first release of Hoop Bounce! » (EN) ·
       « ¡La primera versión de Hoop Bounce! » (ES).

@@ -28,15 +28,16 @@
 //   v12 : 1.11.0-test12 (refonte de la campagne : 50 niveaux plus longs, pièges surprises, Trickshot 50 cartes)
 //   v13 : 1.11.1-test13 (Trickshot : ↺ Recommencer ne permet plus d'obtenir l'étoile « Premier essai »)
 //   v14 : 1.12.0-test14 (phase de finition : scène de Noël, neige, pièces, gemmes, étoiles, coffres, sons, fondus)
+//   v15 : 1.12.1-test15 (Trickshot : retour au fonctionnement d'origine du bouton ↺ Recommencer)
 
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const TEST_BUILD = 14;
+const TEST_BUILD = 15;
 // Nom de version des versions de test : 1.1.0 = mode TRICKSHOT, 1.2.0 = TRICKSHOT « laboratoire », 1.3.0 = Boutique / Collection, 1.4.0 = menu de Noël (Play Store : 1.0.0)
-const VERSION = '1.12.0';
+const VERSION = '1.12.1';
 const PACKAGE = 'com.echospeed.hoopbounce.test';
 // Empreinte SHA-256 de la clé de test qui a signé la v1 : une autre clé empêcherait la mise à jour
 const KEY_SHA256 = '894f0b7da38d40fbd7ad33ae73cfe4d3c64659d981e8f94c00d4cba11535bfd8';

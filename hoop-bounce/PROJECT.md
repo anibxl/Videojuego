@@ -3,12 +3,12 @@
 > **Mémoire permanente du projet.** Ce fichier est mis à jour après chaque étape importante du
 > développement (voir la section [Comment tenir ce document à jour](#comment-tenir-ce-document-à-jour)).
 >
-> **Dernière mise à jour :** 25/11/2026 · **Version publiée prête :** **1.0.0** (versionCode 15,
-> `com.echospeed.hoopbounce`) · **Fichiers :** `dist/HoopBounce-1.0.0-release.aab` (Google Play) et
-> `dist/HoopBounce-1.0.0-release.apk` (même version, pour tester) · **Version de test Android :**
-> `HoopBounce_Test_v14.apk` (1.12.0-test14) · **Saison en cours :** 🎄 **Noël** · **iOS :** projet Xcode prêt (`ios/`)
-> · **Phase en cours :** **préparation de la publication Google Play** — le jeu n'est plus modifié ; tout est prêt
-> (`store/PUBLICATION.md`), il reste les actions dans la Play Console ; rien n'est publié.
+> **Dernière mise à jour :** 25/11/2026 · **Version publiée prête :** **1.0.0** (versionCode 16,
+> `com.echospeed.hoopbounce`) · **Fichiers :** `dist/HoopBounce-1.0.0-16-release.aab` (Google Play) et
+> `dist/HoopBounce-1.0.0-16-release.apk` (même version, pour tester) · **Version de test Android :**
+> `HoopBounce_Test_v15.apk` (1.12.1-test15) · **Saison en cours :** 🎄 **Noël** · **iOS :** projet Xcode prêt (`ios/`)
+> · **Phase en cours :** **préparation de la publication Google Play** — le jeu n'est plus modifié (sauf le retour
+> du ↺ Recommencer d'origine du Trickshot) ; tout est prêt (`store/PUBLICATION.md`) ; rien n'est publié.
 
 ## Sommaire
 
@@ -1192,15 +1192,9 @@ changé** (voir « Physique » plus bas).
 - **3 essais au plus.** Entre deux essais le ballon revient au pas de tir, **le décor reste tel quel** (caisse
   cassée, porte ouverte, pont tombé, ventilateur allumé restent : on peut préparer le terrain puis marquer).
 - **Étoiles** : ★★★ au premier essai, ★★ au deuxième, ★ au troisième. Après 3 essais ratés : écran « Raté ! ».
-- **Défi « Premier essai »** (la 3e étoile, correctif de la v13) : il faut réussir du premier tir **sans avoir
-  utilisé ↺ Recommencer** et sans essai précédent depuis l'entrée dans la carte. Le bouton ↺ reste disponible à
-  tout moment, mais dès qu'il est utilisé (bouton, pause, touche R, « Rejouer », « Réessayer ») le défi est perdu
-  pour la tentative : message discret « ⭐ Défi Premier essai désactivé pour cette tentative. » (3 s), et un panier
-  au premier tir vaut alors ★★ (sous-titre « Défi Premier essai désactivé (↺) »). Quitter la carte après un tir
-  puis y revenir **reprend** la même tentative (défi perdu) : la tentative entamée est notée dans la sauvegarde
-  (`open`) jusqu'à sa fin (victoire ou 3 essais ratés). Une **nouvelle entrée** dans la carte (menu, « Carte
-  suivante », réouverture du jeu après une tentative terminée) rend le défi disponible. Les étoiles déjà gagnées
-  ne sont jamais retirées. Le défi caché « Du premier coup » suit la même règle. Code : `src/trickshot/first-try.js`.
+- **↺ Recommencer** : disponible à tout moment, autant de fois que voulu ; il recharge la carte avec ses 3 essais,
+  sans message, et le premier tir réussi vaut toujours ★★★ (comportement d'origine, rétabli à la v15 après
+  l'essai d'une restriction « Premier essai » aux v13 et v14).
 - **Score** = étoiles × 1 000 + style : rebonds (+100, 8 au plus), **swish** (+500), planche (+250), portails
   (+200), propulsions (+100), **combo** (+150 par mécanisme déclenché pendant le tir gagnant : bouton, caisse).
 - Le tir se termine quand le ballon s'arrête, **tombe dans le vide du bas de la salle**, sort, touche un piège
@@ -1358,8 +1352,7 @@ succès « Trickshots réussis » gardent leur total à vie).
 | `cards-expert.js` | Les 30 nouvelles cartes du mode expert. |
 | `aim.js` | Geste → tir (`aimFromDrag`), trajectoire prévue (`trajectory` : longueur d'arc limitée `maxLength`, arrêtée au premier bloc ou rampe). |
 | `render.js` | `ArenaRenderer` (hérite du rendu du jeu) : **laboratoire** (fond précalculé de panneaux rivetés, tuyaux, câbles, lampes, néon ; engrenage, écrans et gyrophares animés ; vide du bas), acier à liseré lumineux, verre, murs inclinés, câbles des plateformes et paniers suspendus, volets à voyant, ascenseurs, caisses, panier néon à planche de verre et filet qui s'illumine, pas de tir, élastique, pointillés et repère du geste. |
-| `progress.js` | Progression séparée (clé `hoopbounce.trickshot`, format v3 : étoiles, meilleur score, parties par carte, tentatives entamées `open` ; les sauvegardes v1 / v2 repartent de zéro et sont gardées dans `legacy`), déblocage séquentiel, résumé. |
-| `first-try.js` | Règle du défi « Premier essai » : entrée dans la carte, ↺ (défi perdu pour la tentative), tir (tentative entamée), fin de tentative. |
+| `progress.js` | Progression séparée (clé `hoopbounce.trickshot`, format v3 : étoiles, meilleur score, parties par carte ; les sauvegardes v1 / v2 repartent de zéro et sont gardées dans `legacy` ; le champ `open` laissé par les v13 / v14 est simplement ignoré), déblocage séquentiel, résumé. |
 | `i18n.js` | Textes du mode en français, anglais, espagnol (difficultés, chapitres, mécaniques, écrans). |
 | `main.js` | Écran de jeu : caméra, visée tactile et clavier, HUD, effets (ralenti, zoom, confettis, foule), sons, écrans de victoire / échec / pause, enchaînement des niveaux. |
 
@@ -2200,7 +2193,7 @@ aux formulaires : **`store/CHECKLIST.md`**.
 | Nom (téléphone et fiche) | **Hoop Bounce** (inchangé ; les mots-clés sont dans les descriptions) |
 | Développeur | EchoSpeed |
 | Identifiant du paquet | `com.echospeed.hoopbounce` (⚠️ définitif après le premier import) |
-| Version / build | **1.0.0 / 15** (versionCode supérieur à la dernière version de test, 14) |
+| Version / build | **1.0.0 / 16** (15 : première version prête ; 16 : retour du ↺ Recommencer d'origine) |
 | SDK cible / minimum | Android 16 (API 36) / Android 7.0 (API 24) |
 | Catégorie / tags | Jeux › Arcade ; Arcade, Plates-formes, Basket-ball, Adresse, Hors ligne |
 | Classification attendue | PEGI 3 · ESRB Everyone · USK 0 (questionnaire IARC) |
@@ -2260,9 +2253,13 @@ publicité ni achat ; sauvegarde Android ; permission vibreur seule ; enfants ; 
 
 ### Version de test Android — APK (étape 20)
 
-**Fichier actuel :** `dist/HoopBounce_Test_v14.apk` (≈ 0,65 Mo, **1.12.0-test14**, phase de finition) —
+**Fichier actuel :** `dist/HoopBounce_Test_v15.apk` (≈ 0,67 Mo, **1.12.1-test15**, ↺ Recommencer d'origine du Trickshot) —
 une **mise à jour** des v1 à v4 (même identifiant, même clé, versionCode 5 > 4 > 3 > 2 > 1) : elle s'installe par-dessus et
 garde toutes les sauvegardes. Guide complet : `native/test-apk/README.md`.
+
+**Mise à jour v15 (↺ Recommencer d'origine) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé
+identique (SHA-256 `894f0b7d…`), versionCode 15, versionName 1.12.1-test15, signature valide. Sauvegardes : aucune
+clé modifiée ; le champ `open` des sauvegardes Trickshot v13 / v14 est ignoré (test à l'appui).
 
 **Mise à jour v14 (phase de finition) — vérifié :** identifiant `com.echospeed.hoopbounce.test` inchangé, clé
 identique (SHA-256 `894f0b7d…`), versionCode 14, versionName 1.12.0-test14, signature valide ; 18 fichiers
@@ -2317,7 +2314,7 @@ adresse et stockage avec les fichiers extraits de la v2 → aucune clé perdue n
 |---|---|
 | Nom affiché | **Hoop Bounce Test** (icône du ballon) |
 | Identifiant | `com.echospeed.hoopbounce.test` — distinct de la version Play Store : les deux peuvent coexister |
-| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · v10 : `1.9.0-test10` (10) · v11 : `1.10.0-test11` (11) · v12 : `1.11.0-test12` (12) · v13 : `1.11.1-test13` (13) · **v14 : `1.12.0-test14` (14)** ; « 1.12.0 (test 14) » dans Paramètres et À propos |
+| Version | v1 : `1.0.0-test1` (1) · v2 : `1.1.0-test2` (2) · v3 : `1.2.0-test3` (3) · v4 : `1.3.0-test4` (4) · v5 : `1.4.0-test5` (5) · v6 : `1.5.0-test6` (6) · v7 : `1.6.0-test7` (7) · v8 : `1.7.0-test8` (8) · v9 : `1.8.0-test9` (9) · v10 : `1.9.0-test10` (10) · v11 : `1.10.0-test11` (11) · v12 : `1.11.0-test12` (12) · v13 : `1.11.1-test13` (13) · v14 : `1.12.0-test14` (14) · **v15 : `1.12.1-test15` (15)** ; « 1.12.1 (test 15) » dans Paramètres et À propos |
 | Android | 7.0 minimum (API 24), cible Android 14 (API 34) ; paysage, plein écran immersif, écran toujours allumé |
 | Processeurs | tous (aucun code natif) |
 | Permissions | **vibreur uniquement** — aucune permission Internet : tout fonctionne hors ligne |
@@ -2714,7 +2711,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 ### En cours 🟡
 - 🟡 **Publication** (porteur du projet) : sauvegarder la clé d'import, puis suivre `store/PUBLICATION.md` § 2
-  (Play Console, test fermé, production) ; tester `dist/HoopBounce-1.0.0-release.apk` sur téléphone
+  (Play Console, test fermé, production) ; tester `dist/HoopBounce-1.0.0-16-release.apk` sur téléphone
 - 🟡 **Validation de la phase de finition** avec `HoopBounce_Test_v14.apk` : menu (aurore, brume, neige,
   inclinaison du téléphone), pièces / gemmes / étoiles, ouverture des coffres, sons, fluidité
 - 🟡 **Validation du correctif « Premier essai »** (Trickshot) avec `HoopBounce_Test_v13.apk` : ↺ puis panier au
@@ -2992,7 +2989,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 | Info | La progression de l'APK de test (`com.echospeed.hoopbounce.test`) ne se retrouve pas dans la version Play (`com.echospeed.hoopbounce`) : Android sépare les données de chaque application. | 🟡 Normal (testeurs seulement) |
 | Info | Finition : le menu en grand écran (tablette 1180 × 820) tourne ≈ 36 i/s dans le navigateur de test sans GPU (≈ 38 avant la phase). Sur téléphone, le canvas est accéléré par le GPU. | 🔴 À confirmer sur téléphone / tablette (v14) |
 | Info | Identité des mondes : la demande citait nature, grotte, usine, temple, ciel ; les mondes du jeu sont Ville, Neige, Volcan, Forêt, Espace (leurs mécaniques — glace, lave, lianes, gravité réduite — en dépendent). Leur identité existante (palette, décor, ambiance, sons, musique) est gardée. | 🟡 À décider par le porteur du projet |
-| Important | Trickshot : ↺ Recommencer remettait les essais à zéro ; on pouvait s'entraîner puis obtenir quand même ★★★ « Premier essai ». | ✅ Résolu (v13) : ↺ désactive le défi pour la tentative ; quitter après un tir ne le rend pas ; les étoiles déjà gagnées restent |
+| Info | Trickshot : ↺ Recommencer remet les essais à zéro, donc on peut s'entraîner avant de viser ★★★. Une restriction « Premier essai » a été essayée aux v13 et v14. | 🟡 Voulu : comportement d'origine rétabli à la v15 à la demande du porteur du projet |
 | Info | Trickshot : la description du mode annonçait encore « 20 casse-têtes ». | ✅ Résolu (v13) : 50 |
 | Info | Refonte de la campagne : les durées sont **estimées** (1,4 × la solution experte) ; l'Espace est au plafond de sa fourchette (niveau 42 ≈ 124 s pour 120 visées, toléré par le test). | 🔴 À éprouver avec de vrais joueurs |
 | Info | Refonte de la campagne : 51 passages sur 480 n'ont pas de solution « aléatoire » enregistrée (joués seuls, hors de l'état réel de la partie : porte pas encore ouverte, etc.). Ils sont tous couverts par la partie complète des 50 niveaux. | 🟡 Normal |
@@ -3062,6 +3059,28 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 
 ## 11. Journal des modifications
 
+### 25/11/2026 — Trickshot : retour au fonctionnement d'origine du bouton ↺ Recommencer (APK de test v15, AAB 1.0.0 build 16)
+
+> À la demande du porteur du projet, la restriction « Premier essai » ajoutée à la v13 est retirée. Rien d'autre
+> ne change : niveaux, physique, récompenses, sauvegardes et succès sont identiques.
+
+**Retiré**
+- `src/trickshot/first-try.js` (`FirstTryRule`), le plafond à 2 étoiles après ↺ (`firstTryAllowed`,
+  `result.firstTryLost`), le suivi des tentatives entamées (`attemptOpen`, `openAttempt`, `closeAttempt`), le
+  message « ⭐ Défi Premier essai désactivé pour cette tentative. » et le sous-titre « Défi Premier essai
+  désactivé (↺) » (textes FR / EN / ES), les 3 tests de cette règle.
+- Le défi caché « Du premier coup » retrouve aussi sa règle d'origine.
+
+**Gardé**
+- La correction de la description du mode (« 50 casse-têtes »), indépendante de la règle.
+
+**Vérifié**
+- **663 tests** passent, dont 2 nouveaux : ↺ autant de fois qu'on veut → le premier tir réussi vaut ★★★ ;
+  sauvegarde Trickshot v13 / v14 (avec le champ `open`) lue sans changement, étoiles gagnées conservées.
+- Chromium : 3 appuis sur ↺, aucun message, panier au premier tir = 3 étoiles « Du premier coup », 0 erreur.
+- `dist/HoopBounce_Test_v15.apk` (1.12.1-test15, clé de test) et `dist/HoopBounce-1.0.0-16-release.aab` / `.apk`
+  (versionCode 16, clé d'import) ; l'ancien AAB build 15 est retiré de `dist/` (nom de fichier avec le build).
+
 ### 25/11/2026 — Préparation de la publication Google Play (version 1.0.0, AAB release)
 
 > Le jeu n'est plus modifié (gameplay, niveaux, équilibrage, fonctionnalités inchangés). Cette étape prépare tout
@@ -3076,7 +3095,7 @@ Légende : ✅ Terminé · 🟡 En cours · 🔴 À faire
 - 8 captures titrées 1920 × 1080 × 3 langues (gameplay, Trickshot, skins, Hoop Pass, fantôme, coffre, succès,
   collection), avec un vrai fantôme enregistré par le pilote expert ; les 10 anciennes captures sont remplacées.
 - **Version publiée** : `native/release/` (enveloppe, manifeste API 36, activité sans débogage) et
-  `tools/build-release.mjs` → `dist/HoopBounce-1.0.0-release.aab` et `.apk` (versionCode 15), clé d'import
+  `tools/build-release.mjs` → `dist/HoopBounce-1.0.0-16-release.aab` et `.apk` (versionCode 15), clé d'import
   `native/release/keys/` (ignorée par Git) et son empreinte `native/release/upload-key.sha256`.
 
 **Modifié**
